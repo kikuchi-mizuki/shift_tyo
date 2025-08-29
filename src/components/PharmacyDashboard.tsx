@@ -16,6 +16,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('PharmacyDashboard mounted, user:', user);
     loadData();
   }, [user]);
 
@@ -157,6 +158,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           <p className="text-xs text-blue-100 mt-1">必要な薬剤師の募集条件を設定してください</p>
         </div>
         <div className="p-6 space-y-6">
+          {/* デバッグ情報 */}
+          <div className="p-3 bg-gray-100 rounded text-xs">
+            <div>選択日: {selectedDate || '未選択'}</div>
+            <div>時間帯: {timeSlot || '未選択'}</div>
+            <div>人数: {requiredStaff || '未選択'}</div>
+            <div>備考: {memo || 'なし'}</div>
+          </div>
+          
           {/* 募集日 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">募集日</label>
@@ -220,7 +229,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               console.log('Button clicked!');
               handlePost();
             }} 
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            onMouseEnter={() => console.log('Button hovered')}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+            style={{ pointerEvents: 'auto' }}
           >
             募集を追加
           </button>
