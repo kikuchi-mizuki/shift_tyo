@@ -57,12 +57,17 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   };
 
   const handlePost = async () => {
+    console.log('=== handlePost START ===');
     console.log('handlePost called', { selectedDate, timeSlot, requiredStaff, memo });
+    console.log('User:', user);
     
     if (!selectedDate || !timeSlot || !requiredStaff) {
+      console.log('Validation failed:', { selectedDate, timeSlot, requiredStaff });
       alert('募集日・時間帯・人数を選択してください');
       return;
     }
+    
+    console.log('Validation passed, proceeding with posting creation');
     
     try {
       const posting = {
@@ -228,9 +233,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           {/* 作成ボタン */}
           <div className="space-y-2">
             <button 
-              onClick={() => {
-                console.log('Button clicked!');
-                handlePost();
+              onClick={(e) => {
+                console.log('Button clicked!', e);
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('About to call handlePost');
+                try {
+                  handlePost();
+                } catch (error) {
+                  console.error('Error in button click handler:', error);
+                }
               }} 
               onMouseEnter={() => console.log('Button hovered')}
               onMouseDown={() => console.log('Button mousedown')}
