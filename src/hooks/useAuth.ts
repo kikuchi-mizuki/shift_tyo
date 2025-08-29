@@ -14,18 +14,36 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('useAuth: Initializing...');
+    console.log('useAuth: Supabase client:', !!supabase);
+    console.log('useAuth: Environment variables:', {
+      url: !!import.meta.env.VITE_SUPABASE_URL,
+      key: !!import.meta.env.VITE_SUPABASE_ANON_KEY
+    });
+
     // シンプルな認証状態チェック
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('useAuth: Checking session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('useAuth: Session check error:', error);
+        }
+        
+        console.log('useAuth: Session result:', { session: !!session, user: !!session?.user });
         
         if (session?.user) {
+          console.log('useAuth: User found, setting user and profile');
           setUser(session.user);
           await loadUserProfile(session.user);
+        } else {
+          console.log('useAuth: No user found');
         }
       } catch (error) {
-        console.error('Auth check error:', error);
+        console.error('useAuth: Auth check error:', error);
       } finally {
+        console.log('useAuth: Setting loading to false');
         setLoading(false);
       }
     };
@@ -34,27 +52,37 @@ export const useAuth = () => {
 
     // 認証状態の変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event);
+      console.log('useAuth: Auth state change:', event, { user: !!session?.user });
       
       if (event === 'SIGNED_IN' && session?.user) {
+        console.log('useAuth: User signed in');
         setUser(session.user);
         await loadUserProfile(session.user);
         setLoading(false);
       } else if (event === 'SIGNED_OUT') {
+        console.log('useAuth: User signed out');
         setUser(null);
         setUserProfile(null);
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('useAuth: Cleaning up subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadUserProfile = async (authUser: any) => {
     try {
+      console.log('useAuth: Loading user profile for:', authUser.id);
+      console.log('useAuth: User metadata:', authUser.user_metadata);
+      
       const meta = authUser.user_metadata || {};
       const userType = (meta.user_type || meta.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin' | 'store';
       const name = meta.name || authUser.email || null;
+      
+      console.log('useAuth: Determined user type:', userType);
       
       setUserProfile({
         id: authUser.id,
@@ -62,8 +90,10 @@ export const useAuth = () => {
         email: authUser.email ?? '',
         user_type: userType
       });
+      
+      console.log('useAuth: User profile set successfully');
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      console.error('useAuth: Error loading user profile:', error);
     }
   };
 

@@ -7,25 +7,18 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // 本番環境かどうかの判定
 export const isProduction = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key');
 
-// Supabaseクライアントの作成（完全にシングルトン）
-export const supabase = (window as any).supabaseClient
-  ?? ((window as any).supabaseClient = isProduction ? createClient(
-        supabaseUrl!,
-        supabaseAnonKey!,
-        {
-          auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: false, // URLからセッション検出を無効化
-            flowType: 'pkce'
-          },
-          global: {
-            headers: {
-              'X-Client-Info': 'pharmacy-shift-system'
-            }
-          }
-        }
-      ) : null);
+// Supabaseクライアントの作成（シンプル版）
+export const supabase = createClient(
+  supabaseUrl || 'https://your-project.supabase.co',
+  supabaseAnonKey || 'your-anon-key',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false
+    }
+  }
+);
 
 // 認証関連のヘルパー関数
 export const auth = {
