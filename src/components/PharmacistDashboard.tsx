@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Plus, Search } from 'lucide-react';
+import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile } from 'lucide-react';
 import { shifts, shiftRequests } from '../lib/supabase';
 
 interface PharmacistDashboardProps {
@@ -7,8 +7,12 @@ interface PharmacistDashboardProps {
 }
 
 export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState('中優先度');
+  const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState([]);
-  const [availableShifts, setAvailableShifts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,16 +24,97 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       // 自分のシフトを取得
       const { data: myShiftsData } = await shifts.getShiftsByUser(user.id, 'pharmacist');
       setMyShifts(myShiftsData || []);
-
-      // 利用可能なシフトを取得
-      const { data: availableData } = await shifts.getShifts();
-      setAvailableShifts(availableData || []);
     } catch (error) {
       console.error('Error loading shifts:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+    
+    const days = [];
+    for (let i = 0; i < startingDay; i++) {
+      days.push(null);
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i);
+    }
+    return days;
+  };
+
+  const getMonthName = (date: Date) => {
+    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' });
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const handleDateSelect = (day: number) => {
+    if (day) {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      setSelectedDate(formattedDate);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedDate || !selectedTimeSlot) {
+      alert('日付と時間帯を選択してください');
+      return;
+    }
+
+    try {
+      const shiftRequest = {
+        pharmacist_id: user.id,
+        date: selectedDate,
+        time_slot: selectedTimeSlot,
+        priority: selectedPriority,
+        memo: memo,
+        status: 'pending'
+      };
+
+      const { error } = await shiftRequests.createRequests([shiftRequest]);
+      if (error) {
+        console.error('Error creating shift request:', error);
+        alert('シフト希望の登録に失敗しました');
+      } else {
+        alert('シフト希望を登録しました');
+        setSelectedDate('');
+        setSelectedTimeSlot('');
+        setMemo('');
+        loadShifts(); // シフト一覧を再読み込み
+      }
+    } catch (error) {
+      console.error('Error submitting shift request:', error);
+      alert('シフト希望の登録に失敗しました');
+    }
+  };
+
+  const timeSlots = [
+    { id: 'morning', label: '午前 (9:00-13:00)', icon: Sun, color: 'bg-green-500 hover:bg-green-600' },
+    { id: 'afternoon', label: '午後 (13:00-18:00)', icon: Sun, color: 'bg-orange-500 hover:bg-orange-600' },
+    { id: 'full', label: '終日 (9:00-18:00)', icon: Smile, color: 'bg-yellow-500 hover:bg-yellow-600' },
+    { id: 'consult', label: '要相談', icon: MessageCircle, color: 'bg-purple-500 hover:bg-purple-600' }
+  ];
+
+  const priorities = [
+    { id: 'high', label: '高優先度', color: 'bg-red-500 hover:bg-red-600' },
+    { id: 'medium', label: '中優先度', color: 'bg-yellow-500 hover:bg-yellow-600' },
+    { id: 'low', label: '低優先度', color: 'bg-blue-500 hover:bg-blue-600' }
+  ];
 
   if (loading) {
     return (
@@ -40,95 +125,177 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   }
 
   return (
-    <div className="space-y-6">
-      {/* ヘッダー */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center space-x-3">
-          <User className="w-8 h-8 text-blue-600" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">薬剤師ダッシュボード</h1>
-            <p className="text-gray-600">シフト管理と希望登録</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 統計カード */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Calendar className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">今月のシフト</p>
-              <p className="text-2xl font-bold text-gray-900">{myShifts.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Clock className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">総勤務時間</p>
-              <p className="text-2xl font-bold text-gray-900">0時間</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <MapPin className="w-8 h-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">勤務薬局</p>
-              <p className="text-2xl font-bold text-gray-900">0件</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 今月のシフト */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">今月のシフト</h2>
-        </div>
-        <div className="p-6">
-          {myShifts.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">今月のシフトはありません</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {myShifts.map((shift: any) => (
-                <div key={shift.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{shift.pharmacy_name}</h3>
-                      <p className="text-sm text-gray-600">{shift.date} {shift.start_time} - {shift.end_time}</p>
-                    </div>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                      確定
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* シフト希望登録 */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-900">シフト希望登録</h2>
-            <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-              <Plus className="w-4 h-4" />
-              <span>新規登録</span>
+    <div className="flex gap-6 p-6">
+      {/* 左側: カレンダー */}
+      <div className="flex-1 bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">カレンダー</h2>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={handlePrevMonth}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              ←
+            </button>
+            <span className="text-lg font-medium">{getMonthName(currentDate)}</span>
+            <button
+              onClick={handleNextMonth}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              →
             </button>
           </div>
         </div>
-        <div className="p-6">
-          <p className="text-gray-600">シフト希望を登録して、より良い勤務スケジュールを作成しましょう。</p>
+
+        <div className="grid grid-cols-7 gap-1 mb-4">
+          {['日', '月', '火', '水', '木', '金', '土'].map(day => (
+            <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {getDaysInMonth(currentDate).map((day, index) => (
+            <div
+              key={index}
+              className={`p-2 text-center text-sm border border-gray-200 min-h-[60px] ${
+                day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
+              } ${
+                selectedDate === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day?.toString().padStart(2, '0')}`
+                  ? 'bg-blue-100 border-blue-300'
+                  : ''
+              }`}
+              onClick={() => handleDateSelect(day || 0)}
+            >
+              {day && (
+                <>
+                  <div className="font-medium">{day}</div>
+                  {myShifts.some((shift: any) => 
+                    shift.date === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+                  ) && (
+                    <div className="text-xs text-green-600 mt-1">午前(希望)</div>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 右側: シフト希望登録フォーム */}
+      <div className="w-96 bg-white rounded-lg shadow p-6">
+        <div className="flex items-center space-x-2 mb-6">
+          <Plus className="w-5 h-5 text-blue-600" />
+          <h2 className="text-xl font-semibold text-gray-900">シフト希望登録</h2>
+        </div>
+        
+        <p className="text-gray-600 mb-6">勤務希望日時を登録してください</p>
+
+        <div className="space-y-6">
+          {/* 希望日 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              希望日
+            </label>
+            <select
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">日付を選択してください</option>
+              {Array.from({ length: 31 }, (_, i) => {
+                const day = i + 1;
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth() + 1;
+                const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                return (
+                  <option key={day} value={date}>
+                    {month}月{day}日
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {/* 希望時間帯 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              希望時間帯
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {timeSlots.map((slot) => {
+                const Icon = slot.icon;
+                return (
+                  <button
+                    key={slot.id}
+                    onClick={() => setSelectedTimeSlot(slot.id)}
+                    className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
+                      selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{slot.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 優先度 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              優先度
+            </label>
+            <div className="flex space-x-2">
+              {priorities.map((priority) => (
+                <button
+                  key={priority.id}
+                  onClick={() => setSelectedPriority(priority.label)}
+                  className={`flex-1 py-2 px-3 rounded-lg text-white text-sm font-medium transition-colors ${
+                    selectedPriority === priority.label ? priority.color : 'bg-gray-300 hover:bg-gray-400'
+                  }`}
+                >
+                  {priority.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* メモ */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              メモ(任意)
+            </label>
+            <textarea
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="特別な要望や対応可能な業務があれば記入してください (例:在宅医療対応可能)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              rows={3}
+            />
+          </div>
+
+          {/* 登録ボタン */}
+          <button
+            onClick={handleSubmit}
+            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+          >
+            希望を追加
+          </button>
+        </div>
+
+        {/* 情報ボックス */}
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <h3 className="text-sm font-medium text-blue-800 mb-2">
+            シフト希望登録のポイント
+          </h3>
+          <ul className="text-xs text-blue-700 space-y-1">
+            <li>• 希望日は月初に一括登録することをお勧めします</li>
+            <li>• 「要相談」を選択すると柔軟な時間調整が可能です</li>
+            <li>• 高優先度の日程は優先的にマッチングされます</li>
+            <li>• NG薬局の設定は別途管理画面で行えます</li>
+          </ul>
         </div>
       </div>
     </div>
