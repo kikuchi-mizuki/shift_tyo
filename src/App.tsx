@@ -1,10 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, ReactNode } from 'react';
 import { supabase, auth } from './lib/supabase';
 import LoginForm from './components/LoginForm';
 import UserDashboard from './components/UserDashboard';
 import AdminPanel from './components/AdminPanel';
 import AdminMatchingPanel from './components/AdminMatchingPanel';
 import UserManagement from './components/UserManagement';
+
+// エラーバウンダリーコンポーネント
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 m-4">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">
+            エラーが発生しました
+          </h2>
+          <p className="text-red-600 mb-4">
+            コンポーネントの読み込み中にエラーが発生しました。
+          </p>
+          <details className="text-sm text-red-700">
+            <summary className="cursor-pointer">エラー詳細</summary>
+            <pre className="mt-2 p-2 bg-red-100 rounded text-xs overflow-auto">
+              {this.state.error?.toString()}
+            </pre>
+          </details>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            再試行
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 interface User {
   id: string;
@@ -79,8 +127,24 @@ function App() {
 
   const userType = user.user_metadata?.user_type || 'pharmacist';
 
+  // デバッグ情報（開発環境のみ）
+  const isDevelopment = import.meta.env.DEV;
+
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* デバッグ情報 */}
+      {isDevelopment && (
+        <div className="bg-yellow-50 border border-yellow-200 p-4 m-4 rounded-lg">
+          <h3 className="text-sm font-semibold text-yellow-800 mb-2">デバッグ情報</h3>
+          <div className="text-xs text-yellow-700 space-y-1">
+            <div>ユーザーID: {user.id}</div>
+            <div>メール: {user.email}</div>
+            <div>ユーザータイプ: {userType}</div>
+            <div>Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? '設定済み' : '未設定'}</div>
+            <div>Supabase Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? '設定済み' : '未設定'}</div>
+          </div>
+        </div>
+      )}
       {/* ヘッダー */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -157,16 +221,24 @@ function App() {
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {currentView === 'dashboard' && (
-          <UserDashboard user={user} userType={userType} />
+          <ErrorBoundary>
+            <UserDashboard user={user} userType={userType} />
+          </ErrorBoundary>
         )}
         {currentView === 'admin' && userType === 'admin' && (
-          <AdminPanel />
+          <ErrorBoundary>
+            <AdminPanel />
+          </ErrorBoundary>
         )}
         {currentView === 'matching' && userType === 'admin' && (
-          <AdminMatchingPanel />
+          <ErrorBoundary>
+            <AdminMatchingPanel />
+          </ErrorBoundary>
         )}
         {currentView === 'management' && userType === 'admin' && (
-          <UserManagement />
+          <ErrorBoundary>
+            <UserManagement />
+          </ErrorBoundary>
         )}
       </main>
     </div>
