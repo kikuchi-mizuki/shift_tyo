@@ -128,7 +128,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
     <div className="flex gap-6 p-6">
       {/* 左側: カレンダー */}
       <div className="flex-1 bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
             <button
               onClick={handlePrevMonth}
@@ -146,8 +146,11 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
           </div>
         </div>
         
-        <div className="bg-blue-600 text-white p-4 rounded-lg mb-4">
-          <h2 className="text-xl font-semibold">{getMonthName(currentDate)}</h2>
+        <div className="bg-blue-600 text-white px-5 py-4 rounded-lg mb-4">
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-5 h-5 text-white" />
+            <h2 className="text-xl font-semibold">{getMonthName(currentDate)}</h2>
+          </div>
         </div>
 
         <div className="grid grid-cols-7 gap-1 mb-4">
@@ -162,7 +165,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
           {getDaysInMonth(currentDate).map((day, index) => (
             <div
               key={index}
-              className={`p-2 text-center text-sm border border-gray-200 min-h-[60px] ${
+              className={`p-2 text-center text-sm border border-gray-200 min-h-[72px] ${
                 day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
               } ${
                 selectedDate === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day?.toString().padStart(2, '0')}`
@@ -177,7 +180,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                   {myShifts.some((shift: any) => 
                     shift.date === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
                   ) && (
-                    <div className="text-xs text-green-600 mt-1">午前(希望)</div>
+                    <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block">午前(希望)</div>
                   )}
                 </>
               )}
