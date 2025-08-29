@@ -10,6 +10,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
   const [timeSlot, setTimeSlot] = useState('');
+  const [requiredStaff, setRequiredStaff] = useState<number | null>(null);
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,8 +56,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   };
 
   const handlePost = async () => {
-    if (!selectedDate || !timeSlot) {
-      alert('募集日と時間帯を選択してください');
+    if (!selectedDate || !timeSlot || !requiredStaff) {
+      alert('募集日・時間帯・人数を選択してください');
       return;
     }
     try {
@@ -64,6 +65,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         pharmacy_id: user.id,
         date: selectedDate,
         time_slot: timeSlot,
+        required_staff: requiredStaff,
         memo,
         status: 'open'
       };
@@ -75,6 +77,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         alert('募集を作成しました');
         setSelectedDate('');
         setTimeSlot('');
+        setRequiredStaff(null);
         setMemo('');
         loadData();
       }
@@ -139,11 +142,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
       {/* 右: シフト募集フォーム */}
       <div className="w-96 bg-white rounded-lg shadow">
-        <div className="bg-green-600 text-white p-4 rounded-t-lg">
+        <div className="bg-blue-600 text-white p-4 rounded-t-lg">
           <div className="flex items-center space-x-2">
             <Plus className="w-5 h-5" />
-            <h2 className="text-xl font-semibold">シフト募集作成</h2>
+            <h2 className="text-xl font-semibold">薬剤師募集登録</h2>
           </div>
+          <p className="text-xs text-blue-100 mt-1">必要な薬剤師の募集条件を設定してください</p>
         </div>
         <div className="p-6 space-y-6">
           {/* 募集日 */}
@@ -167,7 +171,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
           {/* 時間帯 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">時間帯</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">募集時間帯</label>
             <div className="grid grid-cols-2 gap-2">
               {[{id:'morning',label:'午前 (9:00-13:00)',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
                 {id:'afternoon',label:'午後 (13:00-18:00)',icon:Sun,color:'bg-orange-500 hover:bg-orange-600'},
@@ -175,7 +179,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 {id:'consult',label:'要相談',icon:MessageCircle,color:'bg-purple-500 hover:bg-purple-600'}].map(slot=>{
                   const Icon = slot.icon as any;
                   return (
-                    <button key={slot.id} onClick={()=>setTimeSlot(slot.id)} className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${timeSlot===slot.id?slot.color:'bg-gray-300 hover:bg-gray-400'}`}>
+                    <button key={slot.id} onClick={()=>setTimeSlot(slot.id)} className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${timeSlot===slot.id?slot.color:'bg-gray-300 hover:bg-gray-400'}`}>
                       <Icon className="w-4 h-4" />
                       <span>{slot.label}</span>
                     </button>
@@ -184,14 +188,38 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             </div>
           </div>
 
-          {/* メモ */}
+          {/* 募集人数 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">メモ(任意)</label>
-            <textarea value={memo} onChange={(e)=>setMemo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" rows={3} placeholder="募集条件や注意事項など" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">必要人数</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[1,2,3].map(n => (
+                <button key={n} onClick={()=>setRequiredStaff(n)} className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-sm font-medium border ${requiredStaff===n? 'bg-blue-600 text-white border-blue-600':'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                  <Users className="w-4 h-4" />
+                  <span>{n}人</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 備考 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">備考・特記事項（任意）</label>
+            <textarea value={memo} onChange={(e)=>setMemo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" rows={3} placeholder="経験年数の要件、特別な業務内容、その他の条件があれば記入してください" />
           </div>
 
           {/* 作成ボタン */}
-          <button onClick={handlePost} className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">募集を作成</button>
+          <button onClick={handlePost} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">募集を追加</button>
+        </div>
+
+        {/* 注意ボックス */}
+        <div className="px-6 pb-6">
+          <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-xs text-yellow-800">
+            <ul className="list-disc pl-5 space-y-1">
+              <li>月初に必要人数を全ての日程へ一括登録することをお勧めします</li>
+              <li>「終日」は選択すると募集要件を明確にしてください</li>
+              <li>NG薬局の設定は別途管理画面で行えます</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
