@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile } from 'lucide-react';
-import { shifts, shiftRequests } from '../lib/supabase';
+import { shifts, shiftRequests, shiftPostings } from '../lib/supabase';
 
 interface PharmacistDashboardProps {
   user: any;
@@ -13,6 +13,8 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [selectedPriority, setSelectedPriority] = useState('中優先度');
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState([]);
+  const [myRequests, setMyRequests] = useState([]);
+  const [openPostings, setOpenPostings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,9 +23,12 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
   const loadShifts = async () => {
     try {
-      // 自分のシフトを取得
       const { data: myShiftsData } = await shifts.getShiftsByUser(user.id, 'pharmacist');
       setMyShifts(myShiftsData || []);
+      const { data: reqs } = await shiftRequests.getRequests(user.id, 'pharmacist');
+      setMyRequests(reqs || []);
+      const { data: postings } = await shiftPostings.getPostings('', 'pharmacist');
+      setOpenPostings(postings || []);
     } catch (error) {
       console.error('Error loading shifts:', error);
     } finally {
@@ -95,7 +100,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         setSelectedDate('');
         setSelectedTimeSlot('');
         setMemo('');
-        loadShifts(); // シフト一覧を再読み込み
+        loadShifts();
       }
     } catch (error) {
       console.error('Error submitting shift request:', error);
@@ -123,6 +128,11 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       </div>
     );
   }
+
+  const y = currentDate.getFullYear();
+  const m = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+  const hasMyRequest = (day: number) => myRequests.some((r: any) => r.date === `${y}-${m}-${day.toString().padStart(2, '0')}`);
+  const hasPosting = (day: number) => openPostings.some((p: any) => p.date === `${y}-${m}-${day.toString().padStart(2, '0')}`);
 
   return (
     <div className="flex gap-6 p-6">
@@ -180,7 +190,13 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                   {myShifts.some((shift: any) => 
                     shift.date === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
                   ) && (
-                    <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block">午前(希望)</div>
+                    <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block">割当</div>
+                  )}
+                  {hasMyRequest(day) && (
+                    <div className="text-[10px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-1 mt-1 inline-block">希望</div>
+                  )}
+                  {hasPosting(day) && (
+                    <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集</div>
                   )}
                 </>
               )}
