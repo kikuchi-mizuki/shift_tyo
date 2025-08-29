@@ -328,4 +328,4 @@ export const CompanyShiftPostingForm: React.FC<CompanyShiftPostingFormProps> = (
       </div>
     </div>
   );
-};
+};export default CompanyShiftPostingForm;

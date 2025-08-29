@@ -123,4 +123,4 @@ export const Calendar: React.FC<CalendarProps> = ({ shifts, month, year, onDateC
       </div>
     </div>
   );
-};
+};export default Calendar;

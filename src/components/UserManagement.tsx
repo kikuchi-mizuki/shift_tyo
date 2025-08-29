@@ -285,4 +285,4 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       </div>
     </div>
   );
-};
+};export default UserManagement;

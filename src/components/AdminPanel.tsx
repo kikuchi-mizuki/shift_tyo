@@ -68,3 +68,5 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     </div>
   );
 };
+
+export default AdminPanel;

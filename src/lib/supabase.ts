@@ -240,19 +240,6 @@ export const shifts = {
         // adminの場合はフィルタリングなし
       }
       
-      const result = await response.json();
-      let data = result.data || [];
-      
-      // ユーザータイプに応じてフィルタリング（クライアント側）
-      if (userId && userType) {
-        if (userType === 'pharmacist') {
-          data = data.filter((shift: any) => shift.pharmacist_id === userId);
-        } else if (userType === 'store' || userType === 'pharmacy') {
-          data = data.filter((shift: any) => shift.pharmacy_id === userId);
-        }
-        // adminの場合はフィルタリングなし
-      }
-      
       // テーブルが存在しない場合のエラーハンドリング
       if (result.error && (result.error.code === 'PGRST116' || result.error.code === 'PGRST205')) {
         console.warn('assigned_shifts table not found, falling back to demo mode');

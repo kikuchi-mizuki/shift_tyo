@@ -170,4 +170,4 @@ export const NGSettingsModal: React.FC<NGSettingsModalProps> = ({
       </div>
     </div>
   );
-};
+};export default NGSettingsModal;

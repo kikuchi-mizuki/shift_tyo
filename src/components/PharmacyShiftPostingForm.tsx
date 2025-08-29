@@ -241,4 +241,4 @@ export const PharmacyShiftPostingForm: React.FC<PharmacyShiftPostingFormProps> =
       </div>
     </div>
   );
-};
+};export default PharmacyShiftPostingForm;

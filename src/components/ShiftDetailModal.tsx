@@ -221,4 +221,4 @@ export const ShiftDetailModal: React.FC<ShiftDetailModalProps> = ({
       </div>
     </div>
   );
-};
+};export default ShiftDetailModal;
