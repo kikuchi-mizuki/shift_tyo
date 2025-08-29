@@ -5,7 +5,7 @@ type Profile = {
   id: string;
   name: string | null;
   email: string;
-  user_type: 'pharmacist' | 'pharmacy' | 'admin';
+  user_type: 'pharmacist' | 'pharmacy' | 'admin' | 'store';
 };
 
 export const useAuth = () => {
@@ -49,7 +49,7 @@ export const useAuth = () => {
     const { data: authData } = await auth.getCurrentUser();
     const authUser = authData?.user;
     const meta = authUser?.user_metadata || {};
-    const finalType = (meta.user_type || meta.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
+    const finalType = (meta.user_type || meta.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin' | 'store';
     const name = meta.name || authUser?.email || null;
     
     console.log('loadFromAuthMetadata debug:', {

@@ -96,7 +96,18 @@ function App() {
     return <LoginForm onLoginSuccess={() => {}} />;
   }
 
-  const userType = (userProfile?.user_type || user.user_metadata?.user_type || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin' | 'store';
+  // ユーザータイプの判定（優先順位: userProfile > user_metadata > デフォルト）
+  let userType: 'pharmacist' | 'pharmacy' | 'admin' | 'store';
+  
+  if (userProfile?.user_type) {
+    userType = userProfile.user_type;
+  } else if (user.user_metadata?.user_type) {
+    userType = user.user_metadata.user_type;
+  } else if (user.user_metadata?.role) {
+    userType = user.user_metadata.role;
+  } else {
+    userType = 'pharmacist'; // デフォルト
+  }
   
   // デバッグ: ユーザータイプの詳細情報
   console.log('User type debug:', {
