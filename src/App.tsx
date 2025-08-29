@@ -61,6 +61,16 @@ class ErrorBoundary extends Component<
 function App() {
   const { user, userProfile, loading, signOut } = useAuth();
   const [currentView, setCurrentView] = useState<'dashboard' | 'admin' | 'matching' | 'management'>('dashboard');
+  // ローディングが続く場合のフェイルセーフ（6秒で有効化）
+  const [forceFallback, setForceFallback] = useState(false);
+  useEffect(() => {
+    if (loading) {
+      const t = setTimeout(() => setForceFallback(true), 6000);
+      return () => clearTimeout(t);
+    } else {
+      setForceFallback(false);
+    }
+  }, [loading]);
 
   const handleLogout = async () => {
     try {
@@ -71,7 +81,7 @@ function App() {
     }
   };
 
-  if (loading) {
+  if (loading && !forceFallback) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
@@ -87,12 +97,12 @@ function App() {
   }
 
   const userType = (userProfile?.user_type || user.user_metadata?.user_type || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
-  const isDevelopment = import.meta.env.DEV;
+  const showDebug = true; // 本番でも常時表示（暫定）
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* デバッグ情報 */}
-      {isDevelopment && (
+      {showDebug && (
         <div className="bg-yellow-50 border border-yellow-200 p-4 m-4 rounded-lg">
           <h3 className="text-sm font-semibold text-yellow-800 mb-2">デバッグ情報</h3>
           <div className="text-xs text-yellow-700 space-y-1">
@@ -100,6 +110,7 @@ function App() {
             <div>メール: {user.email}</div>
             <div>ユーザータイプ: {userType}</div>
             <div>プロファイル由来: {String(!!userProfile)}</div>
+            <div>forceFallback: {String(forceFallback)}</div>
             <div>Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? '設定済み' : '未設定'}</div>
             <div>Supabase Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? '設定済み' : '未設定'}</div>
           </div>
@@ -132,40 +143,22 @@ function App() {
               </button>
             </div>
           </div>
-          
-          {/* 管理者ナビ（必要最低限） */}
-          {userType === 'admin' && (
-            <nav className="flex space-x-8 pb-4">
-              <button
-                onClick={() => setCurrentView('dashboard')}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  currentView === 'dashboard'
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                確定済み
-              </button>
-            </nav>
-          )}
         </div>
       </header>
 
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {currentView === 'dashboard' && (
-          <ErrorBoundary>
-            {userType === 'pharmacist' && (
-              <PharmacistDashboard user={user} />
-            )}
-            {(userType === 'pharmacy' || userType === 'store') && (
-              <PharmacyDashboard user={user} />
-            )}
-            {userType === 'admin' && (
-              <AdminDashboard user={user} />
-            )}
-          </ErrorBoundary>
-        )}
+        <ErrorBoundary>
+          {userType === 'pharmacist' && (
+            <PharmacistDashboard user={user} />
+          )}
+          {(userType === 'pharmacy' || userType === 'store') && (
+            <PharmacyDashboard user={user} />
+          )}
+          {userType === 'admin' && (
+            <AdminDashboard user={user} />
+          )}
+        </ErrorBoundary>
       </main>
     </div>
   );
