@@ -64,6 +64,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('handlePost called', { selectedDate, timeSlot, requiredStaff, memo });
     console.log('User:', user);
     
+    console.log('Validation check:', { 
+      selectedDate: selectedDate || 'EMPTY', 
+      timeSlot: timeSlot || 'EMPTY', 
+      requiredStaff: requiredStaff || 'NULL',
+      selectedDateType: typeof selectedDate,
+      timeSlotType: typeof timeSlot,
+      requiredStaffType: typeof requiredStaff
+    });
+    
     if (!selectedDate || !timeSlot || !requiredStaff) {
       console.log('Validation failed:', { selectedDate, timeSlot, requiredStaff });
       alert('募集日・時間帯・人数を選択してください');
@@ -208,13 +217,20 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">募集時間帯</label>
             <div className="grid grid-cols-2 gap-2">
-              {[{id:'morning',label:'午前 (9:00-13:00)',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
+                              {[{id:'morning',label:'午前 (9:00-13:00)',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
                 {id:'afternoon',label:'午後 (13:00-18:00)',icon:Sun,color:'bg-orange-500 hover:bg-orange-600'},
                 {id:'full',label:'終日 (9:00-18:00)',icon:Users,color:'bg-yellow-500 hover:bg-yellow-600'},
                 {id:'consult',label:'要相談',icon:MessageCircle,color:'bg-purple-500 hover:bg-purple-600'}].map(slot=>{
                   const Icon = slot.icon as any;
                   return (
-                    <button key={slot.id} onClick={()=>setTimeSlot(slot.id)} className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${timeSlot===slot.id?slot.color:'bg-gray-300 hover:bg-gray-400'}`}>
+                    <button 
+                      key={slot.id} 
+                      onClick={() => {
+                        console.log('Time slot clicked:', slot.id);
+                        setTimeSlot(slot.id);
+                      }} 
+                      className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${timeSlot===slot.id?slot.color:'bg-gray-300 hover:bg-gray-400'}`}
+                    >
                       <Icon className="w-4 h-4" />
                       <span>{slot.label}</span>
                     </button>
@@ -228,7 +244,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             <label className="block text-sm font-medium text-gray-700 mb-2">必要人数</label>
             <div className="grid grid-cols-3 gap-2">
               {[1,2,3].map(n => (
-                <button key={n} onClick={()=>setRequiredStaff(n)} className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-sm font-medium border ${requiredStaff===n? 'bg-blue-600 text-white border-blue-600':'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                <button 
+                  key={n} 
+                  onClick={() => {
+                    console.log('Required staff clicked:', n);
+                    setRequiredStaff(n);
+                  }} 
+                  className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-sm font-medium border ${requiredStaff===n? 'bg-blue-600 text-white border-blue-600':'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                >
                   <Users className="w-4 h-4" />
                   <span>{n}人</span>
                 </button>
