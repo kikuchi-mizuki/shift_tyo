@@ -88,54 +88,46 @@ export const useAuth = () => {
 
       if (data) {
         console.log('Profile loaded:', data);
-        setUserProfile(data as Profile);
+        // user_profilesにタイプがあればそれを採用
+        const finalType = (data.user_type || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
+        setUserProfile({ ...(data as any), user_type: finalType });
+        // メタデータにタイプが無い場合は自動保存
+        await ensureUserTypeInMetadata(finalType);
       } else {
         // プロファイルが存在しない場合は、auth.usersのメタデータから取得を試行
         console.log('Profile not found, checking auth metadata');
         try {
           const { data: authData } = await auth.getCurrentUser();
           const userMetadata = authData?.user?.user_metadata || {};
-          const userType = userMetadata.user_type || userMetadata.role;
+          const userType = (userMetadata.user_type || userMetadata.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
           const userName = userMetadata.name || emailFallback;
-          
-          console.log('User type from metadata (user_type):', userMetadata.user_type);
-          console.log('User type from metadata (role):', userMetadata.role);
-          console.log('User metadata:', userMetadata);
-          console.log('Full auth user data:', authData?.user);
-          
-          // Determine user type with proper fallback
-          let finalUserType = userMetadata.user_type || userMetadata.role || 'pharmacist';
-          
-          console.log('Final user type:', finalUserType);
-          
-          // Use metadata to create profile
-          console.log('Using metadata for profile creation');
-          
-          setUserProfile({
-            id: userId,
-            name: userName,
-            email: emailFallback,
-            user_type: finalUserType as 'pharmacist' | 'pharmacy' | 'admin',
-          });
+          await ensureUserTypeInMetadata(userType);
+          setUserProfile({ id: userId, name: userName, email: emailFallback, user_type: userType });
         } catch (metaError) {
           console.warn('Failed to get metadata:', metaError);
-          setUserProfile({
-            id: userId,
-            name: null,
-            email: emailFallback,
-            user_type: 'pharmacist', // デフォルト値
-          });
+          const fallbackType = 'pharmacist' as const;
+          await ensureUserTypeInMetadata(fallbackType);
+          setUserProfile({ id: userId, name: null, email: emailFallback, user_type: fallbackType });
         }
       }
     } catch (e) {
       console.warn('Profile load exception:', e);
-      // 例外でもUIを進める
-      setUserProfile({
-        id: userId,
-        name: null,
-        email: emailFallback,
-        user_type: 'pharmacist', // デフォルト値
-      });
+      const fallbackType = 'pharmacist' as const;
+      await ensureUserTypeInMetadata(fallbackType);
+      setUserProfile({ id: userId, name: null, email: emailFallback, user_type: fallbackType });
+    }
+  }
+
+  // user_metadata.user_type を必ず保持する
+  async function ensureUserTypeInMetadata(type: 'pharmacist' | 'pharmacy' | 'admin') {
+    try {
+      const { data: authData } = await auth.getCurrentUser();
+      const current = authData?.user?.user_metadata?.user_type;
+      if (current !== type) {
+        await auth.updateUserMetadata({ user_type: type });
+      }
+    } catch (e) {
+      console.warn('Failed to ensure user_type in metadata:', e);
     }
   }
 

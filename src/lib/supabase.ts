@@ -143,6 +143,20 @@ export const auth = {
     }
 
     return supabase.auth.onAuthStateChange(callback);
+  },
+
+  // ユーザーメタデータ更新（user_type等を補完保存）
+  updateUserMetadata: async (data: Record<string, any>) => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+    try {
+      const { data: res, error } = await supabase.auth.updateUser({ data });
+      return { data: res, error };
+    } catch (error) {
+      console.error('Update user metadata error:', error);
+      return { data: null, error } as any;
+    }
   }
 };
 
@@ -184,21 +198,21 @@ export const userProfiles = {
 
   // プロフィール作成（存在しない場合）
   createProfile: async (userId: string, userData: any) => {
-    // Profile creation disabled due to view restrictions
+    // Profile creation disabled due to database view restrictions
     console.warn('Profile creation is disabled due to database view restrictions');
     return { data: null, error: { message: 'Profile creation is disabled due to database view restrictions' } };
   },
 
   // プロフィール更新
   updateProfile: async (userId: string, updates: any) => {
-    // Update operations disabled due to view restrictions
+    // Update operations disabled due to database view restrictions
     console.warn('Profile updates are disabled due to database view restrictions');
     return { data: null, error: { message: 'Profile updates are not supported' } };
   },
 
   // NGリスト更新
   updateNGList: async (userId: string, ngList: string[]) => {
-    // Update operations disabled due to view restrictions
+    // Update operations disabled due to database view restrictions
     console.warn('NG list updates are disabled due to database view restrictions');
     return { data: null, error: { message: 'NG list updates are not supported' } };
   }
