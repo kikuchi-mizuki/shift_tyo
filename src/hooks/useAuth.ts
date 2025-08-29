@@ -19,12 +19,14 @@ export const useAuth = () => {
   useEffect(() => {
     if (!isProduction) { setLoading(false); return; }
 
+    // 最長でも8秒でロード解除するフェイルセーフ
+    const hardStop = setTimeout(() => setLoading(false), 8000);
+
     // Clear any stale session data on initialization
     const clearStaleSession = async () => {
       try {
         const { data } = await auth.getCurrentUser();
         if (!data?.user) {
-          // Clear any stale session data
           await auth.signOut();
         }
       } catch (error) {
@@ -44,7 +46,6 @@ export const useAuth = () => {
         }
       } catch (error) {
         console.warn('Initial session check failed:', error);
-        // Clear any stale data and continue
         await auth.signOut();
       } finally {
         setLoading(false);
@@ -57,8 +58,11 @@ export const useAuth = () => {
       if (event === 'SIGNED_IN' && session?.user) {
         setLoading(true);
         setUser(session.user);
-        await safeLoadProfile(session.user.id, session.user.email ?? '');
-        setLoading(false);
+        try {
+          await safeLoadProfile(session.user.id, session.user.email ?? '');
+        } finally {
+          setLoading(false);
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setUserProfile(null);
@@ -66,7 +70,7 @@ export const useAuth = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); clearTimeout(hardStop); };
   }, []);
 
   // VIEW から読むだけ。0件なら仮プロフィールを組み立てる
@@ -74,9 +78,9 @@ export const useAuth = () => {
     try {
       console.log('Loading profile for user:', userId);
 
-      // 10秒タイムアウトで確実に抜ける
+      // 5秒タイムアウトで確実に抜ける
       const timeout = new Promise<never>((_, rej) =>
-        setTimeout(() => rej(new Error('profile timeout')), 10_000)
+        setTimeout(() => rej(new Error('profile timeout')), 5_000)
       );
 
       const req = userProfiles.getProfile(userId); // ← from('user_profiles').maybeSingle()
@@ -88,13 +92,10 @@ export const useAuth = () => {
 
       if (data) {
         console.log('Profile loaded:', data);
-        // user_profilesにタイプがあればそれを採用
         const finalType = (data.user_type || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
         setUserProfile({ ...(data as any), user_type: finalType });
-        // メタデータにタイプが無い場合は自動保存
         await ensureUserTypeInMetadata(finalType);
       } else {
-        // プロファイルが存在しない場合は、auth.usersのメタデータから取得を試行
         console.log('Profile not found, checking auth metadata');
         try {
           const { data: authData } = await auth.getCurrentUser();
