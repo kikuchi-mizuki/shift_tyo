@@ -129,7 +129,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       {/* 左側: カレンダー */}
       <div className="flex-1 bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">カレンダー</h2>
           <div className="flex items-center space-x-4">
             <button
               onClick={handlePrevMonth}
@@ -145,6 +144,10 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
               →
             </button>
           </div>
+        </div>
+        
+        <div className="bg-blue-600 text-white p-4 rounded-lg mb-4">
+          <h2 className="text-xl font-semibold">{getMonthName(currentDate)}</h2>
         </div>
 
         <div className="grid grid-cols-7 gap-1 mb-4">
@@ -184,11 +187,14 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       </div>
 
       {/* 右側: シフト希望登録フォーム */}
-      <div className="w-96 bg-white rounded-lg shadow p-6">
-        <div className="flex items-center space-x-2 mb-6">
-          <Plus className="w-5 h-5 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-900">シフト希望登録</h2>
+      <div className="w-96 bg-white rounded-lg shadow">
+        <div className="bg-green-600 text-white p-4 rounded-t-lg">
+          <div className="flex items-center space-x-2">
+            <Plus className="w-5 h-5" />
+            <h2 className="text-xl font-semibold">シフト希望登録</h2>
+          </div>
         </div>
+        <div className="p-6">
         
         <p className="text-gray-600 mb-6">勤務希望日時を登録してください</p>
 
@@ -286,7 +292,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         </div>
 
         {/* 情報ボックス */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+        <div className="p-4 bg-blue-50 rounded-b-lg">
           <h3 className="text-sm font-medium text-blue-800 mb-2">
             シフト希望登録のポイント
           </h3>
