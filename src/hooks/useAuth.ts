@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { auth, isProduction } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 type Profile = {
   id: string;
@@ -14,51 +14,32 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 開発環境ではローディングを無効化
-    if (!isProduction) { 
-      setLoading(false); 
-      return; 
-    }
-
-    const hardStop = setTimeout(() => {
-      console.log('Hard stop timeout reached, forcing loading to false');
-      setLoading(false);
-    }, 5000); // 5秒でタイムアウト
-
-    (async () => {
+    // シンプルな認証状態チェック
+    const checkAuth = async () => {
       try {
-        console.log('Checking current user...');
-        const { data } = await auth.getCurrentUser();
-        console.log('Current user result:', data);
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (data?.user) {
-          console.log('User found, setting user and loading profile');
-          setUser(data.user);
-          await loadFromAuthMetadata();
-        } else {
-          console.log('No user found');
+        if (session?.user) {
+          setUser(session.user);
+          await loadUserProfile(session.user);
         }
       } catch (error) {
-        console.error('Error in auth effect:', error);
+        console.error('Auth check error:', error);
       } finally {
-        console.log('Setting loading to false');
         setLoading(false);
       }
-    })();
+    };
 
-    const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.id);
+    checkAuth();
+
+    // 認証状態の変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event);
       
       if (event === 'SIGNED_IN' && session?.user) {
-        setLoading(true);
         setUser(session.user);
-        try { 
-          await loadFromAuthMetadata(); 
-        } catch (error) {
-          console.error('Error loading auth metadata:', error);
-        } finally { 
-          setLoading(false); 
-        }
+        await loadUserProfile(session.user);
+        setLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setUserProfile(null);
@@ -66,68 +47,63 @@ export const useAuth = () => {
       }
     });
 
-    return () => { 
-      subscription.unsubscribe(); 
-      clearTimeout(hardStop); 
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  async function loadFromAuthMetadata() {
+  const loadUserProfile = async (authUser: any) => {
     try {
-      console.log('Loading from auth metadata...');
-      const { data: authData } = await auth.getCurrentUser();
-      const authUser = authData?.user;
+      const meta = authUser.user_metadata || {};
+      const userType = (meta.user_type || meta.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin' | 'store';
+      const name = meta.name || authUser.email || null;
       
-      if (!authUser) {
-        console.error('No auth user found in loadFromAuthMetadata');
-        return;
-      }
-      
-      const meta = authUser?.user_metadata || {};
-      const finalType = (meta.user_type || meta.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin' | 'store';
-      const name = meta.name || authUser?.email || null;
-      
-      console.log('loadFromAuthMetadata debug:', {
-        meta,
-        finalType,
-        authUser: authUser?.id
+      setUserProfile({
+        id: authUser.id,
+        name,
+        email: authUser.email ?? '',
+        user_type: userType
       });
-      
-      // メタデータに未設定なら保存
-      if (meta.user_type !== finalType) {
-        console.log('Updating user metadata:', { old: meta.user_type, new: finalType });
-        await auth.updateUserMetadata({ user_type: finalType });
-      }
-      
-      setUserProfile({ id: authUser.id, name, email: authUser.email ?? '', user_type: finalType });
-      console.log('User profile set successfully');
     } catch (error) {
-      console.error('Error in loadFromAuthMetadata:', error);
-      // エラーが発生してもローディングを止める
-      setLoading(false);
+      console.error('Error loading user profile:', error);
     }
-  }
+  };
 
   const signIn = async (email: string, password: string) => {
-    if (!isProduction) return { data: null, error: null };
     setLoading(true);
     try {
-      const res = await auth.signIn(email, password);
-      if (!res.error && res.data?.user) {
-        setUser(res.data.user);
-        await loadFromAuthMetadata();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (!error && data.user) {
+        setUser(data.user);
+        await loadUserProfile(data.user);
       }
-      return res;
+      
+      return { data, error };
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return { data: null, error: { message: 'ログインに失敗しました' } };
     } finally {
       setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
-    if (!isProduction) return { data: null, error: { message: 'デモ環境では新規登録はできません' } };
     setLoading(true);
     try {
-      return await auth.signUp(email, password, userData);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData
+        }
+      });
+      
+      return { data, error };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { data: null, error: { message: '新規登録に失敗しました' } };
     } finally {
       setLoading(false);
     }
@@ -136,9 +112,13 @@ export const useAuth = () => {
   const signOut = async () => {
     setLoading(true);
     try {
+      const { error } = await supabase.auth.signOut();
       setUser(null);
       setUserProfile(null);
-      return await auth.signOut();
+      return { error };
+    } catch (error) {
+      console.error('Sign out error:', error);
+      return { error: { message: 'ログアウトに失敗しました' } };
     } finally {
       setLoading(false);
     }
