@@ -56,10 +56,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   };
 
   const handlePost = async () => {
+    console.log('handlePost called', { selectedDate, timeSlot, requiredStaff, memo });
+    
     if (!selectedDate || !timeSlot || !requiredStaff) {
       alert('募集日・時間帯・人数を選択してください');
       return;
     }
+    
     try {
       const posting = {
         pharmacy_id: user.id,
@@ -69,11 +72,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         memo,
         status: 'open'
       };
+      
+      console.log('Creating posting:', posting);
       const { error } = await shiftPostings.createPostings([posting]);
+      
       if (error) {
-        console.error(error);
+        console.error('Shift posting error:', error);
         alert('募集の作成に失敗しました');
       } else {
+        console.log('Posting created successfully');
         alert('募集を作成しました');
         setSelectedDate('');
         setTimeSlot('');
@@ -82,7 +89,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         loadData();
       }
     } catch (e) {
-      console.error(e);
+      console.error('Exception in handlePost:', e);
       alert('募集の作成に失敗しました');
     }
   };
@@ -208,7 +215,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           </div>
 
           {/* 作成ボタン */}
-          <button onClick={handlePost} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">募集を追加</button>
+          <button 
+            onClick={() => {
+              console.log('Button clicked!');
+              handlePost();
+            }} 
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            募集を追加
+          </button>
         </div>
 
         {/* 注意ボックス */}

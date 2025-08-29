@@ -489,16 +489,21 @@ export const shiftPostings = {
 
   // シフト募集作成
   createPostings: async (postingsData: any[]) => {
+    console.log('createPostings called with:', postingsData);
+    
     if (!supabase) {
+      console.error('Supabase not initialized');
       return { data: [], error: { message: 'Supabaseが設定されていません' } };
     }
 
     try {
+      console.log('Inserting into shift_postings table...');
       const { data, error } = await supabase
         .from('shift_postings')
         .insert(postingsData)
         .select();
       
+      console.log('Insert result:', { data, error });
       return { data: data || [], error };
     } catch (error) {
       console.error('Create postings error:', error);
