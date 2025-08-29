@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Building2, Calendar as CalendarIcon, Plus, MessageCircle, Sun, Users } from 'lucide-react';
 import { shifts, shiftPostings } from '../lib/supabase';
 
+// デバッグ: インポートの確認
+console.log('PharmacyDashboard imports:', { shifts, shiftPostings });
+
 interface PharmacyDashboardProps {
   user: any;
 }
@@ -80,6 +83,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       };
       
       console.log('Creating posting:', posting);
+      console.log('shiftPostings object:', shiftPostings);
+      console.log('shiftPostings.createPostings function:', shiftPostings.createPostings);
+      
+      if (typeof shiftPostings.createPostings !== 'function') {
+        console.error('shiftPostings.createPostings is not a function!');
+        alert('システムエラー: 関数が見つかりません');
+        return;
+      }
+      
       const { error } = await shiftPostings.createPostings([posting]);
       
       if (error) {
@@ -234,14 +246,24 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           <div className="space-y-2">
             <button 
               onClick={(e) => {
+                console.log('=== BUTTON CLICK START ===');
                 console.log('Button clicked!', e);
+                console.log('Event type:', e.type);
+                console.log('Event target:', e.target);
+                console.log('Event currentTarget:', e.currentTarget);
+                
                 e.preventDefault();
                 e.stopPropagation();
+                
                 console.log('About to call handlePost');
+                console.log('handlePost function:', handlePost);
+                console.log('typeof handlePost:', typeof handlePost);
+                
                 try {
                   handlePost();
                 } catch (error) {
                   console.error('Error in button click handler:', error);
+                  alert('ボタンクリックエラー: ' + (error instanceof Error ? error.message : String(error)));
                 }
               }} 
               onMouseEnter={() => console.log('Button hovered')}
