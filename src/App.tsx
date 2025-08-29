@@ -59,7 +59,17 @@ class ErrorBoundary extends Component<
 }
 
 function App() {
+  console.log('App: Component rendering');
+  
   const { user, userProfile, loading, signOut } = useAuth();
+  
+  console.log('App: useAuth result:', {
+    user: !!user,
+    userProfile: !!userProfile,
+    loading,
+    userProfileType: userProfile?.user_type,
+    userMetadataType: user?.user_metadata?.user_type
+  });
   const [currentView, setCurrentView] = useState<'dashboard' | 'admin' | 'matching' | 'management'>('dashboard');
   // ローディングが続く場合のフェイルセーフ（6秒で有効化）
   const [forceFallback, setForceFallback] = useState(false);

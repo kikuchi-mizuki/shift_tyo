@@ -9,6 +9,8 @@ type Profile = {
 };
 
 export const useAuth = () => {
+  console.log('useAuth: Hook called');
+  
   const [user, setUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);

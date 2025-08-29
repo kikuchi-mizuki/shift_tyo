@@ -7,6 +7,14 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // 本番環境かどうかの判定
 export const isProduction = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key');
 
+// 環境変数の確認
+console.log('Supabase config:', {
+  url: supabaseUrl ? 'SET' : 'NOT SET',
+  key: supabaseAnonKey ? 'SET' : 'NOT SET',
+  urlValue: supabaseUrl?.substring(0, 20) + '...',
+  keyValue: supabaseAnonKey?.substring(0, 10) + '...'
+});
+
 // Supabaseクライアントの作成（シンプル版）
 export const supabase = createClient(
   supabaseUrl || 'https://your-project.supabase.co',
@@ -19,6 +27,8 @@ export const supabase = createClient(
     }
   }
 );
+
+console.log('Supabase client created:', !!supabase);
 
 // 認証関連のヘルパー関数
 export const auth = {
