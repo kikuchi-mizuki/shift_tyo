@@ -2,6 +2,8 @@ import React, { useState, useEffect, Component, ReactNode } from 'react';
 import { supabase, auth } from './lib/supabase';
 import LoginForm from './components/LoginForm';
 import UserDashboard from './components/UserDashboard';
+import PharmacistDashboard from './components/PharmacistDashboard';
+import PharmacyDashboard from './components/PharmacyDashboard';
 import AdminPanel from './components/AdminPanel';
 import AdminMatchingPanel from './components/AdminMatchingPanel';
 import UserManagement from './components/UserManagement';
@@ -222,7 +224,29 @@ function App() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {currentView === 'dashboard' && (
           <ErrorBoundary>
-            <UserDashboard user={user} userType={userType} />
+            {userType === 'pharmacist' && (
+              <PharmacistDashboard user={user} />
+            )}
+            {(userType === 'pharmacy' || userType === 'store') && (
+              <PharmacyDashboard user={user} />
+            )}
+            {userType === 'admin' && (
+              <UserDashboard 
+                currentUser={{
+                  id: user.id,
+                  name: user.user_metadata?.name || user.email,
+                  email: user.email,
+                  type: userType,
+                  licenseNumber: user.user_metadata?.licenseNumber,
+                  experience: user.user_metadata?.experience,
+                  specialties: user.user_metadata?.specialties,
+                  ngList: user.user_metadata?.ngList
+                }}
+                onUserSwitch={() => {}}
+                availableUsers={[]}
+                onSignOut={handleLogout}
+              />
+            )}
           </ErrorBoundary>
         )}
         {currentView === 'admin' && userType === 'admin' && (
