@@ -75,9 +75,18 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       
       console.log('Creating posting:', posting);
       
-      // まずはローカルでテスト
-      console.log('Adding to local state for testing');
+      console.log('Adding to local state');
       setMyShifts(prev => [...prev, posting]);
+      
+      // Supabaseに保存
+      console.log('Saving to Supabase');
+      const { error } = await shiftPostings.createPostings([posting]);
+      
+      if (error) {
+        console.error('Shift posting error:', error);
+        alert('募集の作成に失敗しました');
+        return;
+      }
       
       // フォームをリセット
       setSelectedDate('');
@@ -85,14 +94,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       setRequiredStaff(null);
       setMemo('');
       
-      alert('募集を作成しました（テストモード）');
-      
-      // 実際のSupabase呼び出しは後で追加
-      // const { error } = await shiftPostings.createPostings([posting]);
-      // if (error) {
-      //   console.error('Shift posting error:', error);
-      //   alert('募集の作成に失敗しました');
-      // }
+      alert('募集を作成しました');
       
     } catch (e) {
       console.error('Exception in handlePost:', e);
@@ -146,9 +148,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               {day && (
                 <>
                   <div className="font-medium">{day}</div>
-                  {myShifts.some((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`) && (
-                    <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集あり</div>
-                  )}
+                  {myShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`).map((shift: any, index: number) => (
+                    <div key={index} className="text-[8px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">
+                      {shift.time_slot === 'morning' ? '午前' : 
+                       shift.time_slot === 'afternoon' ? '午後' : 
+                       shift.time_slot === 'full' ? '終日' : 
+                       shift.time_slot === 'consult' ? '要相談' : shift.time_slot}
+                      {shift.required_staff}人
+                    </div>
+                  ))}
                 </>
               )}
             </div>
@@ -246,44 +254,24 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           </div>
 
           {/* 作成ボタン */}
-          <div className="space-y-2">
-            <button 
-              type="button"
-              onClick={() => {
-                console.log('=== BUTTON CLICK START ===');
-                console.log('Form state:', { selectedDate, timeSlot, requiredStaff, memo });
-                
-                if (!selectedDate || !timeSlot || !requiredStaff) {
-                  alert('募集日・時間帯・人数を選択してください');
-                  return;
-                }
-                
-                console.log('Validation passed, calling handlePost');
-                handlePost();
-              }}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
-            >
-              募集を追加
-            </button>
-            <button 
-              type="button"
-              onClick={() => {
-                alert('テストボタン2');
-              }}
-              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors cursor-pointer"
-            >
-              テストボタン2
-            </button>
-            <button 
-              onClick={() => {
-                console.log('Test button clicked!');
-                alert('Test button works!');
-              }} 
-              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors cursor-pointer"
-            >
-              テストボタン
-            </button>
-          </div>
+          <button 
+            type="button"
+            onClick={() => {
+              console.log('=== BUTTON CLICK START ===');
+              console.log('Form state:', { selectedDate, timeSlot, requiredStaff, memo });
+              
+              if (!selectedDate || !timeSlot || !requiredStaff) {
+                alert('募集日・時間帯・人数を選択してください');
+                return;
+              }
+              
+              console.log('Validation passed, calling handlePost');
+              handlePost();
+            }}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+          >
+            募集を追加
+          </button>
         </div>
 
         {/* 注意ボックス */}
