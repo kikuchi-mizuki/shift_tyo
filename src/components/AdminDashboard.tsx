@@ -12,7 +12,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [requests, setRequests] = useState([]);
   const [postings, setPostings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [systemStatus, setSystemStatus] = useState('confirmed');
+  const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
   useEffect(() => {
@@ -55,6 +55,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
 
+  const handleConfirmShifts = async () => {
+    try {
+      // 全ての募集シフトを確定済みシフトに変換
+      const confirmedShifts = postings.map((posting: any) => ({
+        ...posting,
+        status: 'confirmed',
+        confirmed_at: new Date().toISOString()
+      }));
+
+      // Supabaseに確定済みシフトを保存
+      const { error } = await shifts.createConfirmedShifts(confirmedShifts);
+      
+      if (error) {
+        console.error('Error confirming shifts:', error);
+        alert('シフトの確定に失敗しました');
+        return;
+      }
+
+      setSystemStatus('confirmed');
+      setLastUpdated(new Date());
+      alert('シフトを確定しました');
+      
+      // データを再読み込み
+      loadAll();
+    } catch (error) {
+      console.error('Error in handleConfirmShifts:', error);
+      alert('シフトの確定に失敗しました');
+    }
+  };
+
   const y = currentDate.getFullYear();
   const m = (currentDate.getMonth() + 1).toString().padStart(2, '0');
   const isSameDate = (d: number, target: string) => target === `${y}-${m}-${d.toString().padStart(2,'0')}`;
@@ -69,12 +99,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className={`border rounded-lg p-4 ${systemStatus === 'confirmed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
         <div className="flex items-center space-x-2">
-          <AlertCircle className="w-5 h-5 text-blue-600" />
+          <AlertCircle className={`w-5 h-5 ${systemStatus === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}`} />
           <div>
-            <h3 className="text-sm font-medium text-blue-800">システム状態: シフト確定済み</h3>
-            <p className="text-sm text-blue-700 mt-1">シフトが確定しました。変更が必要な場合は管理者にお問い合わせください。</p>
+            <h3 className={`text-sm font-medium ${systemStatus === 'confirmed' ? 'text-green-800' : 'text-yellow-800'}`}>
+              システム状態: {systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフト未確定'}
+            </h3>
+            <p className={`text-sm mt-1 ${systemStatus === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
+              {systemStatus === 'confirmed' 
+                ? 'シフトが確定しました。変更が必要な場合は管理者にお問い合わせください。'
+                : 'シフトが未確定です。管理者が確定ボタンを押すと確定されます。'
+              }
+            </p>
           </div>
         </div>
       </div>
@@ -135,9 +172,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             <p className="text-sm text-purple-100 mt-1">システム全体の状態管理と調整</p>
           </div>
           <div className="p-6 space-y-4">
-            <button disabled className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-lg font-medium bg-gray-300 text-gray-600 cursor-not-allowed">
+            <button 
+              onClick={handleConfirmShifts}
+              disabled={systemStatus === 'confirmed'}
+              className={`w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-lg font-medium ${
+                systemStatus === 'confirmed' 
+                  ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
+              }`}
+            >
               <RefreshCw className="w-4 h-4" />
-              <span>シフト確定済み</span>
+              <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
             </button>
             <div className="text-xs text-gray-500">最終更新: {lastUpdated.toLocaleString('ja-JP')}</div>
           </div>

@@ -409,6 +409,26 @@ export const shifts = {
       console.error('Get confirmed shifts error:', error);
       return { data: [], error: { code: 'PGRST205', message: 'Table not found' } };
     }
+  },
+
+  // 確定済みシフト作成
+  createConfirmedShifts: async (confirmedShiftsData: any[]) => {
+    if (!supabase) {
+      return { data: [], error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    try {
+      // 確定済みシフトをassigned_shiftsテーブルに保存
+      const { data, error } = await supabase
+        .from('assigned_shifts')
+        .insert(confirmedShiftsData)
+        .select();
+      
+      return { data: data || [], error };
+    } catch (error) {
+      console.error('Create confirmed shifts error:', error);
+      return { data: [], error };
+    }
   }
 };
 
