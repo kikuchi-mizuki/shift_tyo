@@ -195,100 +195,100 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
           </div>
         </div>
         <div className="p-6">
-        
-        <p className="text-gray-600 mb-6">勤務希望日時を登録してください</p>
+          <p className="text-gray-600 mb-6">勤務希望日時を登録してください</p>
 
-        <div className="space-y-6">
-          {/* 希望日 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              希望日
-            </label>
-            <select
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">日付を選択してください</option>
-              {Array.from({ length: 31 }, (_, i) => {
-                const day = i + 1;
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth() + 1;
-                const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                return (
-                  <option key={day} value={date}>
-                    {month}月{day}日
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+          <div className="space-y-6">
+            {/* 希望日 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                希望日
+              </label>
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">日付を選択してください</option>
+                {Array.from({ length: 31 }, (_, i) => {
+                  const day = i + 1;
+                  const year = currentDate.getFullYear();
+                  const month = currentDate.getMonth() + 1;
+                  const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                  return (
+                    <option key={day} value={date}>
+                      {month}月{day}日
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
 
-          {/* 希望時間帯 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              希望時間帯
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {timeSlots.map((slot) => {
-                const Icon = slot.icon;
-                return (
+            {/* 希望時間帯 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                希望時間帯
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {timeSlots.map((slot) => {
+                  const Icon = slot.icon;
+                  return (
+                    <button
+                      key={slot.id}
+                      onClick={() => setSelectedTimeSlot(slot.id)}
+                      className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
+                        selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{slot.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 優先度 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                優先度
+              </label>
+              <div className="flex space-x-2">
+                {priorities.map((priority) => (
                   <button
-                    key={slot.id}
-                    onClick={() => setSelectedTimeSlot(slot.id)}
-                    className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
-                      selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
+                    key={priority.id}
+                    onClick={() => setSelectedPriority(priority.label)}
+                    className={`flex-1 py-2 px-3 rounded-lg text-white text-sm font-medium transition-colors ${
+                      selectedPriority === priority.label ? priority.color : 'bg-gray-300 hover:bg-gray-400'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span>{slot.label}</span>
+                    {priority.label}
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* 優先度 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              優先度
-            </label>
-            <div className="flex space-x-2">
-              {priorities.map((priority) => (
-                <button
-                  key={priority.id}
-                  onClick={() => setSelectedPriority(priority.label)}
-                  className={`flex-1 py-2 px-3 rounded-lg text-white text-sm font-medium transition-colors ${
-                    selectedPriority === priority.label ? priority.color : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                >
-                  {priority.label}
-                </button>
-              ))}
+            {/* メモ */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                メモ(任意)
+              </label>
+              <textarea
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="特別な要望や対応可能な業務があれば記入してください (例:在宅医療対応可能)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                rows={3}
+              />
             </div>
-          </div>
 
-          {/* メモ */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              メモ(任意)
-            </label>
-            <textarea
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-              placeholder="特別な要望や対応可能な業務があれば記入してください (例:在宅医療対応可能)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-              rows={3}
-            />
+            {/* 登録ボタン */}
+            <button
+              onClick={handleSubmit}
+              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              希望を追加
+            </button>
           </div>
-
-          {/* 登録ボタン */}
-          <button
-            onClick={handleSubmit}
-            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
-          >
-            希望を追加
-          </button>
         </div>
 
         {/* 情報ボックス */}
