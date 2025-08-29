@@ -96,8 +96,8 @@ function App() {
     return <LoginForm onLoginSuccess={() => {}} />;
   }
 
-  const userType = (userProfile?.user_type || user.user_metadata?.user_type || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
-  const showDebug = true; // 本番でも常時表示（暫定）
+  const userType = (userProfile?.user_type || user.user_metadata?.user_type || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin' | 'store';
+  const showDebug = import.meta.env.DEV; // 開発時のみ表示
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -133,7 +133,7 @@ function App() {
                 {user.email}
               </span>
               <span className="text-sm text-gray-500">
-                {userType === 'pharmacist' ? '薬剤師' : userType === 'pharmacy' ? '薬局' : userType === 'admin' ? '管理' : 'ユーザー'}
+                {userType === 'pharmacist' ? '薬剤師' : (userType === 'pharmacy' || userType === 'store') ? '薬局' : userType === 'admin' ? '管理' : 'ユーザー'}
               </span>
               <button
                 onClick={handleLogout}
