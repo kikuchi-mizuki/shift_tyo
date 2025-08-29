@@ -355,6 +355,46 @@ export const shifts = {
       console.error('Create multiple shifts error:', error);
       return { data: [], error };
     }
+  },
+
+  // 確定済みシフト取得
+  getConfirmedShifts: async () => {
+    if (!supabase) {
+      return { data: [], error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    try {
+      // Edge Function経由でデータを取得
+      const apiUrl = `${supabaseUrl}/functions/v1/api/assigned_shifts`;
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { data: [], error: errorData.error || { message: 'API request failed' } };
+      }
+      
+      const result = await response.json();
+      let data = result.data || [];
+      
+      // 確定済みシフトのみをフィルタリング（status = 'confirmed'）
+      data = data.filter((shift: any) => shift.status === 'confirmed');
+      
+      // テーブルが存在しない場合のエラーハンドリング
+      if (result.error && (result.error.code === 'PGRST116' || result.error.code === 'PGRST205')) {
+        console.warn('assigned_shifts table not found, falling back to demo mode');
+        return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
+      }
+      
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error('Get confirmed shifts error:', error);
+      return { data: [], error: { code: 'PGRST205', message: 'Table not found' } };
+    }
   }
 };
 
