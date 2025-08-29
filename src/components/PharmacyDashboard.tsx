@@ -15,7 +15,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [timeSlot, setTimeSlot] = useState('');
   const [requiredStaff, setRequiredStaff] = useState<number | null>(null);
   const [memo, setMemo] = useState('');
-  const [myShifts, setMyShifts] = useState([]);
+  const [myShifts, setMyShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,24 +62,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const handlePost = async () => {
     console.log('=== handlePost START ===');
     console.log('handlePost called', { selectedDate, timeSlot, requiredStaff, memo });
-    console.log('User:', user);
-    
-    console.log('Validation check:', { 
-      selectedDate: selectedDate || 'EMPTY', 
-      timeSlot: timeSlot || 'EMPTY', 
-      requiredStaff: requiredStaff || 'NULL',
-      selectedDateType: typeof selectedDate,
-      timeSlotType: typeof timeSlot,
-      requiredStaffType: typeof requiredStaff
-    });
-    
-    if (!selectedDate || !timeSlot || !requiredStaff) {
-      console.log('Validation failed:', { selectedDate, timeSlot, requiredStaff });
-      alert('募集日・時間帯・人数を選択してください');
-      return;
-    }
-    
-    console.log('Validation passed, proceeding with posting creation');
     
     try {
       const posting = {
@@ -92,29 +74,26 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       };
       
       console.log('Creating posting:', posting);
-      console.log('shiftPostings object:', shiftPostings);
-      console.log('shiftPostings.createPostings function:', shiftPostings.createPostings);
       
-      if (typeof shiftPostings.createPostings !== 'function') {
-        console.error('shiftPostings.createPostings is not a function!');
-        alert('システムエラー: 関数が見つかりません');
-        return;
-      }
+      // まずはローカルでテスト
+      console.log('Adding to local state for testing');
+      setMyShifts(prev => [...prev, posting]);
       
-      const { error } = await shiftPostings.createPostings([posting]);
+      // フォームをリセット
+      setSelectedDate('');
+      setTimeSlot('');
+      setRequiredStaff(null);
+      setMemo('');
       
-      if (error) {
-        console.error('Shift posting error:', error);
-        alert('募集の作成に失敗しました');
-      } else {
-        console.log('Posting created successfully');
-        alert('募集を作成しました');
-        setSelectedDate('');
-        setTimeSlot('');
-        setRequiredStaff(null);
-        setMemo('');
-        loadData();
-      }
+      alert('募集を作成しました（テストモード）');
+      
+      // 実際のSupabase呼び出しは後で追加
+      // const { error } = await shiftPostings.createPostings([posting]);
+      // if (error) {
+      //   console.error('Shift posting error:', error);
+      //   alert('募集の作成に失敗しました');
+      // }
+      
     } catch (e) {
       console.error('Exception in handlePost:', e);
       alert('募集の作成に失敗しました');
@@ -271,11 +250,20 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             <button 
               type="button"
               onClick={() => {
-                alert('ボタンがクリックされました！');
+                console.log('=== BUTTON CLICK START ===');
+                console.log('Form state:', { selectedDate, timeSlot, requiredStaff, memo });
+                
+                if (!selectedDate || !timeSlot || !requiredStaff) {
+                  alert('募集日・時間帯・人数を選択してください');
+                  return;
+                }
+                
+                console.log('Validation passed, calling handlePost');
+                handlePost();
               }}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
             >
-              募集を追加（テスト）
+              募集を追加
             </button>
             <button 
               type="button"
