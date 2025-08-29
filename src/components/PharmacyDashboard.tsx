@@ -130,6 +130,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   }
 
   console.log('PharmacyDashboard rendering, loading:', loading, 'user:', user);
+  console.log('Form state:', { selectedDate, timeSlot, requiredStaff, memo });
   
   return (
     <div className="flex gap-6 p-6">
@@ -268,34 +269,22 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           {/* 作成ボタン */}
           <div className="space-y-2">
             <button 
-              onClick={(e) => {
-                console.log('=== BUTTON CLICK START ===');
-                console.log('Button clicked!', e);
-                console.log('Event type:', e.type);
-                console.log('Event target:', e.target);
-                console.log('Event currentTarget:', e.currentTarget);
-                
-                e.preventDefault();
-                e.stopPropagation();
-                
-                console.log('About to call handlePost');
-                console.log('handlePost function:', handlePost);
-                console.log('typeof handlePost:', typeof handlePost);
-                
-                try {
-                  handlePost();
-                } catch (error) {
-                  console.error('Error in button click handler:', error);
-                  alert('ボタンクリックエラー: ' + (error instanceof Error ? error.message : String(error)));
-                }
-              }} 
-              onMouseEnter={() => console.log('Button hovered')}
-              onMouseDown={() => console.log('Button mousedown')}
-              onMouseUp={() => console.log('Button mouseup')}
+              type="button"
+              onClick={() => {
+                alert('ボタンがクリックされました！');
+              }}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
-              style={{ pointerEvents: 'auto' }}
             >
-              募集を追加
+              募集を追加（テスト）
+            </button>
+            <button 
+              type="button"
+              onClick={() => {
+                alert('テストボタン2');
+              }}
+              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors cursor-pointer"
+            >
+              テストボタン2
             </button>
             <button 
               onClick={() => {
