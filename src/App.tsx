@@ -97,6 +97,15 @@ function App() {
   }
 
   const userType = (userProfile?.user_type || user.user_metadata?.user_type || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin' | 'store';
+  
+  // デバッグ: ユーザータイプの詳細情報
+  console.log('User type debug:', {
+    userProfileType: userProfile?.user_type,
+    userMetadataType: user.user_metadata?.user_type,
+    finalUserType: userType,
+    userProfile: userProfile,
+    userMetadata: user.user_metadata
+  });
   const showDebug = import.meta.env.DEV; // 開発時のみ表示
 
   return (

@@ -51,8 +51,16 @@ export const useAuth = () => {
     const meta = authUser?.user_metadata || {};
     const finalType = (meta.user_type || meta.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
     const name = meta.name || authUser?.email || null;
+    
+    console.log('loadFromAuthMetadata debug:', {
+      meta,
+      finalType,
+      authUser: authUser?.id
+    });
+    
     // メタデータに未設定なら保存
     if (meta.user_type !== finalType) {
+      console.log('Updating user metadata:', { old: meta.user_type, new: finalType });
       await auth.updateUserMetadata({ user_type: finalType });
     }
     setUserProfile({ id: authUser.id, name, email: authUser.email ?? '', user_type: finalType });
