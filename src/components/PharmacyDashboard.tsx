@@ -103,6 +103,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     );
   }
 
+  console.log('PharmacyDashboard rendering, loading:', loading, 'user:', user);
+  
   return (
     <div className="flex gap-6 p-6">
       {/* 左: カレンダー */}
@@ -224,17 +226,30 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           </div>
 
           {/* 作成ボタン */}
-          <button 
-            onClick={() => {
-              console.log('Button clicked!');
-              handlePost();
-            }} 
-            onMouseEnter={() => console.log('Button hovered')}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
-            style={{ pointerEvents: 'auto' }}
-          >
-            募集を追加
-          </button>
+          <div className="space-y-2">
+            <button 
+              onClick={() => {
+                console.log('Button clicked!');
+                handlePost();
+              }} 
+              onMouseEnter={() => console.log('Button hovered')}
+              onMouseDown={() => console.log('Button mousedown')}
+              onMouseUp={() => console.log('Button mouseup')}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+              style={{ pointerEvents: 'auto' }}
+            >
+              募集を追加
+            </button>
+            <button 
+              onClick={() => {
+                console.log('Test button clicked!');
+                alert('Test button works!');
+              }} 
+              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors cursor-pointer"
+            >
+              テストボタン
+            </button>
+          </div>
         </div>
 
         {/* 注意ボックス */}
