@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Calendar, Users, Clock, Plus, Search } from 'lucide-react';
+import { Building2, Calendar as CalendarIcon, Plus, MessageCircle, Sun, Users } from 'lucide-react';
 import { shifts, shiftPostings } from '../lib/supabase';
 
 interface PharmacyDashboardProps {
@@ -7,8 +7,11 @@ interface PharmacyDashboardProps {
 }
 
 export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState('');
+  const [timeSlot, setTimeSlot] = useState('');
+  const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState([]);
-  const [availablePharmacists, setAvailablePharmacists] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,16 +20,67 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   const loadData = async () => {
     try {
-      // 自分の薬局のシフトを取得
       const { data: myShiftsData } = await shifts.getShiftsByUser(user.id, 'pharmacy');
       setMyShifts(myShiftsData || []);
-
-      // 利用可能な薬剤師を取得（仮のデータ）
-      setAvailablePharmacists([]);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+
+    const days = [] as (number|null)[];
+    for (let i = 0; i < startingDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    return days;
+  };
+
+  const getMonthName = (date: Date) => date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' });
+  const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+
+  const handleDateSelect = (day: number) => {
+    if (!day) return;
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    setSelectedDate(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+  };
+
+  const handlePost = async () => {
+    if (!selectedDate || !timeSlot) {
+      alert('募集日と時間帯を選択してください');
+      return;
+    }
+    try {
+      const posting = {
+        pharmacy_id: user.id,
+        date: selectedDate,
+        time_slot: timeSlot,
+        memo,
+        status: 'open'
+      };
+      const { error } = await shiftPostings.createPostings([posting]);
+      if (error) {
+        console.error(error);
+        alert('募集の作成に失敗しました');
+      } else {
+        alert('募集を作成しました');
+        setSelectedDate('');
+        setTimeSlot('');
+        setMemo('');
+        loadData();
+      }
+    } catch (e) {
+      console.error(e);
+      alert('募集の作成に失敗しました');
     }
   };
 
@@ -39,128 +93,105 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   }
 
   return (
-    <div className="space-y-6">
-      {/* ヘッダー */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center space-x-3">
-          <Building2 className="w-8 h-8 text-blue-600" />
+    <div className="flex gap-6 p-6">
+      {/* 左: カレンダー */}
+      <div className="flex-1 bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 rounded-lg">←</button>
+            <span className="text-lg font-medium">{getMonthName(currentDate)}</span>
+            <button onClick={handleNextMonth} className="p-2 hover:bg-gray-100 rounded-lg">→</button>
+          </div>
+        </div>
+
+        <div className="bg-blue-600 text-white px-5 py-4 rounded-lg mb-4">
+          <div className="flex items-center space-x-2">
+            <CalendarIcon className="w-5 h-5" />
+            <h2 className="text-xl font-semibold">{getMonthName(currentDate)}</h2>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 mb-4">
+          {['日','月','火','水','木','金','土'].map(d => (
+            <div key={d} className="p-2 text-center text-sm font-medium text-gray-500">{d}</div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {getDaysInMonth(currentDate).map((day, idx) => (
+            <div
+              key={idx}
+              className={`p-2 text-center text-sm border border-gray-200 min-h-[72px] ${day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'}`}
+              onClick={() => day && handleDateSelect(day)}
+            >
+              {day && (
+                <>
+                  <div className="font-medium">{day}</div>
+                  {myShifts.some((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`) && (
+                    <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集あり</div>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 右: シフト募集フォーム */}
+      <div className="w-96 bg-white rounded-lg shadow">
+        <div className="bg-green-600 text-white p-4 rounded-t-lg">
+          <div className="flex items-center space-x-2">
+            <Plus className="w-5 h-5" />
+            <h2 className="text-xl font-semibold">シフト募集作成</h2>
+          </div>
+        </div>
+        <div className="p-6 space-y-6">
+          {/* 募集日 */}
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">薬局ダッシュボード</h1>
-            <p className="text-gray-600">シフト募集と薬剤師管理</p>
+            <label className="block text-sm font-medium text-gray-700 mb-2">募集日</label>
+            <select
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">日付を選択してください</option>
+              {Array.from({ length: 31 }, (_, i) => {
+                const day = i + 1;
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth() + 1;
+                const date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                return <option key={day} value={date}>{month}月{day}日</option>;
+              })}
+            </select>
           </div>
-        </div>
-      </div>
 
-      {/* 統計カード */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Calendar className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">今月のシフト</p>
-              <p className="text-2xl font-bold text-gray-900">{myShifts.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Users className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">登録薬剤師</p>
-              <p className="text-2xl font-bold text-gray-900">0名</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Clock className="w-8 h-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">未確定シフト</p>
-              <p className="text-2xl font-bold text-gray-900">0件</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 今月のシフト */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">今月のシフト</h2>
-        </div>
-        <div className="p-6">
-          {myShifts.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">今月のシフトはありません</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {myShifts.map((shift: any) => (
-                <div key={shift.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{shift.pharmacist_name || '未割り当て'}</h3>
-                      <p className="text-sm text-gray-600">{shift.date} {shift.start_time} - {shift.end_time}</p>
-                    </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      shift.pharmacist_id ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {shift.pharmacist_id ? '確定' : '未確定'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* シフト募集 */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-900">シフト募集</h2>
-            <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-              <Plus className="w-4 h-4" />
-              <span>新規募集</span>
-            </button>
-          </div>
-        </div>
-        <div className="p-6">
-          <p className="text-gray-600">薬剤師を募集して、シフトを埋めましょう。</p>
-        </div>
-      </div>
-
-      {/* 利用可能な薬剤師 */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">利用可能な薬剤師</h2>
-        </div>
-        <div className="p-6">
-          {availablePharmacists.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">現在利用可能な薬剤師はいません</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {availablePharmacists.map((pharmacist: any) => (
-                <div key={pharmacist.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{pharmacist.name}</h3>
-                      <p className="text-sm text-gray-600">{pharmacist.experience}年経験</p>
-                    </div>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                      連絡する
+          {/* 時間帯 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">時間帯</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[{id:'morning',label:'午前 (9:00-13:00)',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
+                {id:'afternoon',label:'午後 (13:00-18:00)',icon:Sun,color:'bg-orange-500 hover:bg-orange-600'},
+                {id:'full',label:'終日 (9:00-18:00)',icon:Users,color:'bg-yellow-500 hover:bg-yellow-600'},
+                {id:'consult',label:'要相談',icon:MessageCircle,color:'bg-purple-500 hover:bg-purple-600'}].map(slot=>{
+                  const Icon = slot.icon as any;
+                  return (
+                    <button key={slot.id} onClick={()=>setTimeSlot(slot.id)} className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${timeSlot===slot.id?slot.color:'bg-gray-300 hover:bg-gray-400'}`}>
+                      <Icon className="w-4 h-4" />
+                      <span>{slot.label}</span>
                     </button>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </div>
-          )}
+          </div>
+
+          {/* メモ */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">メモ(任意)</label>
+            <textarea value={memo} onChange={(e)=>setMemo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" rows={3} placeholder="募集条件や注意事項など" />
+          </div>
+
+          {/* 作成ボタン */}
+          <button onClick={handlePost} className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">募集を作成</button>
         </div>
       </div>
     </div>
