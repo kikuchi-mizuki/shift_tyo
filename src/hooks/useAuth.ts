@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
-import { auth, userProfiles, isProduction } from '../lib/supabase';
+import { auth, isProduction } from '../lib/supabase';
 
 type Profile = {
   id: string;
   name: string | null;
   email: string;
   user_type: 'pharmacist' | 'pharmacy' | 'admin';
-  pharmacy_id?: string | null;
-  specialties?: string[] | null;
-  ng_list?: string[] | null;
 };
 
 export const useAuth = () => {
@@ -19,50 +16,25 @@ export const useAuth = () => {
   useEffect(() => {
     if (!isProduction) { setLoading(false); return; }
 
-    // 最長でも8秒でロード解除するフェイルセーフ
     const hardStop = setTimeout(() => setLoading(false), 8000);
 
-    // Clear any stale session data on initialization
-    const clearStaleSession = async () => {
-      try {
-        const { data } = await auth.getCurrentUser();
-        if (!data?.user) {
-          await auth.signOut();
-        }
-      } catch (error) {
-        console.warn('Session validation failed, clearing stale data:', error);
-        await auth.signOut();
-      }
-    };
-
-    // 既存セッション確認
     (async () => {
       try {
-        await clearStaleSession();
         const { data } = await auth.getCurrentUser();
         if (data?.user) {
           setUser(data.user);
-          await safeLoadProfile(data.user.id, data.user.email ?? '');
+          await loadFromAuthMetadata();
         }
-      } catch (error) {
-        console.warn('Initial session check failed:', error);
-        await auth.signOut();
       } finally {
         setLoading(false);
       }
     })();
 
-    // 認証状態の購読（1つだけ）
     const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.email);
       if (event === 'SIGNED_IN' && session?.user) {
         setLoading(true);
         setUser(session.user);
-        try {
-          await safeLoadProfile(session.user.id, session.user.email ?? '');
-        } finally {
-          setLoading(false);
-        }
+        try { await loadFromAuthMetadata(); } finally { setLoading(false); }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setUserProfile(null);
@@ -73,63 +45,17 @@ export const useAuth = () => {
     return () => { subscription.unsubscribe(); clearTimeout(hardStop); };
   }, []);
 
-  // VIEW から読むだけ。0件なら仮プロフィールを組み立てる
-  async function safeLoadProfile(userId: string, emailFallback: string) {
-    try {
-      console.log('Loading profile for user:', userId);
-
-      // 5秒タイムアウトで確実に抜ける
-      const timeout = new Promise<never>((_, rej) =>
-        setTimeout(() => rej(new Error('profile timeout')), 5_000)
-      );
-
-      const req = userProfiles.getProfile(userId); // ← from('user_profiles').maybeSingle()
-      const { data, error } = await Promise.race([req, timeout]) as any;
-
-      if (error) {
-        console.warn('Profile load error:', error);
-      }
-
-      if (data) {
-        console.log('Profile loaded:', data);
-        const finalType = (data.user_type || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
-        setUserProfile({ ...(data as any), user_type: finalType });
-        await ensureUserTypeInMetadata(finalType);
-      } else {
-        console.log('Profile not found, checking auth metadata');
-        try {
-          const { data: authData } = await auth.getCurrentUser();
-          const userMetadata = authData?.user?.user_metadata || {};
-          const userType = (userMetadata.user_type || userMetadata.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
-          const userName = userMetadata.name || emailFallback;
-          await ensureUserTypeInMetadata(userType);
-          setUserProfile({ id: userId, name: userName, email: emailFallback, user_type: userType });
-        } catch (metaError) {
-          console.warn('Failed to get metadata:', metaError);
-          const fallbackType = 'pharmacist' as const;
-          await ensureUserTypeInMetadata(fallbackType);
-          setUserProfile({ id: userId, name: null, email: emailFallback, user_type: fallbackType });
-        }
-      }
-    } catch (e) {
-      console.warn('Profile load exception:', e);
-      const fallbackType = 'pharmacist' as const;
-      await ensureUserTypeInMetadata(fallbackType);
-      setUserProfile({ id: userId, name: null, email: emailFallback, user_type: fallbackType });
+  async function loadFromAuthMetadata() {
+    const { data: authData } = await auth.getCurrentUser();
+    const authUser = authData?.user;
+    const meta = authUser?.user_metadata || {};
+    const finalType = (meta.user_type || meta.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin';
+    const name = meta.name || authUser?.email || null;
+    // メタデータに未設定なら保存
+    if (meta.user_type !== finalType) {
+      await auth.updateUserMetadata({ user_type: finalType });
     }
-  }
-
-  // user_metadata.user_type を必ず保持する
-  async function ensureUserTypeInMetadata(type: 'pharmacist' | 'pharmacy' | 'admin') {
-    try {
-      const { data: authData } = await auth.getCurrentUser();
-      const current = authData?.user?.user_metadata?.user_type;
-      if (current !== type) {
-        await auth.updateUserMetadata({ user_type: type });
-      }
-    } catch (e) {
-      console.warn('Failed to ensure user_type in metadata:', e);
-    }
+    setUserProfile({ id: authUser.id, name, email: authUser.email ?? '', user_type: finalType });
   }
 
   const signIn = async (email: string, password: string) => {
@@ -139,7 +65,7 @@ export const useAuth = () => {
       const res = await auth.signIn(email, password);
       if (!res.error && res.data?.user) {
         setUser(res.data.user);
-        await safeLoadProfile(res.data.user.id, res.data.user.email ?? '');
+        await loadFromAuthMetadata();
       }
       return res;
     } finally {
@@ -162,7 +88,7 @@ export const useAuth = () => {
     try {
       setUser(null);
       setUserProfile(null);
-      return isProduction ? await auth.signOut() : (window.location.reload(), { error: null });
+      return await auth.signOut();
     } finally {
       setLoading(false);
     }
