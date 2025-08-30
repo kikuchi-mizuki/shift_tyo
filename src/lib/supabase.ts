@@ -480,7 +480,7 @@ export const shiftRequests = {
       // テーブルが存在しない場合のエラーハンドリング
       if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
         console.warn('shift_requests table not found, falling back to demo mode');
-        return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
+        return { data: [], error: { code: 'PGRST116', message: 'shift_requestsテーブルが存在しません。Supabaseダッシュボードでテーブルを作成してください。' } };
       }
       
       return { data: data || [], error };

@@ -16,6 +16,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [requiredStaff, setRequiredStaff] = useState<number | null>(null);
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState<any[]>([]);
+  const [confirmedShifts, setConfirmedShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,8 +26,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   const loadData = async () => {
     try {
+      // 募集シフトを取得
       const { data: myShiftsData } = await shifts.getShiftsByUser(user.id, 'pharmacy');
       setMyShifts(myShiftsData || []);
+      
+      // 確定済みシフトを取得
+      const { data: confirmedData } = await shifts.getConfirmedShifts();
+      setConfirmedShifts(confirmedData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -148,8 +154,19 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               {day && (
                 <>
                   <div className="font-medium">{day}</div>
+                  {/* 確定済みシフト（緑色） */}
+                  {confirmedShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`).map((shift: any, index: number) => (
+                    <div key={`confirmed-${index}`} className="text-[8px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block">
+                      ✓{shift.time_slot === 'morning' ? '午前' : 
+                        shift.time_slot === 'afternoon' ? '午後' : 
+                        shift.time_slot === 'full' ? '終日' : 
+                        shift.time_slot === 'consult' ? '要相談' : shift.time_slot}
+                      {shift.required_staff}人
+                    </div>
+                  ))}
+                  {/* 募集中シフト（青色） */}
                   {myShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`).map((shift: any, index: number) => (
-                    <div key={index} className="text-[8px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">
+                    <div key={`recruiting-${index}`} className="text-[8px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">
                       {shift.time_slot === 'morning' ? '午前' : 
                        shift.time_slot === 'afternoon' ? '午後' : 
                        shift.time_slot === 'full' ? '終日' : 

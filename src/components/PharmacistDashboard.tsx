@@ -102,7 +102,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       
       if (error) {
         console.error('Error creating shift request:', error);
-        alert('シフト希望の登録に失敗しました');
+        alert(`シフト希望の登録に失敗しました: ${error.message || error.code || 'Unknown error'}`);
       } else {
         console.log('Shift request created successfully');
         alert('シフト希望を登録しました');
