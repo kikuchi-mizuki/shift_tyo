@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Shield, RefreshCw, AlertCircle } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, testConnection } from '../lib/supabase';
+import { shifts, shiftRequests, shiftPostings, testConnection, supabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
   user: any;
@@ -23,14 +23,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const loadAll = async () => {
     try {
-      const { data: a } = await shifts.getShifts();
-      setAssigned(a || []);
+      console.log('Loading all data...');
+      
+      // 直接Supabaseからassigned_shiftsを取得
+      const { data: assignedData, error: assignedError } = await supabase
+        .from('assigned_shifts')
+        .select('*');
+      
+      if (assignedError) {
+        console.error('Error loading assigned shifts:', assignedError);
+        setAssigned([]);
+      } else {
+        console.log('Loaded assigned shifts:', assignedData);
+        setAssigned(assignedData || []);
+      }
+      
       const { data: r } = await shiftRequests.getRequests('', 'admin' as any);
       setRequests(r || []);
       const { data: p } = await shiftPostings.getPostings('', 'admin' as any);
       setPostings(p || []);
     } catch (e) {
-      console.error(e);
+      console.error('Error in loadAll:', e);
     } finally {
       setLoading(false);
     }
@@ -390,7 +403,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 </div>
                 <div className="bg-green-50 p-2 rounded">
                   <div className="text-green-600 font-medium">確定</div>
-                  <div className="text-green-800">{assigned.length}件</div>
+                  <div className="text-green-800">{assigned.filter((s: any) => s.status === 'confirmed').length}件</div>
                 </div>
                 <div className="bg-purple-50 p-2 rounded">
                   <div className="text-purple-600 font-medium">マッチング可能</div>
