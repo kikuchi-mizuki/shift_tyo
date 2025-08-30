@@ -18,11 +18,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
 
   useEffect(() => {
+    console.log('=== ADMIN DASHBOARD MOUNTED ===');
+    console.log('User:', user);
     loadAll();
   }, [user, currentDate]);
 
   const loadAll = async () => {
     try {
+      console.log('=== LOADALL START ===');
       console.log('Loading all data...');
       
       // 直接Supabaseからassigned_shiftsを取得
@@ -44,6 +47,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       setPostings(p || []);
       
       // ユーザープロフィールを取得
+      console.log('Fetching user profiles...');
       const { data: profilesData, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*');
@@ -58,11 +62,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         });
         console.log('User profiles map:', profilesMap);
         setUserProfiles(profilesMap);
+        
+        // 強制的にアラートで確認
+        if (profilesData && profilesData.length > 0) {
+          console.log('First profile:', profilesData[0]);
+          alert(`プロフィール取得成功: ${profilesData.length}件のプロフィールを読み込みました`);
+        } else {
+          alert('プロフィールが取得できませんでした');
+        }
       }
     } catch (e) {
       console.error('Error in loadAll:', e);
     } finally {
       setLoading(false);
+      console.log('=== LOADALL END ===');
     }
   };
 
@@ -341,6 +354,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             >
               <RefreshCw className="w-4 h-4" />
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
+            </button>
+            
+            {/* デバッグボタン */}
+            <button 
+              onClick={async () => {
+                console.log('=== DEBUG BUTTON CLICKED ===');
+                console.log('Current user:', user);
+                console.log('Current assigned shifts:', assigned);
+                console.log('Current user profiles:', userProfiles);
+                console.log('Current requests:', requests);
+                console.log('Current postings:', postings);
+                
+                // 強制的にデータを再読み込み
+                await loadAll();
+                
+                // 特定のシフトの詳細をログ出力
+                if (assigned.length > 0) {
+                  const firstShift = assigned[0];
+                  console.log('First assigned shift:', firstShift);
+                  const pharmacistProfile = userProfiles[firstShift.pharmacist_id];
+                  const pharmacyProfile = userProfiles[firstShift.pharmacy_id];
+                  console.log('Pharmacist profile for first shift:', pharmacistProfile);
+                  console.log('Pharmacy profile for first shift:', pharmacyProfile);
+                  console.log('Pharmacist name:', pharmacistProfile?.name || 'NOT FOUND');
+                  console.log('Pharmacy name:', pharmacyProfile?.name || 'NOT FOUND');
+                }
+                
+                alert('デバッグ情報をコンソールに出力しました。F12キーでコンソールを確認してください。');
+              }}
+              className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 text-sm"
+            >
+              <span>デバッグ情報出力</span>
             </button>
             
 
