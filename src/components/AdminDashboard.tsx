@@ -57,12 +57,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const handleConfirmShifts = async () => {
     try {
-      // 全ての募集シフトを確定済みシフトに変換
-      const confirmedShifts = postings.map((posting: any) => ({
-        ...posting,
-        status: 'confirmed',
-        confirmed_at: new Date().toISOString()
-      }));
+      // 希望シフトと募集シフトをマッチングして確定済みシフトを作成
+      const confirmedShifts = [];
+      
+      // 各日付で希望と募集をマッチング
+      const dateGroups = new Map();
+      
+      // 希望シフトを日付ごとにグループ化
+      requests.forEach((request: any) => {
+        if (!dateGroups.has(request.date)) {
+          dateGroups.set(request.date, { requests: [], postings: [] });
+        }
+        dateGroups.get(request.date).requests.push(request);
+      });
+      
+      // 募集シフトを日付ごとにグループ化
+      postings.forEach((posting: any) => {
+        if (!dateGroups.has(posting.date)) {
+          dateGroups.set(posting.date, { requests: [], postings: [] });
+        }
+        dateGroups.get(posting.date).postings.push(posting);
+      });
+      
+      // マッチング処理
+      dateGroups.forEach((group, date) => {
+        group.requests.forEach((request: any) => {
+          // 同じ日付・時間帯の募集があればマッチング
+          const matchingPosting = group.postings.find((posting: any) => 
+            posting.time_slot === request.time_slot
+          );
+          
+          if (matchingPosting) {
+            confirmedShifts.push({
+              pharmacist_id: request.pharmacist_id,
+              pharmacy_id: matchingPosting.pharmacy_id,
+              date: date,
+              time_slot: request.time_slot,
+              status: 'confirmed',
+              created_at: new Date().toISOString()
+            });
+          }
+        });
+      });
+
+      if (confirmedShifts.length === 0) {
+        alert('マッチングできるシフトがありません');
+        return;
+      }
 
       // Supabaseに確定済みシフトを保存
       const { error } = await shifts.createConfirmedShifts(confirmedShifts);
@@ -75,7 +116,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       setSystemStatus('confirmed');
       setLastUpdated(new Date());
-      alert('シフトを確定しました');
+      alert(`${confirmedShifts.length}件のシフトを確定しました`);
       
       // データを再読み込み
       loadAll();
@@ -165,7 +206,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           </div>
         </div>
 
-        {/* right panel unchanged (shortened) */}
+        {/* right panel */}
         <div className="w-96 bg-white rounded-lg shadow border border-purple-200">
           <div className="bg-purple-600 text-white p-4 rounded-t-lg">
             <h2 className="text-xl font-semibold">管理者パネル</h2>
@@ -184,6 +225,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               <RefreshCw className="w-4 h-4" />
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
             </button>
+            
+            {/* 統計情報 */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h3 className="text-sm font-medium text-gray-700">シフト統計</h3>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-blue-50 p-2 rounded">
+                  <div className="text-blue-600 font-medium">希望</div>
+                  <div className="text-blue-800">{requests.length}件</div>
+                </div>
+                <div className="bg-orange-50 p-2 rounded">
+                  <div className="text-orange-600 font-medium">募集</div>
+                  <div className="text-orange-800">{postings.length}件</div>
+                </div>
+                <div className="bg-green-50 p-2 rounded">
+                  <div className="text-green-600 font-medium">確定</div>
+                  <div className="text-green-800">{assigned.length}件</div>
+                </div>
+                <div className="bg-purple-50 p-2 rounded">
+                  <div className="text-purple-600 font-medium">マッチング可能</div>
+                  <div className="text-purple-800">
+                    {requests.filter((r: any) => 
+                      postings.some((p: any) => p.date === r.date && p.time_slot === r.time_slot)
+                    ).length}件
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <div className="text-xs text-gray-500">最終更新: {lastUpdated.toLocaleString('ja-JP')}</div>
           </div>
         </div>
