@@ -25,8 +25,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const loadAll = async () => {
     try {
-      console.log('=== LOADALL START ===');
-      console.log('Loading all data...');
+      // Railwayログに出力
+      const logToRailway = (message: string, data?: any) => {
+        console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
+        // サーバーサイドのログとして出力
+        if (typeof window !== 'undefined') {
+          // ブラウザ環境ではfetchでログを送信
+          fetch('/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, data, timestamp: new Date().toISOString() })
+          }).catch(() => {}); // エラーは無視
+        }
+      };
+
+      logToRailway('=== LOADALL START ===');
+      logToRailway('Loading all data...');
       
       // 直接Supabaseからassigned_shiftsを取得
       const { data: assignedData, error: assignedError } = await supabase
@@ -34,10 +48,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         .select('*');
       
       if (assignedError) {
-        console.error('Error loading assigned shifts:', assignedError);
+        logToRailway('Error loading assigned shifts:', assignedError);
         setAssigned([]);
       } else {
-        console.log('Loaded assigned shifts:', assignedData);
+        logToRailway('Loaded assigned shifts:', assignedData);
         setAssigned(assignedData || []);
       }
       
@@ -47,7 +61,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       setPostings(p || []);
       
       // ユーザープロフィールを取得（管理者用）
-      console.log('Fetching user profiles...');
+      logToRailway('Fetching user profiles...');
       
       // まず、シフトに含まれるユーザーIDを収集
       const userIds = new Set();
@@ -58,10 +72,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         });
       }
       
-      console.log('User IDs from shifts:', Array.from(userIds));
+      logToRailway('User IDs from shifts:', Array.from(userIds));
       
       // 直接Supabaseからプロフィールを取得（管理者用）
-      console.log('Fetching user profiles directly...');
+      logToRailway('Fetching user profiles directly...');
       
       // まず、全プロフィールを取得してみる
       const { data: allProfilesData, error: allProfilesError } = await supabase
@@ -69,25 +83,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         .select('*');
       
       if (allProfilesError) {
-        console.error('Error loading all user profiles:', allProfilesError);
+        logToRailway('Error loading all user profiles:', allProfilesError);
         alert(`プロフィール取得エラー: ${allProfilesError.message}`);
       } else {
-        console.log('Loaded all user profiles:', allProfilesData);
+        logToRailway('Loaded all user profiles:', allProfilesData);
         
         if (allProfilesData && allProfilesData.length > 0) {
           const profilesMap: any = {};
           allProfilesData.forEach((profile: any) => {
             profilesMap[profile.id] = profile;
           });
-          console.log('User profiles map:', profilesMap);
+          logToRailway('User profiles map:', profilesMap);
           setUserProfiles(profilesMap);
           
           // シフトに含まれるユーザーIDをチェック
           const shiftUserIds = Array.from(userIds);
-          console.log('Shift user IDs:', shiftUserIds);
+          logToRailway('Shift user IDs:', shiftUserIds);
           
           const foundProfiles = shiftUserIds.filter(id => profilesMap[id]);
-          console.log('Found profiles for shift users:', foundProfiles);
+          logToRailway('Found profiles for shift users:', foundProfiles);
           
           // 強制的にアラートで確認
           if (foundProfiles.length > 0) {
@@ -95,11 +109,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const profile = profilesMap[id];
               return `${profile.name || profile.email} (${profile.user_type})`;
             });
+            logToRailway('Profile matching success:', foundProfileDetails);
             alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: ${foundProfiles.length}件見つかりました\n${foundProfileDetails.join('\n')}`);
           } else {
+            logToRailway('No profiles found for shift users');
             alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: 見つかりませんでした`);
           }
         } else {
+          logToRailway('No profiles data available');
           alert('プロフィールが取得できませんでした');
         }
       }
@@ -323,10 +340,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                {dayAssignedShifts.map((shift: any, index: number) => {
                                  const pharmacistProfile = userProfiles[shift.pharmacist_id];
                                  const pharmacyProfile = userProfiles[shift.pharmacy_id];
-                                 console.log('Shift:', shift);
-                                 console.log('Pharmacist profile:', pharmacistProfile);
-                                 console.log('Pharmacy profile:', pharmacyProfile);
-                                 console.log('User profiles:', userProfiles);
+                                 
+                                 // Railwayログに出力
+                                 const logToRailway = (message: string, data?: any) => {
+                                   console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
+                                   if (typeof window !== 'undefined') {
+                                     fetch('/api/log', {
+                                       method: 'POST',
+                                       headers: { 'Content-Type': 'application/json' },
+                                       body: JSON.stringify({ message, data, timestamp: new Date().toISOString() })
+                                     }).catch(() => {});
+                                   }
+                                 };
+                                 
+                                 logToRailway('Hover - Shift:', shift);
+                                 logToRailway('Hover - Pharmacist profile:', pharmacistProfile);
+                                 logToRailway('Hover - Pharmacy profile:', pharmacyProfile);
+                                 logToRailway('Hover - User profiles count:', Object.keys(userProfiles).length);
+                                 
                                  return (
                                    <div key={index} className="mb-2 last:mb-0 border-b border-gray-600 pb-2 last:border-b-0">
                                      <div className="text-green-300 font-medium">
@@ -391,12 +422,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             {/* デバッグボタン */}
             <button 
               onClick={async () => {
-                console.log('=== DEBUG BUTTON CLICKED ===');
-                console.log('Current user:', user);
-                console.log('Current assigned shifts:', assigned);
-                console.log('Current user profiles:', userProfiles);
-                console.log('Current requests:', requests);
-                console.log('Current postings:', postings);
+                // Railwayログに出力
+                const logToRailway = (message: string, data?: any) => {
+                  console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
+                  // サーバーサイドのログとして出力
+                  if (typeof window !== 'undefined') {
+                    fetch('/api/log', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ message, data, timestamp: new Date().toISOString() })
+                    }).catch(() => {}); // エラーは無視
+                  }
+                };
+
+                logToRailway('=== DEBUG BUTTON CLICKED ===');
+                logToRailway('Current user:', user);
+                logToRailway('Current assigned shifts:', assigned);
+                logToRailway('Current user profiles:', userProfiles);
+                logToRailway('Current requests:', requests);
+                logToRailway('Current postings:', postings);
                 
                 // 強制的にデータを再読み込み
                 await loadAll();
@@ -404,13 +448,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 // 特定のシフトの詳細をログ出力
                 if (assigned.length > 0) {
                   const firstShift = assigned[0];
-                  console.log('First assigned shift:', firstShift);
+                  logToRailway('First assigned shift:', firstShift);
                   const pharmacistProfile = userProfiles[firstShift.pharmacist_id];
                   const pharmacyProfile = userProfiles[firstShift.pharmacy_id];
-                  console.log('Pharmacist profile for first shift:', pharmacistProfile);
-                  console.log('Pharmacy profile for first shift:', pharmacyProfile);
-                  console.log('Pharmacist name:', pharmacistProfile?.name || 'NOT FOUND');
-                  console.log('Pharmacy name:', pharmacyProfile?.name || 'NOT FOUND');
+                  logToRailway('Pharmacist profile for first shift:', pharmacistProfile);
+                  logToRailway('Pharmacy profile for first shift:', pharmacyProfile);
+                  logToRailway('Pharmacist name:', pharmacistProfile?.name || 'NOT FOUND');
+                  logToRailway('Pharmacy name:', pharmacyProfile?.name || 'NOT FOUND');
                 }
                 
                 // アラートで直接情報を表示
