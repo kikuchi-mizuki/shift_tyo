@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Shield, RefreshCw, AlertCircle } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, testConnection, supabase } from '../lib/supabase';
+import { shifts, shiftRequests, shiftPostings, supabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
   user: any;
@@ -14,7 +14,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [testResults, setTestResults] = useState<any>(null);
+
 
   useEffect(() => {
     loadAll();
@@ -67,22 +67,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' });
   };
 
-  const runConnectionTests = async () => {
-    console.log('Running admin connection tests...');
-    const shiftRequestsTest = await testConnection.testShiftRequestsTable();
-    const shiftPostingsTest = await testConnection.testShiftPostingsTable();
-    const assignedShiftsTest = await testConnection.testAssignedShiftsTable();
-    
-    const results = {
-      shiftRequests: shiftRequestsTest,
-      shiftPostings: shiftPostingsTest,
-      assignedShifts: assignedShiftsTest,
-      timestamp: new Date().toISOString()
-    };
-    
-    console.log('Admin connection test results:', results);
-    setTestResults(results);
-  };
+
 
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
@@ -201,35 +186,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   return (
     <div className="space-y-6">
-      {/* 接続テスト結果 */}
-      {testResults && (
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-lg font-semibold mb-3">データベース接続テスト結果</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <div className={`p-3 rounded-lg ${testResults.shiftRequests.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-              <div className="font-medium">shift_requests テーブル</div>
-              <div className={`text-sm ${testResults.shiftRequests.success ? 'text-green-700' : 'text-red-700'}`}>
-                {testResults.shiftRequests.success ? '✅ 接続成功' : `❌ 接続失敗: ${testResults.shiftRequests.error}`}
-              </div>
-            </div>
-            <div className={`p-3 rounded-lg ${testResults.shiftPostings.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-              <div className="font-medium">shift_postings テーブル</div>
-              <div className={`text-sm ${testResults.shiftPostings.success ? 'text-green-700' : 'text-red-700'}`}>
-                {testResults.shiftPostings.success ? '✅ 接続成功' : `❌ 接続失敗: ${testResults.shiftPostings.error}`}
-              </div>
-            </div>
-            <div className={`p-3 rounded-lg ${testResults.assignedShifts.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-              <div className="font-medium">assigned_shifts テーブル</div>
-              <div className={`text-sm ${testResults.assignedShifts.success ? 'text-green-700' : 'text-red-700'}`}>
-                {testResults.assignedShifts.success ? '✅ 接続成功' : `❌ 接続失敗: ${testResults.assignedShifts.error}`}
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-gray-500 mt-2">
-            テスト実行時刻: {new Date(testResults.timestamp).toLocaleString('ja-JP')}
-          </div>
-        </div>
-      )}
+
       
       <div className={`border rounded-lg p-4 ${systemStatus === 'confirmed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
         <div className="flex items-center space-x-2">

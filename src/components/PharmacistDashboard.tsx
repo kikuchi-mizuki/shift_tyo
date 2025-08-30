@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, testConnection, supabase } from '../lib/supabase';
+import { shifts, shiftRequests, shiftPostings, supabase } from '../lib/supabase';
 
 interface PharmacistDashboardProps {
   user: any;
@@ -16,27 +16,14 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [myRequests, setMyRequests] = useState([]);
   const [openPostings, setOpenPostings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [testResults, setTestResults] = useState<any>(null);
+
 
   useEffect(() => {
     loadShifts();
     runConnectionTests();
   }, [user]);
 
-  const runConnectionTests = async () => {
-    console.log('Running connection tests...');
-    const shiftRequestsTest = await testConnection.testShiftRequestsTable();
-    const shiftPostingsTest = await testConnection.testShiftPostingsTable();
-    
-    const results = {
-      shiftRequests: shiftRequestsTest,
-      shiftPostings: shiftPostingsTest,
-      timestamp: new Date().toISOString()
-    };
-    
-    console.log('Connection test results:', results);
-    setTestResults(results);
-  };
+
 
   const loadShifts = async () => {
     try {
@@ -177,29 +164,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
   return (
     <div className="space-y-6">
-      {/* 接続テスト結果 */}
-      {testResults && (
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-lg font-semibold mb-3">データベース接続テスト結果</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className={`p-3 rounded-lg ${testResults.shiftRequests.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-              <div className="font-medium">shift_requests テーブル</div>
-              <div className={`text-sm ${testResults.shiftRequests.success ? 'text-green-700' : 'text-red-700'}`}>
-                {testResults.shiftRequests.success ? '✅ 接続成功' : `❌ 接続失敗: ${testResults.shiftRequests.error}`}
-              </div>
-            </div>
-            <div className={`p-3 rounded-lg ${testResults.shiftPostings.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-              <div className="font-medium">shift_postings テーブル</div>
-              <div className={`text-sm ${testResults.shiftPostings.success ? 'text-green-700' : 'text-red-700'}`}>
-                {testResults.shiftPostings.success ? '✅ 接続成功' : `❌ 接続失敗: ${testResults.shiftPostings.error}`}
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-gray-500 mt-2">
-            テスト実行時刻: {new Date(testResults.timestamp).toLocaleString('ja-JP')}
-          </div>
-        </div>
-      )}
+
       
       <div className="flex gap-6 p-6">
         {/* 左側: カレンダー */}
