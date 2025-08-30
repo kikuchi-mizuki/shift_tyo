@@ -91,7 +91,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                
                if (appUsersError) {
                  logToRailway('Error loading app_users:', appUsersError);
-                 setUserProfiles({});
+                 // 他のテーブル名も試す
+                 logToRailway('Trying other possible table names...');
+                 
+                 // v_user_profilesを試す
+                 const { data: vUserProfilesData, error: vUserProfilesError } = await supabase
+                   .from('v_user_profiles')
+                   .select('*');
+                 
+                 if (vUserProfilesError) {
+                   logToRailway('Error loading v_user_profiles:', vUserProfilesError);
+                   setUserProfiles({});
+                 } else {
+                   logToRailway('Loaded v_user_profiles:', vUserProfilesData);
+                   const profilesMap: any = {};
+                   vUserProfilesData?.forEach((user: any) => {
+                     profilesMap[user.id] = {
+                       id: user.id,
+                       name: user.name,
+                       email: user.email,
+                       user_type: 'pharmacist'
+                     };
+                   });
+                   setUserProfiles(profilesMap);
+                   return;
+                 }
                } else {
                  logToRailway('Loaded app_users:', appUsersData);
                  // app_usersのデータをuser_profiles形式に変換
@@ -501,6 +525,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 let debugInfo = '=== デバッグ情報 ===\n';
                 debugInfo += `ユーザー数: ${Object.keys(userProfiles).length}\n`;
                 debugInfo += `確定シフト数: ${assigned.length}\n`;
+                debugInfo += `使用テーブル: ${Object.keys(userProfiles).length > 0 ? 'app_users/v_user_profiles' : 'user_profiles'}\n`;
                 
                 if (assigned.length > 0) {
                   const firstShift = assigned[0];
@@ -576,26 +601,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     let profiles;
                     const { data: userProfilesData, error: userProfilesError } = await supabase.from('user_profiles').select('*');
                     
-                    if (userProfilesError && userProfilesError.message.includes('does not exist')) {
-                      logToRailway('user_profiles table not found, trying app_users...');
-                      const { data: appUsersData, error: appUsersError } = await supabase.from('app_users').select('*');
-                      
-                      if (appUsersError) {
-                        logToRailway('Error loading app_users:', appUsersError);
-                        alert('プロフィールが見つかりません');
-                        return;
-                      }
-                      
-                      // app_usersのデータをuser_profiles形式に変換
-                      profiles = appUsersData?.map((user: any) => ({
-                        id: user.id,
-                        name: user.name,
-                        email: user.email,
-                        user_type: 'pharmacist' // デフォルトで薬剤師として設定
-                      }));
-                    } else {
-                      profiles = userProfilesData;
-                    }
+                                         if (userProfilesError && userProfilesError.message.includes('does not exist')) {
+                       logToRailway('user_profiles table not found, trying app_users...');
+                       const { data: appUsersData, error: appUsersError } = await supabase.from('app_users').select('*');
+                       
+                       if (appUsersError) {
+                         logToRailway('Error loading app_users:', appUsersError);
+                         // v_user_profilesを試す
+                         logToRailway('Trying v_user_profiles...');
+                         const { data: vUserProfilesData, error: vUserProfilesError } = await supabase.from('v_user_profiles').select('*');
+                         
+                         if (vUserProfilesError) {
+                           logToRailway('Error loading v_user_profiles:', vUserProfilesError);
+                           alert('プロフィールが見つかりません');
+                           return;
+                         }
+                         
+                         // v_user_profilesのデータをuser_profiles形式に変換
+                         profiles = vUserProfilesData?.map((user: any) => ({
+                           id: user.id,
+                           name: user.name,
+                           email: user.email,
+                           user_type: 'pharmacist'
+                         }));
+                       } else {
+                         // app_usersのデータをuser_profiles形式に変換
+                         profiles = appUsersData?.map((user: any) => ({
+                           id: user.id,
+                           name: user.name,
+                           email: user.email,
+                           user_type: 'pharmacist' // デフォルトで薬剤師として設定
+                         }));
+                       }
+                     } else {
+                       profiles = userProfilesData;
+                     }
                     
                     if (!profiles || profiles.length === 0) {
                       alert('プロフィールが見つかりません');
