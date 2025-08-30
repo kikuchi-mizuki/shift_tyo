@@ -76,6 +76,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const handleConfirmShifts = async () => {
     try {
+      console.log('handleConfirmShifts called');
+      console.log('Current requests:', requests);
+      console.log('Current postings:', postings);
+      
       // 希望シフトと募集シフトをマッチングして確定済みシフトを作成
       const confirmedShifts = [];
       
@@ -98,8 +102,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         dateGroups.get(posting.date).postings.push(posting);
       });
       
+      console.log('Date groups:', dateGroups);
+      
       // マッチング処理
       dateGroups.forEach((group, date) => {
+        console.log(`Processing date ${date}:`, group);
         group.requests.forEach((request: any) => {
           // 同じ日付・時間帯の募集があればマッチング
           const matchingPosting = group.postings.find((posting: any) => 
@@ -107,29 +114,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           );
           
           if (matchingPosting) {
-            confirmedShifts.push({
+            const confirmedShift = {
               pharmacist_id: request.pharmacist_id,
               pharmacy_id: matchingPosting.pharmacy_id,
               date: date,
               time_slot: request.time_slot,
               status: 'confirmed',
               created_at: new Date().toISOString()
-            });
+            };
+            console.log('Creating confirmed shift:', confirmedShift);
+            confirmedShifts.push(confirmedShift);
           }
         });
       });
 
+      console.log('Final confirmed shifts:', confirmedShifts);
+
       if (confirmedShifts.length === 0) {
-        alert('マッチングできるシフトがありません');
+        alert('マッチングできるシフトがありません。希望シフトと募集シフトの日付・時間帯が一致するものを確認してください。');
         return;
       }
 
       // Supabaseに確定済みシフトを保存
+      console.log('Calling createConfirmedShifts with:', confirmedShifts);
       const { error } = await shifts.createConfirmedShifts(confirmedShifts);
       
       if (error) {
         console.error('Error confirming shifts:', error);
-        alert('シフトの確定に失敗しました');
+        alert(`シフトの確定に失敗しました: ${error.message || error.code || 'Unknown error'}`);
         return;
       }
 
@@ -141,7 +153,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       loadAll();
     } catch (error) {
       console.error('Error in handleConfirmShifts:', error);
-      alert('シフトの確定に失敗しました');
+      alert(`シフトの確定に失敗しました: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -273,6 +285,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             >
               <RefreshCw className="w-4 h-4" />
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
+            </button>
+            
+            {/* テスト用: 強制確定ボタン */}
+            <button 
+              onClick={async () => {
+                try {
+                  console.log('Test confirmation button clicked');
+                  const testShift = {
+                    pharmacist_id: 'test-pharmacist-id',
+                    pharmacy_id: 'test-pharmacy-id',
+                    date: '2025-08-01',
+                    time_slot: 'morning',
+                    status: 'confirmed',
+                    created_at: new Date().toISOString()
+                  };
+                  console.log('Creating test shift:', testShift);
+                  const { error } = await shifts.createConfirmedShifts([testShift]);
+                  if (error) {
+                    console.error('Test confirmation error:', error);
+                    alert(`テスト確定に失敗: ${error.message}`);
+                  } else {
+                    alert('テスト確定に成功しました');
+                    loadAll();
+                  }
+                } catch (error) {
+                  console.error('Test confirmation error:', error);
+                  alert(`テスト確定に失敗: ${error.message}`);
+                }
+              }}
+              className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 text-sm"
+            >
+              <span>テスト: 強制確定</span>
             </button>
             
             {/* 統計情報 */}
