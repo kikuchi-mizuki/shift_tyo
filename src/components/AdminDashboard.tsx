@@ -148,81 +148,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         return;
       }
 
-      // 重複チェック：既存のシフトを確認
-      console.log('Checking for existing shifts...');
-      try {
-        const { data: existingShiftsData, error: existingShiftsError } = await shifts.getShifts();
-        
-        if (existingShiftsError) {
-          console.warn('Failed to get existing shifts, proceeding without duplicate check:', existingShiftsError);
-          // エラーが発生した場合は重複チェックをスキップ
-          const uniqueShifts = confirmedShifts;
-          console.log('Proceeding with all shifts (no duplicate check):', uniqueShifts);
-          
-          // Supabaseに確定済みシフトを保存
-          console.log('Calling createConfirmedShifts with:', uniqueShifts);
-          const { error } = await shifts.createConfirmedShifts(uniqueShifts);
-          
-          if (error) {
-            console.error('Error confirming shifts:', error);
-            alert(`シフトの確定に失敗しました: ${error.message || error.code || 'Unknown error'}`);
-            return;
-          }
-
-          setSystemStatus('confirmed');
-          setLastUpdated(new Date());
-          alert(`${uniqueShifts.length}件のシフトを確定しました`);
-          
-          // データを再読み込み
-          loadAll();
-          return;
-        }
-        
-        const existingShifts = existingShiftsData || [];
-        console.log('Existing shifts:', existingShifts);
-        
-        // 重複を除外
-        const uniqueShifts = confirmedShifts.filter(newShift => {
-          const isDuplicate = existingShifts.some(existingShift => 
-            existingShift.pharmacist_id === newShift.pharmacist_id &&
-            existingShift.date === newShift.date &&
-            existingShift.time_slot === newShift.time_slot
-          );
-          
-          if (isDuplicate) {
-            console.log('Duplicate shift found, skipping:', newShift);
-          }
-          
-          return !isDuplicate;
-        });
-        
-        console.log('Unique shifts to insert:', uniqueShifts);
-        
-        if (uniqueShifts.length === 0) {
-          alert('すべてのシフトが既に確定済みです。');
-          return;
-        }
-        
-        // Supabaseに確定済みシフトを保存
-        console.log('Calling createConfirmedShifts with:', uniqueShifts);
-        const { error } = await shifts.createConfirmedShifts(uniqueShifts);
-        
-        if (error) {
-          console.error('Error confirming shifts:', error);
-          alert(`シフトの確定に失敗しました: ${error.message || error.code || 'Unknown error'}`);
-          return;
-        }
-
-        setSystemStatus('confirmed');
-        setLastUpdated(new Date());
-        alert(`${uniqueShifts.length}件のシフトを確定しました（${confirmedShifts.length - uniqueShifts.length}件は既に確定済みでした）`);
-        
-        // データを再読み込み
-        loadAll();
-      } catch (error) {
-        console.error('Error in duplicate check:', error);
-        alert(`シフトの確定に失敗しました: ${error.message || 'Unknown error'}`);
+      // upsertを使用して重複を自動的に処理
+      console.log('Proceeding with upsert (automatic duplicate handling)...');
+      console.log('Shifts to upsert:', confirmedShifts);
+      
+      // Supabaseに確定済みシフトを保存（upsert使用）
+      console.log('Calling createConfirmedShifts with upsert:', confirmedShifts);
+      const { error } = await shifts.createConfirmedShifts(confirmedShifts);
+      
+      if (error) {
+        console.error('Error confirming shifts:', error);
+        alert(`シフトの確定に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        return;
       }
+
+      setSystemStatus('confirmed');
+      setLastUpdated(new Date());
+      alert(`${confirmedShifts.length}件のシフトを確定しました（重複は自動的に処理されました）`);
+      
+      // データを再読み込み
+      loadAll();
     } catch (error) {
       console.error('Error in handleConfirmShifts:', error);
       alert(`シフトの確定に失敗しました: ${error.message || 'Unknown error'}`);

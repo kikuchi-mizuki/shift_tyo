@@ -414,7 +414,7 @@ export const shifts = {
     }
   },
 
-  // 確定済みシフト作成
+  // 確定済みシフト作成（upsert使用）
   createConfirmedShifts: async (confirmedShiftsData: any[]) => {
     console.log('=== createConfirmedShifts START ===');
     console.log('Input data:', confirmedShiftsData);
@@ -426,15 +426,19 @@ export const shifts = {
     }
 
     try {
-      console.log('Preparing to insert into assigned_shifts table...');
-      console.log('Data to insert:', JSON.stringify(confirmedShiftsData, null, 2));
+      console.log('Preparing to upsert into assigned_shifts table...');
+      console.log('Data to upsert:', JSON.stringify(confirmedShiftsData, null, 2));
       
+      // upsertを使用して重複を自動的に処理
       const { data, error } = await supabase
         .from('assigned_shifts')
-        .insert(confirmedShiftsData)
+        .upsert(confirmedShiftsData, {
+          onConflict: 'pharmacist_id,date,time_slot',
+          ignoreDuplicates: false
+        })
         .select();
       
-      console.log('Supabase insert result:', { data, error });
+      console.log('Supabase upsert result:', { data, error });
       
       // テーブルが存在しない場合のエラーハンドリング
       if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
