@@ -172,7 +172,7 @@ function App() {
         </main>
       </div>
     );
-  } catch (error) {
+    } catch (error) {
     console.error('App: Error in component:', error);
     return (
       <div className="min-h-screen bg-red-100 flex items-center justify-center">

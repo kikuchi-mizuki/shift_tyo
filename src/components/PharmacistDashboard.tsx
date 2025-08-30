@@ -26,6 +26,8 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
 
 
+  const [userProfiles, setUserProfiles] = useState<any>({});
+
   const loadShifts = async () => {
     try {
       console.log('Loading pharmacist shifts...');
@@ -59,6 +61,23 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');
+      }
+      
+      // シフトに関連する薬局のプロフィールを取得
+      if (assignedData && assignedData.length > 0) {
+        const pharmacyIds = [...new Set(assignedData.map((shift: any) => shift.pharmacy_id))];
+        const { data: pharmacyProfiles } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .in('id', pharmacyIds);
+        
+        if (pharmacyProfiles) {
+          const profilesMap: any = {};
+          pharmacyProfiles.forEach((profile: any) => {
+            profilesMap[profile.id] = profile;
+          });
+          setUserProfiles(profilesMap);
+        }
       }
     } catch (error) {
       console.error('Error loading shifts:', error);
@@ -253,7 +272,34 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                     {myShifts.some((shift: any) => 
                       shift.date === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
                     ) && (
-                      <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block">割当</div>
+                      <div className="relative group">
+                        <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                          割当
+                        </div>
+                        
+                        {/* マウスオーバーで表示される詳細情報 */}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                          <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
+                            <div className="font-medium mb-2">確定シフト詳細</div>
+                            {myShifts.filter((shift: any) => 
+                              shift.date === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+                            ).map((shift: any, index: number) => {
+                              const pharmacyProfile = userProfiles[shift.pharmacy_id];
+                              return (
+                                <div key={index} className="mb-2 last:mb-0 border-b border-gray-600 pb-2 last:border-b-0">
+                                  <div className="text-green-300 font-medium">
+                                    時間: {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '夜間'}
+                                  </div>
+                                  <div className="text-yellow-300">
+                                    薬局: {pharmacyProfile?.name || pharmacyProfile?.email || shift.pharmacy_id}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 absolute top-full left-1/2 transform -translate-x-1/2"></div>
+                          </div>
+                        </div>
+                      </div>
                     )}
                     {hasMyRequest(day) && (
                       <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">希望</div>

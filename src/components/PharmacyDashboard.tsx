@@ -20,6 +20,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [loading, setLoading] = useState(true);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
+  const [userProfiles, setUserProfiles] = useState<any>({});
 
   useEffect(() => {
     console.log('PharmacyDashboard mounted, user:', user);
@@ -58,6 +59,23 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');
+      }
+      
+      // シフトに関連する薬剤師のプロフィールを取得
+      if (assignedData && assignedData.length > 0) {
+        const pharmacistIds = [...new Set(assignedData.map((shift: any) => shift.pharmacist_id))];
+        const { data: pharmacistProfiles } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .in('id', pharmacistIds);
+        
+        if (pharmacistProfiles) {
+          const profilesMap: any = {};
+          pharmacistProfiles.forEach((profile: any) => {
+            profilesMap[profile.id] = profile;
+          });
+          setUserProfiles(profilesMap);
+        }
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -202,12 +220,30 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   <div className="font-medium">{day}</div>
                   {/* 確定済みシフト（緑色） */}
                   {confirmedShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`).map((shift: any, index: number) => (
-                    <div key={`confirmed-${index}`} className="text-[8px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block">
-                      ✓{shift.time_slot === 'morning' ? '午前' : 
-                        shift.time_slot === 'afternoon' ? '午後' : 
-                        shift.time_slot === 'full' ? '終日' : 
-                        shift.time_slot === 'consult' ? '要相談' : shift.time_slot}
-                      {shift.required_staff}人
+                    <div key={`confirmed-${index}`} className="relative group">
+                      <div className="text-[8px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                        ✓{shift.time_slot === 'morning' ? '午前' : 
+                          shift.time_slot === 'afternoon' ? '午後' : 
+                          shift.time_slot === 'full' ? '終日' : 
+                          shift.time_slot === 'consult' ? '要相談' : shift.time_slot}
+                        {shift.required_staff}人
+                      </div>
+                      
+                      {/* マウスオーバーで表示される詳細情報 */}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                        <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
+                          <div className="font-medium mb-2">確定シフト詳細</div>
+                          <div className="mb-2 last:mb-0 border-b border-gray-600 pb-2 last:border-b-0">
+                            <div className="text-green-300 font-medium">
+                              時間: {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '夜間'}
+                            </div>
+                            <div className="text-blue-300">
+                              薬剤師: {userProfiles[shift.pharmacist_id]?.name || userProfiles[shift.pharmacist_id]?.email || shift.pharmacist_id}
+                            </div>
+                          </div>
+                          <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 absolute top-full left-1/2 transform -translate-x-1/2"></div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                   {/* 募集中シフト（青色） */}
