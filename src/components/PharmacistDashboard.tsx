@@ -76,6 +76,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   };
 
   const handleSubmit = async () => {
+    console.log('PharmacistDashboard: handleSubmit called');
+    console.log('Form data:', { selectedDate, selectedTimeSlot, selectedPriority, memo, userId: user.id });
+    
     if (!selectedDate || !selectedTimeSlot) {
       alert('日付と時間帯を選択してください');
       return;
@@ -91,11 +94,17 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         status: 'pending'
       };
 
+      console.log('Creating shift request:', shiftRequest);
+      console.log('shiftRequests object:', shiftRequests);
+      console.log('shiftRequests.createRequests function:', shiftRequests.createRequests);
+
       const { error } = await shiftRequests.createRequests([shiftRequest]);
+      
       if (error) {
         console.error('Error creating shift request:', error);
         alert('シフト希望の登録に失敗しました');
       } else {
+        console.log('Shift request created successfully');
         alert('シフト希望を登録しました');
         setSelectedDate('');
         setSelectedTimeSlot('');

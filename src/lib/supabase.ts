@@ -461,15 +461,27 @@ export const shiftRequests = {
 
   // シフト希望作成
   createRequests: async (requestsData: any[]) => {
+    console.log('shiftRequests.createRequests called with:', requestsData);
+    
     if (!supabase) {
+      console.error('Supabase not initialized');
       return { data: [], error: { message: 'Supabaseが設定されていません' } };
     }
 
     try {
+      console.log('Inserting into shift_requests table...');
       const { data, error } = await supabase
         .from('shift_requests')
         .insert(requestsData)
         .select();
+      
+      console.log('Insert result:', { data, error });
+      
+      // テーブルが存在しない場合のエラーハンドリング
+      if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
+        console.warn('shift_requests table not found, falling back to demo mode');
+        return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
+      }
       
       return { data: data || [], error };
     } catch (error) {
