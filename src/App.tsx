@@ -59,17 +59,42 @@ class ErrorBoundary extends Component<
 }
 
 function App() {
-  console.log('App: Component rendering');
+  console.log('App: Component rendering - START');
   
-  const { user, userProfile, loading, signOut } = useAuth();
-  
-  console.log('App: useAuth result:', {
-    user: !!user,
-    userProfile: !!userProfile,
-    loading,
-    userProfileType: userProfile?.user_type,
-    userMetadataType: user?.user_metadata?.user_type
-  });
+  try {
+    const { user, userProfile, loading, signOut } = useAuth();
+    
+    console.log('App: useAuth result:', {
+      user: !!user,
+      userProfile: !!userProfile,
+      loading,
+      userProfileType: userProfile?.user_type,
+      userMetadataType: user?.user_metadata?.user_type
+    });
+    
+    console.log('App: Component rendering - SUCCESS');
+    
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <div className="p-4">
+          <h1 className="text-2xl font-bold">シフト調整システム</h1>
+          <p>Loading: {loading ? 'true' : 'false'}</p>
+          <p>User: {user ? 'Logged in' : 'Not logged in'}</p>
+          <p>User Type: {userProfile?.user_type || 'Unknown'}</p>
+        </div>
+      </div>
+    );
+  } catch (error) {
+    console.error('App: Error in component:', error);
+    return (
+      <div className="min-h-screen bg-red-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-800">エラーが発生しました</h1>
+          <p className="text-red-600 mt-2">コンソールを確認してください</p>
+        </div>
+      </div>
+    );
+  }
   const [currentView, setCurrentView] = useState<'dashboard' | 'admin' | 'matching' | 'management'>('dashboard');
   // ローディングが続く場合のフェイルセーフ（6秒で有効化）
   const [forceFallback, setForceFallback] = useState(false);
