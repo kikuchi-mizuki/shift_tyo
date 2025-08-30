@@ -51,10 +51,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       if (profilesError) {
         console.error('Error loading user profiles:', profilesError);
       } else {
+        console.log('Loaded user profiles:', profilesData);
         const profilesMap: any = {};
         profilesData?.forEach((profile: any) => {
           profilesMap[profile.id] = profile;
         });
+        console.log('User profiles map:', profilesMap);
         setUserProfiles(profilesMap);
       }
     } catch (e) {
@@ -276,6 +278,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                {dayAssignedShifts.map((shift: any, index: number) => {
                                  const pharmacistProfile = userProfiles[shift.pharmacist_id];
                                  const pharmacyProfile = userProfiles[shift.pharmacy_id];
+                                 console.log('Shift:', shift);
+                                 console.log('Pharmacist profile:', pharmacistProfile);
+                                 console.log('Pharmacy profile:', pharmacyProfile);
+                                 console.log('User profiles:', userProfiles);
                                  return (
                                    <div key={index} className="mb-2 last:mb-0 border-b border-gray-600 pb-2 last:border-b-0">
                                      <div className="text-green-300 font-medium">

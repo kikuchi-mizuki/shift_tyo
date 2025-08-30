@@ -18,6 +18,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [myShifts, setMyShifts] = useState<any[]>([]);
   const [confirmedShifts, setConfirmedShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [profileName, setProfileName] = useState('');
 
   useEffect(() => {
     console.log('PharmacyDashboard mounted, user:', user);
@@ -45,6 +47,17 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       } else {
         console.log('Loaded confirmed shifts:', assignedData);
         setConfirmedShifts(assignedData || []);
+      }
+      
+      // ユーザープロフィールを取得
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profileError && profileData) {
+        setProfileName(profileData.name || '');
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -76,6 +89,26 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
     setSelectedDate(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+  };
+
+  const handleProfileUpdate = async () => {
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ name: profileName })
+        .eq('id', user.id);
+      
+      if (error) {
+        console.error('Error updating profile:', error);
+        alert('プロフィールの更新に失敗しました');
+      } else {
+        alert('プロフィールを更新しました');
+        setShowProfileEdit(false);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('プロフィールの更新に失敗しました');
+    }
   };
 
   const handlePost = async () => {
@@ -197,13 +230,43 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       {/* 右: シフト募集フォーム */}
       <div className="w-96 bg-white rounded-lg shadow">
         <div className="bg-blue-600 text-white p-4 rounded-t-lg">
-          <div className="flex items-center space-x-2">
-            <Plus className="w-5 h-5" />
-            <h2 className="text-xl font-semibold">薬剤師募集登録</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Plus className="w-5 h-5" />
+              <h2 className="text-xl font-semibold">薬剤師募集登録</h2>
+            </div>
+            <button
+              onClick={() => setShowProfileEdit(!showProfileEdit)}
+              className="text-sm text-blue-100 hover:text-white"
+            >
+              プロフィール編集
+            </button>
           </div>
           <p className="text-xs text-blue-100 mt-1">必要な薬剤師の募集条件を設定してください</p>
         </div>
         <div className="p-6 space-y-6">
+          {/* プロフィール編集フォーム */}
+          {showProfileEdit && (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">名前の設定</h3>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  placeholder="薬局名"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+                <button
+                  onClick={handleProfileUpdate}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                >
+                  更新
+                </button>
+              </div>
+            </div>
+          )}
+          
           {/* デバッグ情報 */}
           <div className="p-3 bg-gray-100 rounded text-xs">
             <div>選択日: {selectedDate || '未選択'}</div>
