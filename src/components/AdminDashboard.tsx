@@ -282,10 +282,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                        時間: {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '夜間'}
                                      </div>
                                      <div className="text-blue-300">
-                                       薬剤師: {pharmacistProfile?.full_name || pharmacistProfile?.email || shift.pharmacist_id}
+                                       薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || shift.pharmacist_id}
                                      </div>
                                      <div className="text-yellow-300">
-                                       薬局: {pharmacyProfile?.full_name || pharmacyProfile?.email || shift.pharmacy_id}
+                                       薬局: {pharmacyProfile?.name || pharmacyProfile?.email || shift.pharmacy_id}
                                      </div>
                                    </div>
                                  );
@@ -367,6 +367,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             </div>
             
             <div className="text-xs text-gray-500">最終更新: {lastUpdated.toLocaleString('ja-JP')}</div>
+            
+            {/* ユーザー管理セクション */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h3 className="text-sm font-medium text-gray-700">ユーザー管理</h3>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {Object.values(userProfiles).map((profile: any) => (
+                  <div key={profile.id} className="text-xs bg-white p-2 rounded border">
+                    <div className="font-medium">{profile.name || '名前未設定'}</div>
+                    <div className="text-gray-600">{profile.email}</div>
+                    <div className="text-gray-500">タイプ: {profile.user_type}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

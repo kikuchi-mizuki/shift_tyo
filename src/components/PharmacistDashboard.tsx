@@ -16,6 +16,8 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [myRequests, setMyRequests] = useState([]);
   const [openPostings, setOpenPostings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [profileName, setProfileName] = useState('');
 
 
   useEffect(() => {
@@ -47,6 +49,17 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       setMyRequests(reqs || []);
       const { data: postings } = await shiftPostings.getPostings('', 'pharmacist');
       setOpenPostings(postings || []);
+      
+      // ユーザープロフィールを取得
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profileError && profileData) {
+        setProfileName(profileData.name || '');
+      }
     } catch (error) {
       console.error('Error loading shifts:', error);
     } finally {
@@ -90,6 +103,26 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       const month = currentDate.getMonth() + 1;
       const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
       setSelectedDate(formattedDate);
+    }
+  };
+
+  const handleProfileUpdate = async () => {
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ name: profileName })
+        .eq('id', user.id);
+      
+      if (error) {
+        console.error('Error updating profile:', error);
+        alert('プロフィールの更新に失敗しました');
+      } else {
+        alert('プロフィールを更新しました');
+        setShowProfileEdit(false);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('プロフィールの更新に失敗しました');
     }
   };
 
@@ -238,7 +271,37 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         {/* 右側: シフト希望登録フォーム */}
         <div className="w-96 bg-white rounded-lg shadow">
           <div className="p-6">
-            <h2 className="text-lg font-semibold mb-4">シフト希望登録</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">シフト希望登録</h2>
+              <button
+                onClick={() => setShowProfileEdit(!showProfileEdit)}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                プロフィール編集
+              </button>
+            </div>
+            
+            {/* プロフィール編集フォーム */}
+            {showProfileEdit && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">名前の設定</h3>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    placeholder="あなたの名前"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  />
+                  <button
+                    onClick={handleProfileUpdate}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                  >
+                    更新
+                  </button>
+                </div>
+              </div>
+            )}
             
             {/* 選択された日付 */}
             {selectedDate && (
