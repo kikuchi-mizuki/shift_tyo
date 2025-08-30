@@ -135,6 +135,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         return;
       }
 
+      // ユーザーIDの妥当性チェック
+      const invalidShifts = confirmedShifts.filter(shift => 
+        !shift.pharmacist_id || !shift.pharmacy_id || 
+        shift.pharmacist_id === 'test-pharmacist-id' || 
+        shift.pharmacy_id === 'test-pharmacy-id'
+      );
+      
+      if (invalidShifts.length > 0) {
+        console.error('Invalid shifts found:', invalidShifts);
+        alert('無効なユーザーIDが含まれています。シフトの確定に失敗しました。');
+        return;
+      }
+
       // Supabaseに確定済みシフトを保存
       console.log('Calling createConfirmedShifts with:', confirmedShifts);
       const { error } = await shifts.createConfirmedShifts(confirmedShifts);
@@ -292,14 +305,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               onClick={async () => {
                 try {
                   console.log('Test confirmation button clicked');
-                  const testShift = {
-                    pharmacist_id: 'test-pharmacist-id',
-                    pharmacy_id: 'test-pharmacy-id',
-                    date: '2025-08-01',
-                    time_slot: 'morning',
-                    status: 'confirmed',
-                    created_at: new Date().toISOString()
-                  };
+                  
+                  // 実際のユーザーIDを使用（存在するユーザーから取得）
+                  const actualRequests = requests.length > 0 ? requests : [];
+                  const actualPostings = postings.length > 0 ? postings : [];
+                  
+                  let testShift;
+                  
+                  if (actualRequests.length > 0 && actualPostings.length > 0) {
+                    // 実際のデータを使用
+                    const request = actualRequests[0];
+                    const posting = actualPostings[0];
+                    testShift = {
+                      pharmacist_id: request.pharmacist_id,
+                      pharmacy_id: posting.pharmacy_id,
+                      date: request.date,
+                      time_slot: request.time_slot,
+                      status: 'confirmed',
+                      created_at: new Date().toISOString()
+                    };
+                  } else {
+                    // ダミーUUIDを使用（実際のUUID形式）
+                    testShift = {
+                      pharmacist_id: '00000000-0000-0000-0000-000000000001',
+                      pharmacy_id: '00000000-0000-0000-0000-000000000002',
+                      date: '2025-08-01',
+                      time_slot: 'morning',
+                      status: 'confirmed',
+                      created_at: new Date().toISOString()
+                    };
+                  }
+                  
                   console.log('Creating test shift:', testShift);
                   const { error } = await shifts.createConfirmedShifts([testShift]);
                   if (error) {
