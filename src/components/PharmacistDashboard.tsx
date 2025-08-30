@@ -448,20 +448,20 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
             >
               希望を追加
             </button>
-          </div>
-        </div>
 
-        {/* 情報ボックス */}
-        <div className="p-4 bg-blue-50 rounded-b-lg">
-          <h3 className="text-sm font-medium text-blue-800 mb-2">
-            シフト希望登録のポイント
-          </h3>
-          <ul className="text-xs text-blue-700 space-y-1">
-            <li>• 希望日は月初に一括登録することをお勧めします</li>
-            <li>• 「要相談」を選択すると柔軟な時間調整が可能です</li>
-            <li>• 高優先度の日程は優先的にマッチングされます</li>
-            <li>• NG薬局の設定は別途管理画面で行えます</li>
-          </ul>
+            {/* 情報ボックス */}
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <h3 className="text-sm font-medium text-blue-800 mb-2">
+                シフト希望登録のポイント
+              </h3>
+              <ul className="text-xs text-blue-700 space-y-1">
+                <li>• 希望日は月初に一括登録することをお勧めします</li>
+                <li>• 「要相談」を選択すると柔軟な時間調整が可能です</li>
+                <li>• 高優先度の日程は優先的にマッチングされます</li>
+                <li>• NG薬局の設定は別途管理画面で行えます</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
