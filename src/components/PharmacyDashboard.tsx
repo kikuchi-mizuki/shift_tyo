@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Calendar as CalendarIcon, Plus, MessageCircle, Sun, Users } from 'lucide-react';
-import { shifts, shiftPostings } from '../lib/supabase';
+import { shifts, shiftPostings, supabase } from '../lib/supabase';
 
 // デバッグ: インポートの確認
 console.log('PharmacyDashboard imports:', { shifts, shiftPostings });
@@ -26,13 +26,26 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   const loadData = async () => {
     try {
+      console.log('Loading pharmacy data...');
+      
       // 募集シフトを取得
       const { data: myShiftsData } = await shifts.getShiftsByUser(user.id, 'pharmacy');
       setMyShifts(myShiftsData || []);
       
-      // 確定済みシフトを取得
-      const { data: confirmedData } = await shifts.getConfirmedShifts();
-      setConfirmedShifts(confirmedData || []);
+      // 直接Supabaseから確定済みシフトを取得
+      const { data: assignedData, error: assignedError } = await supabase
+        .from('assigned_shifts')
+        .select('*')
+        .eq('pharmacy_id', user.id)
+        .eq('status', 'confirmed');
+      
+      if (assignedError) {
+        console.error('Error loading assigned shifts:', assignedError);
+        setConfirmedShifts([]);
+      } else {
+        console.log('Loaded confirmed shifts:', assignedData);
+        setConfirmedShifts(assignedData || []);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {

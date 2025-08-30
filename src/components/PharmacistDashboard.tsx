@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, testConnection } from '../lib/supabase';
+import { shifts, shiftRequests, shiftPostings, testConnection, supabase } from '../lib/supabase';
 
 interface PharmacistDashboardProps {
   user: any;
@@ -40,8 +40,23 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
   const loadShifts = async () => {
     try {
-      const { data: myShiftsData } = await shifts.getShiftsByUser(user.id, 'pharmacist');
-      setMyShifts(myShiftsData || []);
+      console.log('Loading pharmacist shifts...');
+      
+      // 直接Supabaseから確定シフトを取得
+      const { data: assignedData, error: assignedError } = await supabase
+        .from('assigned_shifts')
+        .select('*')
+        .eq('pharmacist_id', user.id)
+        .eq('status', 'confirmed');
+      
+      if (assignedError) {
+        console.error('Error loading assigned shifts:', assignedError);
+        setMyShifts([]);
+      } else {
+        console.log('Loaded assigned shifts:', assignedData);
+        setMyShifts(assignedData || []);
+      }
+      
       const { data: reqs } = await shiftRequests.getRequests(user.id, 'pharmacist');
       setMyRequests(reqs || []);
       const { data: postings } = await shiftPostings.getPostings('', 'pharmacist');

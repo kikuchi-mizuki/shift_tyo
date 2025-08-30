@@ -317,77 +317,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
             </button>
             
-            {/* テスト用: 強制確定ボタン */}
-            <button 
-              onClick={async () => {
-                try {
-                  console.log('=== TEST CONFIRMATION START ===');
-                  console.log('Current user:', user);
-                  console.log('Current requests:', requests);
-                  console.log('Current postings:', postings);
-                  
-                  // 実際のユーザーIDを使用（存在するユーザーから取得）
-                  const actualRequests = requests.length > 0 ? requests : [];
-                  const actualPostings = postings.length > 0 ? postings : [];
-                  
-                  console.log('Actual requests available:', actualRequests.length);
-                  console.log('Actual postings available:', actualPostings.length);
-                  
-                  let testShift;
-                  
-                  if (actualRequests.length > 0 && actualPostings.length > 0) {
-                    // 実際のデータを使用
-                    const request = actualRequests[0];
-                    const posting = actualPostings[0];
-                    console.log('Using actual data - Request:', request);
-                    console.log('Using actual data - Posting:', posting);
-                    
-                    testShift = {
-                      pharmacist_id: request.pharmacist_id,
-                      pharmacy_id: posting.pharmacy_id,
-                      date: request.date,
-                      time_slot: request.time_slot,
-                      status: 'confirmed',
-                      created_at: new Date().toISOString()
-                    };
-                  } else {
-                    // ダミーUUIDを使用（実際のUUID形式）
-                    console.log('Using dummy UUIDs');
-                    testShift = {
-                      pharmacist_id: '00000000-0000-0000-0000-000000000001',
-                      pharmacy_id: '00000000-0000-0000-0000-000000000002',
-                      date: '2025-08-01',
-                      time_slot: 'morning',
-                      status: 'confirmed',
-                      created_at: new Date().toISOString()
-                    };
-                  }
-                  
-                  console.log('Final test shift to create:', testShift);
-                  console.log('Calling createConfirmedShifts...');
-                  
-                  const { error } = await shifts.createConfirmedShifts([testShift]);
-                  
-                  console.log('createConfirmedShifts result:', { error });
-                  
-                  if (error) {
-                    console.error('Test confirmation error:', error);
-                    alert(`テスト確定に失敗: ${error.message || error.code || 'Unknown error'}`);
-                  } else {
-                    console.log('Test confirmation successful!');
-                    alert('テスト確定に成功しました');
-                    loadAll();
-                  }
-                } catch (error) {
-                  console.error('Test confirmation exception:', error);
-                  alert(`テスト確定に失敗: ${error.message || 'Unknown error'}`);
-                }
-                console.log('=== TEST CONFIRMATION END ===');
-              }}
-              className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 text-sm"
-            >
-              <span>テスト: 強制確定</span>
-            </button>
+
             
             {/* 統計情報 */}
             <div className="bg-gray-50 rounded-lg p-4 space-y-3">
