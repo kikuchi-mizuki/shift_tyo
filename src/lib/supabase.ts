@@ -416,7 +416,9 @@ export const shifts = {
 
   // 確定済みシフト作成
   createConfirmedShifts: async (confirmedShiftsData: any[]) => {
-    console.log('createConfirmedShifts called with:', confirmedShiftsData);
+    console.log('=== createConfirmedShifts START ===');
+    console.log('Input data:', confirmedShiftsData);
+    console.log('Supabase client exists:', !!supabase);
     
     if (!supabase) {
       console.error('Supabase not initialized');
@@ -424,13 +426,15 @@ export const shifts = {
     }
 
     try {
-      console.log('Inserting into assigned_shifts table...');
+      console.log('Preparing to insert into assigned_shifts table...');
+      console.log('Data to insert:', JSON.stringify(confirmedShiftsData, null, 2));
+      
       const { data, error } = await supabase
         .from('assigned_shifts')
         .insert(confirmedShiftsData)
         .select();
       
-      console.log('Insert result:', { data, error });
+      console.log('Supabase insert result:', { data, error });
       
       // テーブルが存在しない場合のエラーハンドリング
       if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
@@ -438,9 +442,21 @@ export const shifts = {
         return { data: [], error: { code: 'PGRST116', message: 'assigned_shiftsテーブルが存在しません。Supabaseダッシュボードでテーブルを作成してください。' } };
       }
       
+      // その他のエラーの詳細ログ
+      if (error) {
+        console.error('Detailed error info:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+      }
+      
+      console.log('=== createConfirmedShifts END ===');
       return { data: data || [], error };
     } catch (error) {
-      console.error('Create confirmed shifts error:', error);
+      console.error('Create confirmed shifts exception:', error);
+      console.log('=== createConfirmedShifts END (with exception) ===');
       return { data: [], error };
     }
   }
