@@ -126,7 +126,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: ${foundProfiles.length}件見つかりました\n${foundProfileDetails.join('\n')}`);
           } else {
             logToRailway('No profiles found for shift users');
-            alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: 見つかりませんでした`);
+            alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: 見つかりませんでした\n\nID不一致のため、シフトデータを修正する必要があります。`);
           }
         } else {
           logToRailway('No profiles data available');
@@ -522,6 +522,95 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 text-sm"
             >
               <span>デバッグ情報出力</span>
+            </button>
+            
+            {/* シフトデータ修正ボタン */}
+            <button 
+              onClick={async () => {
+                // Railwayログに出力
+                const logToRailway = (message: string, data?: any) => {
+                  console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
+                  // サーバーサイドのログとして出力
+                  if (typeof window !== 'undefined') {
+                    fetch('/api/log', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ message, data, timestamp: new Date().toISOString() })
+                    }).catch(() => {}); // エラーは無視
+                  }
+                };
+                
+                // シフトデータ修正機能
+                const fixShiftData = async () => {
+                  try {
+                    logToRailway('=== FIXING SHIFT DATA ===');
+                    
+                    // 現在のプロフィールを取得
+                    const { data: profiles } = await supabase.from('user_profiles').select('*');
+                    if (!profiles || profiles.length === 0) {
+                      alert('プロフィールが見つかりません');
+                      return;
+                    }
+                    
+                    // 薬剤師と薬局のプロフィールを特定
+                    const pharmacistProfile = profiles.find(p => p.user_type === 'pharmacist');
+                    const pharmacyProfile = profiles.find(p => p.user_type === 'store');
+                    
+                    if (!pharmacistProfile || !pharmacyProfile) {
+                      alert('薬剤師または薬局のプロフィールが見つかりません');
+                      return;
+                    }
+                    
+                    logToRailway('Found profiles for fixing:', {
+                      pharmacist: pharmacistProfile.id,
+                      pharmacy: pharmacyProfile.id
+                    });
+                    
+                    // 現在のシフトデータを更新
+                    const { data: currentShifts, error: fetchError } = await supabase
+                      .from('assigned_shifts')
+                      .select('*');
+                    
+                    if (fetchError) {
+                      logToRailway('Error fetching shifts:', fetchError);
+                      alert('シフトデータの取得に失敗しました');
+                      return;
+                    }
+                    
+                    logToRailway('Current shifts before fix:', currentShifts);
+                    
+                    // 各シフトを正しいユーザーIDで更新
+                    for (const shift of currentShifts || []) {
+                      const { error: updateError } = await supabase
+                        .from('assigned_shifts')
+                        .update({
+                          pharmacist_id: pharmacistProfile.id,
+                          pharmacy_id: pharmacyProfile.id
+                        })
+                        .eq('id', shift.id);
+                      
+                      if (updateError) {
+                        logToRailway('Error updating shift:', updateError);
+                      } else {
+                        logToRailway('Successfully updated shift:', shift.id);
+                      }
+                    }
+                    
+                    alert('シフトデータを修正しました。ページを再読み込みしてください。');
+                    window.location.reload();
+                    
+                  } catch (error) {
+                    logToRailway('Error in fixShiftData:', error);
+                    alert('シフトデータの修正に失敗しました');
+                  }
+                };
+                
+                // 修正機能を実行
+                await fixShiftData();
+              }}
+              className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 text-sm"
+            >
+              <span>シフトデータ修正</span>
             </button>
             
 
