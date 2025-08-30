@@ -74,13 +74,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       logToRailway('User IDs from shifts:', Array.from(userIds));
       
-      // 直接Supabaseからプロフィールを取得（管理者用）
-      logToRailway('Fetching user profiles directly...');
-      
-      // まず、全プロフィールを取得してみる
-      const { data: allProfilesData, error: allProfilesError } = await supabase
-        .from('user_profiles')
-        .select('*');
+                   // 直接Supabaseからプロフィールを取得（管理者用）
+             logToRailway('Fetching user profiles directly...');
+             
+             // まず、全プロフィールを取得してみる
+             const { data: allProfilesData, error: allProfilesError } = await supabase
+               .from('user_profiles')
+               .select('*');
+             
+             // user_profilesが存在しない場合はapp_usersを試す
+             if (allProfilesError && allProfilesError.message.includes('does not exist')) {
+               logToRailway('user_profiles table not found, trying app_users...');
+               const { data: appUsersData, error: appUsersError } = await supabase
+                 .from('app_users')
+                 .select('*');
+               
+               if (appUsersError) {
+                 logToRailway('Error loading app_users:', appUsersError);
+                 setUserProfiles({});
+               } else {
+                 logToRailway('Loaded app_users:', appUsersData);
+                 // app_usersのデータをuser_profiles形式に変換
+                 const profilesMap: any = {};
+                 appUsersData?.forEach((user: any) => {
+                   profilesMap[user.id] = {
+                     id: user.id,
+                     name: user.name,
+                     email: user.email,
+                     user_type: 'pharmacist' // デフォルトで薬剤師として設定
+                   };
+                 });
+                 setUserProfiles(profilesMap);
+                 return;
+               }
+             }
       
       if (allProfilesError) {
         logToRailway('Error loading all user profiles:', allProfilesError);
@@ -546,7 +573,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     logToRailway('=== FIXING SHIFT DATA ===');
                     
                     // 現在のプロフィールを取得
-                    const { data: profiles } = await supabase.from('user_profiles').select('*');
+                    let profiles;
+                    const { data: userProfilesData, error: userProfilesError } = await supabase.from('user_profiles').select('*');
+                    
+                    if (userProfilesError && userProfilesError.message.includes('does not exist')) {
+                      logToRailway('user_profiles table not found, trying app_users...');
+                      const { data: appUsersData, error: appUsersError } = await supabase.from('app_users').select('*');
+                      
+                      if (appUsersError) {
+                        logToRailway('Error loading app_users:', appUsersError);
+                        alert('プロフィールが見つかりません');
+                        return;
+                      }
+                      
+                      // app_usersのデータをuser_profiles形式に変換
+                      profiles = appUsersData?.map((user: any) => ({
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        user_type: 'pharmacist' // デフォルトで薬剤師として設定
+                      }));
+                    } else {
+                      profiles = userProfilesData;
+                    }
+                    
                     if (!profiles || profiles.length === 0) {
                       alert('プロフィールが見つかりません');
                       return;
