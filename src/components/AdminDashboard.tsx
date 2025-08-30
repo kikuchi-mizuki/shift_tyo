@@ -14,6 +14,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [userProfiles, setUserProfiles] = useState<any>({});
 
 
   useEffect(() => {
@@ -41,6 +42,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       setRequests(r || []);
       const { data: p } = await shiftPostings.getPostings('', 'admin' as any);
       setPostings(p || []);
+      
+      // ユーザープロフィールを取得
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('*');
+      
+      if (profilesError) {
+        console.error('Error loading user profiles:', profilesError);
+      } else {
+        const profilesMap: any = {};
+        profilesData?.forEach((profile: any) => {
+          profilesMap[profile.id] = profile;
+        });
+        setUserProfiles(profilesMap);
+      }
     } catch (e) {
       console.error('Error in loadAll:', e);
     } finally {
@@ -229,27 +245,75 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           </div>
 
           <div className="grid grid-cols-7 gap-1">
-            {getDaysInMonth(currentDate).map((d, i) => (
-              <div key={i} className={`p-2 text-center text-sm border border-gray-200 min-h-[90px] ${d? '':'bg-gray-50'}`}>
-                {d && (
-                  <>
-                    <div className="font-medium">{d}</div>
-                    {/* assigned */}
-                    {assigned.some((s:any)=>isSameDate(d, s.date)) && (
-                      <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block mr-1">割当</div>
-                    )}
-                    {/* requests */}
-                    {requests.some((r:any)=>isSameDate(d, r.date)) && (
-                      <div className="text-[10px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-1 mt-1 inline-block mr-1">希望</div>
-                    )}
-                    {/* postings */}
-                    {postings.some((p:any)=>isSameDate(d, p.date)) && (
-                      <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集</div>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
+            {getDaysInMonth(currentDate).map((d, i) => {
+              const year = currentDate.getFullYear();
+              const month = currentDate.getMonth() + 1;
+              const dateStr = `${year}-${month.toString().padStart(2, '0')}-${d?.toString().padStart(2, '0')}`;
+              
+              // その日の確定シフトを取得
+              const dayAssignedShifts = assigned.filter((s: any) => s.date === dateStr && s.status === 'confirmed');
+              
+              // 確定シフトがある場合は、希望・募集は表示しない
+              const hasConfirmedShifts = dayAssignedShifts.length > 0;
+              
+              return (
+                <div key={i} className={`p-2 text-center text-sm border border-gray-200 min-h-[90px] ${d? '':'bg-gray-50'}`}>
+                  {d && (
+                    <>
+                      <div className="font-medium">{d}</div>
+                      
+                      {/* 確定シフトがある場合 */}
+                      {hasConfirmedShifts && (
+                        <div className="relative group">
+                          <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                            確定
+                          </div>
+                          
+                                                     {/* マウスオーバーで表示される詳細情報 */}
+                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                             <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
+                               <div className="font-medium mb-2">確定シフト詳細</div>
+                               {dayAssignedShifts.map((shift: any, index: number) => {
+                                 const pharmacistProfile = userProfiles[shift.pharmacist_id];
+                                 const pharmacyProfile = userProfiles[shift.pharmacy_id];
+                                 return (
+                                   <div key={index} className="mb-2 last:mb-0 border-b border-gray-600 pb-2 last:border-b-0">
+                                     <div className="text-green-300 font-medium">
+                                       時間: {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '夜間'}
+                                     </div>
+                                     <div className="text-blue-300">
+                                       薬剤師: {pharmacistProfile?.full_name || pharmacistProfile?.email || shift.pharmacist_id}
+                                     </div>
+                                     <div className="text-yellow-300">
+                                       薬局: {pharmacyProfile?.full_name || pharmacyProfile?.email || shift.pharmacy_id}
+                                     </div>
+                                   </div>
+                                 );
+                               })}
+                               <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 absolute top-full left-1/2 transform -translate-x-1/2"></div>
+                             </div>
+                           </div>
+                        </div>
+                      )}
+                      
+                      {/* 確定シフトがない場合のみ、希望・募集を表示 */}
+                      {!hasConfirmedShifts && (
+                        <>
+                          {/* requests */}
+                          {requests.some((r:any)=>isSameDate(d, r.date)) && (
+                            <div className="text-[10px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-1 mt-1 inline-block mr-1">希望</div>
+                          )}
+                          {/* postings */}
+                          {postings.some((p:any)=>isSameDate(d, p.date)) && (
+                            <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集</div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
