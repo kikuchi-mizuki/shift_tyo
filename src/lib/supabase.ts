@@ -416,16 +416,27 @@ export const shifts = {
 
   // 確定済みシフト作成
   createConfirmedShifts: async (confirmedShiftsData: any[]) => {
+    console.log('createConfirmedShifts called with:', confirmedShiftsData);
+    
     if (!supabase) {
+      console.error('Supabase not initialized');
       return { data: [], error: { message: 'Supabaseが設定されていません' } };
     }
 
     try {
-      // 確定済みシフトをassigned_shiftsテーブルに保存
+      console.log('Inserting into assigned_shifts table...');
       const { data, error } = await supabase
         .from('assigned_shifts')
         .insert(confirmedShiftsData)
         .select();
+      
+      console.log('Insert result:', { data, error });
+      
+      // テーブルが存在しない場合のエラーハンドリング
+      if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
+        console.warn('assigned_shifts table not found');
+        return { data: [], error: { code: 'PGRST116', message: 'assigned_shiftsテーブルが存在しません。Supabaseダッシュボードでテーブルを作成してください。' } };
+      }
       
       return { data: data || [], error };
     } catch (error) {
@@ -483,6 +494,31 @@ export const testConnection = {
       return { success: true, data };
     } catch (error) {
       console.error('shift_postings table test error:', error);
+      return { success: false, error: 'Connection failed' };
+    }
+  },
+  
+  testAssignedShiftsTable: async () => {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not initialized' };
+    }
+    
+    try {
+      console.log('Testing assigned_shifts table connection...');
+      const { data, error } = await supabase
+        .from('assigned_shifts')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        console.error('assigned_shifts table test failed:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('assigned_shifts table test successful');
+      return { success: true, data };
+    } catch (error) {
+      console.error('assigned_shifts table test error:', error);
       return { success: false, error: 'Connection failed' };
     }
   }
