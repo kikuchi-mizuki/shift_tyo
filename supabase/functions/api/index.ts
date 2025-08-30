@@ -24,7 +24,27 @@ serve(async (req) => {
       }
     )
 
-    // Get the path from the request URL
+    // Handle POST requests for specific actions
+    if (req.method === 'POST') {
+      const body = await req.json()
+      const { action, userIds } = body
+
+      if (action === 'get_user_profiles' && userIds) {
+        const result = await supabaseClient
+          .from('user_profiles')
+          .select('*')
+          .in('id', userIds)
+        
+        return new Response(
+          JSON.stringify(result),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+    }
+
+    // Handle GET requests for backward compatibility
     const url = new URL(req.url)
     const path = url.pathname.split('/').pop()
 

@@ -46,29 +46,69 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const { data: p } = await shiftPostings.getPostings('', 'admin' as any);
       setPostings(p || []);
       
-      // ユーザープロフィールを取得
+      // ユーザープロフィールを取得（管理者用）
       console.log('Fetching user profiles...');
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('user_profiles')
-        .select('*');
       
-      if (profilesError) {
-        console.error('Error loading user profiles:', profilesError);
-      } else {
-        console.log('Loaded user profiles:', profilesData);
-        const profilesMap: any = {};
-        profilesData?.forEach((profile: any) => {
-          profilesMap[profile.id] = profile;
+      // まず、シフトに含まれるユーザーIDを収集
+      const userIds = new Set();
+      if (assignedData) {
+        assignedData.forEach((shift: any) => {
+          userIds.add(shift.pharmacist_id);
+          userIds.add(shift.pharmacy_id);
         });
-        console.log('User profiles map:', profilesMap);
-        setUserProfiles(profilesMap);
+      }
+      
+      console.log('User IDs from shifts:', Array.from(userIds));
+      
+      // Edge Functionを使用してプロフィールを取得
+      try {
+        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/api`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+          },
+          body: JSON.stringify({
+            action: 'get_user_profiles',
+            userIds: Array.from(userIds)
+          })
+        });
         
-        // 強制的にアラートで確認
-        if (profilesData && profilesData.length > 0) {
-          console.log('First profile:', profilesData[0]);
-          alert(`プロフィール取得成功: ${profilesData.length}件のプロフィールを読み込みました`);
+        const result = await response.json();
+        console.log('Edge Function result:', result);
+        
+        if (result.data) {
+          const profilesMap: any = {};
+          result.data.forEach((profile: any) => {
+            profilesMap[profile.id] = profile;
+          });
+          console.log('User profiles map:', profilesMap);
+          setUserProfiles(profilesMap);
+          
+          if (result.data.length > 0) {
+            console.log('First profile:', result.data[0]);
+            alert(`プロフィール取得成功: ${result.data.length}件のプロフィールを読み込みました`);
+          } else {
+            alert('プロフィールが取得できませんでした');
+          }
+        }
+      } catch (error) {
+        console.error('Edge Function error:', error);
+        
+        // フォールバック: 直接Supabaseから取得
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('user_profiles')
+          .select('*');
+        
+        if (profilesError) {
+          console.error('Error loading user profiles:', profilesError);
         } else {
-          alert('プロフィールが取得できませんでした');
+          console.log('Loaded user profiles (fallback):', profilesData);
+          const profilesMap: any = {};
+          profilesData?.forEach((profile: any) => {
+            profilesMap[profile.id] = profile;
+          });
+          setUserProfiles(profilesMap);
         }
       }
     } catch (e) {
@@ -381,7 +421,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   console.log('Pharmacy name:', pharmacyProfile?.name || 'NOT FOUND');
                 }
                 
-                alert('デバッグ情報をコンソールに出力しました。F12キーでコンソールを確認してください。');
+                // アラートで直接情報を表示
+                let debugInfo = '=== デバッグ情報 ===\n';
+                debugInfo += `ユーザー数: ${Object.keys(userProfiles).length}\n`;
+                debugInfo += `確定シフト数: ${assigned.length}\n`;
+                
+                if (assigned.length > 0) {
+                  const firstShift = assigned[0];
+                  const pharmacistProfile = userProfiles[firstShift.pharmacist_id];
+                  const pharmacyProfile = userProfiles[firstShift.pharmacy_id];
+                  debugInfo += `\n最初のシフト:\n`;
+                  debugInfo += `薬剤師ID: ${firstShift.pharmacist_id}\n`;
+                  debugInfo += `薬局ID: ${firstShift.pharmacy_id}\n`;
+                  debugInfo += `薬剤師名: ${pharmacistProfile?.name || 'NOT FOUND'}\n`;
+                  debugInfo += `薬局名: ${pharmacyProfile?.name || 'NOT FOUND'}\n`;
+                }
+                
+                alert(debugInfo);
               }}
               className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 text-sm"
             >
