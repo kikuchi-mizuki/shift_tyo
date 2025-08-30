@@ -148,9 +148,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         return;
       }
 
+      // 重複チェック：既存のシフトを確認
+      console.log('Checking for existing shifts...');
+      const existingShifts = await shifts.getShifts();
+      console.log('Existing shifts:', existingShifts);
+      
+      // 重複を除外
+      const uniqueShifts = confirmedShifts.filter(newShift => {
+        const isDuplicate = existingShifts.some(existingShift => 
+          existingShift.pharmacist_id === newShift.pharmacist_id &&
+          existingShift.date === newShift.date &&
+          existingShift.time_slot === newShift.time_slot
+        );
+        
+        if (isDuplicate) {
+          console.log('Duplicate shift found, skipping:', newShift);
+        }
+        
+        return !isDuplicate;
+      });
+      
+      console.log('Unique shifts to insert:', uniqueShifts);
+      
+      if (uniqueShifts.length === 0) {
+        alert('すべてのシフトが既に確定済みです。');
+        return;
+      }
+
       // Supabaseに確定済みシフトを保存
-      console.log('Calling createConfirmedShifts with:', confirmedShifts);
-      const { error } = await shifts.createConfirmedShifts(confirmedShifts);
+      console.log('Calling createConfirmedShifts with:', uniqueShifts);
+      const { error } = await shifts.createConfirmedShifts(uniqueShifts);
       
       if (error) {
         console.error('Error confirming shifts:', error);
@@ -160,7 +187,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       setSystemStatus('confirmed');
       setLastUpdated(new Date());
-      alert(`${confirmedShifts.length}件のシフトを確定しました`);
+      alert(`${uniqueShifts.length}件のシフトを確定しました（${confirmedShifts.length - uniqueShifts.length}件は既に確定済みでした）`);
       
       // データを再読み込み
       loadAll();
