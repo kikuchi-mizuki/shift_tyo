@@ -103,6 +103,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const foundProfiles = shiftUserIds.filter(id => profilesMap[id]);
           logToRailway('Found profiles for shift users:', foundProfiles);
           
+          // 詳細なマッチング情報をログ出力
+          shiftUserIds.forEach(id => {
+            const profile = profilesMap[id];
+            logToRailway(`Profile lookup for ID ${id}:`, profile ? 'FOUND' : 'NOT FOUND');
+            if (profile) {
+              logToRailway(`Profile details for ${id}:`, { name: profile.name, email: profile.email, user_type: profile.user_type });
+            }
+          });
+          
+          // 全プロフィールのID一覧をログ出力
+          const allProfileIds = Object.keys(profilesMap);
+          logToRailway('All profile IDs:', allProfileIds);
+          
           // 強制的にアラートで確認
           if (foundProfiles.length > 0) {
             const foundProfileDetails = foundProfiles.map(id => {
@@ -483,6 +496,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 Object.entries(userProfiles).forEach(([id, profile]: [string, any]) => {
                   debugInfo += `${id}: ${profile.name || profile.email} (${profile.user_type})\n`;
                 });
+                
+                // シフトユーザーIDとプロフィールのマッチング詳細
+                if (assigned.length > 0) {
+                  debugInfo += `\nシフトユーザーIDとプロフィールのマッチング:\n`;
+                  const firstShift = assigned[0];
+                  const pharmacistId = firstShift.pharmacist_id;
+                  const pharmacyId = firstShift.pharmacy_id;
+                  
+                  debugInfo += `薬剤師ID: ${pharmacistId}\n`;
+                  debugInfo += `薬剤師プロフィール存在: ${userProfiles[pharmacistId] ? 'YES' : 'NO'}\n`;
+                  if (userProfiles[pharmacistId]) {
+                    debugInfo += `薬剤師名: ${userProfiles[pharmacistId].name || userProfiles[pharmacistId].email}\n`;
+                  }
+                  
+                  debugInfo += `薬局ID: ${pharmacyId}\n`;
+                  debugInfo += `薬局プロフィール存在: ${userProfiles[pharmacyId] ? 'YES' : 'NO'}\n`;
+                  if (userProfiles[pharmacyId]) {
+                    debugInfo += `薬局名: ${userProfiles[pharmacyId].name || userProfiles[pharmacyId].email}\n`;
+                  }
+                }
                 
                 alert(debugInfo);
               }}
