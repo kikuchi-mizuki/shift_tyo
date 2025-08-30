@@ -74,14 +74,102 @@ function App() {
     
     console.log('App: Component rendering - SUCCESS');
     
+    if (loading) {
+      return (
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">読み込み中...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!user) {
+      return <LoginForm onLoginSuccess={() => {}} />;
+    }
+
+    // ユーザータイプの判定（優先順位: userProfile > user_metadata > デフォルト）
+    let userType: 'pharmacist' | 'pharmacy' | 'admin' | 'store';
+    
+    if (userProfile?.user_type) {
+      userType = userProfile.user_type;
+    } else if (user.user_metadata?.user_type) {
+      userType = user.user_metadata.user_type;
+    } else if (user.user_metadata?.role) {
+      userType = user.user_metadata.role;
+    } else {
+      userType = 'pharmacist'; // デフォルト
+    }
+    
+    // デバッグ: ユーザータイプの詳細情報
+    console.log('User type debug:', {
+      userProfileType: userProfile?.user_type,
+      userMetadataType: user.user_metadata?.user_type,
+      finalUserType: userType,
+      userProfile: userProfile,
+      userMetadata: user.user_metadata
+    });
+
     return (
       <div className="min-h-screen bg-gray-100">
-        <div className="p-4">
-          <h1 className="text-2xl font-bold">シフト調整システム</h1>
-          <p>Loading: {loading ? 'true' : 'false'}</p>
-          <p>User: {user ? 'Logged in' : 'Not logged in'}</p>
-          <p>User Type: {userProfile?.user_type || 'Unknown'}</p>
-        </div>
+        {/* デバッグ情報 */}
+        {import.meta.env.DEV && (
+          <div className="bg-yellow-50 border border-yellow-200 p-4 m-4 rounded-lg">
+            <h3 className="text-sm font-semibold text-yellow-800 mb-2">デバッグ情報</h3>
+            <div className="text-xs text-yellow-700 space-y-1">
+              <div>ユーザーID: {user.id}</div>
+              <div>メール: {user.email}</div>
+              <div>ユーザータイプ: {userType}</div>
+              <div>プロファイル由来: {String(!!userProfile)}</div>
+            </div>
+          </div>
+        )}
+        
+        {/* ヘッダー */}
+        <header className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">シ</span>
+                </div>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  シフト調整システム
+                </h1>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600">
+                  {user.email}
+                </span>
+                <span className="text-sm text-gray-500">
+                  {userType === 'pharmacist' ? '薬剤師' : (userType === 'pharmacy' || userType === 'store') ? '薬局' : userType === 'admin' ? '管理' : 'ユーザー'}
+                </span>
+                <button
+                  onClick={signOut}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* メインコンテンツ */}
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <ErrorBoundary>
+            {userType === 'pharmacist' && (
+              <PharmacistDashboard user={user} />
+            )}
+            {(userType === 'pharmacy' || userType === 'store') && (
+              <PharmacyDashboard user={user} />
+            )}
+            {userType === 'admin' && (
+              <AdminDashboard user={user} />
+            )}
+          </ErrorBoundary>
+        </main>
       </div>
     );
   } catch (error) {
