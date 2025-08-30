@@ -556,15 +556,60 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     const pharmacistProfile = profiles.find(p => p.user_type === 'pharmacist');
                     const pharmacyProfile = profiles.find(p => p.user_type === 'store');
                     
-                    if (!pharmacistProfile || !pharmacyProfile) {
-                      alert('薬剤師または薬局のプロフィールが見つかりません');
+                    logToRailway('Available profiles:', profiles.map(p => ({ id: p.id, name: p.name, user_type: p.user_type })));
+                    
+                    if (!pharmacistProfile) {
+                      logToRailway('No pharmacist profile found');
+                      alert('薬剤師のプロフィールが見つかりません。薬剤師としてログインしてプロフィールを作成してください。');
                       return;
+                    }
+                    
+                    if (!pharmacyProfile) {
+                      logToRailway('No pharmacy profile found, creating one');
+                      // 薬局のプロフィールが存在しない場合は作成
+                      const { data: newPharmacyProfile, error: createError } = await supabase
+                        .from('user_profiles')
+                        .insert({
+                          id: 'temp-pharmacy-id-' + Date.now(),
+                          name: 'テスト薬局',
+                          email: 'test-pharmacy@example.com',
+                          user_type: 'store',
+                          created_at: new Date().toISOString()
+                        })
+                        .select()
+                        .single();
+                      
+                      if (createError) {
+                        logToRailway('Error creating pharmacy profile:', createError);
+                        alert('薬局のプロフィール作成に失敗しました');
+                        return;
+                      }
+                      
+                      logToRailway('Created pharmacy profile:', newPharmacyProfile);
+                      pharmacyProfile = newPharmacyProfile;
                     }
                     
                     logToRailway('Found profiles for fixing:', {
                       pharmacist: pharmacistProfile.id,
                       pharmacy: pharmacyProfile.id
                     });
+                    
+                    // 既存のプロフィールのuser_typeを修正（必要に応じて）
+                    if (pharmacistProfile.user_type !== 'pharmacist') {
+                      logToRailway('Fixing pharmacist user_type');
+                      await supabase
+                        .from('user_profiles')
+                        .update({ user_type: 'pharmacist' })
+                        .eq('id', pharmacistProfile.id);
+                    }
+                    
+                    if (pharmacyProfile.user_type !== 'store') {
+                      logToRailway('Fixing pharmacy user_type');
+                      await supabase
+                        .from('user_profiles')
+                        .update({ user_type: 'store' })
+                        .eq('id', pharmacyProfile.id);
+                    }
                     
                     // 現在のシフトデータを更新
                     const { data: currentShifts, error: fetchError } = await supabase
