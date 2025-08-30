@@ -89,7 +89,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const foundProfiles = shiftUserIds.filter(id => profilesMap[id]);
           console.log('Found profiles for shift users:', foundProfiles);
           
-          alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: ${foundProfiles.length}件見つかりました`);
+          // 強制的にアラートで確認
+          if (foundProfiles.length > 0) {
+            const foundProfileDetails = foundProfiles.map(id => {
+              const profile = profilesMap[id];
+              return `${profile.name || profile.email} (${profile.user_type})`;
+            });
+            alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: ${foundProfiles.length}件見つかりました\n${foundProfileDetails.join('\n')}`);
+          } else {
+            alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: 見つかりませんでした`);
+          }
         } else {
           alert('プロフィールが取得できませんでした');
         }
@@ -416,9 +425,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   debugInfo += `\n最初のシフト:\n`;
                   debugInfo += `薬剤師ID: ${firstShift.pharmacist_id}\n`;
                   debugInfo += `薬局ID: ${firstShift.pharmacy_id}\n`;
-                  debugInfo += `薬剤師名: ${pharmacistProfile?.name || 'NOT FOUND'}\n`;
-                  debugInfo += `薬局名: ${pharmacyProfile?.name || 'NOT FOUND'}\n`;
+                  debugInfo += `薬剤師名: ${pharmacistProfile?.name || pharmacistProfile?.email || 'NOT FOUND'}\n`;
+                  debugInfo += `薬局名: ${pharmacyProfile?.name || pharmacyProfile?.email || 'NOT FOUND'}\n`;
+                  
+                  // プロフィールの詳細情報を追加
+                  debugInfo += `\nプロフィール詳細:\n`;
+                  debugInfo += `薬剤師プロフィール: ${JSON.stringify(pharmacistProfile)}\n`;
+                  debugInfo += `薬局プロフィール: ${JSON.stringify(pharmacyProfile)}\n`;
                 }
+                
+                // 全プロフィールの一覧を追加
+                debugInfo += `\n全プロフィール一覧:\n`;
+                Object.entries(userProfiles).forEach(([id, profile]: [string, any]) => {
+                  debugInfo += `${id}: ${profile.name || profile.email} (${profile.user_type})\n`;
+                });
                 
                 alert(debugInfo);
               }}
