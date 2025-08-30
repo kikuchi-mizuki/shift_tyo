@@ -188,88 +188,90 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       
       <div className="flex gap-6 p-6">
         {/* 左側: カレンダー */}
-      <div className="flex-1 bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={handlePrevMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              ←
-            </button>
-            <span className="text-lg font-medium">{getMonthName(currentDate)}</span>
-            <button
-              onClick={handleNextMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              →
-            </button>
-          </div>
-        </div>
-        
-        <div className="bg-blue-600 text-white px-5 py-4 rounded-lg mb-4">
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-5 h-5 text-white" />
-            <h2 className="text-xl font-semibold">{getMonthName(currentDate)}</h2>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-7 gap-1 mb-4">
-          {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-            <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
-              {day}
+        <div className="flex-1 bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handlePrevMonth}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                ←
+              </button>
+              <span className="text-lg font-medium">{getMonthName(currentDate)}</span>
+              <button
+                onClick={handleNextMonth}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                →
+              </button>
             </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1">
-          {getDaysInMonth(currentDate).map((day, index) => (
-            <div
-              key={index}
-              className={`p-2 text-center text-sm border border-gray-200 min-h-[72px] ${
-                day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
-              } ${
-                selectedDate === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day?.toString().padStart(2, '0')}`
-                  ? 'bg-blue-100 border-blue-300'
-                  : ''
-              }`}
-              onClick={() => handleDateSelect(day || 0)}
-            >
-              {day && (
-                <>
-                  <div className="font-medium">{day}</div>
-                  {myShifts.some((shift: any) => 
-                    shift.date === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
-                  ) && (
-                    <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block">割当</div>
-                  )}
-                  {hasMyRequest(day) && (
-                    <div className="text-[10px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-1 mt-1 inline-block">希望</div>
-                  )}
-                  {hasPosting(day) && (
-                    <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集</div>
-                  )}
-                </>
-              )}
+          </div>
+          
+          <div className="bg-blue-600 text-white px-5 py-4 rounded-lg mb-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-5 h-5 text-white" />
+              <h2 className="text-xl font-semibold">{getMonthName(currentDate)}</h2>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* 右側: シフト希望登録フォーム */}
-      <div className="w-96 bg-white rounded-lg shadow">
-        <div className="bg-green-600 text-white p-4 rounded-t-lg">
-          <div className="flex items-center space-x-2">
-            <Plus className="w-5 h-5" />
-            <h2 className="text-xl font-semibold">シフト希望登録</h2>
+          <div className="grid grid-cols-7 gap-1 mb-4">
+            {['日', '月', '火', '水', '木', '金', '土'].map(day => (
+              <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1">
+            {getDaysInMonth(currentDate).map((day, index) => (
+              <div
+                key={index}
+                className={`p-2 text-center text-sm border border-gray-200 min-h-[72px] ${
+                  day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
+                } ${
+                  selectedDate === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day?.toString().padStart(2, '0')}`
+                    ? 'bg-blue-100 border-blue-300'
+                    : ''
+                }`}
+                onClick={() => handleDateSelect(day || 0)}
+              >
+                {day && (
+                  <>
+                    <div className="font-medium">{day}</div>
+                    {myShifts.some((shift: any) => 
+                      shift.date === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+                    ) && (
+                      <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block">割当</div>
+                    )}
+                    {hasMyRequest(day) && (
+                      <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">希望</div>
+                    )}
+                    {hasPosting(day) && (
+                      <div className="text-[10px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-1 mt-1 inline-block">募集</div>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
           </div>
         </div>
-        <div className="p-6">
-          <p className="text-gray-600 mb-6">勤務希望日時を登録してください</p>
 
-          <div className="space-y-6">
-            {/* 希望日 */}
-            <div>
+        {/* 右側: シフト希望登録フォーム */}
+        <div className="w-96 bg-white rounded-lg shadow">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold mb-4">シフト希望登録</h2>
+            
+            {/* 選択された日付 */}
+            {selectedDate && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <span className="text-sm font-medium text-blue-800">
+                  {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日
+                </span>
+              </div>
+            )}
+
+            {/* 日付選択 */}
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 希望日
               </label>
