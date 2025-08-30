@@ -435,6 +435,59 @@ export const shifts = {
   }
 };
 
+// テーブル接続テスト関数
+export const testConnection = {
+  testShiftRequestsTable: async () => {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not initialized' };
+    }
+    
+    try {
+      console.log('Testing shift_requests table connection...');
+      const { data, error } = await supabase
+        .from('shift_requests')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        console.error('shift_requests table test failed:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('shift_requests table test successful');
+      return { success: true, data };
+    } catch (error) {
+      console.error('shift_requests table test error:', error);
+      return { success: false, error: 'Connection failed' };
+    }
+  },
+  
+  testShiftPostingsTable: async () => {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not initialized' };
+    }
+    
+    try {
+      console.log('Testing shift_postings table connection...');
+      const { data, error } = await supabase
+        .from('shift_postings')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        console.error('shift_postings table test failed:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('shift_postings table test successful');
+      return { success: true, data };
+    } catch (error) {
+      console.error('shift_postings table test error:', error);
+      return { success: false, error: 'Connection failed' };
+    }
+  }
+};
+
 // シフト希望関連の関数
 export const shiftRequests = {
   // シフト希望取得
