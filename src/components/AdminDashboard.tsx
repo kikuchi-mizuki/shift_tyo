@@ -18,7 +18,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   useEffect(() => {
     loadAll();
-    runConnectionTests();
   }, [user, currentDate]);
 
   const loadAll = async () => {

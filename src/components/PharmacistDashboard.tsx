@@ -20,7 +20,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
   useEffect(() => {
     loadShifts();
-    runConnectionTests();
   }, [user]);
 
 
