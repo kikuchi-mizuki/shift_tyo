@@ -60,55 +60,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       console.log('User IDs from shifts:', Array.from(userIds));
       
-      // Edge Functionを使用してプロフィールを取得
-      try {
-        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/api`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
-          },
-          body: JSON.stringify({
-            action: 'get_user_profiles',
-            userIds: Array.from(userIds)
-          })
-        });
+      // 直接Supabaseからプロフィールを取得（管理者用）
+      console.log('Fetching user profiles directly...');
+      
+      // まず、全プロフィールを取得してみる
+      const { data: allProfilesData, error: allProfilesError } = await supabase
+        .from('user_profiles')
+        .select('*');
+      
+      if (allProfilesError) {
+        console.error('Error loading all user profiles:', allProfilesError);
+        alert(`プロフィール取得エラー: ${allProfilesError.message}`);
+      } else {
+        console.log('Loaded all user profiles:', allProfilesData);
         
-        const result = await response.json();
-        console.log('Edge Function result:', result);
-        
-        if (result.data) {
+        if (allProfilesData && allProfilesData.length > 0) {
           const profilesMap: any = {};
-          result.data.forEach((profile: any) => {
+          allProfilesData.forEach((profile: any) => {
             profilesMap[profile.id] = profile;
           });
           console.log('User profiles map:', profilesMap);
           setUserProfiles(profilesMap);
           
-          if (result.data.length > 0) {
-            console.log('First profile:', result.data[0]);
-            alert(`プロフィール取得成功: ${result.data.length}件のプロフィールを読み込みました`);
-          } else {
-            alert('プロフィールが取得できませんでした');
-          }
-        }
-      } catch (error) {
-        console.error('Edge Function error:', error);
-        
-        // フォールバック: 直接Supabaseから取得
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('user_profiles')
-          .select('*');
-        
-        if (profilesError) {
-          console.error('Error loading user profiles:', profilesError);
+          // シフトに含まれるユーザーIDをチェック
+          const shiftUserIds = Array.from(userIds);
+          console.log('Shift user IDs:', shiftUserIds);
+          
+          const foundProfiles = shiftUserIds.filter(id => profilesMap[id]);
+          console.log('Found profiles for shift users:', foundProfiles);
+          
+          alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: ${foundProfiles.length}件見つかりました`);
         } else {
-          console.log('Loaded user profiles (fallback):', profilesData);
-          const profilesMap: any = {};
-          profilesData?.forEach((profile: any) => {
-            profilesMap[profile.id] = profile;
-          });
-          setUserProfiles(profilesMap);
+          alert('プロフィールが取得できませんでした');
         }
       }
     } catch (e) {
