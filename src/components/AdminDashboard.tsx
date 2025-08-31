@@ -127,8 +127,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                    if (!userType) {
                      // emailに'store'や'pharmacy'が含まれている場合は薬局として判定
                      const email = user.email?.toLowerCase() || '';
-                     userType = email.includes('store') || email.includes('pharmacy') || email.includes('sampley2') ? 'store' : 'pharmacist';
+                     const name = user.name?.toLowerCase() || '';
+                     userType = email.includes('store') || email.includes('pharmacy') || email.includes('sampley2') || 
+                               name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'store' : 'pharmacist';
                    }
+                   
+                   // デバッグログ
+                   console.log(`User ${user.email} (${user.name}) classified as: ${userType}`);
                    
                    profilesMap[user.id] = {
                      id: user.id,
@@ -642,13 +647,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     onChange={(e) => setEditForm({...editForm, pharmacist_id: e.target.value})}
                                     className="w-full text-xs border border-gray-300 rounded px-2 py-1"
                                   >
-                                    {Object.entries(userProfiles)
-                                      .filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacist')
-                                      .map(([id, profile]: [string, any]) => (
+                                    {(() => {
+                                      const pharmacists = Object.entries(userProfiles)
+                                        .filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacist');
+                                      console.log('Pharmacists for dropdown:', pharmacists);
+                                      return pharmacists.map(([id, profile]: [string, any]) => (
                                         <option key={id} value={id}>
                                           {profile.name || profile.email || '名前未設定'}
                                         </option>
-                                      ))}
+                                      ));
+                                    })()}
                                   </select>
                                 </div>
                                 
@@ -660,13 +668,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     onChange={(e) => setEditForm({...editForm, pharmacy_id: e.target.value})}
                                     className="w-full text-xs border border-gray-300 rounded px-2 py-1"
                                   >
-                                    {Object.entries(userProfiles)
-                                      .filter(([_, profile]: [string, any]) => profile.user_type === 'store')
-                                      .map(([id, profile]: [string, any]) => (
+                                    {(() => {
+                                      const pharmacies = Object.entries(userProfiles)
+                                        .filter(([_, profile]: [string, any]) => profile.user_type === 'store');
+                                      console.log('Pharmacies for dropdown:', pharmacies);
+                                      if (pharmacies.length === 0) {
+                                        console.log('No pharmacies found. All userProfiles:', userProfiles);
+                                      }
+                                      return pharmacies.map(([id, profile]: [string, any]) => (
                                         <option key={id} value={id}>
                                           {profile.name || profile.email || '名前未設定'}
                                         </option>
-                                      ))}
+                                      ));
+                                    })()}
                                   </select>
                                 </div>
                                 
