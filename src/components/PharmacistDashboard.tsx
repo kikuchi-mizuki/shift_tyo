@@ -391,7 +391,8 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                         </div>
                       </div>
                     )}
-                    {hasMyRequest(day) && (
+                    {/* 確定シフトがない場合のみ希望バッジを表示 */}
+                    {!hasMyShift(day) && hasMyRequest(day) && (
                       <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">希望</div>
                     )}
                   </>
