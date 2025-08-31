@@ -8,6 +8,7 @@ interface AdminDashboardProps {
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState('');
   const [assigned, setAssigned] = useState([]);
   const [requests, setRequests] = useState([]);
   const [postings, setPostings] = useState([]);
@@ -215,6 +216,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
 
+  const handleDateSelect = (day: number) => {
+    if (day) {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      setSelectedDate(formattedDate);
+    }
+  };
+
   const handleConfirmShifts = async () => {
     try {
       console.log('handleConfirmShifts called');
@@ -385,7 +395,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const hasConfirmedShifts = dayAssignedShifts.length > 0;
               
               return (
-                <div key={i} className={`p-2 text-center text-sm border border-gray-200 min-h-[90px] ${d? '':'bg-gray-50'}`}>
+                <div 
+                  key={i} 
+                  className={`p-2 text-center text-sm border border-gray-200 min-h-[90px] ${
+                    d ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
+                  } ${
+                    selectedDate === dateStr ? 'bg-blue-100 border-blue-300' : ''
+                  }`}
+                  onClick={() => d && handleDateSelect(d)}
+                >
                   {d && (
                     <>
                       <div className="font-medium">{d}</div>
@@ -483,102 +501,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
             </button>
             
-            {/* デバッグボタン */}
-            <button 
-              onClick={async () => {
-                // Railwayログに出力
-                const logToRailway = (message: string, data?: any) => {
-                  console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
-                  // サーバーサイドのログとして出力
-                  if (typeof window !== 'undefined') {
-                    fetch('/api/log', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ message, data, timestamp: new Date().toISOString() })
-                    }).catch(() => {}); // エラーは無視
-                  }
-                };
 
-                logToRailway('=== DEBUG BUTTON CLICKED ===');
-                logToRailway('Current user:', user);
-                logToRailway('Current assigned shifts:', assigned);
-                logToRailway('Current user profiles:', userProfiles);
-                logToRailway('Current requests:', requests);
-                logToRailway('Current postings:', postings);
-                
-                // 強制的にデータを再読み込み
-                await loadAll();
-                
-                // 特定のシフトの詳細をログ出力
-                if (assigned.length > 0) {
-                  const firstShift = assigned[0];
-                  logToRailway('First assigned shift:', firstShift);
-                  const pharmacistProfile = userProfiles[firstShift.pharmacist_id];
-                  const pharmacyProfile = userProfiles[firstShift.pharmacy_id];
-                  logToRailway('Pharmacist profile for first shift:', pharmacistProfile);
-                  logToRailway('Pharmacy profile for first shift:', pharmacyProfile);
-                  logToRailway('Pharmacist name:', pharmacistProfile?.name || 'NOT FOUND');
-                  logToRailway('Pharmacy name:', pharmacyProfile?.name || 'NOT FOUND');
-                }
-                
-                // アラートで直接情報を表示
-                let debugInfo = '=== デバッグ情報 ===\n';
-                debugInfo += `ユーザー数: ${Object.keys(userProfiles).length}\n`;
-                debugInfo += `確定シフト数: ${assigned.length}\n`;
-                debugInfo += `使用テーブル: ${Object.keys(userProfiles).length > 0 ? 'app_users/v_user_profiles' : 'user_profiles'}\n`;
-                
-                if (assigned.length > 0) {
-                  const firstShift = assigned[0];
-                  const pharmacistProfile = userProfiles[firstShift.pharmacist_id];
-                  const pharmacyProfile = userProfiles[firstShift.pharmacy_id];
-                  debugInfo += `\n最初のシフト:\n`;
-                  debugInfo += `薬剤師ID: ${firstShift.pharmacist_id}\n`;
-                  debugInfo += `薬局ID: ${firstShift.pharmacy_id}\n`;
-                  debugInfo += `薬剤師名: ${pharmacistProfile?.name || pharmacistProfile?.email || 'NOT FOUND'}\n`;
-                  debugInfo += `薬局名: ${pharmacyProfile?.name || pharmacyProfile?.email || 'NOT FOUND'}\n`;
-                  
-                  // プロフィールの詳細情報を追加
-                  debugInfo += `\nプロフィール詳細:\n`;
-                  debugInfo += `薬剤師プロフィール: ${JSON.stringify(pharmacistProfile)}\n`;
-                  debugInfo += `薬局プロフィール: ${JSON.stringify(pharmacyProfile)}\n`;
-                }
-                
-                // 全プロフィールの一覧を追加
-                debugInfo += `\n全プロフィール一覧:\n`;
-                Object.entries(userProfiles).forEach(([id, profile]: [string, any]) => {
-                  debugInfo += `${id}: ${profile.name || profile.email} (${profile.user_type})\n`;
-                });
-                
-                // シフトユーザーIDとプロフィールのマッチング詳細
-                if (assigned.length > 0) {
-                  debugInfo += `\nシフトユーザーIDとプロフィールのマッチング:\n`;
-                  const firstShift = assigned[0];
-                  const pharmacistId = firstShift.pharmacist_id;
-                  const pharmacyId = firstShift.pharmacy_id;
-                  
-                  debugInfo += `薬剤師ID: ${pharmacistId}\n`;
-                  debugInfo += `薬剤師プロフィール存在: ${userProfiles[pharmacistId] ? 'YES' : 'NO'}\n`;
-                  if (userProfiles[pharmacistId]) {
-                    debugInfo += `薬剤師名: ${userProfiles[pharmacistId].name || userProfiles[pharmacistId].email}\n`;
-                  }
-                  
-                  debugInfo += `薬局ID: ${pharmacyId}\n`;
-                  debugInfo += `薬局プロフィール存在: ${userProfiles[pharmacyId] ? 'YES' : 'NO'}\n`;
-                  if (userProfiles[pharmacyId]) {
-                    debugInfo += `薬局名: ${userProfiles[pharmacyId].name || userProfiles[pharmacyId].email}\n`;
-                  }
-                }
-                
-                alert(debugInfo);
-              }}
-              className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 text-sm"
-            >
-              <span>デバッグ情報出力</span>
-            </button>
-            
-            {/* シフトデータ修正ボタン */}
-            <button 
-              onClick={async () => {
                 // Railwayログに出力
                 const logToRailway = (message: string, data?: any) => {
                   console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
@@ -750,6 +673,100 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             
 
             
+            {/* 選択された日付の詳細表示 */}
+            {selectedDate && (
+              <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-medium text-blue-800">選択された日付の詳細</h3>
+                <div className="text-sm text-blue-700">
+                  <div className="mb-2">
+                    <strong>日付:</strong> {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日
+                  </div>
+                  
+                  {/* 確定シフト */}
+                  {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length > 0 && (
+                    <div className="mb-2">
+                      <strong className="text-green-700">確定シフト:</strong>
+                      {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
+                        const pharmacistProfile = userProfiles[shift.pharmacist_id];
+                        const pharmacyProfile = userProfiles[shift.pharmacy_id];
+                        return (
+                          <div key={index} className="ml-2 text-xs">
+                            • {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '終日'} - 
+                            {pharmacistProfile?.name || pharmacistProfile?.email || shift.pharmacist_id} → 
+                            {pharmacyProfile?.name || pharmacyProfile?.email || shift.pharmacy_id}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* シフト希望 */}
+                  {requests.filter((r: any) => r.date === selectedDate).length > 0 && (
+                    <div className="mb-2">
+                      <strong className="text-blue-700">シフト希望:</strong>
+                      {requests.filter((r: any) => r.date === selectedDate).map((request: any, index: number) => {
+                        const pharmacistProfile = userProfiles[request.pharmacist_id];
+                        return (
+                          <div key={index} className="ml-2 text-xs">
+                            • {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'} - 
+                            {pharmacistProfile?.name || pharmacistProfile?.email || request.pharmacist_id} 
+                            ({request.priority})
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* シフト募集 */}
+                  {postings.filter((p: any) => p.date === selectedDate).length > 0 && (
+                    <div className="mb-2">
+                      <strong className="text-orange-700">シフト募集:</strong>
+                      {postings.filter((p: any) => p.date === selectedDate).map((posting: any, index: number) => {
+                        const pharmacyProfile = userProfiles[posting.pharmacy_id];
+                        return (
+                          <div key={index} className="ml-2 text-xs">
+                            • {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'} - 
+                            {pharmacyProfile?.name || pharmacyProfile?.email || posting.pharmacy_id} 
+                            ({posting.required_staff}人必要)
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* マッチング可能な組み合わせ */}
+                  {(() => {
+                    const dayRequests = requests.filter((r: any) => r.date === selectedDate);
+                    const dayPostings = postings.filter((p: any) => p.date === selectedDate);
+                    const matchingPairs = dayRequests.filter((r: any) => 
+                      dayPostings.some((p: any) => p.time_slot === r.time_slot)
+                    );
+                    
+                    if (matchingPairs.length > 0) {
+                      return (
+                        <div className="mb-2">
+                          <strong className="text-purple-700">マッチング可能:</strong>
+                          {matchingPairs.map((request: any, index: number) => {
+                            const pharmacistProfile = userProfiles[request.pharmacist_id];
+                            const matchingPosting = dayPostings.find((p: any) => p.time_slot === request.time_slot);
+                            const pharmacyProfile = userProfiles[matchingPosting?.pharmacy_id];
+                            return (
+                              <div key={index} className="ml-2 text-xs">
+                                • {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'} - 
+                                {pharmacistProfile?.name || pharmacistProfile?.email || request.pharmacist_id} ↔ 
+                                {pharmacyProfile?.name || pharmacyProfile?.email || matchingPosting?.pharmacy_id}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              </div>
+            )}
+
             {/* 統計情報 */}
             <div className="bg-gray-50 rounded-lg p-4 space-y-3">
               <h3 className="text-sm font-medium text-gray-700">シフト統計</h3>
