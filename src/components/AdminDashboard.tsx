@@ -122,11 +122,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                  // app_usersのデータをuser_profiles形式に変換
                  const profilesMap: any = {};
                  appUsersData?.forEach((user: any) => {
+                   // user_typeが設定されている場合はそれを使用、ない場合はemailから推測
+                   let userType = user.user_type;
+                   if (!userType) {
+                     // emailに'store'や'pharmacy'が含まれている場合は薬局として判定
+                     const email = user.email?.toLowerCase() || '';
+                     userType = email.includes('store') || email.includes('pharmacy') || email.includes('sampley2') ? 'store' : 'pharmacist';
+                   }
+                   
                    profilesMap[user.id] = {
                      id: user.id,
                      name: user.name,
                      email: user.email,
-                     user_type: 'pharmacist' // デフォルトで薬剤師として設定
+                     user_type: userType
                    };
                  });
                  setUserProfiles(profilesMap);
@@ -577,14 +585,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             
             <button
               onClick={() => {
+                const pharmacists = Object.entries(userProfiles).filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacist');
+                const pharmacies = Object.entries(userProfiles).filter(([_, profile]: [string, any]) => profile.user_type === 'store');
                 const debugInfo = {
                   selectedDate,
                   assignedShifts: assigned.filter((s: any) => s.date === selectedDate),
                   confirmedShifts: assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed'),
                   allAssigned: assigned.length,
-                  systemStatus
+                  systemStatus,
+                  userProfiles: {
+                    total: Object.keys(userProfiles).length,
+                    pharmacists: pharmacists.length,
+                    pharmacies: pharmacies.length,
+                    pharmacistList: pharmacists.map(([id, profile]: [string, any]) => ({ id, name: profile.name, email: profile.email })),
+                    pharmacyList: pharmacies.map(([id, profile]: [string, any]) => ({ id, name: profile.name, email: profile.email }))
+                  }
                 };
-                alert(`デバッグ情報:\n選択日: ${selectedDate}\n確定シフト数: ${debugInfo.confirmedShifts.length}\n全体シフト数: ${debugInfo.allAssigned}\nシステム状態: ${systemStatus}\n\n詳細:\n${JSON.stringify(debugInfo, null, 2)}`);
+                alert(`デバッグ情報:\n選択日: ${selectedDate}\n確定シフト数: ${debugInfo.confirmedShifts.length}\n全体シフト数: ${debugInfo.allAssigned}\nシステム状態: ${systemStatus}\n\nユーザープロフィール:\n薬剤師数: ${debugInfo.userProfiles.pharmacists}\n薬局数: ${debugInfo.userProfiles.pharmacies}\n\n詳細:\n${JSON.stringify(debugInfo, null, 2)}`);
               }}
               className="w-full bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
             >
