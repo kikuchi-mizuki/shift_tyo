@@ -567,6 +567,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
             </button>
             
+            <button
+              onClick={() => {
+                const debugInfo = {
+                  selectedDate,
+                  assignedShifts: assigned.filter((s: any) => s.date === selectedDate),
+                  confirmedShifts: assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed'),
+                  allAssigned: assigned.length,
+                  systemStatus
+                };
+                alert(`デバッグ情報:\n選択日: ${selectedDate}\n確定シフト数: ${debugInfo.confirmedShifts.length}\n全体シフト数: ${debugInfo.allAssigned}\nシステム状態: ${systemStatus}\n\n詳細:\n${JSON.stringify(debugInfo, null, 2)}`);
+              }}
+              className="w-full bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+            >
+              データ確認
+            </button>
+            
 
             
             {/* 選択された日付の詳細表示 */}
