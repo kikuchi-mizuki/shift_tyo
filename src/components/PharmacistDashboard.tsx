@@ -10,7 +10,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
-  const [selectedPriority, setSelectedPriority] = useState('中優先度');
+  const [selectedPriority, setSelectedPriority] = useState('medium');
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState<any[]>([]);
   const [myRequests, setMyRequests] = useState<any[]>([]);
@@ -46,8 +46,15 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         setMyShifts(assignedData || []);
       }
       
-      const { data: reqs } = await shiftRequests.getRequests(user.id, 'pharmacist');
-      setMyRequests(reqs || []);
+      // シフト希望を取得
+      const { data: reqs, error: reqsError } = await shiftRequests.getRequests(user.id, 'pharmacist');
+      if (reqsError) {
+        console.error('Error loading shift requests:', reqsError);
+        setMyRequests([]);
+      } else {
+        console.log('Loaded shift requests:', reqs);
+        setMyRequests(reqs || []);
+      }
       
       // ユーザープロフィールを取得
       const { data: profileData, error: profileError } = await supabase
@@ -176,7 +183,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         setSelectedDate('');
         setSelectedTimeSlot('');
         setMemo('');
-        loadShifts();
+        loadShifts(); // 確定シフトとシフト希望の両方を再取得
       }
     } catch (error) {
       console.error('Error submitting shift request:', error);
@@ -421,9 +428,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 {priorities.map((priority) => (
                   <button
                     key={priority.id}
-                    onClick={() => setSelectedPriority(priority.label)}
+                    onClick={() => setSelectedPriority(priority.id)}
                     className={`flex-1 py-2 px-3 rounded-lg text-white text-sm font-medium transition-colors ${
-                      selectedPriority === priority.label ? priority.color : 'bg-gray-300 hover:bg-gray-400'
+                      selectedPriority === priority.id ? priority.color : 'bg-gray-300 hover:bg-gray-400'
                     }`}
                   >
                     {priority.label}
