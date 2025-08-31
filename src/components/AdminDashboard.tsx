@@ -680,20 +680,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       const pharmacists = Object.entries(userProfiles)
                                         .filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacist');
                                       console.log('Pharmacists for dropdown:', pharmacists);
-                                      
-                                      // Railwayログに送信
-                                      const logToRailway = (message: string, data?: any) => {
-                                        console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
-                                        if (typeof window !== 'undefined') {
-                                          fetch('/api/log', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ message, data, timestamp: new Date().toISOString() })
-                                          }).catch(() => {});
-                                        }
-                                      };
-                                      
-                                      logToRailway('Pharmacists for dropdown:', pharmacists);
                                       return pharmacists.map(([id, profile]: [string, any]) => (
                                         <option key={id} value={id}>
                                           {profile.name || profile.email || '名前未設定'}
@@ -717,11 +703,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       console.log('Pharmacies for dropdown:', pharmacies);
                                       if (pharmacies.length === 0) {
                                         console.log('No pharmacies found. All userProfiles:', userProfiles);
-                                      }
-                                      
-                                      logToRailway('Pharmacies for dropdown:', pharmacies);
-                                      if (pharmacies.length === 0) {
-                                        logToRailway('No pharmacies found. All userProfiles:', userProfiles);
                                       }
                                       return pharmacies.map(([id, profile]: [string, any]) => (
                                         <option key={id} value={id}>
