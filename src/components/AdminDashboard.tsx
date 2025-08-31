@@ -633,32 +633,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               </div>
             )}
 
-            {/* 統計情報 */}
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <h3 className="text-sm font-medium text-gray-700">シフト統計</h3>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-blue-50 p-2 rounded">
-                  <div className="text-blue-600 font-medium">希望</div>
-                  <div className="text-blue-800">{requests.length}件</div>
-                </div>
-                <div className="bg-orange-50 p-2 rounded">
-                  <div className="text-orange-600 font-medium">募集</div>
-                  <div className="text-orange-800">{postings.length}件</div>
-                </div>
-                <div className="bg-green-50 p-2 rounded">
-                  <div className="text-green-600 font-medium">確定</div>
-                  <div className="text-green-800">{assigned.filter((s: any) => s.status === 'confirmed').length}件</div>
-                </div>
-                <div className="bg-purple-50 p-2 rounded">
-                  <div className="text-purple-600 font-medium">マッチング可能</div>
-                  <div className="text-purple-800">
-                    {requests.filter((r: any) => 
-                      postings.some((p: any) => p.date === r.date && p.time_slot === r.time_slot)
-                    ).length}件
-                  </div>
-                </div>
-              </div>
-            </div>
+
             
             <div className="text-xs text-gray-500">最終更新: {lastUpdated.toLocaleString('ja-JP')}</div>
             
