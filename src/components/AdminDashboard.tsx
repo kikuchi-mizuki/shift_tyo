@@ -350,35 +350,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
-  // シフトの編集
+  // シフト編集の状態管理
+  const [editingShift, setEditingShift] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    pharmacist_id: '',
+    pharmacy_id: '',
+    time_slot: ''
+  });
+
+  // シフトの編集開始
   const handleEditShift = (shift: any) => {
-    const newTimeSlot = prompt(
-      `シフトの時間帯を変更してください:\n現在: ${shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '終日'}\n\n選択肢:\n1. morning (午前)\n2. afternoon (午後)\n3. full (終日)\n4. consult (要相談)`,
-      shift.time_slot
-    );
-
-    if (!newTimeSlot || newTimeSlot === shift.time_slot) {
-      return;
-    }
-
-    // 時間帯の妥当性チェック
-    const validTimeSlots = ['morning', 'afternoon', 'full', 'consult'];
-    if (!validTimeSlots.includes(newTimeSlot)) {
-      alert('無効な時間帯です。morning, afternoon, full, consult のいずれかを入力してください。');
-      return;
-    }
-
-    // シフトを更新
-    updateShift(shift.id, { time_slot: newTimeSlot });
+    setEditingShift(shift);
+    setEditForm({
+      pharmacist_id: shift.pharmacist_id,
+      pharmacy_id: shift.pharmacy_id,
+      time_slot: shift.time_slot
+    });
   };
 
-  // シフト更新の実行
-  const updateShift = async (shiftId: string, updates: any) => {
+  // シフト編集の保存
+  const handleSaveShiftEdit = async () => {
+    if (!editingShift) return;
+
     try {
       const { error } = await supabase
         .from('assigned_shifts')
-        .update(updates)
-        .eq('id', shiftId);
+        .update(editForm)
+        .eq('id', editingShift.id);
 
       if (error) {
         console.error('Error updating shift:', error);
@@ -387,12 +385,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
 
       alert('シフトを更新しました');
+      setEditingShift(null);
+      setEditForm({ pharmacist_id: '', pharmacy_id: '', time_slot: '' });
       loadAll();
     } catch (error) {
-      console.error('Error in updateShift:', error);
+      console.error('Error in handleSaveShiftEdit:', error);
       alert(`シフトの更新に失敗しました: ${error.message || 'Unknown error'}`);
     }
   };
+
+  // シフト編集のキャンセル
+  const handleCancelShiftEdit = () => {
+    setEditingShift(null);
+    setEditForm({ pharmacist_id: '', pharmacy_id: '', time_slot: '' });
+  };
+
+
 
   const y = currentDate.getFullYear();
   const m = (currentDate.getMonth() + 1).toString().padStart(2, '0');
@@ -609,21 +617,100 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
                         const pharmacistProfile = userProfiles[shift.pharmacist_id];
                         const pharmacyProfile = userProfiles[shift.pharmacy_id];
+                        const isEditing = editingShift?.id === shift.id;
+                        
                         return (
                           <div key={index} className="ml-2 text-xs bg-green-100 p-2 rounded mb-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="font-medium">
-                                {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '終日'}
+                            {isEditing ? (
+                              // 編集モード
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium text-green-700">編集モード</div>
+                                  <div className="flex space-x-1">
+                                    <button
+                                      onClick={handleSaveShiftEdit}
+                                      className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded"
+                                    >
+                                      保存
+                                    </button>
+                                    <button
+                                      onClick={handleCancelShiftEdit}
+                                      className="text-xs bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded"
+                                    >
+                                      キャンセル
+                                    </button>
+                                  </div>
+                                </div>
+                                
+                                {/* 薬剤師選択 */}
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">薬剤師:</label>
+                                  <select
+                                    value={editForm.pharmacist_id}
+                                    onChange={(e) => setEditForm({...editForm, pharmacist_id: e.target.value})}
+                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                                  >
+                                    {Object.entries(userProfiles)
+                                      .filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacist')
+                                      .map(([id, profile]: [string, any]) => (
+                                        <option key={id} value={id}>
+                                          {profile.name || profile.email || '名前未設定'}
+                                        </option>
+                                      ))}
+                                  </select>
+                                </div>
+                                
+                                {/* 薬局選択 */}
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">薬局:</label>
+                                  <select
+                                    value={editForm.pharmacy_id}
+                                    onChange={(e) => setEditForm({...editForm, pharmacy_id: e.target.value})}
+                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                                  >
+                                    {Object.entries(userProfiles)
+                                      .filter(([_, profile]: [string, any]) => profile.user_type === 'store')
+                                      .map(([id, profile]: [string, any]) => (
+                                        <option key={id} value={id}>
+                                          {profile.name || profile.email || '名前未設定'}
+                                        </option>
+                                      ))}
+                                  </select>
+                                </div>
+                                
+                                {/* 時間帯選択 */}
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">時間帯:</label>
+                                  <select
+                                    value={editForm.time_slot}
+                                    onChange={(e) => setEditForm({...editForm, time_slot: e.target.value})}
+                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                                  >
+                                    <option value="morning">午前 (9:00-13:00)</option>
+                                    <option value="afternoon">午後 (13:00-18:00)</option>
+                                    <option value="full">終日 (9:00-18:00)</option>
+                                    <option value="consult">要相談</option>
+                                  </select>
+                                </div>
                               </div>
-                              <button
-                                onClick={() => handleEditShift(shift)}
-                                className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
-                              >
-                                編集
-                              </button>
-                            </div>
-                            <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
-                            <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</div>
+                            ) : (
+                              // 表示モード
+                              <>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="font-medium">
+                                    {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : shift.time_slot === 'full' ? '終日' : '要相談'}
+                                  </div>
+                                  <button
+                                    onClick={() => handleEditShift(shift)}
+                                    className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
+                                  >
+                                    編集
+                                  </button>
+                                </div>
+                                <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
+                                <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</div>
+                              </>
+                            )}
                           </div>
                         );
                       })}
