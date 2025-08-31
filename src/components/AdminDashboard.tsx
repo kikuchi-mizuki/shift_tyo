@@ -567,6 +567,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   
                   {/* マッチング可能な組み合わせ */}
                   {(() => {
+                    // Railwayログ用の関数を定義
+                    const logToRailway = (message: string, data?: any) => {
+                      console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
+                      if (typeof window !== 'undefined') {
+                        fetch('/api/log', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ message, data, timestamp: new Date().toISOString() })
+                        }).catch(() => {});
+                      }
+                    };
+                    
+                    logToRailway('マッチング分析開始');
+                    
                     const dayRequests = requests.filter((r: any) => r.date === selectedDate);
                     const dayPostings = postings.filter((p: any) => p.date === selectedDate);
                     
@@ -575,6 +589,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     console.log('選択された日付:', selectedDate);
                     console.log('その日の希望:', dayRequests);
                     console.log('その日の募集:', dayPostings);
+                    
+                    // Railwayログにも送信
+                    logToRailway('=== マッチング分析デバッグ ===');
+                    logToRailway('選択された日付:', selectedDate);
+                    logToRailway('その日の希望:', dayRequests);
+                    logToRailway('その日の募集:', dayPostings);
                     
                     // 時間帯ごとにマッチング状況を分析
                     const timeSlots = ['morning', 'afternoon', 'full'];
@@ -635,6 +655,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     
                     // デバッグ用ログ
                     console.log('マッチング分析結果:', matchingAnalysis);
+                    logToRailway('マッチング分析結果:', matchingAnalysis);
                     
                     if (matchingAnalysis.length > 0) {
                       return (
