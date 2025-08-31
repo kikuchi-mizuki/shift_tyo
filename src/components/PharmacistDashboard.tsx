@@ -349,10 +349,17 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 </div>
                 {selectedTimeSlot && (
                   <div className="text-xs text-blue-600 mt-1">
-                    {selectedTimeSlot === 'morning' ? '午前 (9:00-13:00)' :
+                    希望時間: {selectedTimeSlot === 'morning' ? '午前 (9:00-13:00)' :
                      selectedTimeSlot === 'afternoon' ? '午後 (13:00-18:00)' :
                      selectedTimeSlot === 'full' ? '終日 (9:00-18:00)' :
                      selectedTimeSlot === 'consult' ? '要相談' : selectedTimeSlot}
+                  </div>
+                )}
+                {selectedPriority && (
+                  <div className="text-xs text-blue-600 mt-1">
+                    優先度: {selectedPriority === 'high' ? '高優先度' :
+                     selectedPriority === 'medium' ? '中優先度' :
+                     selectedPriority === 'low' ? '低優先度' : selectedPriority}
                   </div>
                 )}
               </div>
