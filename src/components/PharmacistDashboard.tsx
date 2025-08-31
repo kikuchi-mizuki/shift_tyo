@@ -306,9 +306,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
     <div className="space-y-6">
 
       
-      <div className="flex gap-6 p-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
         {/* 左側: カレンダー */}
-        <div className="flex-1 bg-white rounded-lg shadow p-6">
+                  <div className="flex-1 bg-white rounded-lg shadow p-4 lg:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
               <button
@@ -403,8 +403,8 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         </div>
 
         {/* 右側: シフト希望登録フォーム */}
-        <div className="w-96 bg-white rounded-lg shadow">
-          <div className="p-6">
+        <div className="w-full lg:w-96 bg-white rounded-lg shadow">
+                      <div className="p-4 lg:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">シフト希望登録</h2>
               <button

@@ -234,9 +234,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   console.log('Calendar data:', { myShifts: myShifts.length, confirmedShifts: confirmedShifts.length });
   
   return (
-    <div className="flex gap-6 p-6">
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
       {/* 左: カレンダー */}
-      <div className="flex-1 bg-white rounded-lg shadow p-6">
+      <div className="flex-1 bg-white rounded-lg shadow p-4 lg:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
             <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 rounded-lg">←</button>
@@ -321,7 +321,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       </div>
 
       {/* 右: シフト募集フォーム */}
-      <div className="w-96 bg-white rounded-lg shadow">
+      <div className="w-full lg:w-96 bg-white rounded-lg shadow">
         <div className="bg-blue-600 text-white p-4 rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -337,7 +337,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           </div>
           <p className="text-xs text-blue-100 mt-1">必要な薬剤師の募集条件を設定してください</p>
         </div>
-        <div className="p-6 space-y-6">
+        <div className="p-4 lg:p-6 space-y-6">
           {/* プロフィール編集フォーム */}
           {showProfileEdit && (
             <div className="p-4 bg-gray-50 rounded-lg">
@@ -471,7 +471,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         </div>
 
         {/* 注意ボックス */}
-        <div className="px-6 pb-6">
+        <div className="px-4 lg:px-6 pb-4 lg:pb-6">
           <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-xs text-yellow-800">
             <ul className="list-disc pl-5 space-y-1">
               <li>月初に必要人数を全ての日程へ一括登録することをお勧めします</li>

@@ -477,9 +477,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         </div>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
         {/* left calendar */}
-        <div className="flex-1 bg-white rounded-lg shadow p-6">
+        <div className="flex-1 bg-white rounded-lg shadow p-4 lg:p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 rounded-lg">←</button>
@@ -497,7 +497,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
           <div className="grid grid-cols-7 gap-1 mb-4">
             {['日','月','火','水','木','金','土'].map(d => (
-              <div key={d} className="p-2 text-center text-sm font-medium text-gray-500">{d}</div>
+              <div key={d} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500">{d}</div>
             ))}
           </div>
 
@@ -516,7 +516,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               return (
                 <div 
                   key={i} 
-                  className={`p-2 text-center text-sm border border-gray-200 min-h-[90px] ${
+                  className={`p-1 sm:p-2 text-center text-xs sm:text-sm border border-gray-200 min-h-[60px] sm:min-h-[90px] ${
                     d ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
                   } ${
                     selectedDate === dateStr ? 'bg-blue-100 border-blue-300' : ''
@@ -530,9 +530,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       {/* 確定シフトがある場合 */}
                       {hasConfirmedShifts && (
                         <div className="relative group">
-                          <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
-                            確定
-                          </div>
+                                                  <div className="text-[8px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                          確定
+                        </div>
                           
                                                      {/* マウスオーバーで表示される詳細情報 */}
                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
@@ -584,12 +584,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         <>
                           {/* requests */}
                           {requests.some((r:any)=>isSameDate(d, r.date)) && (
-                            <div className="text-[10px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-1 mt-1 inline-block mr-1">希望</div>
-                          )}
-                          {/* postings */}
-                          {postings.some((p:any)=>isSameDate(d, p.date)) && (
-                            <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集</div>
-                          )}
+                                                      <div className="text-[8px] sm:text-[10px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-1 mt-1 inline-block mr-1">希望</div>
+                        )}
+                        {/* postings */}
+                        {postings.some((p:any)=>isSameDate(d, p.date)) && (
+                          <div className="text-[8px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集</div>
+                        )}
                         </>
                       )}
                     </>
@@ -601,12 +601,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         </div>
 
         {/* right panel */}
-        <div className="w-96 bg-white rounded-lg shadow border border-purple-200">
+        <div className="w-full lg:w-96 bg-white rounded-lg shadow border border-purple-200">
           <div className="bg-purple-600 text-white p-4 rounded-t-lg">
             <h2 className="text-xl font-semibold">管理者パネル</h2>
             <p className="text-sm text-purple-100 mt-1">システム全体の状態管理と調整</p>
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-4 lg:p-6 space-y-4">
             <button 
               onClick={handleConfirmShifts}
               className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm ${

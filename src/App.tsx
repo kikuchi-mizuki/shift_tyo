@@ -129,25 +129,25 @@ function App() {
         {/* ヘッダー */}
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
+            <div className="flex flex-col sm:flex-row justify-between items-center py-4 sm:h-16 space-y-2 sm:space-y-0">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-bold">シ</span>
                 </div>
-                <h1 className="text-xl font-semibold text-gray-900">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
                   シフト調整システム
                 </h1>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <span className="text-xs sm:text-sm text-gray-600 truncate max-w-32 sm:max-w-none">
                   {user.email}
                 </span>
-                <span className="text-sm text-gray-500">
+                <span className="text-xs sm:text-sm text-gray-500">
                   {userType === 'pharmacist' ? '薬剤師' : (userType === 'pharmacy' || userType === 'store') ? '薬局' : userType === 'admin' ? '管理' : 'ユーザー'}
                 </span>
                 <button
                   onClick={signOut}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-1"
                 >
                   →
                 </button>
@@ -157,7 +157,7 @@ function App() {
         </header>
 
         {/* メインコンテンツ */}
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
           <ErrorBoundary>
             {userType === 'pharmacist' && (
               <PharmacistDashboard user={user} />
