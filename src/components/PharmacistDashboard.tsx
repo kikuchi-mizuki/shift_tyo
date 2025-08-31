@@ -12,14 +12,38 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('medium');
   
+  // Railwayログ用のヘルパー関数
+  const logToRailway = (message: string, data?: any) => {
+    const logMessage = `[PharmacistDashboard] ${message}${data ? ': ' + JSON.stringify(data) : ''}`;
+    console.log(logMessage);
+    
+    // Railwayのログに確実に出力されるようにfetchでログ送信を試行
+    try {
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: logMessage, timestamp: new Date().toISOString() })
+      }).catch(() => {
+        // APIエンドポイントが存在しない場合は無視
+      });
+    } catch (error) {
+      // エラーは無視
+    }
+  };
+
   // デバッグ用: 状態の変更を監視
   useEffect(() => {
-    console.log('PharmacistDashboard state changed:', {
+    logToRailway('State changed', {
       selectedDate,
       selectedTimeSlot,
       selectedPriority
     });
   }, [selectedDate, selectedTimeSlot, selectedPriority]);
+
+  // 個別の状態変更監視
+  useEffect(() => {
+    logToRailway('selectedTimeSlot changed', selectedTimeSlot);
+  }, [selectedTimeSlot]);
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState<any[]>([]);
   const [myRequests, setMyRequests] = useState<any[]>([]);
@@ -61,10 +85,10 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         console.error('Error loading shift requests:', reqsError);
         setMyRequests([]);
       } else {
-        console.log('Loaded shift requests:', reqs);
+        logToRailway('Loaded shift requests', reqs);
         // データベースのtime_slot値を確認
         if (reqs && reqs.length > 0) {
-          console.log('Database time_slot values:', reqs.map((r: any) => ({ 
+          logToRailway('Database time_slot values', reqs.map((r: any) => ({ 
             date: r.date, 
             time_slot: r.time_slot, 
             priority: r.priority 
@@ -427,12 +451,15 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                                       <button
                     key={slot.id}
                     onClick={() => {
-                      console.log('Time slot clicked:', slot.id);
+                      logToRailway('Time slot clicked', slot.id);
+                      logToRailway('Before setSelectedTimeSlot', selectedTimeSlot);
                       setSelectedTimeSlot(slot.id);
+                      logToRailway('After setSelectedTimeSlot call');
                     }}
                     className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
                       selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
                     }`}
+                    style={{ border: selectedTimeSlot === slot.id ? '2px solid blue' : 'none' }}
                   >
                     <Icon className="w-4 h-4" />
                     <span>{slot.label}</span>
@@ -475,6 +502,17 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 rows={3}
               />
             </div>
+
+            {/* デバッグボタン */}
+            <button
+              onClick={() => {
+                logToRailway('Debug button clicked', { selectedDate, selectedTimeSlot, selectedPriority });
+                alert(`現在の状態:\n日付: ${selectedDate}\n時間: ${selectedTimeSlot}\n優先度: ${selectedPriority}`);
+              }}
+              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors mb-2"
+            >
+              デバッグ: 現在の状態を確認
+            </button>
 
             {/* 登録ボタン */}
             <button
