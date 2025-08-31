@@ -498,15 +498,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             
             <button
               onClick={() => {
+                const dayRequests = requests.filter((r: any) => r.date === selectedDate);
+                const dayPostings = postings.filter((p: any) => p.date === selectedDate);
                 const debugInfo = {
                   selectedDate,
-                  requests: requests.filter((r: any) => r.date === selectedDate),
-                  postings: postings.filter((p: any) => p.date === selectedDate),
+                  requests: dayRequests,
+                  postings: dayPostings,
                   userProfiles: Object.keys(userProfiles).length,
                   allRequests: requests.length,
-                  allPostings: postings.length
+                  allPostings: postings.length,
+                  timeSlotAnalysis: {
+                    requests: dayRequests.map(r => r.time_slot),
+                    postings: dayPostings.map(p => p.time_slot)
+                  }
                 };
-                alert(`デバッグ情報:\n選択日: ${selectedDate}\n希望数: ${debugInfo.requests.length}\n募集数: ${debugInfo.postings.length}\nプロフィール数: ${debugInfo.userProfiles}\n全体希望数: ${debugInfo.allRequests}\n全体募集数: ${debugInfo.allPostings}\n\n詳細:\n${JSON.stringify(debugInfo, null, 2)}`);
+                alert(`デバッグ情報:\n選択日: ${selectedDate}\n希望数: ${debugInfo.requests.length}\n募集数: ${debugInfo.postings.length}\nプロフィール数: ${debugInfo.userProfiles}\n全体希望数: ${debugInfo.allRequests}\n全体募集数: ${debugInfo.allPostings}\n\n時間帯分析:\n希望: ${debugInfo.timeSlotAnalysis.requests.join(', ')}\n募集: ${debugInfo.timeSlotAnalysis.postings.join(', ')}\n\n詳細:\n${JSON.stringify(debugInfo, null, 2)}`);
               }}
               className="w-full bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
             >
@@ -614,7 +620,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     logToRailway('その日の募集:', dayPostings);
                     
                     // 時間帯ごとにマッチング状況を分析
-                    const timeSlots = ['morning', 'afternoon', 'full'];
+                    const timeSlots = ['morning', 'afternoon', 'full', 'consult'];
                     const matchingAnalysis = timeSlots.map(timeSlot => {
                       const slotRequests = dayRequests.filter((r: any) => r.time_slot === timeSlot);
                       const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot);
@@ -681,9 +687,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           {matchingAnalysis.map((analysis: any, index: number) => (
                             <div key={index} className="ml-2 text-xs bg-purple-100 p-2 rounded mb-1">
                               <div className="font-medium">
-                                {analysis.timeSlot === 'morning' ? '午前' : analysis.timeSlot === 'afternoon' ? '午後' : '終日'}
+                                {analysis.timeSlot === 'morning' ? '午前' : 
+                                 analysis.timeSlot === 'afternoon' ? '午後' : 
+                                 analysis.timeSlot === 'full' ? '終日' : 
+                                 analysis.timeSlot === 'consult' ? '要相談' : analysis.timeSlot}
                               </div>
-                              {analysis.isMatching ? (
+                              {analysis.timeSlot === 'consult' ? (
+                                // 要相談の場合は薬剤師名を表示
+                                <div className="text-xs text-gray-600">
+                                  {analysis.requests.map((request: any) => {
+                                    const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                    return (
+                                      <div key={request.id} className="mb-1">
+                                        薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}
+                                        <span className="text-gray-500"> (優先度: {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : analysis.isMatching ? (
                                 <>
                                   {/* デバッグ情報 */}
                                   <div className="text-xs text-gray-500 mb-1">
@@ -744,11 +766,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     </div>
                                   )}
                                 </>
-                              ) : (
-                                <div className="text-gray-600">
-                                  {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
-                                </div>
-                              )}
+                                         ) : (
+             <div className="text-gray-600">
+               {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
+               {analysis.timeSlot !== 'consult' && analysis.postings.length > 0 && analysis.requests.length === 0 && (
+                 <div className="text-red-600 font-medium mt-1">
+                   ⚠️ 不足人数: {analysis.totalRequired}人
+                 </div>
+               )}
+             </div>
+           )}
                             </div>
                           ))}
                         </div>
