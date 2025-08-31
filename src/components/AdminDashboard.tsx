@@ -107,11 +107,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                    logToRailway('Loaded v_user_profiles:', vUserProfilesData);
                    const profilesMap: any = {};
                    vUserProfilesData?.forEach((user: any) => {
+                     // user_typeが設定されている場合はそれを使用、ない場合はemailから推測
+                     let userType = user.user_type;
+                     if (!userType) {
+                       // emailに'store'や'pharmacy'が含まれている場合は薬局として判定
+                       const email = user.email?.toLowerCase() || '';
+                       const name = user.name?.toLowerCase() || '';
+                       userType = email.includes('store') || email.includes('pharmacy') || email.includes('sampley2') || 
+                                 name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'pharmacy' : 'pharmacist';
+                     }
+                     
+                     // デバッグログ
+                     console.log(`User ${user.email} (${user.name}) classified as: ${userType}`);
+                     
                      profilesMap[user.id] = {
                        id: user.id,
                        name: user.name,
                        email: user.email,
-                       user_type: 'pharmacist'
+                       user_type: userType
                      };
                    });
                    setUserProfiles(profilesMap);
@@ -129,7 +142,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                      const email = user.email?.toLowerCase() || '';
                      const name = user.name?.toLowerCase() || '';
                      userType = email.includes('store') || email.includes('pharmacy') || email.includes('sampley2') || 
-                               name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'store' : 'pharmacist';
+                               name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'pharmacy' : 'pharmacist';
                    }
                    
                    // デバッグログ
@@ -156,7 +169,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         if (allProfilesData && allProfilesData.length > 0) {
           const profilesMap: any = {};
           allProfilesData.forEach((profile: any) => {
-            profilesMap[profile.id] = profile;
+            // user_typeが設定されている場合はそれを使用、ない場合はemailから推測
+            let userType = profile.user_type;
+            if (!userType) {
+              // emailに'store'や'pharmacy'が含まれている場合は薬局として判定
+              const email = profile.email?.toLowerCase() || '';
+              const name = profile.name?.toLowerCase() || '';
+              userType = email.includes('store') || email.includes('pharmacy') || email.includes('sampley2') || 
+                        name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'pharmacy' : 'pharmacist';
+            }
+            
+            // デバッグログ
+            console.log(`User ${profile.email} (${profile.name}) classified as: ${userType}`);
+            
+            profilesMap[profile.id] = {
+              ...profile,
+              user_type: userType
+            };
           });
           logToRailway('User profiles map:', profilesMap);
           setUserProfiles(profilesMap);
@@ -684,7 +713,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   >
                                     {(() => {
                                       const pharmacies = Object.entries(userProfiles)
-                                        .filter(([_, profile]: [string, any]) => profile.user_type === 'store');
+                                        .filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacy' || profile.user_type === 'store');
                                       console.log('Pharmacies for dropdown:', pharmacies);
                                       if (pharmacies.length === 0) {
                                         console.log('No pharmacies found. All userProfiles:', userProfiles);
