@@ -9,7 +9,7 @@ interface PharmacistDashboardProps {
 export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState('morning'); // デフォルトで午前を選択
   const [selectedPriority, setSelectedPriority] = useState('medium');
   
   // Railwayログ用のヘルパー関数
@@ -171,6 +171,19 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       const month = currentDate.getMonth() + 1;
       const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
       setSelectedDate(formattedDate);
+      
+      // 既存のシフト希望がある場合は自動選択
+      const existingRequest = myRequests.find((r: any) => r.date === formattedDate);
+      if (existingRequest) {
+        logToRailway('Found existing request for date', existingRequest);
+        setSelectedTimeSlot(existingRequest.time_slot);
+        setSelectedPriority(existingRequest.priority);
+        setMemo(existingRequest.memo || '');
+      } else {
+        // 新しい日付の場合は時間帯をリセット
+        setSelectedTimeSlot('');
+        setMemo('');
+      }
     }
   };
 
@@ -225,7 +238,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       } else {
         console.log('Shift request created successfully');
         alert('シフト希望を登録しました');
-        setSelectedDate('');
+        // 登録後は時間帯とメモのみリセット、日付は保持
         setSelectedTimeSlot('');
         setMemo('');
         loadShifts(); // 確定シフトとシフト希望の両方を再取得
