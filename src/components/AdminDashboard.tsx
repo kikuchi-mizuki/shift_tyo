@@ -323,6 +323,77 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
+  // 確定シフトの取り消し
+  const handleCancelConfirmedShifts = async (date: string) => {
+    if (!confirm(`${date}の確定シフトを取り消しますか？`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('assigned_shifts')
+        .delete()
+        .eq('date', date)
+        .eq('status', 'confirmed');
+
+      if (error) {
+        console.error('Error canceling confirmed shifts:', error);
+        alert(`確定シフトの取り消しに失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        return;
+      }
+
+      alert(`${date}の確定シフトを取り消しました`);
+      loadAll();
+    } catch (error) {
+      console.error('Error in handleCancelConfirmedShifts:', error);
+      alert(`確定シフトの取り消しに失敗しました: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  // シフトの編集
+  const handleEditShift = (shift: any) => {
+    const newTimeSlot = prompt(
+      `シフトの時間帯を変更してください:\n現在: ${shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '終日'}\n\n選択肢:\n1. morning (午前)\n2. afternoon (午後)\n3. full (終日)\n4. consult (要相談)`,
+      shift.time_slot
+    );
+
+    if (!newTimeSlot || newTimeSlot === shift.time_slot) {
+      return;
+    }
+
+    // 時間帯の妥当性チェック
+    const validTimeSlots = ['morning', 'afternoon', 'full', 'consult'];
+    if (!validTimeSlots.includes(newTimeSlot)) {
+      alert('無効な時間帯です。morning, afternoon, full, consult のいずれかを入力してください。');
+      return;
+    }
+
+    // シフトを更新
+    updateShift(shift.id, { time_slot: newTimeSlot });
+  };
+
+  // シフト更新の実行
+  const updateShift = async (shiftId: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('assigned_shifts')
+        .update(updates)
+        .eq('id', shiftId);
+
+      if (error) {
+        console.error('Error updating shift:', error);
+        alert(`シフトの更新に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        return;
+      }
+
+      alert('シフトを更新しました');
+      loadAll();
+    } catch (error) {
+      console.error('Error in updateShift:', error);
+      alert(`シフトの更新に失敗しました: ${error.message || 'Unknown error'}`);
+    }
+  };
+
   const y = currentDate.getFullYear();
   const m = (currentDate.getMonth() + 1).toString().padStart(2, '0');
   const isSameDate = (d: number, target: string) => target === `${y}-${m}-${d.toString().padStart(2,'0')}`;
@@ -510,14 +581,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   {/* 確定シフト */}
                   {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length > 0 && (
                     <div className="mb-3">
-                      <strong className="text-green-700 block mb-1">✅ 確定シフト:</strong>
+                      <div className="flex items-center justify-between mb-1">
+                        <strong className="text-green-700">✅ 確定シフト:</strong>
+                        <button
+                          onClick={() => handleCancelConfirmedShifts(selectedDate)}
+                          className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+                        >
+                          確定取り消し
+                        </button>
+                      </div>
                       {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
                         const pharmacistProfile = userProfiles[shift.pharmacist_id];
                         const pharmacyProfile = userProfiles[shift.pharmacy_id];
                         return (
                           <div key={index} className="ml-2 text-xs bg-green-100 p-2 rounded mb-1">
-                            <div className="font-medium">
-                              {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '終日'}
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="font-medium">
+                                {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '終日'}
+                              </div>
+                              <button
+                                onClick={() => handleEditShift(shift)}
+                                className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
+                              >
+                                編集
+                              </button>
                             </div>
                             <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
                             <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</div>
