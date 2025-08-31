@@ -576,12 +576,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     console.log('その日の希望:', dayRequests);
                     console.log('その日の募集:', dayPostings);
                     
-                    // Railwayログにも送信
-                    logToRailway('=== マッチング分析デバッグ ===');
-                    logToRailway('選択された日付:', selectedDate);
-                    logToRailway('その日の希望:', dayRequests);
-                    logToRailway('その日の募集:', dayPostings);
-                    
                     // 時間帯ごとにマッチング状況を分析
                     const timeSlots = ['morning', 'afternoon', 'full'];
                     const matchingAnalysis = timeSlots.map(timeSlot => {
@@ -641,7 +635,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     
                     // デバッグ用ログ
                     console.log('マッチング分析結果:', matchingAnalysis);
-                    logToRailway('マッチング分析結果:', matchingAnalysis);
                     
                     if (matchingAnalysis.length > 0) {
                       return (
