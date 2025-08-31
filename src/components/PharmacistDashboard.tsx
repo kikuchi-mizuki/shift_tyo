@@ -216,36 +216,63 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       return;
     }
 
-    try {
-      const shiftRequest = {
-        pharmacist_id: user.id,
-        date: selectedDate,
-        time_slot: selectedTimeSlot,
-        priority: selectedPriority,
-        memo: memo,
-        status: 'pending'
-      };
-
-      console.log('Creating shift request:', shiftRequest);
-      console.log('shiftRequests object:', shiftRequests);
-      console.log('shiftRequests.createRequests function:', shiftRequests.createRequests);
-
-      const { error } = await shiftRequests.createRequests([shiftRequest]);
-      
-      if (error) {
-        console.error('Error creating shift request:', error);
-        alert(`シフト希望の登録に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
-      } else {
-        console.log('Shift request created successfully');
-        alert('シフト希望を登録しました');
-        // 登録後は時間帯とメモのみリセット、日付は保持
-        setSelectedTimeSlot('');
-        setMemo('');
-        loadShifts(); // 確定シフトとシフト希望の両方を再取得
+    // 既存のシフト希望があるかチェック
+    const existingRequest = myRequests.find((r: any) => r.date === selectedDate);
+    
+    if (existingRequest) {
+      // 既存の希望がある場合は削除
+      if (confirm('この日付のシフト希望を削除しますか？')) {
+        try {
+          const { error } = await supabase
+            .from('shift_requests')
+            .delete()
+            .eq('id', existingRequest.id);
+          
+          if (error) {
+            console.error('Error deleting shift request:', error);
+            alert(`シフト希望の削除に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
+          } else {
+            console.log('Shift request deleted successfully');
+            alert('シフト希望を削除しました');
+            setSelectedTimeSlot('');
+            setMemo('');
+            loadShifts();
+          }
+        } catch (error) {
+          console.error('Error deleting shift request:', error);
+          alert('シフト希望の削除に失敗しました');
+        }
       }
-    } catch (error) {
-      console.error('Error submitting shift request:', error);
-      alert('シフト希望の登録に失敗しました');
+    } else {
+      // 新しい希望を登録
+      try {
+        const shiftRequest = {
+          pharmacist_id: user.id,
+          date: selectedDate,
+          time_slot: selectedTimeSlot,
+          priority: selectedPriority,
+          memo: memo,
+          status: 'pending'
+        };
+
+        console.log('Creating shift request:', shiftRequest);
+        const { error } = await shiftRequests.createRequests([shiftRequest]);
+        
+        if (error) {
+          console.error('Error creating shift request:', error);
+          alert(`シフト希望の登録に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
+        } else {
+          console.log('Shift request created successfully');
+          alert('シフト希望を登録しました');
+          // 登録後は時間帯とメモのみリセット、日付は保持
+          setSelectedTimeSlot('');
+          setMemo('');
+          loadShifts();
+        }
+      } catch (error) {
+        console.error('Error submitting shift request:', error);
+        alert('シフト希望の登録に失敗しました');
+      }
     }
   };
 
@@ -520,24 +547,25 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
               />
             </div>
 
-            {/* デバッグボタン */}
-            <button
-              onClick={() => {
-                logToRailway('Debug button clicked', { selectedDate, selectedTimeSlot, selectedPriority });
-                alert(`現在の状態:\n日付: ${selectedDate}\n時間: ${selectedTimeSlot}\n優先度: ${selectedPriority}`);
-              }}
-              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors mb-2"
-            >
-              デバッグ: 現在の状態を確認
-            </button>
 
-            {/* 登録ボタン */}
-            <button
-              onClick={handleSubmit}
-              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
-            >
-              希望を追加
-            </button>
+
+            {/* 登録/削除ボタン */}
+            {myShifts.find((s: any) => s.date === selectedDate) ? (
+              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
+                確定済みのため編集できません
+              </div>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                  myRequests.find((r: any) => r.date === selectedDate)
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {myRequests.find((r: any) => r.date === selectedDate) ? '希望を削除' : '希望を追加'}
+              </button>
+            )}
 
             {/* 情報ボックス */}
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
