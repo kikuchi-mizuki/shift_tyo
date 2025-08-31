@@ -62,6 +62,14 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         setMyRequests([]);
       } else {
         console.log('Loaded shift requests:', reqs);
+        // データベースのtime_slot値を確認
+        if (reqs && reqs.length > 0) {
+          console.log('Database time_slot values:', reqs.map((r: any) => ({ 
+            date: r.date, 
+            time_slot: r.time_slot, 
+            priority: r.priority 
+          })));
+        }
         setMyRequests(reqs || []);
       }
       
@@ -299,7 +307,10 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                               return (
                                 <div key={index} className="mb-2 last:mb-0 border-b border-gray-600 pb-2 last:border-b-0">
                                   <div className="text-green-300 font-medium">
-                                    時間: {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '夜間'}
+                                    時間: {shift.time_slot === 'morning' || shift.time_slot === 'am' ? '午前' : 
+                                          shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '午後' : 
+                                          shift.time_slot === 'full' ? '終日' : 
+                                          shift.time_slot === 'consult' ? '要相談' : '夜間'}
                                   </div>
                                   <div className="text-yellow-300">
                                     薬局: {pharmacyProfile?.name || pharmacyProfile?.email || shift.pharmacy_id}
@@ -365,8 +376,8 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 </div>
                 <div className="text-xs text-blue-600 mt-1">
                   希望時間: {selectedTimeSlot ? (
-                    selectedTimeSlot === 'morning' ? '午前 (9:00-13:00)' :
-                    selectedTimeSlot === 'afternoon' ? '午後 (13:00-18:00)' :
+                    selectedTimeSlot === 'morning' || selectedTimeSlot === 'am' ? '午前 (9:00-13:00)' :
+                    selectedTimeSlot === 'afternoon' || selectedTimeSlot === 'pm' ? '午後 (13:00-18:00)' :
                     selectedTimeSlot === 'full' ? '終日 (9:00-18:00)' :
                     selectedTimeSlot === 'consult' ? '要相談' : selectedTimeSlot
                   ) : '未選択'} (値: {selectedTimeSlot || 'null'})
