@@ -32,8 +32,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('Loading pharmacy data...');
       
       // 募集シフトを取得
-      const { data: myShiftsData } = await shifts.getShiftsByUser(user.id, 'pharmacy');
-      setMyShifts(myShiftsData || []);
+      const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
+      if (myShiftsError) {
+        console.error('Error loading shift postings:', myShiftsError);
+        setMyShifts([]);
+      } else {
+        console.log('Loaded shift postings:', myShiftsData);
+        setMyShifts(myShiftsData || []);
+      }
       
       // 直接Supabaseから確定済みシフトを取得
       const { data: assignedData, error: assignedError } = await supabase
@@ -225,6 +231,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   console.log('PharmacyDashboard rendering, loading:', loading, 'user:', user);
   console.log('Form state:', { selectedDate, timeSlot, requiredStaff, memo });
+  console.log('Calendar data:', { myShifts: myShifts.length, confirmedShifts: confirmedShifts.length });
   
   return (
     <div className="flex gap-6 p-6">
@@ -255,7 +262,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           {getDaysInMonth(currentDate).map((day, idx) => (
             <div
               key={idx}
-              className={`p-2 text-center text-sm border border-gray-200 min-h-[72px] ${day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'}`}
+              className={`p-2 text-center text-sm border border-gray-200 min-h-[72px] ${
+                day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
+              } ${
+                selectedDate === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+                  ? 'bg-blue-100 border-blue-300'
+                  : ''
+              }`}
               onClick={() => day && handleDateSelect(day)}
             >
               {day && (
