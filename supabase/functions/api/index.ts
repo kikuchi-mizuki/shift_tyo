@@ -27,7 +27,18 @@ serve(async (req) => {
     // Handle POST requests for specific actions
     if (req.method === 'POST') {
       const body = await req.json()
-      const { action, userIds } = body
+      const { action, userIds, message, timestamp } = body
+
+      // ログエンドポイント
+      if (action === 'log' || req.url.includes('/api/log')) {
+        console.log(`[${timestamp || new Date().toISOString()}] ${message}`)
+        return new Response(
+          JSON.stringify({ success: true, logged: message }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
 
       if (action === 'get_user_profiles' && userIds) {
         const result = await supabaseClient

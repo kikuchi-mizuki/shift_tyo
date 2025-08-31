@@ -22,7 +22,11 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       fetch('/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: logMessage, timestamp: new Date().toISOString() })
+        body: JSON.stringify({ 
+          action: 'log',
+          message: logMessage, 
+          timestamp: new Date().toISOString() 
+        })
       }).catch(() => {
         // APIエンドポイントが存在しない場合は無視
       });
