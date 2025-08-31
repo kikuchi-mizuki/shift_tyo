@@ -11,6 +11,15 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('medium');
+  
+  // デバッグ用: 状態の変更を監視
+  useEffect(() => {
+    console.log('PharmacistDashboard state changed:', {
+      selectedDate,
+      selectedTimeSlot,
+      selectedPriority
+    });
+  }, [selectedDate, selectedTimeSlot, selectedPriority]);
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState<any[]>([]);
   const [myRequests, setMyRequests] = useState<any[]>([]);
@@ -360,12 +369,12 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                     selectedTimeSlot === 'afternoon' ? '午後 (13:00-18:00)' :
                     selectedTimeSlot === 'full' ? '終日 (9:00-18:00)' :
                     selectedTimeSlot === 'consult' ? '要相談' : selectedTimeSlot
-                  ) : '未選択'}
+                  ) : '未選択'} (値: {selectedTimeSlot || 'null'})
                 </div>
                 <div className="text-xs text-blue-600 mt-1">
                   優先度: {selectedPriority === 'high' ? '高優先度' :
                    selectedPriority === 'medium' ? '中優先度' :
-                   selectedPriority === 'low' ? '低優先度' : selectedPriority}
+                   selectedPriority === 'low' ? '低優先度' : selectedPriority} (値: {selectedPriority})
                 </div>
               </div>
             )}
@@ -404,16 +413,19 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 {timeSlots.map((slot) => {
                   const Icon = slot.icon;
                   return (
-                    <button
-                      key={slot.id}
-                      onClick={() => setSelectedTimeSlot(slot.id)}
-                      className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
-                        selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{slot.label}</span>
-                    </button>
+                                      <button
+                    key={slot.id}
+                    onClick={() => {
+                      console.log('Time slot clicked:', slot.id);
+                      setSelectedTimeSlot(slot.id);
+                    }}
+                    className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
+                      selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{slot.label}</span>
+                  </button>
                   );
                 })}
               </div>
