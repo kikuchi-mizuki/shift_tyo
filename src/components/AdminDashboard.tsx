@@ -578,17 +578,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       
                       if (slotRequests.length === 0 && slotPostings.length === 0) return null;
                       
+                      // 薬剤師を優先順位でソート（高→中→低）
+                      const sortedRequests = slotRequests.sort((a: any, b: any) => {
+                        const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+                        return priorityOrder[b.priority] - priorityOrder[a.priority];
+                      });
+                      
                       const totalRequired = slotPostings.reduce((sum: number, p: any) => sum + p.required_staff, 0);
-                      const totalAvailable = slotRequests.length;
+                      const totalAvailable = sortedRequests.length;
+                      
+                      // マッチングシミュレーション（優先順位順）
+                      const matchedPharmacists = [];
+                      const matchedPharmacies = [];
+                      let remainingRequired = totalRequired;
+                      
+                      // 各薬局の必要人数を管理
+                      const pharmacyNeeds = slotPostings.map((p: any) => ({
+                        ...p,
+                        remaining: p.required_staff
+                      }));
+                      
+                      // 優先順位順に薬剤師をマッチング
+                      sortedRequests.forEach((request: any) => {
+                        if (remainingRequired > 0) {
+                          // まだ人員が必要な薬局を探す
+                          const availablePharmacy = pharmacyNeeds.find((p: any) => p.remaining > 0);
+                          if (availablePharmacy) {
+                            matchedPharmacists.push(request);
+                            matchedPharmacies.push(availablePharmacy);
+                            availablePharmacy.remaining--;
+                            remainingRequired--;
+                          }
+                        }
+                      });
                       
                       return {
                         timeSlot,
-                        requests: slotRequests,
+                        requests: sortedRequests,
                         postings: slotPostings,
                         totalRequired,
                         totalAvailable,
+                        matchedPharmacists,
+                        matchedPharmacies,
+                        remainingRequired,
                         isMatching: totalAvailable > 0 && totalRequired > 0,
-                        isShortage: totalAvailable < totalRequired
+                        isShortage: totalAvailable < totalRequired,
+                        hasExcess: totalAvailable > totalRequired
                       };
                     }).filter(Boolean);
                     
@@ -603,17 +638,58 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                               {analysis.isMatching ? (
                                 <>
-                                  <div>薬剤師: {analysis.requests.map((r: any) => {
-                                    const profile = userProfiles[r.pharmacist_id];
-                                    return profile?.name || profile?.email || '名前未設定';
-                                  }).join(', ')}</div>
-                                  <div>薬局: {analysis.postings.map((p: any) => {
-                                    const profile = userProfiles[p.pharmacy_id];
-                                    return profile?.name || profile?.email || '名前未設定';
-                                  }).join(', ')}</div>
-                                  {analysis.isShortage && (
-                                    <div className="text-red-600 font-medium">
-                                      ⚠️ 人数不足: {analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募
+                                  {/* マッチング済みの薬剤師と薬局 */}
+                                  {analysis.matchedPharmacists.length > 0 && (
+                                    <div className="mb-1">
+                                      <div className="font-medium text-green-700">✅ マッチング済み:</div>
+                                      {analysis.matchedPharmacists.map((request: any, idx: number) => {
+                                        const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                        const pharmacyProfile = userProfiles[analysis.matchedPharmacies[idx].pharmacy_id];
+                                        return (
+                                          <div key={idx} className="ml-2 text-xs">
+                                            • {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'} 
+                                            → {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}
+                                            <span className="text-gray-500"> (優先度: {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  
+                                  {/* 人数状況 */}
+                                  <div className="mb-1">
+                                    <div className="font-medium">📊 人数状況:</div>
+                                    <div className="ml-2">
+                                      • 必要人数: {analysis.totalRequired}人
+                                    </div>
+                                    <div className="ml-2">
+                                      • 応募人数: {analysis.totalAvailable}人
+                                    </div>
+                                    {analysis.remainingRequired > 0 && (
+                                      <div className="ml-2 text-red-600 font-medium">
+                                        ⚠️ 不足: {analysis.remainingRequired}人
+                                      </div>
+                                    )}
+                                    {analysis.hasExcess && (
+                                      <div className="ml-2 text-blue-600">
+                                        ℹ️ 余剰: {analysis.totalAvailable - analysis.totalRequired}人
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* 未マッチングの薬剤師 */}
+                                  {analysis.remainingRequired === 0 && analysis.hasExcess && (
+                                    <div className="mb-1">
+                                      <div className="font-medium text-orange-700">⏳ 未マッチング薬剤師:</div>
+                                      {analysis.requests.slice(analysis.totalRequired).map((request: any, idx: number) => {
+                                        const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                        return (
+                                          <div key={idx} className="ml-2 text-xs">
+                                            • {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}
+                                            <span className="text-gray-500"> (優先度: {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </>
