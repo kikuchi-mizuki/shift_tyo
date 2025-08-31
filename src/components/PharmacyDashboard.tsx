@@ -12,8 +12,8 @@ interface PharmacyDashboardProps {
 export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
-  const [timeSlot, setTimeSlot] = useState('');
-  const [requiredStaff, setRequiredStaff] = useState<number | null>(null);
+  const [timeSlot, setTimeSlot] = useState('morning'); // デフォルトで午前を選択
+  const [requiredStaff, setRequiredStaff] = useState<number | null>(1); // デフォルトで1人を選択
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState<any[]>([]);
   const [confirmedShifts, setConfirmedShifts] = useState<any[]>([]);
@@ -106,7 +106,22 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     if (!day) return;
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
-    setSelectedDate(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+    const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setSelectedDate(formattedDate);
+    
+    // 既存の募集がある場合は自動選択
+    const existingPosting = myShifts.find((s: any) => s.date === formattedDate);
+    if (existingPosting) {
+      console.log('Found existing posting for date', existingPosting);
+      setTimeSlot(existingPosting.time_slot);
+      setRequiredStaff(existingPosting.required_staff);
+      setMemo(existingPosting.memo || '');
+    } else {
+      // 新しい日付の場合はフォームをリセット
+      setTimeSlot('');
+      setRequiredStaff(null);
+      setMemo('');
+    }
   };
 
   const handleProfileUpdate = async () => {
@@ -133,42 +148,70 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('=== handlePost START ===');
     console.log('handlePost called', { selectedDate, timeSlot, requiredStaff, memo });
     
-    try {
-      const posting = {
-        pharmacy_id: user.id,
-        date: selectedDate,
-        time_slot: timeSlot,
-        required_staff: requiredStaff,
-        memo,
-        status: 'open'
-      };
-      
-      console.log('Creating posting:', posting);
-      
-      console.log('Adding to local state');
-      setMyShifts(prev => [...prev, posting]);
-      
-      // Supabaseに保存
-      console.log('Saving to Supabase');
-      const { error } = await shiftPostings.createPostings([posting]);
-      
-      if (error) {
-        console.error('Shift posting error:', error);
-        alert('募集の作成に失敗しました');
-        return;
+    // 既存の募集があるかチェック
+    const existingPosting = myShifts.find((s: any) => s.date === selectedDate);
+    
+    if (existingPosting) {
+      // 既存の募集がある場合は削除
+      if (confirm('この日付の募集を削除しますか？')) {
+        try {
+          const { error } = await supabase
+            .from('shift_postings')
+            .delete()
+            .eq('id', existingPosting.id);
+          
+          if (error) {
+            console.error('Shift posting deletion error:', error);
+            alert('募集の削除に失敗しました');
+            return;
+          }
+          
+          alert('募集を削除しました');
+          setTimeSlot('');
+          setRequiredStaff(null);
+          setMemo('');
+          loadData();
+        } catch (e) {
+          console.error('Exception in handlePost deletion:', e);
+          alert('募集の削除に失敗しました');
+        }
       }
-      
-      // フォームをリセット
-      setSelectedDate('');
-      setTimeSlot('');
-      setRequiredStaff(null);
-      setMemo('');
-      
-      alert('募集を作成しました');
-      
-    } catch (e) {
-      console.error('Exception in handlePost:', e);
-      alert('募集の作成に失敗しました');
+    } else {
+      // 新しい募集を作成
+      try {
+        const posting = {
+          pharmacy_id: user.id,
+          date: selectedDate,
+          time_slot: timeSlot,
+          required_staff: requiredStaff,
+          memo,
+          status: 'open'
+        };
+        
+        console.log('Creating posting:', posting);
+        
+        // Supabaseに保存
+        console.log('Saving to Supabase');
+        const { error } = await shiftPostings.createPostings([posting]);
+        
+        if (error) {
+          console.error('Shift posting error:', error);
+          alert('募集の作成に失敗しました');
+          return;
+        }
+        
+        // フォームをリセット
+        setTimeSlot('');
+        setRequiredStaff(null);
+        setMemo('');
+        
+        alert('募集を作成しました');
+        loadData();
+        
+      } catch (e) {
+        console.error('Exception in handlePost:', e);
+        alert('募集の作成に失敗しました');
+      }
     }
   };
 
@@ -382,25 +425,35 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             <textarea value={memo} onChange={(e)=>setMemo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" rows={3} placeholder="経験年数の要件、特別な業務内容、その他の条件があれば記入してください" />
           </div>
 
-          {/* 作成ボタン */}
-          <button 
-            type="button"
-            onClick={() => {
-              console.log('=== BUTTON CLICK START ===');
-              console.log('Form state:', { selectedDate, timeSlot, requiredStaff, memo });
-              
-              if (!selectedDate || !timeSlot || !requiredStaff) {
-                alert('募集日・時間帯・人数を選択してください');
-                return;
-              }
-              
-              console.log('Validation passed, calling handlePost');
-              handlePost();
-            }}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
-          >
-            募集を追加
-          </button>
+          {/* 作成/削除ボタン */}
+          {confirmedShifts.find((s: any) => s.date === selectedDate) ? (
+            <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
+              確定済みのため編集できません
+            </div>
+          ) : (
+            <button 
+              type="button"
+              onClick={() => {
+                console.log('=== BUTTON CLICK START ===');
+                console.log('Form state:', { selectedDate, timeSlot, requiredStaff, memo });
+                
+                if (!selectedDate || !timeSlot || !requiredStaff) {
+                  alert('募集日・時間帯・人数を選択してください');
+                  return;
+                }
+                
+                console.log('Validation passed, calling handlePost');
+                handlePost();
+              }}
+              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${
+                myShifts.find((s: any) => s.date === selectedDate)
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {myShifts.find((s: any) => s.date === selectedDate) ? '募集を削除' : '募集を追加'}
+            </button>
+          )}
         </div>
 
         {/* 注意ボックス */}
