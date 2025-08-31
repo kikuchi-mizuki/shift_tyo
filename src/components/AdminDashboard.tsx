@@ -570,6 +570,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     const dayRequests = requests.filter((r: any) => r.date === selectedDate);
                     const dayPostings = postings.filter((p: any) => p.date === selectedDate);
                     
+                    // デバッグ用ログ
+                    console.log('=== マッチング分析デバッグ ===');
+                    console.log('選択された日付:', selectedDate);
+                    console.log('その日の希望:', dayRequests);
+                    console.log('その日の募集:', dayPostings);
+                    
                     // 時間帯ごとにマッチング状況を分析
                     const timeSlots = ['morning', 'afternoon', 'full'];
                     const matchingAnalysis = timeSlots.map(timeSlot => {
@@ -627,6 +633,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       };
                     }).filter(Boolean);
                     
+                    // デバッグ用ログ
+                    console.log('マッチング分析結果:', matchingAnalysis);
+                    
                     if (matchingAnalysis.length > 0) {
                       return (
                         <div className="mb-2">
@@ -638,6 +647,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                               {analysis.isMatching ? (
                                 <>
+                                  {/* デバッグ情報 */}
+                                  <div className="text-xs text-gray-500 mb-1">
+                                    デバッグ: 必要{analysis.totalRequired}人, 応募{analysis.totalAvailable}人, マッチ{analysis.matchedPharmacists.length}人
+                                  </div>
                                   {/* マッチング済みの薬剤師と薬局 */}
                                   {analysis.matchedPharmacists.length > 0 && (
                                     <div className="mb-1">
