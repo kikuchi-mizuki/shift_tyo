@@ -505,39 +505,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               <div className="bg-blue-50 rounded-lg p-4 space-y-3">
                 <h3 className="text-sm font-medium text-blue-800">選択された日付の詳細</h3>
                 <div className="text-sm text-blue-700">
-                  <div className="mb-2">
+                  <div className="mb-3">
                     <strong>日付:</strong> {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日
                   </div>
                   
                   {/* 確定シフト */}
                   {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length > 0 && (
-                    <div className="mb-2">
-                      <strong className="text-green-700">確定シフト:</strong>
+                    <div className="mb-3">
+                      <strong className="text-green-700 block mb-1">✅ 確定シフト:</strong>
                       {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
                         const pharmacistProfile = userProfiles[shift.pharmacist_id];
                         const pharmacyProfile = userProfiles[shift.pharmacy_id];
                         return (
-                          <div key={index} className="ml-2 text-xs">
-                            • {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '終日'} - 
-                            {pharmacistProfile?.name || pharmacistProfile?.email || shift.pharmacist_id} → 
-                            {pharmacyProfile?.name || pharmacyProfile?.email || shift.pharmacy_id}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  
-                  {/* シフト希望 */}
-                  {requests.filter((r: any) => r.date === selectedDate).length > 0 && (
-                    <div className="mb-2">
-                      <strong className="text-blue-700">シフト希望:</strong>
-                      {requests.filter((r: any) => r.date === selectedDate).map((request: any, index: number) => {
-                        const pharmacistProfile = userProfiles[request.pharmacist_id];
-                        return (
-                          <div key={index} className="ml-2 text-xs">
-                            • {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'} - 
-                            {pharmacistProfile?.name || pharmacistProfile?.email || request.pharmacist_id} 
-                            ({request.priority})
+                          <div key={index} className="ml-2 text-xs bg-green-100 p-2 rounded mb-1">
+                            <div className="font-medium">
+                              {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '終日'}
+                            </div>
+                            <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
+                            <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</div>
                           </div>
                         );
                       })}
@@ -546,15 +531,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   
                   {/* シフト募集 */}
                   {postings.filter((p: any) => p.date === selectedDate).length > 0 && (
-                    <div className="mb-2">
-                      <strong className="text-orange-700">シフト募集:</strong>
+                    <div className="mb-3">
+                      <strong className="text-orange-700 block mb-1">📢 募集している薬局:</strong>
                       {postings.filter((p: any) => p.date === selectedDate).map((posting: any, index: number) => {
                         const pharmacyProfile = userProfiles[posting.pharmacy_id];
                         return (
-                          <div key={index} className="ml-2 text-xs">
-                            • {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'} - 
-                            {pharmacyProfile?.name || pharmacyProfile?.email || posting.pharmacy_id} 
-                            ({posting.required_staff}人必要)
+                          <div key={index} className="ml-2 text-xs bg-orange-100 p-2 rounded mb-1">
+                            <div className="font-medium">
+                              {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'}
+                            </div>
+                            <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</div>
+                            <div>必要人数: {posting.required_staff}人</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* シフト希望 */}
+                  {requests.filter((r: any) => r.date === selectedDate).length > 0 && (
+                    <div className="mb-3">
+                      <strong className="text-blue-700 block mb-1">👨‍⚕️ 応募している薬剤師:</strong>
+                      {requests.filter((r: any) => r.date === selectedDate).map((request: any, index: number) => {
+                        const pharmacistProfile = userProfiles[request.pharmacist_id];
+                        return (
+                          <div key={index} className="ml-2 text-xs bg-blue-100 p-2 rounded mb-1">
+                            <div className="font-medium">
+                              {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'}
+                            </div>
+                            <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
+                            <div>優先度: {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}</div>
                           </div>
                         );
                       })}
@@ -565,26 +571,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   {(() => {
                     const dayRequests = requests.filter((r: any) => r.date === selectedDate);
                     const dayPostings = postings.filter((p: any) => p.date === selectedDate);
-                    const matchingPairs = dayRequests.filter((r: any) => 
-                      dayPostings.some((p: any) => p.time_slot === r.time_slot)
-                    );
                     
-                    if (matchingPairs.length > 0) {
+                    // 時間帯ごとにマッチング状況を分析
+                    const timeSlots = ['morning', 'afternoon', 'full'];
+                    const matchingAnalysis = timeSlots.map(timeSlot => {
+                      const slotRequests = dayRequests.filter((r: any) => r.time_slot === timeSlot);
+                      const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot);
+                      
+                      if (slotRequests.length === 0 && slotPostings.length === 0) return null;
+                      
+                      const totalRequired = slotPostings.reduce((sum: number, p: any) => sum + p.required_staff, 0);
+                      const totalAvailable = slotRequests.length;
+                      
+                      return {
+                        timeSlot,
+                        requests: slotRequests,
+                        postings: slotPostings,
+                        totalRequired,
+                        totalAvailable,
+                        isMatching: totalAvailable > 0 && totalRequired > 0,
+                        isShortage: totalAvailable < totalRequired
+                      };
+                    }).filter(Boolean);
+                    
+                    if (matchingAnalysis.length > 0) {
                       return (
                         <div className="mb-2">
-                          <strong className="text-purple-700">マッチング可能:</strong>
-                          {matchingPairs.map((request: any, index: number) => {
-                            const pharmacistProfile = userProfiles[request.pharmacist_id];
-                            const matchingPosting = dayPostings.find((p: any) => p.time_slot === request.time_slot);
-                            const pharmacyProfile = userProfiles[matchingPosting?.pharmacy_id];
-                            return (
-                              <div key={index} className="ml-2 text-xs">
-                                • {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'} - 
-                                {pharmacistProfile?.name || pharmacistProfile?.email || request.pharmacist_id} ↔ 
-                                {pharmacyProfile?.name || pharmacyProfile?.email || matchingPosting?.pharmacy_id}
+                          <strong className="text-purple-700 block mb-1">🔗 マッチング状況:</strong>
+                          {matchingAnalysis.map((analysis: any, index: number) => (
+                            <div key={index} className="ml-2 text-xs bg-purple-100 p-2 rounded mb-1">
+                              <div className="font-medium">
+                                {analysis.timeSlot === 'morning' ? '午前' : analysis.timeSlot === 'afternoon' ? '午後' : '終日'}
                               </div>
-                            );
-                          })}
+                              {analysis.isMatching ? (
+                                <>
+                                  <div>薬剤師: {analysis.requests.map((r: any) => {
+                                    const profile = userProfiles[r.pharmacist_id];
+                                    return profile?.name || profile?.email || '名前未設定';
+                                  }).join(', ')}</div>
+                                  <div>薬局: {analysis.postings.map((p: any) => {
+                                    const profile = userProfiles[p.pharmacy_id];
+                                    return profile?.name || profile?.email || '名前未設定';
+                                  }).join(', ')}</div>
+                                  {analysis.isShortage && (
+                                    <div className="text-red-600 font-medium">
+                                      ⚠️ 人数不足: {analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="text-gray-600">
+                                  {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       );
                     }
