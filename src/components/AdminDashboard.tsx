@@ -136,7 +136,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       if (allProfilesError) {
         logToRailway('Error loading all user profiles:', allProfilesError);
-        alert(`プロフィール取得エラー: ${allProfilesError.message}`);
+        console.error('プロフィール取得エラー:', allProfilesError.message);
       } else {
         logToRailway('Loaded all user profiles:', allProfilesData);
         
@@ -168,21 +168,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const allProfileIds = Object.keys(profilesMap);
           logToRailway('All profile IDs:', allProfileIds);
           
-          // 強制的にアラートで確認
+          // プロフィールマッチング状況をログ出力（アラートは削除）
           if (foundProfiles.length > 0) {
             const foundProfileDetails = foundProfiles.map(id => {
               const profile = profilesMap[id];
               return `${profile.name || profile.email} (${profile.user_type})`;
             });
             logToRailway('Profile matching success:', foundProfileDetails);
-            alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: ${foundProfiles.length}件見つかりました\n${foundProfileDetails.join('\n')}`);
           } else {
             logToRailway('No profiles found for shift users');
-            alert(`プロフィール取得成功: ${allProfilesData.length}件のプロフィールを読み込みました\nシフトユーザー: 見つかりませんでした\n\nID不一致のため、シフトデータを修正する必要があります。`);
           }
         } else {
           logToRailway('No profiles data available');
-          alert('プロフィールが取得できませんでした');
+          console.warn('プロフィールが取得できませんでした');
         }
       }
     } catch (e) {
