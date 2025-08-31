@@ -14,7 +14,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
-  const [openPostings, setOpenPostings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
@@ -49,8 +48,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       
       const { data: reqs } = await shiftRequests.getRequests(user.id, 'pharmacist');
       setMyRequests(reqs || []);
-      const { data: postings } = await shiftPostings.getPostings('', 'pharmacist');
-      setOpenPostings(postings || []);
       
       // ユーザープロフィールを取得
       const { data: profileData, error: profileError } = await supabase
@@ -211,7 +208,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const y = currentDate.getFullYear();
   const m = (currentDate.getMonth() + 1).toString().padStart(2, '0');
   const hasMyRequest = (day: number) => myRequests.some((r: any) => r.date === `${y}-${m}-${day.toString().padStart(2, '0')}`);
-  const hasPosting = (day: number) => openPostings.some((p: any) => p.date === `${y}-${m}-${day.toString().padStart(2, '0')}`);
+  const hasMyShift = (day: number) => myShifts.some((s: any) => s.date === `${y}-${m}-${day.toString().padStart(2, '0')}`);
 
   return (
     <div className="space-y-6">
@@ -269,9 +266,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 {day && (
                   <>
                     <div className="font-medium">{day}</div>
-                    {myShifts.some((shift: any) => 
-                      shift.date === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
-                    ) && (
+                    {hasMyShift(day) && (
                       <div className="relative group">
                         <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
                           割当
@@ -303,9 +298,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                     )}
                     {hasMyRequest(day) && (
                       <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">希望</div>
-                    )}
-                    {hasPosting(day) && (
-                      <div className="text-[10px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-1 mt-1 inline-block">募集</div>
                     )}
                   </>
                 )}
@@ -349,12 +341,20 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
               </div>
             )}
             
-            {/* 選択された日付 */}
+            {/* 選択された日付と時間 */}
             {selectedDate && (
               <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                <span className="text-sm font-medium text-blue-800">
+                <div className="text-sm font-medium text-blue-800">
                   {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日
-                </span>
+                </div>
+                {selectedTimeSlot && (
+                  <div className="text-xs text-blue-600 mt-1">
+                    {selectedTimeSlot === 'morning' ? '午前 (9:00-13:00)' :
+                     selectedTimeSlot === 'afternoon' ? '午後 (13:00-18:00)' :
+                     selectedTimeSlot === 'full' ? '終日 (9:00-18:00)' :
+                     selectedTimeSlot === 'consult' ? '要相談' : selectedTimeSlot}
+                  </div>
+                )}
               </div>
             )}
 
