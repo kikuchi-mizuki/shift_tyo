@@ -496,29 +496,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
             </button>
             
-            <button
-              onClick={() => {
-                const dayRequests = requests.filter((r: any) => r.date === selectedDate);
-                const dayPostings = postings.filter((p: any) => p.date === selectedDate);
-                const debugInfo = {
-                  selectedDate,
-                  requests: dayRequests,
-                  postings: dayPostings,
-                  userProfiles: Object.keys(userProfiles).length,
-                  allRequests: requests.length,
-                  allPostings: postings.length,
-                  timeSlotAnalysis: {
-                    requests: dayRequests.map(r => r.time_slot),
-                    postings: dayPostings.map(p => p.time_slot)
-                  }
-                };
-                alert(`デバッグ情報:\n選択日: ${selectedDate}\n希望数: ${debugInfo.requests.length}\n募集数: ${debugInfo.postings.length}\nプロフィール数: ${debugInfo.userProfiles}\n全体希望数: ${debugInfo.allRequests}\n全体募集数: ${debugInfo.allPostings}\n\n時間帯分析:\n希望: ${debugInfo.timeSlotAnalysis.requests.join(', ')}\n募集: ${debugInfo.timeSlotAnalysis.postings.join(', ')}\n\n詳細:\n${JSON.stringify(debugInfo, null, 2)}`);
-              }}
-              className="w-full bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
-            >
-              デバッグ情報
-            </button>
-            
 
             
             {/* 選択された日付の詳細表示 */}
