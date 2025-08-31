@@ -31,7 +31,11 @@ serve(async (req) => {
 
       // ログエンドポイント
       if (action === 'log' || req.url.includes('/api/log')) {
-        console.log(`[${timestamp || new Date().toISOString()}] ${message}`)
+        const logMessage = `[ADMIN_DASHBOARD_LOG] [${timestamp || new Date().toISOString()}] ${message}`
+        console.log(logMessage)
+        if (body.data) {
+          console.log(`[ADMIN_DASHBOARD_DATA] ${JSON.stringify(body.data)}`)
+        }
         return new Response(
           JSON.stringify({ success: true, logged: message }),
           { 
