@@ -12,8 +12,8 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('中優先度');
   const [memo, setMemo] = useState('');
-  const [myShifts, setMyShifts] = useState([]);
-  const [myRequests, setMyRequests] = useState([]);
+  const [myShifts, setMyShifts] = useState<any[]>([]);
+  const [myRequests, setMyRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
@@ -169,7 +169,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       
       if (error) {
         console.error('Error creating shift request:', error);
-        alert(`シフト希望の登録に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        alert(`シフト希望の登録に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
       } else {
         console.log('Shift request created successfully');
         alert('シフト希望を登録しました');
@@ -347,21 +347,19 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 <div className="text-sm font-medium text-blue-800">
                   {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日
                 </div>
-                {selectedTimeSlot && (
-                  <div className="text-xs text-blue-600 mt-1">
-                    希望時間: {selectedTimeSlot === 'morning' ? '午前 (9:00-13:00)' :
-                     selectedTimeSlot === 'afternoon' ? '午後 (13:00-18:00)' :
-                     selectedTimeSlot === 'full' ? '終日 (9:00-18:00)' :
-                     selectedTimeSlot === 'consult' ? '要相談' : selectedTimeSlot}
-                  </div>
-                )}
-                {selectedPriority && (
-                  <div className="text-xs text-blue-600 mt-1">
-                    優先度: {selectedPriority === 'high' ? '高優先度' :
-                     selectedPriority === 'medium' ? '中優先度' :
-                     selectedPriority === 'low' ? '低優先度' : selectedPriority}
-                  </div>
-                )}
+                <div className="text-xs text-blue-600 mt-1">
+                  希望時間: {selectedTimeSlot ? (
+                    selectedTimeSlot === 'morning' ? '午前 (9:00-13:00)' :
+                    selectedTimeSlot === 'afternoon' ? '午後 (13:00-18:00)' :
+                    selectedTimeSlot === 'full' ? '終日 (9:00-18:00)' :
+                    selectedTimeSlot === 'consult' ? '要相談' : selectedTimeSlot
+                  ) : '未選択'}
+                </div>
+                <div className="text-xs text-blue-600 mt-1">
+                  優先度: {selectedPriority === 'high' ? '高優先度' :
+                   selectedPriority === 'medium' ? '中優先度' :
+                   selectedPriority === 'low' ? '低優先度' : selectedPriority}
+                </div>
               </div>
             )}
 
