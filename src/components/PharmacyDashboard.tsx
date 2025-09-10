@@ -541,13 +541,29 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             </div>
           )}
           
-          {/* デバッグ情報 */}
+          {/* 概要（当日の全店舗分を表示） */}
           <div className="p-3 bg-gray-100 rounded text-xs">
-            <div>選択日: {selectedDate || '未選択'}</div>
-            <div>店舗名: {selectedStoreName || (storeNames[0] || '未選択')}</div>
-            <div>時間帯: {timeSlot || '未選択'}</div>
-            <div>人数: {requiredStaff || '未選択'}</div>
-            <div>備考: {stripStoreTag(memo) || 'なし'}</div>
+            <div className="font-medium text-gray-700 mb-1">選択日: {selectedDate || '未選択'}</div>
+            {selectedDate ? (
+              <div className="space-y-1">
+                {myShifts
+                  .filter((s: any) => s.date === selectedDate)
+                  .map((s: any, idx: number) => {
+                    const name = s.store_name || (typeof s.memo === 'string' ? (s.memo.match(/\[store:([^\]]+)\]/)?.[1] || '') : '');
+                    return (
+                      <div key={idx} className="flex items-center justify-between bg-white rounded border px-2 py-1">
+                        <div className="text-gray-800">店舗: {name || '（店舗名未設定）'}</div>
+                        <div className="text-gray-500">{s.time_slot === 'morning' ? '午前' : s.time_slot === 'afternoon' ? '午後' : s.time_slot === 'full' ? '終日' : s.time_slot === 'consult' ? '要相談' : s.time_slot} / {s.required_staff || 1}人</div>
+                      </div>
+                    );
+                  })}
+                {myShifts.filter((s: any) => s.date === selectedDate).length === 0 && (
+                  <div className="text-gray-500">この日付の募集はありません</div>
+                )}
+              </div>
+            ) : (
+              <div className="text-gray-500">日付を選択してください</div>
+            )}
           </div>
           
           {/* 募集日 */}
