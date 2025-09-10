@@ -240,6 +240,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       setStoreNames(newStoreNames);
       setNewStoreName('');
       console.log('Store name added successfully');
+      
+      // 即座にプロフィールを更新してテスト
+      console.log('Auto-updating profile with new store names...');
+      setTimeout(() => {
+        handleProfileUpdate();
+      }, 100);
     } else {
       console.log('Store name not added - either empty or already exists');
     }
