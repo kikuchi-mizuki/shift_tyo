@@ -22,6 +22,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [storeNames, setStoreNames] = useState<string[]>([]);
+  
+  // storeNamesの状態変更を監視
+  useEffect(() => {
+    console.log('storeNames state changed:', storeNames);
+  }, [storeNames]);
   const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [ngList, setNgList] = useState<string[]>([]); // NG薬剤師ID
@@ -124,11 +129,22 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         .single();
       
       if (!profileError && profileData) {
-        console.log('Profile data loaded:', profileData);
+        console.log('=== PROFILE DATA LOADED ===');
+        console.log('Full profile data:', profileData);
         console.log('store_names from DB:', profileData.store_names);
+        console.log('store_names type:', typeof profileData.store_names);
+        console.log('store_names is array:', Array.isArray(profileData.store_names));
+        
+        const storeNamesFromDB = profileData.store_names || [];
+        console.log('Setting storeNames to:', storeNamesFromDB);
         setProfileName(profileData.name || '');
-        setStoreNames(profileData.store_names || []);
+        setStoreNames(storeNamesFromDB);
         setNgList(profileData.ng_list || []);
+        
+        console.log('=== PROFILE DATA LOADED END ===');
+      } else {
+        console.log('Profile data load error:', profileError);
+        console.log('Profile data:', profileData);
       }
       
       // シフトに関連する薬剤師のプロフィールを取得
