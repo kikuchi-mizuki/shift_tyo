@@ -259,6 +259,17 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('Store names to save:', storeNames);
       console.log('NG list:', ngList);
       
+      // まず現在のプロフィールデータを確認
+      console.log('Checking current profile data...');
+      const { data: currentProfile, error: fetchError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      console.log('Current profile data:', currentProfile);
+      console.log('Fetch error:', fetchError);
+      
       // store_namesを直接保存（カラム存在チェックを削除）
       let updateData: any = { 
         name: profileName, 
@@ -289,9 +300,23 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           details: error.details,
           hint: error.hint
         });
-        alert(`プロフィールの更新に失敗しました: ${error.message}`);
+        
+        // RLSエラーの場合の特別な処理
+        if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
+          console.error('RLS permission error detected');
+          alert('権限エラー: プロフィールの更新が拒否されました。RLSポリシーを確認してください。');
+        } else {
+          alert(`プロフィールの更新に失敗しました: ${error.message}`);
+        }
       } else {
         console.log('Profile updated successfully');
+        console.log('Updated data returned:', updateResult);
+        
+        // 更新されたデータを確認
+        if (updateResult && updateResult.length > 0) {
+          console.log('Updated store_names:', updateResult[0].store_names);
+        }
+        
         alert('プロフィールを更新しました');
         setShowProfileEdit(false);
         // 成功時はローカルキャッシュも更新
