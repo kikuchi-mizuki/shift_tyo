@@ -24,6 +24,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [storeNames, setStoreNames] = useState<string[]>([]);
   const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
+  const [ngList, setNgList] = useState<string[]>([]); // NG薬剤師ID
+  const [selectedNgPharmacistId, setSelectedNgPharmacistId] = useState('');
+  const [allPharmacists, setAllPharmacists] = useState<any[]>([]);
 
   useEffect(() => {
     console.log('PharmacyDashboard mounted, user:', user);
@@ -102,6 +105,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');
         setStoreNames(profileData.store_names || []);
+        setNgList(profileData.ng_list || []);
       }
       
       // シフトに関連する薬剤師のプロフィールを取得
@@ -126,6 +130,19 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       setLoading(false);
     }
   };
+
+  // NG対象候補として全薬剤師のリストを取得
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('user_profiles')
+          .select('id,name,email')
+          .eq('user_type', 'pharmacist');
+        setAllPharmacists(data || []);
+      } catch {}
+    })();
+  }, []);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -200,7 +217,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         .eq('table_name', 'user_profiles')
         .eq('column_name', 'store_names');
       
-      let updateData: any = { name: profileName };
+      let updateData: any = { name: profileName, ng_list: ngList };
       
       // store_namesカラムが存在する場合のみ追加
       if (!tableError && tableInfo && tableInfo.length > 0) {
@@ -227,6 +244,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.error('Error updating profile:', error);
       alert('プロフィールの更新に失敗しました');
     }
+  };
+
+  const addNgPharmacist = () => {
+    if (selectedNgPharmacistId && !ngList.includes(selectedNgPharmacistId)) {
+      setNgList([...ngList, selectedNgPharmacistId]);
+      setSelectedNgPharmacistId('');
+    }
+  };
+  const removeNgPharmacist = (id: string) => {
+    setNgList(ngList.filter(x => x !== id));
   };
 
   const handlePost = async () => {
@@ -480,6 +507,32 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     </div>
                   )}
                 </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">NG薬剤師の設定</h3>
+                <div className="flex space-x-2 mb-2">
+                  <select
+                    value={selectedNgPharmacistId}
+                    onChange={(e) => setSelectedNgPharmacistId(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  >
+                    <option value="">薬剤師を選択</option>
+                    {allPharmacists.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name || p.email}</option>
+                    ))}
+                  </select>
+                  <button onClick={addNgPharmacist} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">追加</button>
+                </div>
+                {ngList.length > 0 && (
+                  <div className="space-y-1">
+                    {ngList.map((id) => (
+                      <div key={id} className="flex items-center justify-between bg-white p-2 rounded border">
+                        <span className="text-sm">{allPharmacists.find(p => p.id === id)?.name || id}</span>
+                        <button onClick={() => removeNgPharmacist(id)} className="text-red-600 hover:text-red-800 text-sm">削除</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleProfileUpdate}

@@ -54,6 +54,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [loading, setLoading] = useState(true);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
+  const [allPharmacies, setAllPharmacies] = useState<any[]>([]);
+  const [ngList, setNgList] = useState<string[]>([]); // 薬局IDの配列
+  const [selectedNgPharmacyId, setSelectedNgPharmacyId] = useState('');
 
 
   useEffect(() => {
@@ -110,6 +113,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');
+        setNgList(profileData.ng_list || []);
       }
       
       // シフトに関連する薬局のプロフィールを取得
@@ -134,6 +138,19 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       setLoading(false);
     }
   };
+
+  // 全薬局のリストを取得（NG選択用）
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('user_profiles')
+          .select('id,name,email')
+          .eq('user_type', 'pharmacy');
+        setAllPharmacies(data || []);
+      } catch {}
+    })();
+  }, []);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -191,7 +208,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
     try {
       const { error } = await supabase
         .from('user_profiles')
-        .update({ name: profileName })
+        .update({ name: profileName, ng_list: ngList })
         .eq('id', user.id);
       
       if (error) {
@@ -205,6 +222,16 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       console.error('Error updating profile:', error);
       alert('プロフィールの更新に失敗しました');
     }
+  };
+
+  const addNgPharmacy = () => {
+    if (selectedNgPharmacyId && !ngList.includes(selectedNgPharmacyId)) {
+      setNgList([...ngList, selectedNgPharmacyId]);
+      setSelectedNgPharmacyId('');
+    }
+  };
+  const removeNgPharmacy = (id: string) => {
+    setNgList(ngList.filter(x => x !== id));
   };
 
   const handleSubmit = async () => {
@@ -433,6 +460,39 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                   >
                     更新
                   </button>
+                </div>
+
+                {/* NG薬局の設定 */}
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">NG薬局の設定</h3>
+                  <div className="flex space-x-2 mb-2">
+                    <select
+                      value={selectedNgPharmacyId}
+                      onChange={(e) => setSelectedNgPharmacyId(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">薬局を選択</option>
+                      {allPharmacies.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name || p.email}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={addNgPharmacy}
+                      className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                    >
+                      追加
+                    </button>
+                  </div>
+                  {ngList.length > 0 && (
+                    <div className="space-y-1">
+                      {ngList.map((id) => (
+                        <div key={id} className="flex items-center justify-between bg-white p-2 rounded border">
+                          <span className="text-sm">{allPharmacies.find(p => p.id === id)?.name || id}</span>
+                          <button onClick={() => removeNgPharmacy(id)} className="text-red-600 hover:text-red-800 text-sm">削除</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
