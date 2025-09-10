@@ -389,26 +389,19 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   {/* 確定シフトがない場合のみ募集中シフト（青色）を表示 */}
                   {confirmedShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`).length === 0 && 
                    myShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`).map((shift: any, index: number) => (
-                    <div key={`recruiting-${index}`} className="text-[8px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">
-                      {shift.time_slot === 'morning' ? '午前' : 
-                       shift.time_slot === 'afternoon' ? '午後' : 
-                       shift.time_slot === 'full' ? '終日' : 
-                       shift.time_slot === 'consult' ? '要相談' : shift.time_slot}
-                      {shift.required_staff}人
-                      {/* 店舗名は store_name または memo から抽出 */}
-                      {(() => {
-                        const direct = (shift.store_name || '').trim();
-                        let fromMemo = '';
-                        if (!direct && typeof shift.memo === 'string') {
-                          const m = shift.memo.match(/\[store:([^\]]+)\]/);
-                          if (m && m[1]) fromMemo = m[1];
-                        }
-                        const name = direct || fromMemo;
-                        return name ? (
-                          <div className="text-[7px] text-blue-600 mt-0.5">{name}</div>
-                        ) : null;
-                      })()}
-                    </div>
+                    (() => {
+                      // 店舗名のみを表示（store_name -> memoのタグ の順で取得）
+                      const direct = (shift.store_name || '').trim();
+                      let fromMemo = '';
+                      if (!direct && typeof shift.memo === 'string') {
+                        const m = shift.memo.match(/\[store:([^\]]+)\]/);
+                        if (m && m[1]) fromMemo = m[1];
+                      }
+                      const name = direct || fromMemo;
+                      return name ? (
+                        <div key={`recruiting-${index}`} className="text-[8px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">{name}</div>
+                      ) : null;
+                    })()
                   ))}
                 </>
               )}
