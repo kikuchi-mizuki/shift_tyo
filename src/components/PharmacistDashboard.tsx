@@ -275,16 +275,88 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
     }
   };
 
-  const addNgPharmacy = () => {
+  const addNgPharmacy = async () => {
     if (selectedNgPharmacyId && !ngList.includes(selectedNgPharmacyId)) {
-      setNgList([...ngList, selectedNgPharmacyId]);
+      const newNgList = [...ngList, selectedNgPharmacyId];
+      setNgList(newNgList);
       setSelectedNgPharmacyId('');
       console.log('NG pharmacy added to local state:', selectedNgPharmacyId);
+      
+      // 即座にデータベースに保存
+      await updateNgListInDatabase(newNgList);
     }
   };
-  const removeNgPharmacy = (id: string) => {
-    setNgList(ngList.filter(x => x !== id));
+  const removeNgPharmacy = async (id: string) => {
+    const newNgList = ngList.filter(x => x !== id);
+    setNgList(newNgList);
     console.log('NG pharmacy removed from local state:', id);
+    
+    // 即座にデータベースに保存
+    await updateNgListInDatabase(newNgList);
+  };
+
+  const updateNgListInDatabase = async (newNgList: string[]) => {
+    try {
+      console.log('=== UPDATING NG LIST IN DATABASE ===');
+      console.log('User ID:', user.id);
+      console.log('New NG list:', newNgList);
+      
+      // ユーザーIDの確認
+      if (!user?.id) {
+        console.error('User ID is missing!');
+        return;
+      }
+      
+      const updatePayload = {
+        ng_list: newNgList
+      };
+      
+      console.log('Update payload:', updatePayload);
+      
+      const { data: updateResult, error } = await supabase
+        .from('user_profiles')
+        .update(updatePayload)
+        .eq('id', user.id)
+        .select('*');
+      
+      console.log('Update result:', { data: updateResult, error });
+      
+      if (error) {
+        console.error('Error updating NG list:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // RLSエラーの場合の特別な処理
+        if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
+          console.error('RLS permission error detected');
+          alert('権限エラー: NG薬局の更新が拒否されました。');
+        } else {
+          alert(`NG薬局の更新に失敗しました: ${error.message}`);
+        }
+      } else {
+        console.log('NG list updated successfully');
+        console.log('Updated data returned:', updateResult);
+        
+        // 更新されたデータを確認
+        if (updateResult && updateResult.length > 0) {
+          console.log('Updated ng_list:', updateResult[0].ng_list);
+        }
+        
+        // 成功時はローカルキャッシュも更新
+        try {
+          localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(newNgList));
+        } catch {}
+      }
+      
+      console.log('=== UPDATING NG LIST IN DATABASE END ===');
+    } catch (error) {
+      console.error('Error updating NG list:', error);
+      alert('NG薬局の更新に失敗しました');
+    }
   };
 
   const handleSubmit = async () => {
