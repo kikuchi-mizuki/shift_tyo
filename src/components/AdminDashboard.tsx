@@ -16,6 +16,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [userProfiles, setUserProfiles] = useState<any>({});
+  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
+    pharmacies: false,
+    pharmacists: false
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  // 薬局と薬剤師のデータを整理する関数
+  const getOrganizedUserData = () => {
+    const pharmacies: any[] = [];
+    const pharmacists: any[] = [];
+
+    Object.values(userProfiles).forEach((profile: any) => {
+      if (profile.user_type === 'pharmacy') {
+        pharmacies.push(profile);
+      } else if (profile.user_type === 'pharmacist') {
+        pharmacists.push(profile);
+      }
+    });
+
+    return { pharmacies, pharmacists };
+  };
 
 
   useEffect(() => {
@@ -65,7 +92,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       logToRailway('Fetching user profiles...');
       
       // まず、シフトに含まれるユーザーIDを収集
-      const userIds = new Set();
+      const userIds = new Set<string>();
       if (assignedData) {
         assignedData.forEach((shift: any) => {
           userIds.add(shift.pharmacist_id);
@@ -388,7 +415,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       loadAll();
     } catch (error) {
       console.error('Error in handleCancelConfirmedShifts:', error);
-      alert(`確定シフトの取り消しに失敗しました: ${error.message || 'Unknown error'}`);
+      alert(`確定シフトの取り消しに失敗しました: ${(error as any).message || 'Unknown error'}`);
     }
   };
 
@@ -444,8 +471,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
 
 
-  const y = currentDate.getFullYear();
-  const m = (currentDate.getMonth() + 1).toString().padStart(2, '0');
 
   if (loading) {
     return (
@@ -1153,6 +1178,143 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             
             <div className="text-xs text-gray-500">最終更新: {lastUpdated.toLocaleString('ja-JP')}</div>
           </div>
+        </div>
+
+        {/* ユーザー一覧セクション */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">ユーザー管理</h2>
+          
+          {(() => {
+            const { pharmacies, pharmacists } = getOrganizedUserData();
+            
+            return (
+              <div className="space-y-4">
+                {/* 薬局一覧 */}
+                <div className="border border-gray-200 rounded-lg">
+                  <button
+                    onClick={() => toggleSection('pharmacies')}
+                    className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center justify-between"
+                  >
+                    <span className="font-medium text-gray-800">
+                      薬局一覧 ({pharmacies.length}件)
+                    </span>
+                    <span className="text-gray-500">
+                      {expandedSections.pharmacies ? '▼' : '▶'}
+                    </span>
+                  </button>
+                  
+                  {expandedSections.pharmacies && (
+                    <div className="p-4 space-y-3">
+                      {pharmacies.length === 0 ? (
+                        <div className="text-sm text-gray-500">登録されている薬局はありません</div>
+                      ) : (
+                        pharmacies.map((pharmacy: any) => (
+                          <div key={pharmacy.id} className="bg-white border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-gray-800">{pharmacy.name || '名前未設定'}</h4>
+                              <span className="text-xs text-gray-500">{pharmacy.email}</span>
+                            </div>
+                            
+                            {/* 店舗名 */}
+                            <div className="mb-2">
+                              <div className="text-xs text-gray-600 mb-1">店舗名:</div>
+                              <div className="text-sm">
+                                {pharmacy.store_names && pharmacy.store_names.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {pharmacy.store_names.map((storeName: string, idx: number) => (
+                                      <span key={idx} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                                        {storeName}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500">未設定</span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* NGリスト */}
+                            <div>
+                              <div className="text-xs text-gray-600 mb-1">NG薬剤師:</div>
+                              <div className="text-sm">
+                                {pharmacy.ng_list && pharmacy.ng_list.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {pharmacy.ng_list.map((ngId: string, idx: number) => {
+                                      const ngPharmacist = userProfiles[ngId];
+                                      return (
+                                        <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                                          {ngPharmacist?.name || ngPharmacist?.email || ngId}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500">なし</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 薬剤師一覧 */}
+                <div className="border border-gray-200 rounded-lg">
+                  <button
+                    onClick={() => toggleSection('pharmacists')}
+                    className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center justify-between"
+                  >
+                    <span className="font-medium text-gray-800">
+                      薬剤師一覧 ({pharmacists.length}件)
+                    </span>
+                    <span className="text-gray-500">
+                      {expandedSections.pharmacists ? '▼' : '▶'}
+                    </span>
+                  </button>
+                  
+                  {expandedSections.pharmacists && (
+                    <div className="p-4 space-y-3">
+                      {pharmacists.length === 0 ? (
+                        <div className="text-sm text-gray-500">登録されている薬剤師はありません</div>
+                      ) : (
+                        pharmacists.map((pharmacist: any) => (
+                          <div key={pharmacist.id} className="bg-white border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-gray-800">{pharmacist.name || '名前未設定'}</h4>
+                              <span className="text-xs text-gray-500">{pharmacist.email}</span>
+                            </div>
+                            
+                            {/* NGリスト */}
+                            <div>
+                              <div className="text-xs text-gray-600 mb-1">NG薬局:</div>
+                              <div className="text-sm">
+                                {pharmacist.ng_list && pharmacist.ng_list.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {pharmacist.ng_list.map((ngId: string, idx: number) => {
+                                      const ngPharmacy = userProfiles[ngId];
+                                      return (
+                                        <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                                          {ngPharmacy?.name || ngPharmacy?.email || ngId}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500">なし</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
