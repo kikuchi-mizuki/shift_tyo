@@ -280,8 +280,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.error('JSON:', JSON.stringify(storeNamesToUpdate));
       console.error('User ID:', user.id);
       
-      // アラートでも確認
-      alert(`店舗名デバッグ: ${JSON.stringify(storeNamesToUpdate)}\nユーザーID: ${user.id}`);
       
       const updatePayload = {
         name: profileName || user.email || 'Unknown',
