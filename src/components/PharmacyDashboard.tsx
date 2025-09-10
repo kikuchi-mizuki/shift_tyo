@@ -346,6 +346,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         console.warn('Failed to send debug log to Railway:', logError);
       }
       
+      // 強制的にコンソールに表示（フィルターを回避）
+      console.error('=== STORE NAMES DEBUG ===');
+      console.error('storeNames:', storeNames);
+      console.error('isArray:', Array.isArray(storeNames));
+      console.error('JSON:', JSON.stringify(storeNames));
+      
       const updatePayload = {
         name: profileName,
         ng_list: ngList,
