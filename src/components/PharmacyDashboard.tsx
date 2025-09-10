@@ -266,6 +266,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('handlePost called', { selectedDate, timeSlot, requiredStaff, memo });
     
     // 既存の募集があるかチェック（同日・同店舗名で判断）
+    console.log('=== HANDLEPOST DEBUG ===');
+    console.log('selectedDate:', selectedDate);
+    console.log('selectedStoreName:', selectedStoreName);
+    console.log('myShifts:', myShifts);
+    
     const existingPosting = myShifts.find((s: any) => {
       if (s.date !== selectedDate) return false;
       
@@ -273,12 +278,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       const sStoreName = (s.store_name || '').trim();
       const selectedStore = (selectedStoreName || '').trim();
       
+      console.log('Comparing store names:', { sStoreName, selectedStore, match: sStoreName === selectedStore });
+      
       // 両方とも空の場合は同じ店舗名とみなす
       if (sStoreName === '' && selectedStore === '') return true;
       
       // 通常の文字列比較
       return sStoreName === selectedStore;
     });
+    
+    console.log('existingPosting found:', existingPosting);
     
     if (existingPosting) {
       // 既存の募集がある場合は削除
