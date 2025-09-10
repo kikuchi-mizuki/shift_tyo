@@ -43,6 +43,15 @@ class ErrorBoundary extends Component<
             <pre className="mt-2 p-2 bg-red-100 rounded text-xs overflow-auto">
               {this.state.error?.toString()}
             </pre>
+            {this.state.error && (
+              <pre className="mt-2 p-2 bg-red-50 rounded text-xs overflow-auto">
+                {this.state.error.stack}
+              </pre>
+            )}
+            {/* component stack (どのコンポーネントで発生したか) */}
+            <pre className="mt-2 p-2 bg-red-50 rounded text-xs overflow-auto">
+              {(this as any)?.componentStack || ''}
+            </pre>
           </details>
           <button
             onClick={() => this.setState({ hasError: false })}
