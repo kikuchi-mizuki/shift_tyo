@@ -1,13 +1,13 @@
 import React, { useState, useEffect, Component, ReactNode } from 'react';
 import { supabase, auth } from './lib/supabase';
 import LoginForm from './components/LoginForm';
-import UserDashboard from './components/UserDashboard';
-import PharmacistDashboard from './components/PharmacistDashboard';
-import PharmacyDashboard from './components/PharmacyDashboard';
-import AdminDashboard from './components/AdminDashboard';
-import AdminPanel from './components/AdminPanel';
-import AdminMatchingPanel from './components/AdminMatchingPanel';
-import UserManagement from './components/UserManagement';
+// 遅延読み込みで循環依存や初期化順の問題を回避
+const PharmacistDashboard = React.lazy(() => import('./components/PharmacistDashboard'));
+const PharmacyDashboard = React.lazy(() => import('./components/PharmacyDashboard'));
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
+const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
+const AdminMatchingPanel = React.lazy(() => import('./components/AdminMatchingPanel'));
+const UserManagement = React.lazy(() => import('./components/UserManagement'));
 import { useAuth } from './hooks/useAuth';
 
 // エラーバウンダリーコンポーネント
@@ -159,15 +159,17 @@ function App() {
         {/* メインコンテンツ */}
         <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
           <ErrorBoundary>
-            {userType === 'pharmacist' && (
-              <PharmacistDashboard user={user} />
-            )}
-            {(userType === 'pharmacy' || userType === 'store') && (
-              <PharmacyDashboard user={user} />
-            )}
-            {userType === 'admin' && (
-              <AdminDashboard user={user} />
-            )}
+            <React.Suspense fallback={<div className="p-6 text-gray-600">読み込み中...</div>}>
+              {userType === 'pharmacist' && (
+                <PharmacistDashboard user={user} />
+              )}
+              {(userType === 'pharmacy' || userType === 'store') && (
+                <PharmacyDashboard user={user} />
+              )}
+              {userType === 'admin' && (
+                <AdminDashboard user={user} />
+              )}
+            </React.Suspense>
           </ErrorBoundary>
         </main>
       </div>
