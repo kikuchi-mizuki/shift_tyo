@@ -257,6 +257,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('User ID:', user.id);
       console.log('Profile name:', profileName);
       console.log('Store names to save:', storeNames);
+      console.log('Store names type:', typeof storeNames);
+      console.log('Store names length:', storeNames.length);
       console.log('NG list:', ngList);
       
       // まず現在のプロフィールデータを確認
@@ -268,6 +270,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         .single();
       
       console.log('Current profile data:', currentProfile);
+      console.log('Current store_names in DB:', currentProfile?.store_names);
       console.log('Fetch error:', fetchError);
       
       // store_namesを直接保存（カラム存在チェックを削除）
@@ -278,8 +281,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       };
       
       console.log('Saving store_names directly:', storeNames);
+      console.log('Store names JSON stringified:', JSON.stringify(storeNames));
       
       console.log('Final update data:', updateData);
+      console.log('Final update data JSON:', JSON.stringify(updateData));
       
       console.log('Executing update query with data:', updateData);
       console.log('User ID for update:', user.id);
@@ -291,6 +296,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         .select();
       
       console.log('Update result:', { data: updateResult, error });
+      console.log('Update result data:', updateResult);
+      console.log('Update result error:', error);
       
       if (error) {
         console.error('Error updating profile:', error);
