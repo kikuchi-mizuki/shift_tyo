@@ -195,26 +195,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     setSelectedDate(formattedDate);
     
-    // 既存の募集がある場合は自動選択
-    const existingPosting = myShifts.find((s: any) => s.date === formattedDate);
-    if (existingPosting) {
-      console.log('Found existing posting for date', existingPosting);
-      setTimeSlot(existingPosting.time_slot);
-      setRequiredStaff(existingPosting.required_staff);
-      setMemo(stripStoreTag(existingPosting.memo || ''));
-      // 店舗名（store_name または memoの[store:◯◯]）を自動反映
-      if (existingPosting.store_name && typeof existingPosting.store_name === 'string') {
-        setSelectedStoreName(existingPosting.store_name);
-      } else if (existingPosting.memo && typeof existingPosting.memo === 'string') {
-        const m = existingPosting.memo.match(/\[store:([^\]]+)\]/);
-        if (m && m[1]) setSelectedStoreName(m[1]);
-      }
-    } else {
-      // 新しい日付の場合はフォームをリセット
-      setTimeSlot('');
-      setRequiredStaff(null);
-      setMemo('');
-    }
+    // 新しい日付の場合はフォームをリセット
+    setTimeSlot('');
+    setRequiredStaff(null);
+    setMemo('');
+    // 店舗名はリセットしない（ユーザーが選択した店舗名を保持）
   };
 
   const handleAddStoreName = () => {
@@ -281,7 +266,19 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('handlePost called', { selectedDate, timeSlot, requiredStaff, memo });
     
     // 既存の募集があるかチェック（同日・同店舗名で判断）
-    const existingPosting = myShifts.find((s: any) => s.date === selectedDate && ((s.store_name || '') === (selectedStoreName || '')));
+    const existingPosting = myShifts.find((s: any) => {
+      if (s.date !== selectedDate) return false;
+      
+      // 店舗名の比較（両方とも空文字列の場合は同じとみなす）
+      const sStoreName = (s.store_name || '').trim();
+      const selectedStore = (selectedStoreName || '').trim();
+      
+      // 両方とも空の場合は同じ店舗名とみなす
+      if (sStoreName === '' && selectedStore === '') return true;
+      
+      // 通常の文字列比較
+      return sStoreName === selectedStore;
+    });
     
     if (existingPosting) {
       // 既存の募集がある場合は削除
@@ -699,12 +696,28 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 handlePost();
               }}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${
-                myShifts.find((s: any) => s.date === selectedDate && ((s.store_name || '') === (selectedStoreName || '')))
-                  ? 'bg-red-600 text-white hover:bg-red-700'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                (() => {
+                  const existing = myShifts.find((s: any) => {
+                    if (s.date !== selectedDate) return false;
+                    const sStoreName = (s.store_name || '').trim();
+                    const selectedStore = (selectedStoreName || '').trim();
+                    if (sStoreName === '' && selectedStore === '') return true;
+                    return sStoreName === selectedStore;
+                  });
+                  return existing ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700';
+                })()
               }`}
             >
-              {myShifts.find((s: any) => s.date === selectedDate && ((s.store_name || '') === (selectedStoreName || ''))) ? '募集を削除' : '募集を追加'}
+              {(() => {
+                const existing = myShifts.find((s: any) => {
+                  if (s.date !== selectedDate) return false;
+                  const sStoreName = (s.store_name || '').trim();
+                  const selectedStore = (selectedStoreName || '').trim();
+                  if (sStoreName === '' && selectedStore === '') return true;
+                  return sStoreName === selectedStore;
+                });
+                return existing ? '募集を削除' : '募集を追加';
+              })()}
             </button>
           )}
         </div>
