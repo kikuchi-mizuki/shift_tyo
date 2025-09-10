@@ -30,6 +30,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     loadData();
   }, [user]);
 
+  // 店舗名リストが取得できたら、未選択の場合は先頭を自動選択
+  useEffect(() => {
+    if (!selectedStoreName && storeNames && storeNames.length > 0) {
+      setSelectedStoreName(storeNames[0]);
+    }
+  }, [storeNames]);
+
   const loadData = async () => {
     try {
       console.log('Loading pharmacy data...');
@@ -450,7 +457,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           {/* デバッグ情報 */}
           <div className="p-3 bg-gray-100 rounded text-xs">
             <div>選択日: {selectedDate || '未選択'}</div>
-            <div>店舗名: {selectedStoreName || '未選択'}</div>
+            <div>店舗名: {selectedStoreName || (storeNames[0] || '未選択')}</div>
             <div>時間帯: {timeSlot || '未選択'}</div>
             <div>人数: {requiredStaff || '未選択'}</div>
             <div>備考: {memo || 'なし'}</div>
