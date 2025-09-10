@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Shield, RefreshCw, AlertCircle } from 'lucide-react';
+import { Calendar, RefreshCw, AlertCircle } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, supabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
@@ -9,9 +9,9 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
-  const [assigned, setAssigned] = useState([]);
-  const [requests, setRequests] = useState([]);
-  const [postings, setPostings] = useState([]);
+  const [assigned, setAssigned] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [postings, setPostings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -272,7 +272,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('Current postings:', postings);
       
       // 希望シフトと募集シフトをマッチングして確定済みシフトを作成
-      const confirmedShifts = [];
+      const confirmedShifts: any[] = [];
       
       // 各日付で希望と募集をマッチング
       const dateGroups = new Map();
@@ -349,7 +349,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       if (error) {
         console.error('Error confirming shifts:', error);
-        alert(`シフトの確定に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        alert(`シフトの確定に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
         return;
       }
 
@@ -361,7 +361,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       loadAll();
     } catch (error) {
       console.error('Error in handleConfirmShifts:', error);
-      alert(`シフトの確定に失敗しました: ${error.message || 'Unknown error'}`);
+      alert(`シフトの確定に失敗しました: ${(error as any).message || 'Unknown error'}`);
     }
   };
 
@@ -432,7 +432,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       loadAll();
     } catch (error) {
       console.error('Error in handleSaveShiftEdit:', error);
-      alert(`シフトの更新に失敗しました: ${error.message || 'Unknown error'}`);
+      alert(`シフトの更新に失敗しました: ${(error as any).message || 'Unknown error'}`);
     }
   };
 
@@ -446,7 +446,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const y = currentDate.getFullYear();
   const m = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-  const isSameDate = (d: number, target: string) => target === `${y}-${m}-${d.toString().padStart(2,'0')}`;
 
   if (loading) {
     return (
@@ -510,8 +509,55 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               // その日の確定シフトを取得
               const dayAssignedShifts = assigned.filter((s: any) => s.date === dateStr && s.status === 'confirmed');
               
-              // 確定シフトがある場合は、希望・募集は表示しない
-              const hasConfirmedShifts = dayAssignedShifts.length > 0;
+              // その日の希望と募集を取得
+              const dayRequests = requests.filter((r: any) => r.date === dateStr);
+              const dayPostings = postings.filter((p: any) => p.date === dateStr);
+              
+              // マッチング状況を計算
+              const calculateMatchingStatus = () => {
+                if (dayAssignedShifts.length > 0) {
+                  return { type: 'confirmed', count: dayAssignedShifts.length };
+                }
+                
+                if (dayRequests.length === 0 && dayPostings.length === 0) {
+                  return { type: 'empty', count: 0 };
+                }
+                
+                // 時間帯ごとにマッチング状況を分析
+                const timeSlots = ['morning', 'afternoon', 'full', 'consult'];
+                let totalMatched = 0;
+                let totalRequired = 0;
+                let totalAvailable = 0;
+                
+                timeSlots.forEach(timeSlot => {
+                  const slotRequests = dayRequests.filter((r: any) => r.time_slot === timeSlot);
+                  const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot);
+                  
+                  if (slotRequests.length > 0 || slotPostings.length > 0) {
+                    const slotRequired = slotPostings.reduce((sum: number, p: any) => sum + p.required_staff, 0);
+                    const slotAvailable = slotRequests.length;
+                    const slotMatched = Math.min(slotRequired, slotAvailable);
+                    
+                    totalRequired += slotRequired;
+                    totalAvailable += slotAvailable;
+                    totalMatched += slotMatched;
+                  }
+                });
+                
+                if (totalRequired === 0) {
+                  return { type: 'requests_only', count: totalAvailable };
+                }
+                
+                if (totalMatched === totalRequired) {
+                  return { type: 'matched', count: totalMatched };
+                } else if (totalAvailable < totalRequired) {
+                  return { type: 'shortage', count: totalMatched, shortage: totalRequired - totalAvailable };
+                } else {
+                  return { type: 'excess', count: totalMatched, excess: totalAvailable - totalRequired };
+                }
+              };
+              
+              const matchingStatus = calculateMatchingStatus();
               
               return (
                 <div 
@@ -527,17 +573,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     <>
                       <div className="font-medium">{d}</div>
                       
-                      {/* 確定シフトがある場合 */}
-                      {hasConfirmedShifts && (
+                      {/* マッチング状況表示 */}
+                      {matchingStatus.type === 'confirmed' && (
                         <div className="relative group">
-                                                  <div className="text-[8px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
-                          確定
-                        </div>
+                          <div className="text-[8px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                            確定 {matchingStatus.count}件
+                          </div>
                           
-                                                     {/* マウスオーバーで表示される詳細情報 */}
-                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-                             <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
-                               <div className="font-medium mb-2">確定シフト詳細</div>
+                          {/* マウスオーバーで表示される詳細情報 */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
+                              <div className="font-medium mb-2">確定シフト詳細</div>
                                {dayAssignedShifts.map((shift: any, index: number) => {
                                  const pharmacistProfile = userProfiles[shift.pharmacist_id];
                                  const pharmacyProfile = userProfiles[shift.pharmacy_id];
@@ -579,18 +625,78 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       
-                      {/* 確定シフトがない場合のみ、希望・募集を表示 */}
-                      {!hasConfirmedShifts && (
-                        <>
-                          {/* requests */}
-                          {requests.some((r:any)=>isSameDate(d, r.date)) && (
-                                                      <div className="text-[8px] sm:text-[10px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-1 mt-1 inline-block mr-1">希望</div>
-                        )}
-                        {/* postings */}
-                        {postings.some((p:any)=>isSameDate(d, p.date)) && (
-                          <div className="text-[8px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集</div>
-                        )}
-                        </>
+                      {/* マッチング状況表示（確定シフトがない場合） */}
+                      {matchingStatus.type === 'matched' && (
+                        <div className="relative group">
+                          <div className="text-[8px] sm:text-[10px] text-green-600 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                            マッチ {matchingStatus.count}件
+                          </div>
+                          
+                          {/* マウスオーバーで表示される詳細情報 */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
+                              <div className="font-medium mb-2">マッチング状況</div>
+                              <div>マッチング: {matchingStatus.count}件</div>
+                              <div>希望: {dayRequests.length}件</div>
+                              <div>募集: {dayPostings.length}件</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {matchingStatus.type === 'shortage' && (
+                        <div className="relative group">
+                          <div className="text-[8px] sm:text-[10px] text-red-600 bg-red-50 border border-red-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                            不足 {matchingStatus.shortage}人
+                          </div>
+                          
+                          {/* マウスオーバーで表示される詳細情報 */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
+                              <div className="font-medium mb-2">人員不足</div>
+                              <div>マッチング: {matchingStatus.count}件</div>
+                              <div>不足: {matchingStatus.shortage}人</div>
+                              <div>希望: {dayRequests.length}件</div>
+                              <div>募集: {dayPostings.length}件</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {matchingStatus.type === 'excess' && (
+                        <div className="relative group">
+                          <div className="text-[8px] sm:text-[10px] text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                            余裕 {matchingStatus.excess}人
+                          </div>
+                          
+                          {/* マウスオーバーで表示される詳細情報 */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
+                              <div className="font-medium mb-2">人員余裕</div>
+                              <div>マッチング: {matchingStatus.count}件</div>
+                              <div>余裕: {matchingStatus.excess}人</div>
+                              <div>希望: {dayRequests.length}件</div>
+                              <div>募集: {dayPostings.length}件</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {matchingStatus.type === 'requests_only' && (
+                        <div className="relative group">
+                          <div className="text-[8px] sm:text-[10px] text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                            希望 {matchingStatus.count}件
+                          </div>
+                          
+                          {/* マウスオーバーで表示される詳細情報 */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
+                              <div className="font-medium mb-2">希望のみ</div>
+                              <div>希望: {matchingStatus.count}件</div>
+                              <div>募集: 0件</div>
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </>
                   )}
@@ -601,12 +707,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         </div>
 
         {/* right panel */}
-        <div className="w-full lg:w-96 bg-white rounded-lg shadow border border-purple-200">
-          <div className="bg-purple-600 text-white p-4 rounded-t-lg">
+        <div className="w-full lg:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
+          <div className="bg-purple-600 text-white p-4 rounded-t-lg flex-shrink-0">
             <h2 className="text-xl font-semibold">管理者パネル</h2>
             <p className="text-sm text-purple-100 mt-1">システム全体の状態管理と調整</p>
           </div>
-          <div className="p-4 lg:p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
             <button 
               onClick={handleConfirmShifts}
               className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm ${
@@ -622,17 +728,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             {/* 選択された日付の詳細表示 */}
             {selectedDate && (
               <div className="bg-blue-50 rounded-lg p-4 space-y-3">
-                <h3 className="text-sm font-medium text-blue-800">選択された日付の詳細</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-blue-800">選択された日付の詳細</h3>
+                  <button
+                    onClick={() => setSelectedDate('')}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    ✕ 閉じる
+                  </button>
+                </div>
                 <div className="text-sm text-blue-700">
-                  <div className="mb-3">
+                  <div className="mb-3 p-2 bg-white rounded border">
                     <strong>日付:</strong> {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日
                   </div>
                   
                   {/* 確定シフト */}
                   {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length > 0 && (
                     <div className="mb-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <strong className="text-green-700">✅ 確定シフト:</strong>
+                      <div className="flex items-center justify-between mb-2">
+                        <strong className="text-green-700">✅ 確定シフト ({assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length}件):</strong>
                         <button
                           onClick={() => handleCancelConfirmedShifts(selectedDate)}
                           className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
@@ -640,6 +754,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           確定取り消し
                         </button>
                       </div>
+                      <div className="max-h-40 overflow-y-auto space-y-2">
                       {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
                         const pharmacistProfile = userProfiles[shift.pharmacist_id];
                         const pharmacyProfile = userProfiles[shift.pharmacy_id];
@@ -749,13 +864,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         );
                       })}
+                      </div>
                     </div>
                   )}
                   
                   {/* シフト募集 */}
                   {postings.filter((p: any) => p.date === selectedDate).length > 0 && (
                     <div className="mb-3">
-                      <strong className="text-orange-700 block mb-1">📢 募集している薬局:</strong>
+                      <strong className="text-orange-700 block mb-2">📢 募集している薬局 ({postings.filter((p: any) => p.date === selectedDate).length}件):</strong>
+                      <div className="max-h-40 overflow-y-auto space-y-2">
                       {postings.filter((p: any) => p.date === selectedDate).map((posting: any, index: number) => {
                         const pharmacyProfile = userProfiles[posting.pharmacy_id];
                         return (
@@ -768,13 +885,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         );
                       })}
+                      </div>
                     </div>
                   )}
                   
                   {/* シフト希望 */}
                   {requests.filter((r: any) => r.date === selectedDate).length > 0 && (
                     <div className="mb-3">
-                      <strong className="text-blue-700 block mb-1">👨‍⚕️ 応募している薬剤師:</strong>
+                      <strong className="text-blue-700 block mb-2">👨‍⚕️ 応募している薬剤師 ({requests.filter((r: any) => r.date === selectedDate).length}件):</strong>
+                      <div className="max-h-40 overflow-y-auto space-y-2">
                       {requests.filter((r: any) => r.date === selectedDate).map((request: any, index: number) => {
                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                         return (
@@ -787,6 +906,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         );
                       })}
+                      </div>
                     </div>
                   )}
                   
@@ -831,7 +951,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       
                       // 薬剤師を優先順位でソート（高→中→低）
                       const sortedRequests = slotRequests.sort((a: any, b: any) => {
-                        const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+                        const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
                         return priorityOrder[b.priority] - priorityOrder[a.priority];
                       });
                       
@@ -839,8 +959,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       const totalAvailable = sortedRequests.length;
                       
                       // マッチングシミュレーション（優先順位順）
-                      const matchedPharmacists = [];
-                      const matchedPharmacies = [];
+                      const matchedPharmacists: any[] = [];
+                      const matchedPharmacies: any[] = [];
                       let remainingRequired = totalRequired;
                       
                       // 各薬局の必要人数を管理
@@ -885,7 +1005,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     if (matchingAnalysis.length > 0) {
                       return (
                         <div className="mb-2">
-                          <strong className="text-purple-700 block mb-1">🔗 マッチング状況:</strong>
+                          <strong className="text-purple-700 block mb-2">🔗 マッチング状況:</strong>
+                          <div className="max-h-40 overflow-y-auto space-y-2">
                           {matchingAnalysis.map((analysis: any, index: number) => (
                             <div key={index} className="ml-2 text-xs bg-purple-100 p-2 rounded mb-1">
                               <div className="font-medium">
@@ -980,6 +1101,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
            )}
                             </div>
                           ))}
+                          </div>
                         </div>
                       );
                     }
