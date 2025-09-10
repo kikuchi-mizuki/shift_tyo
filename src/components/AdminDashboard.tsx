@@ -871,7 +871,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   </div>
                                   <button
                                     onClick={() => handleEditShift(shift)}
-                                    className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
+                                    className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
                                   >
                                     編集
                                   </button>
@@ -949,7 +949,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 <div className="text-gray-500">
                                   {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'}
                                 </div>
-                                <div className={`text-xs font-medium ${priorityColor}`}>
+                                <div className={`font-medium ${priorityColor}`}>
                                   {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
                                 </div>
                               </div>
@@ -1070,7 +1070,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                    analysis.timeSlot === 'full' ? '終日' : 
                                    analysis.timeSlot === 'consult' ? '要相談' : analysis.timeSlot}
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-gray-500">
                                   {analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募
                                   {analysis.remainingRequired > 0 && (
                                     <span className="text-red-600 ml-1">(不足{analysis.remainingRequired}人)</span>
@@ -1080,7 +1080,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   )}
                                 </div>
                               </div>
-                              <div className="text-xs text-gray-600">
+                              <div className="text-gray-600">
                               {analysis.timeSlot === 'consult' ? (
                                 // 要相談の場合は薬剤師名を表示
                                 <div>
@@ -1100,7 +1100,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   {/* マッチング済みの薬剤師と薬局 */}
                                   {analysis.matchedPharmacists.length > 0 && (
                                     <div className="mb-1">
-                                      <div className="text-xs font-medium text-green-700 mb-1">✅ マッチング済み:</div>
+                                      <div className="font-medium text-green-700 mb-1">✅ マッチング済み:</div>
                                       {analysis.matchedPharmacists.map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const pharmacyProfile = userProfiles[analysis.matchedPharmacies[idx].pharmacy_id];
@@ -1118,7 +1118,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   {/* 未マッチングの薬剤師 */}
                                   {analysis.remainingRequired === 0 && analysis.hasExcess && (
                                     <div className="mt-1">
-                                      <div className="text-xs font-medium text-orange-700 mb-1">⏳ 未マッチング:</div>
+                                      <div className="font-medium text-orange-700 mb-1">⏳ 未マッチング:</div>
                                       {analysis.requests.slice(analysis.totalRequired).map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
