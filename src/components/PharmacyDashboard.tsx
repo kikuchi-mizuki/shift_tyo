@@ -159,6 +159,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       setTimeSlot(existingPosting.time_slot);
       setRequiredStaff(existingPosting.required_staff);
       setMemo(existingPosting.memo || '');
+      // 店舗名（store_name または memoの[store:◯◯]）を自動反映
+      if (existingPosting.store_name && typeof existingPosting.store_name === 'string') {
+        setSelectedStoreName(existingPosting.store_name);
+      } else if (existingPosting.memo && typeof existingPosting.memo === 'string') {
+        const m = existingPosting.memo.match(/\[store:([^\]]+)\]/);
+        if (m && m[1]) setSelectedStoreName(m[1]);
+      }
     } else {
       // 新しい日付の場合はフォームをリセット
       setTimeSlot('');
