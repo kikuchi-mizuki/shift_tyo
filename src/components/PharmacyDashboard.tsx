@@ -323,6 +323,29 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('store_names is array:', Array.isArray(storeNames));
       console.log('store_names JSON:', JSON.stringify(storeNames));
       
+      // Railwayログでも確認
+      try {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api/log`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'log',
+            message: `[STORE_NAMES_DEBUG] About to send update with store_names`,
+            data: {
+              storeNames: storeNames,
+              isArray: Array.isArray(storeNames),
+              jsonString: JSON.stringify(storeNames)
+            },
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (logError) {
+        console.warn('Failed to send debug log to Railway:', logError);
+      }
+      
       const updatePayload = {
         name: profileName,
         ng_list: ngList,
