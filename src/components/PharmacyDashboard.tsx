@@ -258,24 +258,33 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const handleProfileUpdateWithStoreNames = async (storeNamesToUpdate: string[]) => {
     try {
       console.log('=== PROFILE UPDATE WITH STORE NAMES START ===');
-      console.log('User ID:', user.id);
+      console.log('User ID:', user?.id);
+      console.log('User object:', user);
       console.log('Profile name:', profileName);
       console.log('Store names to save:', storeNamesToUpdate);
       console.log('Store names type:', typeof storeNamesToUpdate);
       console.log('Store names length:', storeNamesToUpdate.length);
       console.log('NG list:', ngList);
       
+      // ユーザーIDの確認
+      if (!user?.id) {
+        console.error('User ID is missing!');
+        alert('ユーザーIDが取得できません。ログインし直してください。');
+        return;
+      }
+      
       // 強制的にコンソールに表示（フィルターを回避）
       console.error('=== STORE NAMES DEBUG ===');
       console.error('storeNames:', storeNamesToUpdate);
       console.error('isArray:', Array.isArray(storeNamesToUpdate));
       console.error('JSON:', JSON.stringify(storeNamesToUpdate));
+      console.error('User ID:', user.id);
       
       // アラートでも確認
-      alert(`店舗名デバッグ: ${JSON.stringify(storeNamesToUpdate)}`);
+      alert(`店舗名デバッグ: ${JSON.stringify(storeNamesToUpdate)}\nユーザーID: ${user.id}`);
       
       const updatePayload = {
-        name: profileName,
+        name: profileName || user.email || 'Unknown',
         ng_list: ngList,
         store_names: storeNamesToUpdate
       };
