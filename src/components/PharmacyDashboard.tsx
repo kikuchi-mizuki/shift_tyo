@@ -345,11 +345,19 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                        shift.time_slot === 'full' ? '終日' : 
                        shift.time_slot === 'consult' ? '要相談' : shift.time_slot}
                       {shift.required_staff}人
-                      {shift.store_name && (
-                        <div className="text-[7px] text-blue-600 mt-0.5">
-                          {shift.store_name}
-                        </div>
-                      )}
+                      {/* 店舗名は store_name または memo から抽出 */}
+                      {(() => {
+                        const direct = (shift.store_name || '').trim();
+                        let fromMemo = '';
+                        if (!direct && typeof shift.memo === 'string') {
+                          const m = shift.memo.match(/\[store:([^\]]+)\]/);
+                          if (m && m[1]) fromMemo = m[1];
+                        }
+                        const name = direct || fromMemo;
+                        return name ? (
+                          <div className="text-[7px] text-blue-600 mt-0.5">{name}</div>
+                        ) : null;
+                      })()}
                     </div>
                   ))}
                 </>

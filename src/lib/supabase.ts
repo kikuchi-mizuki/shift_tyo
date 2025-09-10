@@ -656,13 +656,25 @@ export const shiftPostings = {
         // ステータスの既定値 ('open' / 'recruiting') どちらでも運用できるように 'recruiting' を採用
         const status = p.status === 'open' ? 'recruiting' : (p.status || 'recruiting');
 
-        // 送信カラムを制限（未知のカラムは除去: store_name など）
+        // 店舗名の保存: スキーマに専用カラムが無い想定のため、memoに埋め込み
+        const memoWithStore = (() => {
+          const rawMemo = p.memo ?? '';
+          const name = p.store_name || p.selectedStoreName;
+          if (name && typeof name === 'string' && name.trim().length > 0) {
+            // 先頭にタグ形式で埋め込む（再保存時の重複付与を防止）
+            if (rawMemo.includes('[store:')) return rawMemo;
+            return `[store:${name.trim()}] ${rawMemo}`.trim();
+          }
+          return rawMemo || null;
+        })();
+
+        // 送信カラムを制限（未知のカラムは除去）
         return {
           pharmacy_id: p.pharmacy_id,
           date: p.date, // YYYY-MM-DD 文字列想定（date型に自動変換される）
           time_slot: normalizedTimeSlot,
           required_staff: requiredStaff,
-          memo: p.memo ?? null,
+          memo: memoWithStore,
           status
         };
       });
