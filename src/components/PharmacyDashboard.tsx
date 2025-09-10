@@ -278,8 +278,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     const existingPosting = myShifts.find((s: any) => {
       if (s.date !== selectedDate) return false;
       
-      // 店舗名の比較（両方とも空文字列の場合は同じとみなす）
-      const sStoreName = (s.store_name || '').trim();
+      // カレンダー表示と同じロジックで店舗名を取得
+      const direct = (s.store_name || '').trim();
+      let fromMemo = '';
+      if (!direct && typeof s.memo === 'string') {
+        const m = s.memo.match(/\[store:([^\]]+)\]/);
+        if (m && m[1]) fromMemo = m[1];
+      }
+      const sStoreName = direct || fromMemo;
       const selectedStore = (selectedStoreName || '').trim();
       
       console.log('Comparing store names:', { sStoreName, selectedStore, match: sStoreName === selectedStore });
@@ -579,14 +585,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 {myShifts
                   .filter((s: any) => s.date === selectedDate)
                   .map((s: any, idx: number) => {
-                    // デバッグ用ログ
-                    console.log('=== DETAIL DISPLAY DEBUG ===');
-                    console.log('Shift data:', s);
-                    console.log('s.store_name:', s.store_name);
-                    console.log('s.memo:', s.memo);
-                    
-                    const name = s.store_name || (typeof s.memo === 'string' ? (s.memo.match(/\[store:([^\]]+)\]/)?.[1] || '') : '');
-                    console.log('Extracted name:', name);
+                    // カレンダー表示と同じロジックを使用
+                    const direct = (s.store_name || '').trim();
+                    let fromMemo = '';
+                    if (!direct && typeof s.memo === 'string') {
+                      const m = s.memo.match(/\[store:([^\]]+)\]/);
+                      if (m && m[1]) fromMemo = m[1];
+                    }
+                    const name = direct || fromMemo;
                     
                     return (
                       <div key={idx} className="flex items-center justify-between bg-white rounded border px-2 py-1">
@@ -720,8 +726,17 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 (() => {
                   const existing = myShifts.find((s: any) => {
                     if (s.date !== selectedDate) return false;
-                    const sStoreName = (s.store_name || '').trim();
+                    
+                    // カレンダー表示と同じロジックで店舗名を取得
+                    const direct = (s.store_name || '').trim();
+                    let fromMemo = '';
+                    if (!direct && typeof s.memo === 'string') {
+                      const m = s.memo.match(/\[store:([^\]]+)\]/);
+                      if (m && m[1]) fromMemo = m[1];
+                    }
+                    const sStoreName = direct || fromMemo;
                     const selectedStore = (selectedStoreName || '').trim();
+                    
                     if (sStoreName === '' && selectedStore === '') return true;
                     return sStoreName === selectedStore;
                   });
@@ -732,19 +747,20 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               {(() => {
                 const existing = myShifts.find((s: any) => {
                   if (s.date !== selectedDate) return false;
-                  const sStoreName = (s.store_name || '').trim();
+                  
+                  // カレンダー表示と同じロジックで店舗名を取得
+                  const direct = (s.store_name || '').trim();
+                  let fromMemo = '';
+                  if (!direct && typeof s.memo === 'string') {
+                    const m = s.memo.match(/\[store:([^\]]+)\]/);
+                    if (m && m[1]) fromMemo = m[1];
+                  }
+                  const sStoreName = direct || fromMemo;
                   const selectedStore = (selectedStoreName || '').trim();
+                  
                   if (sStoreName === '' && selectedStore === '') return true;
                   return sStoreName === selectedStore;
                 });
-                
-                // デバッグ用ログ
-                console.log('=== BUTTON DEBUG ===');
-                console.log('selectedDate:', selectedDate);
-                console.log('selectedStoreName:', selectedStoreName);
-                console.log('myShifts:', myShifts);
-                console.log('existing posting found:', existing);
-                console.log('button text will be:', existing ? '募集を削除' : '募集を追加');
                 
                 return existing ? '募集を削除' : '募集を追加';
               })()}
