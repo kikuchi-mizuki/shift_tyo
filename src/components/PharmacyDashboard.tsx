@@ -716,6 +716,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   if (sStoreName === '' && selectedStore === '') return true;
                   return sStoreName === selectedStore;
                 });
+                
+                // デバッグ用ログ
+                console.log('=== BUTTON DEBUG ===');
+                console.log('selectedDate:', selectedDate);
+                console.log('selectedStoreName:', selectedStoreName);
+                console.log('myShifts:', myShifts);
+                console.log('existing posting found:', existing);
+                console.log('button text will be:', existing ? '募集を削除' : '募集を追加');
+                
                 return existing ? '募集を削除' : '募集を追加';
               })()}
             </button>
