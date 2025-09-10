@@ -554,6 +554,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 let totalRequired = 0;
                 let totalAvailable = 0;
                 
+                // デバッグ用ログ
+                console.log(`[DEBUG] Date: ${dateStr}`);
+                console.log(`[DEBUG] Day requests:`, dayRequests);
+                console.log(`[DEBUG] Day postings:`, dayPostings);
+                
                 timeSlots.forEach(timeSlot => {
                   const slotRequests = dayRequests.filter((r: any) => r.time_slot === timeSlot);
                   const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot);
@@ -563,11 +568,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     const slotAvailable = slotRequests.length;
                     const slotMatched = Math.min(slotRequired, slotAvailable);
                     
+                    console.log(`[DEBUG] TimeSlot ${timeSlot}: Required=${slotRequired}, Available=${slotAvailable}, Matched=${slotMatched}`);
+                    
                     totalRequired += slotRequired;
                     totalAvailable += slotAvailable;
                     totalMatched += slotMatched;
                   }
                 });
+                
+                console.log(`[DEBUG] Total: Required=${totalRequired}, Available=${totalAvailable}, Matched=${totalMatched}`);
                 
                 if (totalRequired === 0) {
                   return { type: 'requests_only', count: totalAvailable };
