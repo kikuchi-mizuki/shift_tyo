@@ -44,6 +44,18 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     loadData();
   }, [user]);
 
+  // メモに埋め込んだ [store:◯◯] から店舗名を抽出（store_name が無いときのフォールバック）
+  // function 宣言でTDZを回避（先に利用されてもOK）
+  function extractStoreName(shift: any): string {
+    const direct = (shift?.store_name || '').trim();
+    if (direct) return direct;
+    if (typeof shift?.memo === 'string') {
+      const m = shift.memo.match(/\[store:([^\]]+)\]/);
+      if (m && m[1]) return m[1];
+    }
+    return '';
+  }
+
   // 店舗名リストが取得できたら、未選択の場合は先頭を自動選択
   // ドロップダウン候補（プロフィール登録 + これまでの募集から抽出）のユニオン
   const storeOptions: string[] = Array.from(new Set([
@@ -174,16 +186,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     return text.replace(/\[store:[^\]]+\]\s*/g, '').trim();
   };
 
-  // メモに埋め込んだ [store:◯◯] から店舗名を抽出（store_name が無いときのフォールバック）
-  const extractStoreName = (shift: any): string => {
-    const direct = (shift?.store_name || '').trim();
-    if (direct) return direct;
-    if (typeof shift?.memo === 'string') {
-      const m = shift.memo.match(/\[store:([^\]]+)\]/);
-      if (m && m[1]) return m[1];
-    }
-    return '';
-  };
+  // （上でfunction宣言したのでここは削除）
 
   const handleDateSelect = (day: number) => {
     if (!day) return;
