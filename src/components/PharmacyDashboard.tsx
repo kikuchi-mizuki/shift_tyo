@@ -209,13 +209,21 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   };
 
   const handleAddStoreName = () => {
-    console.log('handleAddStoreName called:', { newStoreName, currentStoreNames: storeNames });
+    console.log('=== ADD STORE NAME START ===');
+    console.log('New store name:', newStoreName);
+    console.log('Current store names:', storeNames);
+    
     if (newStoreName.trim() && !storeNames.includes(newStoreName.trim())) {
       const newStoreNames = [...storeNames, newStoreName.trim()];
       console.log('Setting new store names:', newStoreNames);
       setStoreNames(newStoreNames);
       setNewStoreName('');
+      console.log('Store name added successfully');
+    } else {
+      console.log('Store name not added - either empty or already exists');
     }
+    
+    console.log('=== ADD STORE NAME END ===');
   };
 
   const handleRemoveStoreName = (storeNameToRemove: string) => {
@@ -224,6 +232,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   const handleProfileUpdate = async () => {
     try {
+      console.log('=== PROFILE UPDATE START ===');
+      console.log('User ID:', user.id);
+      console.log('Profile name:', profileName);
+      console.log('Store names to save:', storeNames);
+      console.log('NG list:', ngList);
+      
       // まずstore_namesカラムが存在するかチェック
       const { data: tableInfo, error: tableError } = await supabase
         .from('information_schema.columns')
@@ -231,22 +245,32 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         .eq('table_name', 'user_profiles')
         .eq('column_name', 'store_names');
       
+      console.log('Table info check result:', { tableInfo, tableError });
+      
       let updateData: any = { name: profileName, ng_list: ngList };
       
       // store_namesカラムが存在する場合のみ追加
       if (!tableError && tableInfo && tableInfo.length > 0) {
         updateData.store_names = storeNames;
+        console.log('store_names column exists, adding to update data');
+      } else {
+        console.log('store_names column does not exist, skipping');
       }
+      
+      console.log('Final update data:', updateData);
       
       const { error } = await supabase
         .from('user_profiles')
         .update(updateData)
         .eq('id', user.id);
       
+      console.log('Update result:', { error });
+      
       if (error) {
         console.error('Error updating profile:', error);
         alert('プロフィールの更新に失敗しました');
       } else {
+        console.log('Profile updated successfully');
         alert('プロフィールを更新しました');
         setShowProfileEdit(false);
         // 成功時はローカルキャッシュも更新
@@ -254,6 +278,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
         } catch {}
       }
+      
+      console.log('=== PROFILE UPDATE END ===');
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('プロフィールの更新に失敗しました');
