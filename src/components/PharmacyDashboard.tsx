@@ -168,6 +168,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     return text.replace(/\[store:[^\]]+\]\s*/g, '').trim();
   };
 
+  const extractStoreName = (shift: any) => {
+    const direct = (shift?.store_name || '').trim();
+    if (direct) return direct;
+    if (typeof shift?.memo === 'string') {
+      const m = shift.memo.match(/\[store:([^\]]+)\]/);
+      if (m && m[1]) return m[1];
+    }
+    return '';
+  };
+
   const handleDateSelect = (day: number) => {
     if (!day) return;
     const year = currentDate.getFullYear();
@@ -549,7 +559,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 {myShifts
                   .filter((s: any) => s.date === selectedDate)
                   .map((s: any, idx: number) => {
-                    const name = s.store_name || (typeof s.memo === 'string' ? (s.memo.match(/\[store:([^\]]+)\]/)?.[1] || '') : '');
+                    const name = extractStoreName(s);
                     return (
                       <div key={idx} className="flex items-center justify-between bg-white rounded border px-2 py-1">
                         <div className="text-gray-800">店舗: {name || '（店舗名未設定）'}</div>
@@ -594,7 +604,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">店舗名を選択してください</option>
-              {storeNames.map((name, index) => (
+              {Array.from(new Set([
+                ...storeNames,
+                ...myShifts
+                  .filter((s: any) => s.date === selectedDate)
+                  .map((s: any) => extractStoreName(s))
+                  .filter(Boolean)
+              ])).map((name, index) => (
                 <option key={index} value={name}>{name}</option>
               ))}
               <option value="">店舗名なし</option>
