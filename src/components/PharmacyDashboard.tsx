@@ -229,7 +229,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     // 店舗名はリセットしない（ユーザーが選択した店舗名を保持）
   };
 
-  const handleAddStoreName = () => {
+  const handleAddStoreName = async () => {
     console.log('=== ADD STORE NAME START ===');
     console.log('New store name:', newStoreName);
     console.log('Current store names:', storeNames);
@@ -241,11 +241,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       setNewStoreName('');
       console.log('Store name added successfully');
       
-      // 即座にプロフィールを更新してテスト
+      // 直接プロフィールを更新（setTimeoutを削除）
       console.log('Auto-updating profile with new store names...');
-      setTimeout(() => {
-        handleProfileUpdate();
-      }, 100);
+      await handleProfileUpdateWithStoreNames(newStoreNames);
     } else {
       console.log('Store name not added - either empty or already exists');
     }
@@ -255,6 +253,86 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   const handleRemoveStoreName = (storeNameToRemove: string) => {
     setStoreNames(storeNames.filter(name => name !== storeNameToRemove));
+  };
+
+  const handleProfileUpdateWithStoreNames = async (storeNamesToUpdate: string[]) => {
+    try {
+      console.log('=== PROFILE UPDATE WITH STORE NAMES START ===');
+      console.log('User ID:', user.id);
+      console.log('Profile name:', profileName);
+      console.log('Store names to save:', storeNamesToUpdate);
+      console.log('Store names type:', typeof storeNamesToUpdate);
+      console.log('Store names length:', storeNamesToUpdate.length);
+      console.log('NG list:', ngList);
+      
+      // 強制的にコンソールに表示（フィルターを回避）
+      console.error('=== STORE NAMES DEBUG ===');
+      console.error('storeNames:', storeNamesToUpdate);
+      console.error('isArray:', Array.isArray(storeNamesToUpdate));
+      console.error('JSON:', JSON.stringify(storeNamesToUpdate));
+      
+      // アラートでも確認
+      alert(`店舗名デバッグ: ${JSON.stringify(storeNamesToUpdate)}`);
+      
+      const updatePayload = {
+        name: profileName,
+        ng_list: ngList,
+        store_names: storeNamesToUpdate
+      };
+      
+      console.log('Update payload:', updatePayload);
+      console.log('Update payload JSON:', JSON.stringify(updatePayload));
+      
+      const { data: updateResult, error } = await supabase
+        .from('user_profiles')
+        .update(updatePayload)
+        .eq('id', user.id)
+        .select('*');
+      
+      console.log('Update result:', { data: updateResult, error });
+      console.log('Update result data:', updateResult);
+      console.log('Update result error:', error);
+      
+      if (error) {
+        console.error('Error updating profile:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // RLSエラーの場合の特別な処理
+        if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
+          console.error('RLS permission error detected');
+          alert('権限エラー: プロフィールの更新が拒否されました。RLSポリシーを確認してください。');
+        } else {
+          alert(`プロフィールの更新に失敗しました: ${error.message}`);
+        }
+      } else {
+        console.log('Profile updated successfully');
+        console.log('Updated data returned:', updateResult);
+        
+        // 更新されたデータを確認
+        if (updateResult && updateResult.length > 0) {
+          console.log('Updated store_names:', updateResult[0].store_names);
+          console.log('Updated store_names type:', typeof updateResult[0].store_names);
+          console.log('Updated store_names length:', updateResult[0].store_names?.length);
+        }
+        
+        alert('プロフィールを更新しました');
+        setShowProfileEdit(false);
+        // 成功時はローカルキャッシュも更新
+        try {
+          localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNamesToUpdate));
+        } catch {}
+      }
+      
+      console.log('=== PROFILE UPDATE WITH STORE NAMES END ===');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('プロフィールの更新に失敗しました');
+    }
   };
 
   const handleProfileUpdate = async () => {
