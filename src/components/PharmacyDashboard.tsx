@@ -78,11 +78,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   useEffect(() => {
     try {
-      if (selectedStoreName) {
-        localStorage.setItem(`selected_store_${user?.id || ''}`, selectedStoreName);
+      if (selectedStoreNames.length > 0) {
+        localStorage.setItem(`selected_stores_${user?.id || ''}`, JSON.stringify(selectedStoreNames));
       }
     } catch {}
-  }, [selectedStoreName, user?.id]);
+  }, [selectedStoreNames, user?.id]);
 
   const loadData = async () => {
     try {
@@ -124,6 +124,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         .single();
       
       if (!profileError && profileData) {
+        console.log('Profile data loaded:', profileData);
+        console.log('store_names from DB:', profileData.store_names);
         setProfileName(profileData.name || '');
         setStoreNames(profileData.store_names || []);
         setNgList(profileData.ng_list || []);
@@ -207,8 +209,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   };
 
   const handleAddStoreName = () => {
+    console.log('handleAddStoreName called:', { newStoreName, currentStoreNames: storeNames });
     if (newStoreName.trim() && !storeNames.includes(newStoreName.trim())) {
-      setStoreNames([...storeNames, newStoreName.trim()]);
+      const newStoreNames = [...storeNames, newStoreName.trim()];
+      console.log('Setting new store names:', newStoreNames);
+      setStoreNames(newStoreNames);
       setNewStoreName('');
     }
   };
