@@ -681,13 +681,15 @@ export const shiftPostings = {
         };
       });
 
-      let { data, error } = await supabase
+      const insertRes = await supabase
         .from('shift_postings')
         .insert(sanitized)
         .select();
-      
+      let insData = insertRes.data as any;
+      let insError = insertRes.error as any;
+
       // もし store_name カラムが存在せずエラーになった場合は、store_name を除外してリトライ
-      if (error && (error.code === '42703' || (typeof error.message === 'string' && error.message.includes('store_name')))) {
+      if (insError && (insError.code === '42703' || (typeof insError.message === 'string' && insError.message.includes('store_name')))) {
         const sanitizedWithoutStore = sanitized.map((s: any) => {
           const { store_name, ...rest } = s;
           return rest;
@@ -696,12 +698,12 @@ export const shiftPostings = {
           .from('shift_postings')
           .insert(sanitizedWithoutStore)
           .select();
-        data = retry.data as any;
-        error = retry.error as any;
+        insData = retry.data as any;
+        insError = retry.error as any;
       }
 
-      console.log('Insert result:', { data, error });
-      return { data: data || [], error };
+      console.log('Insert result:', { data: insData, error: insError });
+      return { data: insData || [], error: insError };
     } catch (error) {
       console.error('Create postings error:', error);
       return { data: [], error };
