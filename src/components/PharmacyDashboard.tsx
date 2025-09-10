@@ -289,6 +289,29 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('Executing update query with data:', updateData);
       console.log('User ID for update:', user.id);
       
+      // Railwayログで確認できるようにサーバーサイドログを送信
+      try {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api/log`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'log',
+            message: `[PHARMACY_PROFILE_UPDATE] User ${user.id} updating profile`,
+            data: {
+              userId: user.id,
+              storeNames: storeNames,
+              updateData: updateData
+            },
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (logError) {
+        console.warn('Failed to send log to Railway:', logError);
+      }
+      
       const { data: updateResult, error } = await supabase
         .from('user_profiles')
         .update(updateData)
@@ -298,6 +321,30 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('Update result:', { data: updateResult, error });
       console.log('Update result data:', updateResult);
       console.log('Update result error:', error);
+      
+      // 更新結果もRailwayログに送信
+      try {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api/log`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'log',
+            message: `[PHARMACY_PROFILE_UPDATE_RESULT] User ${user.id} profile update completed`,
+            data: {
+              userId: user.id,
+              success: !error,
+              error: error,
+              result: updateResult
+            },
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (logError) {
+        console.warn('Failed to send result log to Railway:', logError);
+      }
       
       if (error) {
         console.error('Error updating profile:', error);
