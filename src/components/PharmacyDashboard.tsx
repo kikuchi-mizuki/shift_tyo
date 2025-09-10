@@ -663,12 +663,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 handlePost();
               }}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${
-                myShifts.find((s: any) => s.date === selectedDate)
+                myShifts.find((s: any) => s.date === selectedDate && ((s.store_name || '') === (selectedStoreName || '')))
                   ? 'bg-red-600 text-white hover:bg-red-700'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              {myShifts.find((s: any) => s.date === selectedDate) ? '募集を削除' : '募集を追加'}
+              {myShifts.find((s: any) => s.date === selectedDate && ((s.store_name || '') === (selectedStoreName || ''))) ? '募集を削除' : '募集を追加'}
             </button>
           )}
         </div>
