@@ -78,11 +78,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   useEffect(() => {
     try {
-      if (selectedStoreNames.length > 0) {
-        localStorage.setItem(`selected_stores_${user?.id || ''}`, JSON.stringify(selectedStoreNames));
+      if (selectedStoreName) {
+        localStorage.setItem(`selected_store_${user?.id || ''}`, selectedStoreName);
       }
     } catch {}
-  }, [selectedStoreNames, user?.id]);
+  }, [selectedStoreName, user?.id]);
 
   const loadData = async () => {
     try {
