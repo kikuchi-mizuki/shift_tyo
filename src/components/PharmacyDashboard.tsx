@@ -27,6 +27,17 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   useEffect(() => {
     console.log('PharmacyDashboard mounted, user:', user);
+    // 1) ローカルキャッシュから即座に復元（UX向上）
+    try {
+      const cachedStores = localStorage.getItem(`store_names_${user?.id || ''}`);
+      if (cachedStores) {
+        const parsed = JSON.parse(cachedStores);
+        if (Array.isArray(parsed)) setStoreNames(parsed);
+      }
+      const cachedSelected = localStorage.getItem(`selected_store_${user?.id || ''}`);
+      if (cachedSelected) setSelectedStoreName(cachedSelected);
+    } catch {}
+    // 2) サーバーデータを正とする
     loadData();
   }, [user]);
 
@@ -36,6 +47,21 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       setSelectedStoreName(storeNames[0]);
     }
   }, [storeNames]);
+
+  // 変更があればローカルにキャッシュ
+  useEffect(() => {
+    try {
+      localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
+    } catch {}
+  }, [storeNames, user?.id]);
+
+  useEffect(() => {
+    try {
+      if (selectedStoreName) {
+        localStorage.setItem(`selected_store_${user?.id || ''}`, selectedStoreName);
+      }
+    } catch {}
+  }, [selectedStoreName, user?.id]);
 
   const loadData = async () => {
     try {
@@ -179,6 +205,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       } else {
         alert('プロフィールを更新しました');
         setShowProfileEdit(false);
+        // 成功時はローカルキャッシュも更新
+        try {
+          localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
+        } catch {}
       }
     } catch (error) {
       console.error('Error updating profile:', error);
