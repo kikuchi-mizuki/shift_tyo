@@ -323,9 +323,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('store_names is array:', Array.isArray(storeNames));
       console.log('store_names JSON:', JSON.stringify(storeNames));
       
-      // Railwayログでも確認
+      // Railwayログでも確認（認証エラーを回避）
       try {
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api/log`, {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
