@@ -86,15 +86,18 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   const loadData = async () => {
     try {
-      console.log('Loading pharmacy data...');
+      console.log('=== loadData START ===');
+      console.log('Loading pharmacy data for user:', user.id);
       
       // 募集シフトを取得
+      console.log('Calling shiftPostings.getPostings...');
       const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
       if (myShiftsError) {
         console.error('Error loading shift postings:', myShiftsError);
         setMyShifts([]);
       } else {
         console.log('Loaded shift postings:', myShiftsData);
+        console.log('Setting myShifts state with:', myShiftsData);
         setMyShifts(myShiftsData || []);
       }
       
@@ -145,6 +148,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
+      console.log('=== loadData END ===');
       setLoading(false);
     }
   };

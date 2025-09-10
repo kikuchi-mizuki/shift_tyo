@@ -604,7 +604,11 @@ export const shiftRequests = {
 export const shiftPostings = {
   // シフト募集取得
   getPostings: async (userId: string, userType: string) => {
+    console.log('=== getPostings START ===');
+    console.log('userId:', userId, 'userType:', userType);
+    
     if (!supabase) {
+      console.error('Supabase not initialized');
       return { data: [], error: { message: 'Supabaseが設定されていません' } };
     }
 
@@ -613,10 +617,15 @@ export const shiftPostings = {
       
       if (userType === 'store' || userType === 'pharmacy') {
         query = query.eq('pharmacy_id', userId);
+        console.log('Filtering by pharmacy_id:', userId);
       }
       // pharmacist/adminは全ての募集を閲覧可能
       
+      console.log('Executing query...');
       const { data, error } = await query;
+      
+      console.log('Query result:', { dataCount: data?.length || 0, error });
+      console.log('Raw data:', data);
       
       // テーブルが存在しない場合のエラーハンドリング
       if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
@@ -624,6 +633,7 @@ export const shiftPostings = {
         return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
       }
       
+      console.log('=== getPostings END ===');
       return { data: data || [], error: null };
     } catch (error) {
       console.error('Get postings error:', error);
