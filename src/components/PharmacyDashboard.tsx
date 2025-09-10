@@ -319,13 +319,22 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       }
       
       // より明示的にstore_namesを送信
+      console.log('About to send update with store_names:', storeNames);
+      console.log('store_names is array:', Array.isArray(storeNames));
+      console.log('store_names JSON:', JSON.stringify(storeNames));
+      
+      const updatePayload = {
+        name: profileName,
+        ng_list: ngList,
+        store_names: storeNames
+      };
+      
+      console.log('Update payload:', updatePayload);
+      console.log('Update payload JSON:', JSON.stringify(updatePayload));
+      
       const { data: updateResult, error } = await supabase
         .from('user_profiles')
-        .update({
-          name: profileName,
-          ng_list: ngList,
-          store_names: storeNames
-        })
+        .update(updatePayload)
         .eq('id', user.id)
         .select('*');
       
@@ -348,13 +357,30 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               userId: user.id,
               success: !error,
               error: error,
-              result: updateResult
+              result: updateResult,
+              storeNamesSent: storeNames,
+              updatePayload: updatePayload
             },
             timestamp: new Date().toISOString()
           })
         });
       } catch (logError) {
         console.warn('Failed to send result log to Railway:', logError);
+      }
+      
+      // 直接テスト用のクエリを実行
+      if (!error && updateResult && updateResult.length > 0) {
+        console.log('Testing direct query to verify store_names...');
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('user_profiles')
+          .select('id, name, store_names')
+          .eq('id', user.id)
+          .single();
+        
+        console.log('Verification query result:', { data: verifyData, error: verifyError });
+        if (verifyData) {
+          console.log('Current store_names in DB:', verifyData.store_names);
+        }
       }
       
       if (error) {
