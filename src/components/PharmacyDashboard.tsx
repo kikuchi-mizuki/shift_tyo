@@ -25,7 +25,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   
   // storeNamesの状態変更を監視
   useEffect(() => {
-    console.log('storeNames state changed:', storeNames);
+    console.log('=== STORENAMES STATE CHANGED ===');
+    console.log('New storeNames value:', storeNames);
+    console.log('storeNames length:', storeNames.length);
+    console.log('storeNames type:', typeof storeNames);
+    console.log('storeNames is array:', Array.isArray(storeNames));
+    console.log('=== STORENAMES STATE CHANGED END ===');
   }, [storeNames]);
   const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
@@ -265,12 +270,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       
       console.log('Final update data:', updateData);
       
-      const { error } = await supabase
+      console.log('Executing update query with data:', updateData);
+      console.log('User ID for update:', user.id);
+      
+      const { data: updateResult, error } = await supabase
         .from('user_profiles')
         .update(updateData)
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select();
       
-      console.log('Update result:', { error });
+      console.log('Update result:', { data: updateResult, error });
       
       if (error) {
         console.error('Error updating profile:', error);
@@ -400,7 +409,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         setMemo('');
         
         alert('募集を作成しました');
-        loadData();
+        // 募集データのみを再読み込み（プロフィールデータは保持）
+        const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
+        if (!myShiftsError) {
+          setMyShifts(myShiftsData || []);
+        }
         
       } catch (e) {
         console.error('Exception in handlePost:', e);
