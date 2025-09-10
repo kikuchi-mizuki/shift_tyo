@@ -168,7 +168,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     return text.replace(/\[store:[^\]]+\]\s*/g, '').trim();
   };
 
-  const extractStoreName = (shift: any) => {
+  // メモに埋め込んだ [store:◯◯] から店舗名を抽出（store_name が無いときのフォールバック）
+  const extractStoreName = (shift: any): string => {
     const direct = (shift?.store_name || '').trim();
     if (direct) return direct;
     if (typeof shift?.memo === 'string') {
@@ -559,7 +560,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 {myShifts
                   .filter((s: any) => s.date === selectedDate)
                   .map((s: any, idx: number) => {
-                    const name = extractStoreName(s);
+                    const name = s.store_name || (typeof s.memo === 'string' ? (s.memo.match(/\[store:([^\]]+)\]/)?.[1] || '') : '');
                     return (
                       <div key={idx} className="flex items-center justify-between bg-white rounded border px-2 py-1">
                         <div className="text-gray-800">店舗: {name || '（店舗名未設定）'}</div>
