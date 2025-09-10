@@ -318,11 +318,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         console.warn('Failed to send log to Railway:', logError);
       }
       
+      // より明示的にstore_namesを送信
       const { data: updateResult, error } = await supabase
         .from('user_profiles')
-        .update(updateData)
+        .update({
+          name: profileName,
+          ng_list: ngList,
+          store_names: storeNames
+        })
         .eq('id', user.id)
-        .select();
+        .select('*');
       
       console.log('Update result:', { data: updateResult, error });
       console.log('Update result data:', updateResult);
@@ -375,6 +380,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         // 更新されたデータを確認
         if (updateResult && updateResult.length > 0) {
           console.log('Updated store_names:', updateResult[0].store_names);
+          console.log('Updated store_names type:', typeof updateResult[0].store_names);
+          console.log('Updated store_names length:', updateResult[0].store_names?.length);
         }
         
         alert('プロフィールを更新しました');
