@@ -656,7 +656,7 @@ export const shiftPostings = {
         // ステータスの既定値 ('open' / 'recruiting') どちらでも運用できるように 'recruiting' を採用
         const status = p.status === 'open' ? 'recruiting' : (p.status || 'recruiting');
 
-        // 店舗名の保存
+        // 店舗名の保存: スキーマに専用カラムが無い想定のため、memoに埋め込み
         const memoWithStore = (() => {
           const rawMemo = p.memo ?? '';
           const name = p.store_name || p.selectedStoreName;
@@ -674,36 +674,19 @@ export const shiftPostings = {
           date: p.date, // YYYY-MM-DD 文字列想定（date型に自動変換される）
           time_slot: normalizedTimeSlot,
           required_staff: requiredStaff,
-          // store_name は存在すれば保存される。存在しないテーブルでは後続のリトライで除外
-          store_name: (p.store_name || p.selectedStoreName) ?? null,
           memo: memoWithStore,
           status
         };
       });
 
-      const insertRes = await supabase
+      const { data, error } = await supabase
         .from('shift_postings')
         .insert(sanitized)
         .select();
-      let insData = insertRes.data as any;
-      let insError = insertRes.error as any;
-
-      // もし store_name カラムが存在せずエラーになった場合は、store_name を除外してリトライ
-      if (insError && (insError.code === '42703' || (typeof insError.message === 'string' && insError.message.includes('store_name')))) {
-        const sanitizedWithoutStore = sanitized.map((s: any) => {
-          const { store_name, ...rest } = s;
-          return rest;
-        });
-        const retry = await supabase
-          .from('shift_postings')
-          .insert(sanitizedWithoutStore)
-          .select();
-        insData = retry.data as any;
-        insError = retry.error as any;
-      }
-
-      console.log('Insert result:', { data: insData, error: insError });
-      return { data: insData || [], error: insError };
+      
+      console.log('Insert result:', { data, error });
+      return { data: data || [], error };
+      
     } catch (error) {
       console.error('Create postings error:', error);
       return { data: [], error };
