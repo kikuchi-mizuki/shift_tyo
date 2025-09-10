@@ -21,7 +21,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [loading, setLoading] = useState(true);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
-  const [storeName, setStoreName] = useState('');
+  const [storeNames, setStoreNames] = useState<string[]>([]);
+  const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');
-        setStoreName(profileData.store_name || '');
+        setStoreNames(profileData.store_names || []);
       }
       
       // シフトに関連する薬剤師のプロフィールを取得
@@ -133,20 +134,31 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     }
   };
 
+  const handleAddStoreName = () => {
+    if (newStoreName.trim() && !storeNames.includes(newStoreName.trim())) {
+      setStoreNames([...storeNames, newStoreName.trim()]);
+      setNewStoreName('');
+    }
+  };
+
+  const handleRemoveStoreName = (storeNameToRemove: string) => {
+    setStoreNames(storeNames.filter(name => name !== storeNameToRemove));
+  };
+
   const handleProfileUpdate = async () => {
     try {
-      // まずstore_nameカラムが存在するかチェック
+      // まずstore_namesカラムが存在するかチェック
       const { data: tableInfo, error: tableError } = await supabase
         .from('information_schema.columns')
         .select('column_name')
         .eq('table_name', 'user_profiles')
-        .eq('column_name', 'store_name');
+        .eq('column_name', 'store_names');
       
       let updateData: any = { name: profileName };
       
-      // store_nameカラムが存在する場合のみ追加
+      // store_namesカラムが存在する場合のみ追加
       if (!tableError && tableInfo && tableInfo.length > 0) {
-        updateData.store_name = storeName;
+        updateData.store_names = storeNames;
       }
       
       const { error } = await supabase
@@ -379,14 +391,44 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">店舗名の設定</h3>
-                <input
-                  type="text"
-                  value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                  placeholder="店舗名（例：渋谷店、新宿店）"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
+                <h3 className="text-sm font-medium text-gray-700 mb-2">店舗名の管理</h3>
+                <div className="space-y-2">
+                  {/* 店舗名追加フォーム */}
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={newStoreName}
+                      onChange={(e) => setNewStoreName(e.target.value)}
+                      placeholder="新しい店舗名（例：渋谷店）"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddStoreName()}
+                    />
+                    <button
+                      onClick={handleAddStoreName}
+                      className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                    >
+                      追加
+                    </button>
+                  </div>
+                  
+                  {/* 登録済み店舗名一覧 */}
+                  {storeNames.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-600">登録済み店舗名:</p>
+                      {storeNames.map((name, index) => (
+                        <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                          <span className="text-sm">{name}</span>
+                          <button
+                            onClick={() => handleRemoveStoreName(name)}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            削除
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <button
                 onClick={handleProfileUpdate}
@@ -434,12 +476,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">店舗名を選択してください</option>
-              <option value={storeName}>{storeName || 'メイン店舗'}</option>
-              {storeName && (
-                <option value="">店舗名なし</option>
-              )}
+              {storeNames.map((name, index) => (
+                <option key={index} value={name}>{name}</option>
+              ))}
+              <option value="">店舗名なし</option>
             </select>
-            {!storeName && (
+            {storeNames.length === 0 && (
               <p className="text-xs text-gray-500 mt-1">
                 店舗名を設定するには「プロフィール編集」から設定してください
               </p>
