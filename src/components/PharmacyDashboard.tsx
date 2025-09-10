@@ -145,6 +145,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
 
+  // 備考から [store:◯◯] タグを取り除く（UI表示用）
+  const stripStoreTag = (text: any) => {
+    if (typeof text !== 'string') return '';
+    return text.replace(/\[store:[^\]]+\]\s*/g, '').trim();
+  };
+
   const handleDateSelect = (day: number) => {
     if (!day) return;
     const year = currentDate.getFullYear();
@@ -158,7 +164,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('Found existing posting for date', existingPosting);
       setTimeSlot(existingPosting.time_slot);
       setRequiredStaff(existingPosting.required_staff);
-      setMemo(existingPosting.memo || '');
+      setMemo(stripStoreTag(existingPosting.memo || ''));
       // 店舗名（store_name または memoの[store:◯◯]）を自動反映
       if (existingPosting.store_name && typeof existingPosting.store_name === 'string') {
         setSelectedStoreName(existingPosting.store_name);
@@ -497,7 +503,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             <div>店舗名: {selectedStoreName || (storeNames[0] || '未選択')}</div>
             <div>時間帯: {timeSlot || '未選択'}</div>
             <div>人数: {requiredStaff || '未選択'}</div>
-            <div>備考: {memo || 'なし'}</div>
+            <div>備考: {stripStoreTag(memo) || 'なし'}</div>
           </div>
           
           {/* 募集日 */}
