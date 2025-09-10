@@ -206,18 +206,69 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
   const handleProfileUpdate = async () => {
     try {
-      const { error } = await supabase
+      console.log('=== PHARMACIST PROFILE UPDATE START ===');
+      console.log('User ID:', user.id);
+      console.log('Profile name:', profileName);
+      console.log('NG list to save:', ngList);
+      console.log('NG list type:', typeof ngList);
+      console.log('NG list length:', ngList.length);
+      
+      // ユーザーIDの確認
+      if (!user?.id) {
+        console.error('User ID is missing!');
+        alert('ユーザーIDが取得できません。ログインし直してください。');
+        return;
+      }
+      
+      const updatePayload = {
+        name: profileName || user.email || 'Unknown',
+        ng_list: ngList
+      };
+      
+      console.log('Update payload:', updatePayload);
+      
+      const { data: updateResult, error } = await supabase
         .from('user_profiles')
-        .update({ name: profileName, ng_list: ngList })
-        .eq('id', user.id);
+        .update(updatePayload)
+        .eq('id', user.id)
+        .select('*');
+      
+      console.log('Update result:', { data: updateResult, error });
       
       if (error) {
         console.error('Error updating profile:', error);
-        alert('プロフィールの更新に失敗しました');
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // RLSエラーの場合の特別な処理
+        if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
+          console.error('RLS permission error detected');
+          alert('権限エラー: プロフィールの更新が拒否されました。RLSポリシーを確認してください。');
+        } else {
+          alert(`プロフィールの更新に失敗しました: ${error.message}`);
+        }
       } else {
+        console.log('Profile updated successfully');
+        console.log('Updated data returned:', updateResult);
+        
+        // 更新されたデータを確認
+        if (updateResult && updateResult.length > 0) {
+          console.log('Updated ng_list:', updateResult[0].ng_list);
+        }
+        
         alert('プロフィールを更新しました');
         setShowProfileEdit(false);
+        // 成功時はローカルキャッシュも更新
+        try {
+          localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(ngList));
+        } catch {}
       }
+      
+      console.log('=== PHARMACIST PROFILE UPDATE END ===');
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('プロフィールの更新に失敗しました');
@@ -228,10 +279,12 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
     if (selectedNgPharmacyId && !ngList.includes(selectedNgPharmacyId)) {
       setNgList([...ngList, selectedNgPharmacyId]);
       setSelectedNgPharmacyId('');
+      console.log('NG pharmacy added to local state:', selectedNgPharmacyId);
     }
   };
   const removeNgPharmacy = (id: string) => {
     setNgList(ngList.filter(x => x !== id));
+    console.log('NG pharmacy removed from local state:', id);
   };
 
   const handleSubmit = async () => {
