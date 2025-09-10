@@ -554,11 +554,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 let totalRequired = 0;
                 let totalAvailable = 0;
                 
-                // デバッグ用ログ
-                console.log(`[DEBUG] Date: ${dateStr}`);
-                console.log(`[DEBUG] Day requests:`, dayRequests);
-                console.log(`[DEBUG] Day postings:`, dayPostings);
-                
                 timeSlots.forEach(timeSlot => {
                   const slotRequests = dayRequests.filter((r: any) => r.time_slot === timeSlot);
                   const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot);
@@ -568,18 +563,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     const slotAvailable = slotRequests.length;
                     const slotMatched = Math.min(slotRequired, slotAvailable);
                     
-                    console.log(`[DEBUG] TimeSlot ${timeSlot}: Required=${slotRequired}, Available=${slotAvailable}, Matched=${slotMatched}`);
-                    
                     totalRequired += slotRequired;
                     totalAvailable += slotAvailable;
                     totalMatched += slotMatched;
                   }
                 });
                 
-                console.log(`[DEBUG] Total: Required=${totalRequired}, Available=${totalAvailable}, Matched=${totalMatched}`);
-                
                 if (totalRequired === 0) {
-                  return { type: 'requests_only', count: totalAvailable };
+                  // 募集がない場合は希望のみ表示（0件の場合は表示しない）
+                  return totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable } : { type: 'empty', count: 0 };
                 }
                 
                 if (totalMatched === totalRequired) {
@@ -587,7 +579,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 } else if (totalAvailable < totalRequired) {
                   return { type: 'shortage', count: totalMatched, shortage: totalRequired - totalAvailable };
                 } else {
-                  return { type: 'excess', count: totalMatched, excess: totalAvailable - totalRequired };
+                  // 余裕がある場合（0人の場合は表示しない）
+                  const excess = totalAvailable - totalRequired;
+                  return excess > 0 ? { type: 'excess', count: totalMatched, excess: excess } : { type: 'matched', count: totalMatched };
                 }
               };
               
@@ -697,7 +691,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       
-                      {matchingStatus.type === 'excess' && (
+                      {matchingStatus.type === 'excess' && matchingStatus.excess > 0 && (
                         <div className="relative group">
                           <div className="text-[8px] sm:text-[10px] text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-1 mt-1 inline-block cursor-pointer">
                             余裕 {matchingStatus.excess}人
@@ -716,7 +710,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       
-                      {matchingStatus.type === 'requests_only' && (
+                      {matchingStatus.type === 'requests_only' && matchingStatus.count > 0 && (
                         <div className="relative group">
                           <div className="text-[8px] sm:text-[10px] text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block cursor-pointer">
                             希望 {matchingStatus.count}件
