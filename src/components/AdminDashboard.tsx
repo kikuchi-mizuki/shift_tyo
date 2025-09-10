@@ -727,41 +727,51 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             
             {/* 選択された日付の詳細表示 */}
             {selectedDate && (
-              <div className="bg-blue-50 rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-blue-800">選択された日付の詳細</h3>
-                  <button
-                    onClick={() => setSelectedDate('')}
-                    className="text-xs text-blue-600 hover:text-blue-800"
-                  >
-                    ✕ 閉じる
-                  </button>
-                </div>
-                <div className="text-sm text-blue-700">
-                  <div className="mb-3 p-2 bg-white rounded border">
-                    <strong>日付:</strong> {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-blue-600 text-white p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="w-5 h-5" />
+                      <h3 className="text-lg font-semibold">日付詳細</h3>
+                    </div>
+                    <button
+                      onClick={() => setSelectedDate('')}
+                      className="text-blue-100 hover:text-white text-sm"
+                    >
+                      ✕ 閉じる
+                    </button>
                   </div>
+                  <p className="text-sm text-blue-100 mt-1">
+                    {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日の詳細情報
+                  </p>
+                </div>
+                <div className="p-4 space-y-4">
                   
                   {/* 確定シフト */}
                   {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <strong className="text-green-700">✅ 確定シフト ({assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length}件):</strong>
+                    <div className="bg-green-50 rounded-lg border border-green-200 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          <h4 className="text-sm font-semibold text-green-800">
+                            確定シフト ({assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length}件)
+                          </h4>
+                        </div>
                         <button
                           onClick={() => handleCancelConfirmedShifts(selectedDate)}
-                          className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+                          className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg"
                         >
                           確定取り消し
                         </button>
                       </div>
-                      <div className="max-h-40 overflow-y-auto space-y-2">
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
                       {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
                         const pharmacistProfile = userProfiles[shift.pharmacist_id];
                         const pharmacyProfile = userProfiles[shift.pharmacy_id];
                         const isEditing = editingShift?.id === shift.id;
                         
                         return (
-                          <div key={index} className="ml-2 text-xs bg-green-100 p-2 rounded mb-1">
+                          <div key={index} className="bg-white rounded-lg border border-green-200 p-3">
                             {isEditing ? (
                               // 編集モード
                               <div className="space-y-2">
@@ -846,19 +856,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             ) : (
                               // 表示モード
                               <>
-                                <div className="flex items-center justify-between mb-1">
-                                  <div className="font-medium">
-                                    {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : shift.time_slot === 'full' ? '終日' : '要相談'}
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span className="font-medium text-gray-800">
+                                      {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : shift.time_slot === 'full' ? '終日' : '要相談'}
+                                    </span>
                                   </div>
                                   <button
                                     onClick={() => handleEditShift(shift)}
-                                    className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
+                                    className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg"
                                   >
                                     編集
                                   </button>
                                 </div>
-                                <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
-                                <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</div>
+                                <div className="space-y-1 text-sm">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-gray-600">薬剤師:</span>
+                                    <span className="font-medium text-gray-800">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-gray-600">薬局:</span>
+                                    <span className="font-medium text-gray-800">{pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
+                                  </div>
+                                </div>
                               </>
                             )}
                           </div>
@@ -870,18 +891,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   
                   {/* シフト募集 */}
                   {postings.filter((p: any) => p.date === selectedDate).length > 0 && (
-                    <div className="mb-3">
-                      <strong className="text-orange-700 block mb-2">📢 募集している薬局 ({postings.filter((p: any) => p.date === selectedDate).length}件):</strong>
-                      <div className="max-h-40 overflow-y-auto space-y-2">
+                    <div className="bg-orange-50 rounded-lg border border-orange-200 p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                        <h4 className="text-sm font-semibold text-orange-800">
+                          募集している薬局 ({postings.filter((p: any) => p.date === selectedDate).length}件)
+                        </h4>
+                      </div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
                       {postings.filter((p: any) => p.date === selectedDate).map((posting: any, index: number) => {
                         const pharmacyProfile = userProfiles[posting.pharmacy_id];
                         return (
-                          <div key={index} className="ml-2 text-xs bg-orange-100 p-2 rounded mb-1">
-                            <div className="font-medium">
-                              {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'}
+                          <div key={index} className="bg-white rounded-lg border border-orange-200 p-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              <span className="font-medium text-gray-800">
+                                {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'}
+                              </span>
                             </div>
-                            <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</div>
-                            <div>必要人数: {posting.required_staff}人</div>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-600">薬局:</span>
+                                <span className="font-medium text-gray-800">{pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-600">必要人数:</span>
+                                <span className="font-medium text-gray-800">{posting.required_staff}人</span>
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
@@ -891,18 +928,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   
                   {/* シフト希望 */}
                   {requests.filter((r: any) => r.date === selectedDate).length > 0 && (
-                    <div className="mb-3">
-                      <strong className="text-blue-700 block mb-2">👨‍⚕️ 応募している薬剤師 ({requests.filter((r: any) => r.date === selectedDate).length}件):</strong>
-                      <div className="max-h-40 overflow-y-auto space-y-2">
+                    <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <h4 className="text-sm font-semibold text-blue-800">
+                          応募している薬剤師 ({requests.filter((r: any) => r.date === selectedDate).length}件)
+                        </h4>
+                      </div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
                       {requests.filter((r: any) => r.date === selectedDate).map((request: any, index: number) => {
                         const pharmacistProfile = userProfiles[request.pharmacist_id];
+                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                         return (
-                          <div key={index} className="ml-2 text-xs bg-blue-100 p-2 rounded mb-1">
-                            <div className="font-medium">
-                              {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'}
+                          <div key={index} className="bg-white rounded-lg border border-blue-200 p-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span className="font-medium text-gray-800">
+                                {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'}
+                              </span>
                             </div>
-                            <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
-                            <div>優先度: {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}</div>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-600">薬剤師:</span>
+                                <span className="font-medium text-gray-800">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-600">優先度:</span>
+                                <span className={`font-medium ${priorityColor}`}>
+                                  {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
@@ -1004,101 +1060,127 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     
                     if (matchingAnalysis.length > 0) {
                       return (
-                        <div className="mb-2">
-                          <strong className="text-purple-700 block mb-2">🔗 マッチング状況:</strong>
-                          <div className="max-h-40 overflow-y-auto space-y-2">
+                        <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                            <h4 className="text-sm font-semibold text-purple-800">マッチング状況</h4>
+                          </div>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
                           {matchingAnalysis.map((analysis: any, index: number) => (
-                            <div key={index} className="ml-2 text-xs bg-purple-100 p-2 rounded mb-1">
-                              <div className="font-medium">
-                                {analysis.timeSlot === 'morning' ? '午前' : 
-                                 analysis.timeSlot === 'afternoon' ? '午後' : 
-                                 analysis.timeSlot === 'full' ? '終日' : 
-                                 analysis.timeSlot === 'consult' ? '要相談' : analysis.timeSlot}
+                            <div key={index} className="bg-white rounded-lg border border-purple-200 p-3">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                <span className="font-medium text-gray-800">
+                                  {analysis.timeSlot === 'morning' ? '午前' : 
+                                   analysis.timeSlot === 'afternoon' ? '午後' : 
+                                   analysis.timeSlot === 'full' ? '終日' : 
+                                   analysis.timeSlot === 'consult' ? '要相談' : analysis.timeSlot}
+                                </span>
                               </div>
+                              <div className="space-y-1 text-sm">
                               {analysis.timeSlot === 'consult' ? (
                                 // 要相談の場合は薬剤師名を表示
-                                <div className="text-xs text-gray-600">
+                                <div className="space-y-1">
                                   {analysis.requests.map((request: any) => {
                                     const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                    const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                                     return (
-                                      <div key={request.id} className="mb-1">
-                                        薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}
-                                        <span className="text-gray-500"> (優先度: {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                      <div key={request.id} className="flex items-center justify-between">
+                                        <span className="text-gray-600">薬剤師:</span>
+                                        <div className="text-right">
+                                          <span className="font-medium text-gray-800">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                          <span className={`ml-2 ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                        </div>
                                       </div>
                                     );
                                   })}
                                 </div>
                               ) : analysis.isMatching ? (
                                 <>
-                                  {/* デバッグ情報 */}
-                                  <div className="text-xs text-gray-500 mb-1">
-                                    デバッグ: 必要{analysis.totalRequired}人, 応募{analysis.totalAvailable}人, マッチ{analysis.matchedPharmacists.length}人
+                                  {/* 人数状況 */}
+                                  <div className="space-y-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-gray-600">必要人数:</span>
+                                      <span className="font-medium text-gray-800">{analysis.totalRequired}人</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-gray-600">応募人数:</span>
+                                      <span className="font-medium text-gray-800">{analysis.totalAvailable}人</span>
+                                    </div>
+                                    {analysis.remainingRequired > 0 && (
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-red-600">不足:</span>
+                                        <span className="font-medium text-red-600">{analysis.remainingRequired}人</span>
+                                      </div>
+                                    )}
+                                    {analysis.hasExcess && (
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-yellow-600">余裕:</span>
+                                        <span className="font-medium text-yellow-600">{analysis.totalAvailable - analysis.totalRequired}人</span>
+                                      </div>
+                                    )}
                                   </div>
                                   {/* マッチング済みの薬剤師と薬局 */}
                                   {analysis.matchedPharmacists.length > 0 && (
-                                    <div className="mb-1">
-                                      <div className="font-medium text-green-700">✅ マッチング済み:</div>
+                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                      <div className="text-xs font-medium text-green-700 mb-1">✅ マッチング済み:</div>
                                       {analysis.matchedPharmacists.map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const pharmacyProfile = userProfiles[analysis.matchedPharmacies[idx].pharmacy_id];
+                                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                                         return (
-                                          <div key={idx} className="ml-2 text-xs">
-                                            • {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'} 
-                                            → {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}
-                                            <span className="text-gray-500"> (優先度: {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                          <div key={idx} className="text-xs bg-green-50 p-2 rounded mb-1">
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-gray-600">薬剤師:</span>
+                                              <span className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-gray-600">薬局:</span>
+                                              <span className="font-medium">{pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-gray-600">優先度:</span>
+                                              <span className={`font-medium ${priorityColor}`}>
+                                                {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
+                                              </span>
+                                            </div>
                                           </div>
                                         );
                                       })}
                                     </div>
                                   )}
                                   
-                                  {/* 人数状況 */}
-                                  <div className="mb-1">
-                                    <div className="font-medium">📊 人数状況:</div>
-                                    <div className="ml-2">
-                                      • 必要人数: {analysis.totalRequired}人
-                                    </div>
-                                    <div className="ml-2">
-                                      • 応募人数: {analysis.totalAvailable}人
-                                    </div>
-                                    {analysis.remainingRequired > 0 && (
-                                      <div className="ml-2 text-red-600 font-medium">
-                                        ⚠️ 不足: {analysis.remainingRequired}人
-                                      </div>
-                                    )}
-                                    {analysis.hasExcess && (
-                                      <div className="ml-2 text-blue-600">
-                                        ℹ️ 余剰: {analysis.totalAvailable - analysis.totalRequired}人
-                                      </div>
-                                    )}
-                                  </div>
-                                  
                                   {/* 未マッチングの薬剤師 */}
                                   {analysis.remainingRequired === 0 && analysis.hasExcess && (
-                                    <div className="mb-1">
-                                      <div className="font-medium text-orange-700">⏳ 未マッチング薬剤師:</div>
+                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                      <div className="text-xs font-medium text-orange-700 mb-1">⏳ 未マッチング薬剤師:</div>
                                       {analysis.requests.slice(analysis.totalRequired).map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                                         return (
-                                          <div key={idx} className="ml-2 text-xs">
-                                            • {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}
-                                            <span className="text-gray-500"> (優先度: {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                          <div key={idx} className="text-xs bg-orange-50 p-2 rounded mb-1">
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-gray-600">薬剤師:</span>
+                                              <span className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-gray-600">優先度:</span>
+                                              <span className={`font-medium ${priorityColor}`}>
+                                                {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
+                                              </span>
+                                            </div>
                                           </div>
                                         );
                                       })}
                                     </div>
                                   )}
                                 </>
-                                         ) : (
-             <div className="text-gray-600">
-               {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
-               {analysis.timeSlot !== 'consult' && analysis.postings.length > 0 && analysis.requests.length === 0 && (
-                 <div className="text-red-600 font-medium mt-1">
-                   ⚠️ 不足人数: {analysis.totalRequired}人
-                 </div>
-               )}
-             </div>
-           )}
+                              ) : (
+                                <div className="text-sm text-gray-500">
+                                  {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
+                                </div>
+                              )}
+                              </div>
                             </div>
                           ))}
                           </div>
@@ -1110,7 +1192,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 </div>
               </div>
             )}
-
 
             
             <div className="text-xs text-gray-500">最終更新: {lastUpdated.toLocaleString('ja-JP')}</div>
