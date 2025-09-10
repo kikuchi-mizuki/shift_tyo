@@ -280,7 +280,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           
           alert('募集を削除しました');
           setSelectedDate('');
-          setSelectedStoreName('');
           setTimeSlot('');
           setRequiredStaff(null);
           setMemo('');
@@ -315,9 +314,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           return;
         }
         
-        // フォームをリセット
+        // フォームをリセット（店舗名は保持）
         setSelectedDate('');
-        setSelectedStoreName('');
         setTimeSlot('');
         setRequiredStaff(null);
         setMemo('');
