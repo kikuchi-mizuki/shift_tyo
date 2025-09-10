@@ -642,9 +642,34 @@ export const shiftPostings = {
 
     try {
       console.log('Inserting into shift_postings table...');
+      // テーブル定義の相違に備えて、許可されたカラムだけを送る
+      const sanitized = postingsData.map((p: any) => {
+        // time_slot を既存スキーマに合わせて正規化
+        const normalizedTimeSlot =
+          p.time_slot === 'full' ? 'fullday' :
+          p.time_slot === 'consult' ? 'negotiable' : p.time_slot;
+
+        // カラム名の差異: required_staff / required_people のどちらでも受け入れられるように
+        const requiredStaff =
+          p.required_staff ?? p.required_people ?? 1;
+
+        // ステータスの既定値 ('open' / 'recruiting') どちらでも運用できるように 'recruiting' を採用
+        const status = p.status === 'open' ? 'recruiting' : (p.status || 'recruiting');
+
+        // 送信カラムを制限（未知のカラムは除去: store_name など）
+        return {
+          pharmacy_id: p.pharmacy_id,
+          date: p.date, // YYYY-MM-DD 文字列想定（date型に自動変換される）
+          time_slot: normalizedTimeSlot,
+          required_staff: requiredStaff,
+          memo: p.memo ?? null,
+          status
+        };
+      });
+
       const { data, error } = await supabase
         .from('shift_postings')
-        .insert(postingsData)
+        .insert(sanitized)
         .select();
       
       console.log('Insert result:', { data, error });
