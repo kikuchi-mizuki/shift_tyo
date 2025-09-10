@@ -45,18 +45,24 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   }, [user]);
 
   // 店舗名リストが取得できたら、未選択の場合は先頭を自動選択
+  // ドロップダウン候補（プロフィール登録 + これまでの募集から抽出）のユニオン
+  const storeOptions: string[] = Array.from(new Set([
+    ...(storeNames || []),
+    ...((myShifts || []).map((s: any) => extractStoreName(s)).filter(Boolean))
+  ]));
+
   useEffect(() => {
-    if (!selectedStoreName && storeNames && storeNames.length > 0) {
-      setSelectedStoreName(storeNames[0]);
+    if (!selectedStoreName && storeOptions && storeOptions.length > 0) {
+      setSelectedStoreName(storeOptions[0]);
     }
-  }, [storeNames]);
+  }, [storeOptions]);
 
   // 変更があればローカルにキャッシュ
   useEffect(() => {
     try {
-      localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
+      localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeOptions));
     } catch {}
-  }, [storeNames, user?.id]);
+  }, [storeOptions, user?.id]);
 
   useEffect(() => {
     try {
@@ -605,13 +611,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">店舗名を選択してください</option>
-              {Array.from(new Set([
-                ...storeNames,
-                ...myShifts
-                  .filter((s: any) => s.date === selectedDate)
-                  .map((s: any) => extractStoreName(s))
-                  .filter(Boolean)
-              ])).map((name, index) => (
+              {storeOptions.map((name, index) => (
                 <option key={index} value={name}>{name}</option>
               ))}
               <option value="">店舗名なし</option>
