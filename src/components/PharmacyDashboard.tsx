@@ -579,7 +579,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 {myShifts
                   .filter((s: any) => s.date === selectedDate)
                   .map((s: any, idx: number) => {
+                    // デバッグ用ログ
+                    console.log('=== DETAIL DISPLAY DEBUG ===');
+                    console.log('Shift data:', s);
+                    console.log('s.store_name:', s.store_name);
+                    console.log('s.memo:', s.memo);
+                    
                     const name = s.store_name || (typeof s.memo === 'string' ? (s.memo.match(/\[store:([^\]]+)\]/)?.[1] || '') : '');
+                    console.log('Extracted name:', name);
+                    
                     return (
                       <div key={idx} className="flex items-center justify-between bg-white rounded border px-2 py-1">
                         <div className="text-gray-800">店舗: {name || '（店舗名未設定）'}</div>
