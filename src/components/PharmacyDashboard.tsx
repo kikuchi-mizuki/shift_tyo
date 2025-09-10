@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Calendar as CalendarIcon, Plus, MessageCircle, Sun, Users } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, MessageCircle, Sun, Users } from 'lucide-react';
 import { shifts, shiftPostings, supabase } from '../lib/supabase';
 
 // デバッグ: インポートの確認
@@ -12,6 +12,7 @@ interface PharmacyDashboardProps {
 export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedStoreName, setSelectedStoreName] = useState('');
   const [timeSlot, setTimeSlot] = useState('morning'); // デフォルトで午前を選択
   const [requiredStaff, setRequiredStaff] = useState<number | null>(1); // デフォルトで1人を選択
   const [memo, setMemo] = useState('');
@@ -20,6 +21,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [loading, setLoading] = useState(true);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
+  const [storeName, setStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');
+        setStoreName(profileData.store_name || '');
       }
       
       // シフトに関連する薬剤師のプロフィールを取得
@@ -134,7 +137,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     try {
       const { error } = await supabase
         .from('user_profiles')
-        .update({ name: profileName })
+        .update({ 
+          name: profileName,
+          store_name: storeName
+        })
         .eq('id', user.id);
       
       if (error) {
@@ -173,6 +179,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           }
           
           alert('募集を削除しました');
+          setSelectedDate('');
+          setSelectedStoreName('');
           setTimeSlot('');
           setRequiredStaff(null);
           setMemo('');
@@ -188,6 +196,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         const posting = {
           pharmacy_id: user.id,
           date: selectedDate,
+          store_name: selectedStoreName,
           time_slot: timeSlot,
           required_staff: requiredStaff,
           memo,
@@ -207,6 +216,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         }
         
         // フォームをリセット
+        setSelectedDate('');
+        setSelectedStoreName('');
         setTimeSlot('');
         setRequiredStaff(null);
         setMemo('');
@@ -311,6 +322,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                        shift.time_slot === 'full' ? '終日' : 
                        shift.time_slot === 'consult' ? '要相談' : shift.time_slot}
                       {shift.required_staff}人
+                      {shift.store_name && (
+                        <div className="text-[7px] text-blue-600 mt-0.5">
+                          {shift.store_name}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </>
@@ -340,29 +356,40 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         <div className="p-4 lg:p-6 space-y-6">
           {/* プロフィール編集フォーム */}
           {showProfileEdit && (
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">名前の設定</h3>
-              <div className="flex space-x-2">
+            <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">薬局名の設定</h3>
                 <input
                   type="text"
                   value={profileName}
                   onChange={(e) => setProfileName(e.target.value)}
                   placeholder="薬局名"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
-                <button
-                  onClick={handleProfileUpdate}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                >
-                  更新
-                </button>
               </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">店舗名の設定</h3>
+                <input
+                  type="text"
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                  placeholder="店舗名（例：渋谷店、新宿店）"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+              <button
+                onClick={handleProfileUpdate}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              >
+                更新
+              </button>
             </div>
           )}
           
           {/* デバッグ情報 */}
           <div className="p-3 bg-gray-100 rounded text-xs">
             <div>選択日: {selectedDate || '未選択'}</div>
+            <div>店舗名: {selectedStoreName || '未選択'}</div>
             <div>時間帯: {timeSlot || '未選択'}</div>
             <div>人数: {requiredStaff || '未選択'}</div>
             <div>備考: {memo || 'なし'}</div>
@@ -385,6 +412,27 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 return <option key={day} value={date}>{month}月{day}日</option>;
               })}
             </select>
+          </div>
+
+          {/* 店舗名選択 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">店舗名</label>
+            <select
+              value={selectedStoreName}
+              onChange={(e) => setSelectedStoreName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">店舗名を選択してください</option>
+              <option value={storeName}>{storeName || 'メイン店舗'}</option>
+              {storeName && (
+                <option value="">店舗名なし</option>
+              )}
+            </select>
+            {!storeName && (
+              <p className="text-xs text-gray-500 mt-1">
+                店舗名を設定するには「プロフィール編集」から設定してください
+              </p>
+            )}
           </div>
 
           {/* 時間帯 */}
