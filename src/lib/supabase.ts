@@ -652,6 +652,8 @@ export const shiftPostings = {
 
     try {
       console.log('Inserting into shift_postings table...');
+      console.log('Original postingsData:', postingsData);
+      
       // テーブル定義の相違に備えて、許可されたカラムだけを送る
       const sanitized = postingsData.map((p: any) => {
         // time_slot を既存スキーマに合わせて正規化
@@ -666,16 +668,19 @@ export const shiftPostings = {
         // ステータスの既定値 ('open' / 'recruiting') どちらでも運用できるように 'recruiting' を採用
         const status = p.status === 'open' ? 'recruiting' : (p.status || 'recruiting');
 
-        // 送信カラムを制限（未知のカラムは除去: store_name など）
+        // store_nameも保存するように修正
         return {
           pharmacy_id: p.pharmacy_id,
           date: p.date, // YYYY-MM-DD 文字列想定（date型に自動変換される）
           time_slot: normalizedTimeSlot,
           required_staff: requiredStaff,
           memo: p.memo ?? null,
-          status
+          status,
+          store_name: p.store_name ?? null
         };
       });
+
+      console.log('Sanitized data to insert:', sanitized);
 
       const { data, error } = await supabase
         .from('shift_postings')
