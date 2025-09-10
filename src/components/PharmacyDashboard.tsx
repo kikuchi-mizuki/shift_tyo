@@ -254,24 +254,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('Store names to save:', storeNames);
       console.log('NG list:', ngList);
       
-      // まずstore_namesカラムが存在するかチェック
-      const { data: tableInfo, error: tableError } = await supabase
-        .from('information_schema.columns')
-        .select('column_name')
-        .eq('table_name', 'user_profiles')
-        .eq('column_name', 'store_names');
+      // store_namesを直接保存（カラム存在チェックを削除）
+      let updateData: any = { 
+        name: profileName, 
+        ng_list: ngList,
+        store_names: storeNames
+      };
       
-      console.log('Table info check result:', { tableInfo, tableError });
-      
-      let updateData: any = { name: profileName, ng_list: ngList };
-      
-      // store_namesカラムが存在する場合のみ追加
-      if (!tableError && tableInfo && tableInfo.length > 0) {
-        updateData.store_names = storeNames;
-        console.log('store_names column exists, adding to update data');
-      } else {
-        console.log('store_names column does not exist, skipping');
-      }
+      console.log('Saving store_names directly:', storeNames);
       
       console.log('Final update data:', updateData);
       
@@ -284,7 +274,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       
       if (error) {
         console.error('Error updating profile:', error);
-        alert('プロフィールの更新に失敗しました');
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        alert(`プロフィールの更新に失敗しました: ${error.message}`);
       } else {
         console.log('Profile updated successfully');
         alert('プロフィールを更新しました');
