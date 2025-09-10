@@ -555,10 +555,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   </div>
                   
                   {/* 登録済み店舗名一覧 */}
-                  {storeNames.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-xs text-gray-600">登録済み店舗名:</p>
-                      {storeNames.map((name, index) => (
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-600">登録済み店舗名: ({storeNames.length}件)</p>
+                    {storeNames.length > 0 ? (
+                      storeNames.map((name, index) => (
                         <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
                           <span className="text-sm">{name}</span>
                           <button
@@ -568,9 +568,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                             削除
                           </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      ))
+                    ) : (
+                      <div className="text-xs text-gray-500 bg-white p-2 rounded border">
+                        店舗名が登録されていません
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>
