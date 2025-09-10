@@ -352,6 +352,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.error('isArray:', Array.isArray(storeNames));
       console.error('JSON:', JSON.stringify(storeNames));
       
+      // アラートでも確認
+      alert(`店舗名デバッグ: ${JSON.stringify(storeNames)}`);
+      
       const updatePayload = {
         name: profileName,
         ng_list: ngList,
