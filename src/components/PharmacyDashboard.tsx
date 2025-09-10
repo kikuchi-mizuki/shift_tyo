@@ -135,12 +135,23 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   const handleProfileUpdate = async () => {
     try {
+      // まずstore_nameカラムが存在するかチェック
+      const { data: tableInfo, error: tableError } = await supabase
+        .from('information_schema.columns')
+        .select('column_name')
+        .eq('table_name', 'user_profiles')
+        .eq('column_name', 'store_name');
+      
+      let updateData: any = { name: profileName };
+      
+      // store_nameカラムが存在する場合のみ追加
+      if (!tableError && tableInfo && tableInfo.length > 0) {
+        updateData.store_name = storeName;
+      }
+      
       const { error } = await supabase
         .from('user_profiles')
-        .update({ 
-          name: profileName,
-          store_name: storeName
-        })
+        .update(updateData)
         .eq('id', user.id);
       
       if (error) {
