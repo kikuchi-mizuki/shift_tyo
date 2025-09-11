@@ -45,7 +45,7 @@ export const AdminMatchingPanel: React.FC<AdminMatchingPanelProps> = ({ userRole
     setIsLoading(true);
     try {
       await createAvailability({ date, slot });
-      alert('希望を登録しました');
+      // 通知は不要
     } catch (error) {
       alert(`希望登録に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {

@@ -415,7 +415,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
           alert(`シフト希望の登録に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
         } else {
           console.log('Shift request created successfully');
-          alert('シフト希望を登録しました');
+          // 通知は不要
           // 登録後は時間帯とメモのみリセット、日付は保持
           setSelectedTimeSlot('');
           setMemo('');
