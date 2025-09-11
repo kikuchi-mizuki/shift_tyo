@@ -538,13 +538,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const dayRequests = requests.filter((r: any) => r.date === dateStr);
               const dayPostings = postings.filter((p: any) => p.date === dateStr);
               
-              // 9月2日のデバッグログ
-              if (dateStr === '2025-09-02') {
-                console.log(`[DEBUG 9/2] Original requests:`, requests);
-                console.log(`[DEBUG 9/2] Original postings:`, postings);
-                console.log(`[DEBUG 9/2] Filtered dayRequests:`, dayRequests);
-                console.log(`[DEBUG 9/2] Filtered dayPostings:`, dayPostings);
-              }
               
               // マッチング状況を計算
               const calculateMatchingStatus = () => {
@@ -561,22 +554,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 const totalAvailable = dayRequests.length;
                 const totalMatched = Math.min(totalRequired, totalAvailable);
                 
-                // 9月2日のデバッグログ
-                if (dateStr === '2025-09-02') {
-                  console.log(`[DEBUG 9/2] Date: ${dateStr}`);
-                  console.log(`[DEBUG 9/2] Day requests:`, dayRequests);
-                  console.log(`[DEBUG 9/2] Day postings:`, dayPostings);
-                  console.log(`[DEBUG 9/2] Total required: ${totalRequired}, Total available: ${totalAvailable}, Total matched: ${totalMatched}`);
-                  
-                  // 各募集の詳細を確認
-                  dayPostings.forEach((posting: any, index: number) => {
-                    console.log(`[DEBUG 9/2] Posting ${index}:`, posting);
-                    console.log(`[DEBUG 9/2] Posting ${index} required_staff:`, posting.required_staff);
-                  });
-                  
-                  // 強制的にアラートで表示
-                  alert(`9月2日デバッグ:\n必要人数: ${totalRequired}\n希望人数: ${totalAvailable}\nマッチ数: ${totalMatched}\n\nフィルタ後希望データ: ${JSON.stringify(dayRequests)}\nフィルタ後募集データ: ${JSON.stringify(dayPostings)}\n\n元の希望データ件数: ${requests.length}\n元の募集データ件数: ${postings.length}`);
-                }
                 
                 if (totalRequired === 0) {
                   // 募集がない場合は希望のみ表示（0件の場合は表示しない）
@@ -600,11 +577,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               };
               
               const matchingStatus = calculateMatchingStatus();
-              
-              // 9月2日のデバッグログ
-              if (dateStr === '2025-09-02') {
-                console.log(`[DEBUG 9/2] Final matching status:`, matchingStatus);
-              }
               
               return (
                 <div 
