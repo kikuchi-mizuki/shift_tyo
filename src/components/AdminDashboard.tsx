@@ -176,7 +176,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     const pharmacists: any[] = [];
 
     Object.values(userProfiles).forEach((profile: any) => {
-      console.log('Processing profile:', profile.id, profile.name, profile.user_type);
+      console.log('Processing profile:', profile.id, profile.name, profile.user_type, 'ng_list:', profile.ng_list);
       if (profile.user_type === 'pharmacy') {
         pharmacies.push(profile);
       } else if (profile.user_type === 'pharmacist') {
@@ -197,6 +197,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const loadAll = async () => {
     try {
+      console.log('loadAll started - データ読み込み開始');
       // Railwayログに出力
       const logToRailway = (message: string, data?: any) => {
         console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
