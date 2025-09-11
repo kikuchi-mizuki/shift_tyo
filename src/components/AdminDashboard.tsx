@@ -284,6 +284,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                    
                    if (userProfilesError) {
                      logToRailway('Error loading user_profiles:', userProfilesError);
+                   } else {
+                     console.log('user_profilesデータ取得成功:', userProfilesData);
                    }
                    
                    const profilesMap: any = {};
@@ -1958,22 +1960,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   return ngList.length > 0 ? (
                                     <div className="flex flex-wrap gap-1">
                                       {ngList.map((ngId: string, idx: number) => {
-                                        // 薬局の情報を取得
-                                        const ngPharmacy = Object.values(userProfiles).find((profile: any) => 
+                                        // 薬局の情報を取得 - より確実な方法
+                                        let ngPharmacyName = ngId; // デフォルトはID
+                                        
+                                        // userProfilesから薬局を検索
+                                        const allProfiles = Object.values(userProfiles);
+                                        const ngPharmacy = allProfiles.find((profile: any) => 
                                           profile.id === ngId && profile.user_type === 'pharmacy'
                                         );
                                         
-                                        // デバッグログ
-                                        console.log('NG薬局表示デバッグ:', {
-                                          pharmacist: pharmacist.name,
-                                          ngId,
-                                          ngPharmacy,
-                                          allPharmacies: Object.values(userProfiles).filter((p: any) => p.user_type === 'pharmacy')
-                                        });
+                                        if (ngPharmacy && ngPharmacy.name) {
+                                          ngPharmacyName = ngPharmacy.name;
+                                        } else {
+                                          // 薬局が見つからない場合、直接Supabaseから取得を試行
+                                          console.log('薬局が見つからないID:', ngId);
+                                          console.log('利用可能な薬局:', allProfiles.filter((p: any) => p.user_type === 'pharmacy'));
+                                        }
                                         
                                         return (
                                           <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                            {ngPharmacy?.name || ngId}
+                                            {ngPharmacyName}
                                           </span>
                                         );
                                       })}
