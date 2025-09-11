@@ -276,6 +276,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                    setUserProfiles({});
                  } else {
                    logToRailway('Loaded v_user_profiles:', vUserProfilesData);
+                   
+                   // user_profilesテーブルから詳細情報を取得
+                   const { data: userProfilesData, error: userProfilesError } = await supabase
+                     .from('user_profiles')
+                     .select('*');
+                   
+                   if (userProfilesError) {
+                     logToRailway('Error loading user_profiles:', userProfilesError);
+                   }
+                   
                    const profilesMap: any = {};
                    vUserProfilesData?.forEach((user: any) => {
                      // user_typeが設定されている場合はそれを使用、ない場合はemailから推測
@@ -288,14 +298,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                  name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'pharmacy' : 'pharmacist';
                      }
                      
-                     // デバッグログ
-                     console.log(`User ${user.email} (${user.name}) classified as: ${userType}`);
+                     // user_profilesから詳細情報を取得
+                     const profileDetails = userProfilesData?.find((p: any) => p.id === user.id);
                      
                      profilesMap[user.id] = {
                        id: user.id,
                        name: user.name,
                        email: user.email,
-                       user_type: userType
+                       user_type: userType,
+                       ng_list: profileDetails?.ng_list || [],
+                       store_names: profileDetails?.store_names || []
                      };
                    });
                    setUserProfiles(profilesMap);
