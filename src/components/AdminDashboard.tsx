@@ -107,11 +107,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   };
 
   const deleteUser = async (profile: any) => {
-    console.log('deleteUser function called with profile:', profile);
-    alert(`削除開始: ${profile.name || profile.email} (ID: ${profile.id})`);
     if (!confirm(`${profile.name || profile.email} を削除しますか？`)) {
-      console.log('User cancelled deletion');
-      alert('削除がキャンセルされました');
       return;
     }
     try {
@@ -128,111 +124,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.error('assigned_shifts delete error:', (assignedDelete as any).error);
         throw (assignedDelete as any).error;
       }
-      console.log('assigned_shifts deleted successfully');
-      alert('assigned_shifts削除完了');
-
       // shift_requests（薬剤師）
-      console.log('Deleting shift_requests...');
       const reqDelete = await supabase
         .from('shift_requests')
         .delete()
         .eq('pharmacist_id', profile.id);
       if ((reqDelete as any).error) {
         console.error('shift_requests delete error:', (reqDelete as any).error);
-        alert(`shift_requests削除エラー: ${(reqDelete as any).error.message}`);
         throw (reqDelete as any).error;
       }
-      console.log('shift_requests deleted successfully');
-      alert('shift_requests削除完了');
 
       // shift_postings（薬局）
-      console.log('Deleting shift_postings...');
       const postDelete = await supabase
         .from('shift_postings')
         .delete()
         .eq('pharmacy_id', profile.id);
       if ((postDelete as any).error) {
         console.error('shift_postings delete error:', (postDelete as any).error);
-        alert(`shift_postings削除エラー: ${(postDelete as any).error.message}`);
         throw (postDelete as any).error;
       }
-      console.log('shift_postings deleted successfully');
-      alert('shift_postings削除完了');
 
       // 2) プロファイルを削除
-      console.log('Deleting user profile...');
-      alert(`削除対象ID: ${profile.id}`);
-      
-      // 削除前にプロファイルの存在確認
-      const checkProfile = await supabase
-        .from('user_profiles')
-        .select('id, name, email')
-        .eq('id', profile.id);
-      alert(`削除前確認: ${checkProfile.data?.length || 0}件のプロファイルが見つかりました`);
-      
       const profileDelete = await supabase
         .from('user_profiles')
         .delete()
         .eq('id', profile.id);
       if ((profileDelete as any).error) {
         console.error('user_profiles delete error:', (profileDelete as any).error);
-        alert(`user_profiles削除エラー: ${(profileDelete as any).error.message}`);
         throw (profileDelete as any).error;
       }
-      console.log('user profile deleted successfully');
-      alert(`user_profiles削除完了 - 削除件数: ${(profileDelete as any).data?.length || '不明'}`);
-      
-      // 削除後の確認
-      const checkAfterDelete = await supabase
-        .from('user_profiles')
-        .select('id, name, email')
-        .eq('id', profile.id);
-      alert(`削除後確認: ${checkAfterDelete.data?.length || 0}件のプロファイルが残っています`);
 
       // 3) 画面更新
-      console.log('Reloading data...');
       await loadAll();
-      
-      // 4) ユーザープロフィールを強制的に再取得
-      console.log('Force reloading user profiles...');
-      const { data: allProfilesData, error: allProfilesError } = await supabase
-        .from('user_profiles')
-        .select('*');
-      
-      if (allProfilesError) {
-        console.error('Error reloading user profiles:', allProfilesError);
-      } else {
-        console.log('Reloaded user profiles:', allProfilesData);
-        console.log('Number of profiles after deletion:', allProfilesData?.length);
-        alert(`削除後のプロファイル数: ${allProfilesData?.length}`);
-        
-        const profilesMap: any = {};
-        allProfilesData?.forEach((user: any) => {
-          let userType = user.user_type;
-          if (!userType) {
-            const email = user.email?.toLowerCase() || '';
-            const name = user.name?.toLowerCase() || '';
-            userType = email.includes('store') || email.includes('pharmacy') || email.includes('sampley2') || 
-                      name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'pharmacy' : 'pharmacist';
-          }
-          profilesMap[user.id] = { ...user, user_type: userType };
-        });
-        
-        console.log('Before setUserProfiles - current state:', userProfiles);
-        console.log('Setting new userProfiles state:', profilesMap);
-        alert(`状態更新前のプロファイル数: ${Object.keys(userProfiles).length}`);
-        alert(`新しいプロファイル数: ${Object.keys(profilesMap).length}`);
-        setUserProfiles(profilesMap);
-        
-        // 状態更新を確認
-        setTimeout(() => {
-          console.log('After setUserProfiles - new state:', userProfiles);
-          alert(`setTimeout後のプロファイル数: ${Object.keys(userProfiles).length}`);
-        }, 100);
-      }
-      
-      console.log('User deletion completed successfully:', profile.id);
-      alert('ユーザーを削除しました');
     } catch (e: any) {
       console.error('User deletion failed:', e);
       alert(`削除に失敗しました: ${e?.message || 'Unknown error'}`);
