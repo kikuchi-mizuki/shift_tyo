@@ -22,8 +22,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [storeNames, setStoreNames] = useState<string[]>([]);
-  const [multiStoreNames, setMultiStoreNames] = useState<string[]>([]);
-  const TEMP_STORE_KEY = `temp_selected_stores_${user?.id || ''}`;
+  // 募集登録での店舗名は一時保存は残しつつ単一選択へ
+  const [singleStoreName, setSingleStoreName] = useState('');
+  const TEMP_STORE_KEY = `temp_selected_store_${user?.id || ''}`;
   
   // storeNamesの状態変更を監視
   useEffect(() => {
@@ -49,11 +50,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         const parsed = JSON.parse(cachedStores);
         if (Array.isArray(parsed)) setStoreNames(parsed);
       }
-      const cachedMulti = localStorage.getItem(TEMP_STORE_KEY);
-      if (cachedMulti) {
-        const parsed = JSON.parse(cachedMulti);
-        if (Array.isArray(parsed)) setMultiStoreNames(parsed);
-      }
+      const cachedSingle = localStorage.getItem(TEMP_STORE_KEY);
+      if (cachedSingle) setSingleStoreName(cachedSingle);
     } catch {}
     // 2) サーバーデータを正とする
     loadData();
@@ -523,17 +521,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     } else {
       // 新しい募集を作成（同日でも店舗名が異なれば追加可）
       try {
-        // 選択した複数の店舗に対して個別の募集を作成
-        const targets = (multiStoreNames.length > 0 ? multiStoreNames : ['']);
-        const payload = targets.map((name) => ({
+        // 単一選択の店舗に対して募集を作成
+        const payload = [{
           pharmacy_id: user.id,
           date: selectedDate,
-          store_name: name || null,
+          store_name: (singleStoreName || '') || null,
           time_slot: timeSlot,
           required_staff: requiredStaff,
           memo,
           status: 'open'
-        }));
+        }];
         console.log('Creating postings:', payload);
         const { error } = await shiftPostings.createPostings(payload);
         
@@ -823,17 +820,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             </select>
           </div>
 
-          {/* 店舗名選択（複数選択に対応・一時保存可） */}
+          {/* 店舗名選択（一時保存可・単一選択） */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">店舗名（複数選択可）</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">店舗名</label>
             <select
-              multiple
-              value={multiStoreNames}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions).map(o => o.value);
-                setMultiStoreNames(selected);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-28"
+              value={singleStoreName}
+              onChange={(e) => setSingleStoreName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {storeOptions.map((name, index) => (
                 <option key={index} value={name}>{name}</option>
@@ -845,7 +838,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 type="button"
                 onClick={() => {
                   try {
-                    localStorage.setItem(TEMP_STORE_KEY, JSON.stringify(multiStoreNames));
+                    localStorage.setItem(TEMP_STORE_KEY, singleStoreName);
                   } catch {}
                 }}
                 className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
@@ -853,12 +846,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               <button
                 type="button"
                 onClick={() => {
-                  setMultiStoreNames([]);
+                  setSingleStoreName('');
                   try { localStorage.removeItem(TEMP_STORE_KEY); } catch {}
                 }}
                 className="text-xs px-2 py-1 rounded bg-gray-500 text-white hover:bg-gray-600"
               >選択をクリア</button>
-              <span className="text-xs text-gray-500">Cmd/Shift を押しながら選択で複数選べます</span>
             </div>
           </div>
 
@@ -947,10 +939,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                       if (m && m[1]) fromMemo = m[1];
                     }
                     const sStoreName = direct || fromMemo;
-                    // 複数選択中はいずれかが一致していれば既存とみなす
-                    const selectedSet = new Set(multiStoreNames.length > 0 ? multiStoreNames : ['']);
-                    if (sStoreName === '' && selectedSet.has('')) return true;
-                    return selectedSet.has(sStoreName);
+                    const selectedStore = (singleStoreName || '').trim();
+                    if (sStoreName === '' && selectedStore === '') return true;
+                    return sStoreName === selectedStore;
                   });
                   return existing ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700';
                 })()
@@ -968,9 +959,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     if (m && m[1]) fromMemo = m[1];
                   }
                   const sStoreName = direct || fromMemo;
-                  const selectedSet = new Set(multiStoreNames.length > 0 ? multiStoreNames : ['']);
-                  if (sStoreName === '' && selectedSet.has('')) return true;
-                  return selectedSet.has(sStoreName);
+                  const selectedStore = (singleStoreName || '').trim();
+                  if (sStoreName === '' && selectedStore === '') return true;
+                  return sStoreName === selectedStore;
                 });
                 
                 return existing ? '募集を削除' : '募集を追加';
