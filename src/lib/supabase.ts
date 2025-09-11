@@ -694,5 +694,70 @@ export const shiftPostings = {
       console.error('Create postings error:', error);
       return { data: [], error };
     }
+  },
+
+  // シフト募集更新
+  updatePosting: async (postingId: string, updates: any) => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    // createPostings と同様の正規化を適用
+    const normalized: any = { ...updates };
+    if (normalized.time_slot) {
+      normalized.time_slot = normalized.time_slot === 'full' ? 'fullday' : normalized.time_slot;
+      if (normalized.time_slot === 'consult') {
+        normalized.time_slot = 'negotiable';
+      }
+    }
+    if (normalized.required_people != null && normalized.required_staff == null) {
+      normalized.required_staff = normalized.required_people;
+      delete normalized.required_people;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('shift_postings')
+        .update(normalized)
+        .eq('id', postingId)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Update posting error:', error);
+      return { data: null, error } as any;
+    }
+  }
+};
+
+// 管理者用：シフト希望の更新
+export const shiftRequestsAdmin = {
+  updateRequest: async (requestId: string, updates: any) => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    const normalized: any = { ...updates };
+    if (normalized.time_slot) {
+      normalized.time_slot = normalized.time_slot === 'full' ? 'fullday' : normalized.time_slot;
+      if (normalized.time_slot === 'consult') {
+        normalized.time_slot = 'negotiable';
+      }
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('shift_requests')
+        .update(normalized)
+        .eq('id', requestId)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Update request error:', error);
+      return { data: null, error } as any;
+    }
   }
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, RefreshCw, AlertCircle } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, supabase } from '../lib/supabase';
+import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
   user: any;
@@ -19,6 +19,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     pharmacies: false,
     pharmacists: false
+  });
+
+  // 追加フォーム用のローカル状態
+  const [newPosting, setNewPosting] = useState<any>({
+    pharmacy_id: '',
+    time_slot: 'morning',
+    required_staff: 1,
+    store_name: '',
+    memo: ''
+  });
+  const [newRequest, setNewRequest] = useState<any>({
+    pharmacist_id: '',
+    time_slot: 'morning',
+    priority: 'medium'
+  });
+
+  // 編集フォーム用の状態（募集/希望）
+  const [editingPostingId, setEditingPostingId] = useState<string | null>(null);
+  const [postingEditForm, setPostingEditForm] = useState<any>({
+    time_slot: 'morning',
+    required_staff: 1,
+    store_name: '',
+    memo: ''
+  });
+  const [editingRequestId, setEditingRequestId] = useState<string | null>(null);
+  const [requestEditForm, setRequestEditForm] = useState<any>({
+    time_slot: 'morning',
+    priority: 'medium'
   });
 
   const toggleSection = (section: string) => {
@@ -392,6 +420,107 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
+  // 募集 追加
+  const handleAddPosting = async () => {
+    if (!selectedDate) {
+      alert('日付を選択してください');
+      return;
+    }
+    if (!newPosting.pharmacy_id) {
+      alert('薬局を選択してください');
+      return;
+    }
+    const payload = [{
+      pharmacy_id: newPosting.pharmacy_id,
+      date: selectedDate,
+      time_slot: newPosting.time_slot,
+      required_staff: Number(newPosting.required_staff) || 1,
+      store_name: (newPosting.store_name || '').trim() || null,
+      memo: (newPosting.memo || '').trim() || null,
+      status: 'recruiting'
+    }];
+    const { error } = await shiftPostings.createPostings(payload);
+    if (error) {
+      const e: any = error as any;
+      alert(`募集の追加に失敗しました: ${e?.message || e?.code || 'Unknown error'}`);
+      return;
+    }
+    setNewPosting({ pharmacy_id: '', time_slot: 'morning', required_staff: 1, store_name: '', memo: '' });
+    loadAll();
+  };
+
+  // 希望 追加
+  const handleAddRequest = async () => {
+    if (!selectedDate) {
+      alert('日付を選択してください');
+      return;
+    }
+    if (!newRequest.pharmacist_id) {
+      alert('薬剤師を選択してください');
+      return;
+    }
+    const payload = [{
+      pharmacist_id: newRequest.pharmacist_id,
+      date: selectedDate,
+      time_slot: newRequest.time_slot,
+      priority: newRequest.priority
+    }];
+    const { error } = await shiftRequests.createRequests(payload);
+    if (error) {
+      const e: any = error as any;
+      alert(`希望の追加に失敗しました: ${e?.message || e?.code || 'Unknown error'}`);
+      return;
+    }
+    setNewRequest({ pharmacist_id: '', time_slot: 'morning', priority: 'medium' });
+    loadAll();
+  };
+
+  // 募集 編集開始/保存
+  const beginEditPosting = (p: any) => {
+    setEditingPostingId(p.id);
+    setPostingEditForm({
+      time_slot: p.time_slot === 'fullday' ? 'full' : p.time_slot,
+      required_staff: p.required_staff,
+      store_name: p.store_name || '',
+      memo: p.memo || ''
+    });
+  };
+  const saveEditPosting = async (postingId: string) => {
+    const { error } = await shiftPostings.updatePosting(postingId, {
+      time_slot: postingEditForm.time_slot,
+      required_staff: Number(postingEditForm.required_staff) || 1,
+      store_name: (postingEditForm.store_name || '').trim() || null,
+      memo: (postingEditForm.memo || '').trim() || null
+    });
+    if (error) {
+      alert(`募集の更新に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+      return;
+    }
+    setEditingPostingId(null);
+    loadAll();
+  };
+
+  // 希望 編集開始/保存
+  const beginEditRequest = (r: any) => {
+    setEditingRequestId(r.id);
+    setRequestEditForm({
+      time_slot: r.time_slot === 'fullday' ? 'full' : r.time_slot,
+      priority: r.priority || 'medium'
+    });
+  };
+  const saveEditRequest = async (requestId: string) => {
+    const { error } = await shiftRequestsAdmin.updateRequest(requestId, {
+      time_slot: requestEditForm.time_slot,
+      priority: requestEditForm.priority
+    });
+    if (error) {
+      alert(`希望の更新に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+      return;
+    }
+    setEditingRequestId(null);
+    loadAll();
+  };
+
   // 確定シフトの取り消し
   const handleCancelConfirmedShifts = async (date: string) => {
     if (!confirm(`${date}の確定シフトを取り消しますか？`)) {
@@ -663,7 +792,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             )}
                             
                             {/* 余裕数 */}
-                            {matchingStatus.excess > 0 && (
+                            {typeof matchingStatus.excess === 'number' && matchingStatus.excess > 0 && (
                               <div className="text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-1 inline-block">
                                 余裕 {matchingStatus.excess}
                               </div>
@@ -683,7 +812,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <div className="font-medium mb-2">マッチング状況</div>
                               <div>マッチング: {matchingStatus.count}件</div>
                               {matchingStatus.shortage > 0 && <div>不足: {matchingStatus.shortage}人</div>}
-                              {matchingStatus.excess > 0 && <div>余裕: {matchingStatus.excess}人</div>}
+                              {typeof matchingStatus.excess === 'number' && matchingStatus.excess > 0 && <div>余裕: {matchingStatus.excess}人</div>}
                               <div>希望: {dayRequests.length}件</div>
                               <div>募集: {dayPostings.length}件</div>
                             </div>
@@ -880,7 +1009,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   )}
                   
                   {/* シフト募集 */}
-                  {postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').length > 0 && (
+                  {(
                     <div className="bg-orange-50 rounded-lg border border-orange-200 p-4">
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
@@ -888,10 +1017,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           募集している薬局 ({postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').length}件)
                         </h4>
                       </div>
+                      {/* 追加フォーム */}
+                      <div className="mb-3 bg-white border rounded p-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <select
+                            className="text-xs border rounded px-2 py-1"
+                            value={newPosting.pharmacy_id}
+                            onChange={(e) => setNewPosting({ ...newPosting, pharmacy_id: e.target.value })}
+                          >
+                            <option value="">薬局を選択</option>
+                            {Object.entries(userProfiles)
+                              .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy' || (profile as any).user_type === 'store')
+                              .map(([id, profile]: [string, any]) => (
+                                <option key={id} value={id}>{(profile as any).name || (profile as any).email}</option>
+                              ))}
+                          </select>
+                          <select
+                            className="text-xs border rounded px-2 py-1"
+                            value={newPosting.time_slot}
+                            onChange={(e) => setNewPosting({ ...newPosting, time_slot: e.target.value })}
+                          >
+                            <option value="morning">午前</option>
+                            <option value="afternoon">午後</option>
+                            <option value="full">終日</option>
+                          </select>
+                          <input
+                            className="text-xs border rounded px-2 py-1"
+                            type="number"
+                            min={1}
+                            value={newPosting.required_staff}
+                            onChange={(e) => setNewPosting({ ...newPosting, required_staff: e.target.value })}
+                            placeholder="必要人数"
+                          />
+                          <input
+                            className="text-xs border rounded px-2 py-1"
+                            value={newPosting.store_name}
+                            onChange={(e) => setNewPosting({ ...newPosting, store_name: e.target.value })}
+                            placeholder="店舗名（任意）"
+                          />
+                          <input
+                            className="col-span-2 text-xs border rounded px-2 py-1"
+                            value={newPosting.memo}
+                            onChange={(e) => setNewPosting({ ...newPosting, memo: e.target.value })}
+                            placeholder="メモ（任意）"
+                          />
+                        </div>
+                        <div className="text-right mt-2">
+                          <button onClick={handleAddPosting} className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded">追加</button>
+                        </div>
+                      </div>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').map((posting: any, index: number) => {
                         const pharmacyProfile = userProfiles[posting.pharmacy_id];
-                        
+                        const isEditing = editingPostingId === posting.id;
                         // 店舗名を取得（store_name または memo から）
                         const getStoreName = (posting: any) => {
                           const direct = (posting.store_name || '').trim();
@@ -902,17 +1080,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           }
                           return direct || fromMemo || '（店舗名未設定）';
                         };
-                        
                         return (
                           <div key={index} className="bg-white rounded border px-2 py-1">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm text-gray-800">
-                                {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(posting)})
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <select
+                                    className="text-xs border rounded px-2 py-1"
+                                    value={postingEditForm.time_slot}
+                                    onChange={(e) => setPostingEditForm({ ...postingEditForm, time_slot: e.target.value })}
+                                  >
+                                    <option value="morning">午前</option>
+                                    <option value="afternoon">午後</option>
+                                    <option value="full">終日</option>
+                                  </select>
+                                  <input
+                                    className="text-xs border rounded px-2 py-1"
+                                    type="number"
+                                    min={1}
+                                    value={postingEditForm.required_staff}
+                                    onChange={(e) => setPostingEditForm({ ...postingEditForm, required_staff: e.target.value })}
+                                    placeholder="必要人数"
+                                  />
+                                  <input
+                                    className="text-xs border rounded px-2 py-1"
+                                    value={postingEditForm.store_name}
+                                    onChange={(e) => setPostingEditForm({ ...postingEditForm, store_name: e.target.value })}
+                                    placeholder="店舗名（任意）"
+                                  />
+                                  <input
+                                    className="text-xs border rounded px-2 py-1"
+                                    value={postingEditForm.memo}
+                                    onChange={(e) => setPostingEditForm({ ...postingEditForm, memo: e.target.value })}
+                                    placeholder="メモ（任意）"
+                                  />
+                                </div>
+                                <div className="text-right space-x-1">
+                                  <button onClick={() => saveEditPosting(posting.id)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded">保存</button>
+                                  <button onClick={() => setEditingPostingId(null)} className="text-xs bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded">キャンセル</button>
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500">
-                                {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'} / {posting.required_staff}人
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm text-gray-800">
+                                  {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(posting)})
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <div className="text-sm text-gray-500">
+                                    {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'} / {posting.required_staff}人
+                                  </div>
+                                  <button onClick={() => beginEditPosting(posting)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         );
                       })}
@@ -921,7 +1141,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   )}
                   
                   {/* シフト希望 */}
-                  {requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').length > 0 && (
+                  {(
                     <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -929,25 +1149,94 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           応募している薬剤師 ({requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').length}件)
                         </h4>
                       </div>
+                      {/* 追加フォーム */}
+                      <div className="mb-3 bg-white border rounded p-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <select
+                            className="text-xs border rounded px-2 py-1"
+                            value={newRequest.pharmacist_id}
+                            onChange={(e) => setNewRequest({ ...newRequest, pharmacist_id: e.target.value })}
+                          >
+                            <option value="">薬剤師を選択</option>
+                            {Object.entries(userProfiles)
+                              .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacist')
+                              .map(([id, profile]: [string, any]) => (
+                                <option key={id} value={id}>{(profile as any).name || (profile as any).email}</option>
+                              ))}
+                          </select>
+                          <select
+                            className="text-xs border rounded px-2 py-1"
+                            value={newRequest.time_slot}
+                            onChange={(e) => setNewRequest({ ...newRequest, time_slot: e.target.value })}
+                          >
+                            <option value="morning">午前</option>
+                            <option value="afternoon">午後</option>
+                            <option value="full">終日</option>
+                          </select>
+                          <select
+                            className="text-xs border rounded px-2 py-1"
+                            value={newRequest.priority}
+                            onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
+                          >
+                            <option value="high">高</option>
+                            <option value="medium">中</option>
+                            <option value="low">低</option>
+                          </select>
+                        </div>
+                        <div className="text-right mt-2">
+                          <button onClick={handleAddRequest} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">追加</button>
+                        </div>
+                      </div>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').map((request: any, index: number) => {
                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                        const isEditing = editingRequestId === request.id;
                         return (
                           <div key={index} className="bg-white rounded border px-2 py-1">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm text-gray-800">
-                                {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <div className="text-sm text-gray-500">
-                                  {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'}
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <div className="grid grid-cols-3 gap-2">
+                                  <select
+                                    className="text-xs border rounded px-2 py-1"
+                                    value={requestEditForm.time_slot}
+                                    onChange={(e) => setRequestEditForm({ ...requestEditForm, time_slot: e.target.value })}
+                                  >
+                                    <option value="morning">午前</option>
+                                    <option value="afternoon">午後</option>
+                                    <option value="full">終日</option>
+                                  </select>
+                                  <select
+                                    className="text-xs border rounded px-2 py-1"
+                                    value={requestEditForm.priority}
+                                    onChange={(e) => setRequestEditForm({ ...requestEditForm, priority: e.target.value })}
+                                  >
+                                    <option value="high">高</option>
+                                    <option value="medium">中</option>
+                                    <option value="low">低</option>
+                                  </select>
                                 </div>
-                                <div className={`text-sm font-medium ${priorityColor}`}>
-                                  {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
+                                <div className="text-right space-x-1">
+                                  <button onClick={() => saveEditRequest(request.id)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded">保存</button>
+                                  <button onClick={() => setEditingRequestId(null)} className="text-xs bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded">キャンセル</button>
                                 </div>
                               </div>
-                            </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm text-gray-800">
+                                  {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <div className="text-sm text-gray-500">
+                                    {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'}
+                                  </div>
+                                  <div className={`text-sm font-medium ${priorityColor}`}>
+                                    {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
+                                  </div>
+                                  <button onClick={() => beginEditRequest(request)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
