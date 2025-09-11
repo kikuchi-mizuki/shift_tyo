@@ -1934,18 +1934,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     ngList = pharmacist.ng_list.split(',').map(s => s.trim()).filter(s => s.length > 0);
                                   }
                                   
-                                  console.log('NG薬局表示デバッグ:', { 
-                                    pharmacist: pharmacist.name, 
-                                    ng_list_raw: pharmacist.ng_list, 
-                                    ng_list_processed: ngList,
-                                    userProfilesKeys: Object.keys(userProfiles)
-                                  });
-                                  
                                   return ngList.length > 0 ? (
                                     <div className="flex flex-wrap gap-1">
                                       {ngList.map((ngId: string, idx: number) => {
-                                        const ngPharmacy = userProfiles[ngId];
-                                        console.log('NG薬局個別デバッグ:', { ngId, ngPharmacy });
+                                        // 薬局の情報を取得
+                                        const ngPharmacy = Object.values(userProfiles).find((profile: any) => 
+                                          profile.id === ngId && profile.user_type === 'pharmacy'
+                                        );
+                                        
                                         return (
                                           <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
                                             {ngPharmacy?.name || ngPharmacy?.email || ngId}
