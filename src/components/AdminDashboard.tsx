@@ -1737,7 +1737,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               {/* 薬局一覧 */}
               <div className="border border-gray-200 rounded-lg">
                 <button
-                  onClick={() => toggleSection('pharmacies')}
+                  onClick={() => {
+                    console.log('Pharmacies section toggle clicked, current state:', expandedSections.pharmacies);
+                    toggleSection('pharmacies');
+                  }}
                   className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center justify-between"
                 >
                   <span className="font-medium text-gray-800">
@@ -1851,9 +1854,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </>
                             ) : (
                               <>
-                                <button onClick={() => beginEditUser(pharmacy)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
+                                <button onClick={() => {
+                                  console.log('Edit button clicked for pharmacy:', pharmacy.id);
+                                  beginEditUser(pharmacy);
+                                }} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
                                 <button onClick={() => {
                                   console.log('Delete button clicked for pharmacy:', pharmacy);
+                                  alert('削除ボタンがクリックされました: ' + (pharmacy.name || pharmacy.email));
                                   deleteUser(pharmacy);
                                 }} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
                               </>
@@ -1941,6 +1948,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 <button onClick={() => beginEditUser(pharmacist)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
                                 <button onClick={() => {
                                   console.log('Delete button clicked for pharmacist:', pharmacist);
+                                  alert('削除ボタンがクリックされました: ' + (pharmacist.name || pharmacist.email));
                                   deleteUser(pharmacist);
                                 }} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
                               </>
