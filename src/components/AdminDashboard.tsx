@@ -178,6 +178,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.error('Error reloading user profiles:', allProfilesError);
       } else {
         console.log('Reloaded user profiles:', allProfilesData);
+        console.log('Number of profiles after deletion:', allProfilesData?.length);
+        
         const profilesMap: any = {};
         allProfilesData?.forEach((user: any) => {
           let userType = user.user_type;
@@ -189,8 +191,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           }
           profilesMap[user.id] = { ...user, user_type: userType };
         });
+        
+        console.log('Before setUserProfiles - current state:', userProfiles);
+        console.log('Setting new userProfiles state:', profilesMap);
         setUserProfiles(profilesMap);
-        console.log('Updated userProfiles state:', profilesMap);
+        
+        // 状態更新を確認
+        setTimeout(() => {
+          console.log('After setUserProfiles - new state:', userProfiles);
+        }, 100);
       }
       
       console.log('User deletion completed successfully:', profile.id);
@@ -210,10 +219,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // 薬局と薬剤師のデータを整理する関数
   const getOrganizedUserData = () => {
+    console.log('getOrganizedUserData called with userProfiles:', userProfiles);
     const pharmacies: any[] = [];
     const pharmacists: any[] = [];
 
     Object.values(userProfiles).forEach((profile: any) => {
+      console.log('Processing profile:', profile.id, profile.name, profile.user_type);
       if (profile.user_type === 'pharmacy') {
         pharmacies.push(profile);
       } else if (profile.user_type === 'pharmacist') {
@@ -221,6 +232,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
     });
 
+    console.log('Organized data - pharmacies:', pharmacies.length, 'pharmacists:', pharmacists.length);
     return { pharmacies, pharmacists };
   };
 
