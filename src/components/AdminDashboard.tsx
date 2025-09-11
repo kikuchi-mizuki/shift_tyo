@@ -774,7 +774,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 // 全体でマッチング状況を分析（時間帯に関係なく）
                 const totalRequired = dayPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0);
                 const totalAvailable = dayRequests.length;
-                const totalMatched = Math.min(totalRequired, totalAvailable);
+
+                // NGリストを考慮した“適合可能”な希望数を算出
+                const getProfile = (id: string) => (userProfiles && (userProfiles as any)[id]) || {};
+                const compatibleRequestIds = new Set<string>();
+                dayRequests.forEach((r: any) => {
+                  const pharmacist = getProfile(r.pharmacist_id);
+                  const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+                  const canMatchWithAnyPosting = dayPostings.some((p: any) => {
+                    const pharmacy = getProfile(p.pharmacy_id);
+                    const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+                    const blockedByPharmacist = pharmacistNg.includes(p.pharmacy_id);
+                    const blockedByPharmacy = pharmacyNg.includes(r.pharmacist_id);
+                    return !blockedByPharmacist && !blockedByPharmacy;
+                  });
+                  if (canMatchWithAnyPosting) compatibleRequestIds.add(r.pharmacist_id);
+                });
+                const totalCompatible = compatibleRequestIds.size;
+                const totalMatched = Math.min(totalRequired, totalCompatible);
                 
                 
                 if (totalRequired === 0) {
