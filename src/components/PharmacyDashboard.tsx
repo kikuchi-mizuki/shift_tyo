@@ -22,6 +22,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [storeNames, setStoreNames] = useState<string[]>([]);
+  const [multiStoreNames, setMultiStoreNames] = useState<string[]>([]);
   
   // storeNamesの状態変更を監視
   useEffect(() => {
@@ -538,21 +539,19 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     } else {
       // 新しい募集を作成（同日でも店舗名が異なれば追加可）
       try {
-        const posting = {
+        // 選択した複数の店舗に対して個別の募集を作成
+        const targets = (multiStoreNames.length > 0 ? multiStoreNames : ['']);
+        const payload = targets.map((name) => ({
           pharmacy_id: user.id,
           date: selectedDate,
-          store_name: selectedStoreName,
+          store_name: name || null,
           time_slot: timeSlot,
           required_staff: requiredStaff,
           memo,
           status: 'open'
-        };
-        
-        console.log('Creating posting:', posting);
-        
-        // Supabaseに保存
-        console.log('Saving to Supabase');
-        const { error } = await shiftPostings.createPostings([posting]);
+        }));
+        console.log('Creating postings:', payload);
+        const { error } = await shiftPostings.createPostings(payload);
         
         if (error) {
           console.error('Shift posting error:', error);
@@ -839,25 +838,24 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             </select>
           </div>
 
-          {/* 店舗名選択 */}
+          {/* 店舗名選択（複数選択に対応） */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">店舗名</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">店舗名（複数選択可）</label>
             <select
-              value={selectedStoreName}
-              onChange={(e) => setSelectedStoreName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              multiple
+              value={multiStoreNames}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions).map(o => o.value);
+                setMultiStoreNames(selected);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-28"
             >
-              <option value="">店舗名を選択してください</option>
               {storeOptions.map((name, index) => (
                 <option key={index} value={name}>{name}</option>
               ))}
               <option value="">店舗名なし</option>
             </select>
-            {storeNames.length === 0 && (
-              <p className="text-xs text-gray-500 mt-1">
-                店舗名を設定するには「プロフィール編集」から設定してください
-              </p>
-            )}
+            <p className="text-xs text-gray-500 mt-1">Cmd/Shift を押しながら選択で複数選べます</p>
           </div>
 
           {/* 時間帯 */}
@@ -945,10 +943,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                       if (m && m[1]) fromMemo = m[1];
                     }
                     const sStoreName = direct || fromMemo;
-                    const selectedStore = (selectedStoreName || '').trim();
-                    
-                    if (sStoreName === '' && selectedStore === '') return true;
-                    return sStoreName === selectedStore;
+                    // 複数選択中はいずれかが一致していれば既存とみなす
+                    const selectedSet = new Set(multiStoreNames.length > 0 ? multiStoreNames : ['']);
+                    if (sStoreName === '' && selectedSet.has('')) return true;
+                    return selectedSet.has(sStoreName);
                   });
                   return existing ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700';
                 })()
@@ -966,10 +964,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     if (m && m[1]) fromMemo = m[1];
                   }
                   const sStoreName = direct || fromMemo;
-                  const selectedStore = (selectedStoreName || '').trim();
-                  
-                  if (sStoreName === '' && selectedStore === '') return true;
-                  return sStoreName === selectedStore;
+                  const selectedSet = new Set(multiStoreNames.length > 0 ? multiStoreNames : ['']);
+                  if (sStoreName === '' && selectedSet.has('')) return true;
+                  return selectedSet.has(sStoreName);
                 });
                 
                 return existing ? '募集を削除' : '募集を追加';
