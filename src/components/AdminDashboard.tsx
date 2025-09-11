@@ -291,6 +291,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                    }
                    
                    const profilesMap: any = {};
+                   
+                   // まず、user_profilesの全データをマップに追加
+                   userProfilesData?.forEach((profile: any) => {
+                     profilesMap[profile.id] = {
+                       id: profile.id,
+                       name: profile.name,
+                       email: profile.email,
+                       ng_list: profile.ng_list || [],
+                       store_names: profile.store_names || [],
+                       address: profile.address,
+                       phone: profile.phone
+                     };
+                   });
+                   
+                   // 次に、v_user_profilesのデータでuser_typeを設定
                    vUserProfilesData?.forEach((user: any) => {
                      // user_typeが設定されている場合はそれを使用、ない場合はemailから推測
                      let userType = user.user_type;
@@ -302,33 +317,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                  name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'pharmacy' : 'pharmacist';
                      }
                      
-                     // user_profilesから詳細情報を取得
-                     const profileDetails = userProfilesData?.find((p: any) => p.id === user.id);
-                     
-                     // デバッグログ
-                     if (profileDetails?.ng_list && profileDetails.ng_list.length > 0) {
-                       console.log('ユーザープロファイル詳細:', {
-                         user: user.name,
-                         ng_list: profileDetails.ng_list,
-                         store_names: profileDetails.store_names
-                       });
+                     // 既存のプロファイルにuser_typeを追加
+                     if (profilesMap[user.id]) {
+                       profilesMap[user.id].user_type = userType;
+                     } else {
+                       // v_user_profilesにのみ存在する場合は新規追加
+                       profilesMap[user.id] = {
+                         id: user.id,
+                         name: user.name,
+                         email: user.email,
+                         user_type: userType,
+                         ng_list: [],
+                         store_names: []
+                       };
                      }
-                     
-                     profilesMap[user.id] = {
-                       id: user.id,
-                       name: user.name,
-                       email: user.email,
-                       user_type: userType,
-                       ng_list: profileDetails?.ng_list || [],
-                       store_names: profileDetails?.store_names || [],
-                       // 薬局の場合は追加情報も含める
-                       ...(userType === 'pharmacy' && profileDetails ? {
-                         address: profileDetails.address,
-                         phone: profileDetails.phone
-                       } : {}),
-                       // 薬局の情報を確実に含める
-                       ...(profileDetails || {})
-                     };
                    });
                    setUserProfiles(profilesMap);
                    return;
@@ -1973,18 +1975,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   return (
                                     <div className="flex flex-wrap gap-1">
                                       {ngList.map((ngId: string, idx: number) => {
-                                        // 薬局名を取得する関数 - シンプルな方法
+                                        // 薬局名を取得する関数 - より包括的な検索
                                         const getPharmacyName = (id: string) => {
                                           // 1. 直接userProfilesから検索
                                           const profile = userProfiles[id];
-                                          if (profile && profile.user_type === 'pharmacy' && profile.name) {
+                                          if (profile && profile.name) {
                                             return profile.name;
                                           }
                                           
-                                          // 2. 全プロファイルから検索
+                                          // 2. 全プロファイルから検索（user_typeに関係なく）
                                           for (const [profileId, profileData] of Object.entries(userProfiles)) {
-                                            if (profileId === id && (profileData as any).user_type === 'pharmacy') {
-                                              return (profileData as any).name || id;
+                                            if (profileId === id && (profileData as any).name) {
+                                              return (profileData as any).name;
                                             }
                                           }
                                           
