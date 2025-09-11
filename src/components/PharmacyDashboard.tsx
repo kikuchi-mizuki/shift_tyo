@@ -467,65 +467,57 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('selectedStoreName:', selectedStoreName);
     console.log('myShifts:', myShifts);
     
-    const existingPosting = myShifts.find((s: any) => {
-      if (s.date !== selectedDate) return false;
-      
-      // カレンダー表示と同じロジックで店舗名を取得
-      const direct = (s.store_name || '').trim();
-      let fromMemo = '';
-      if (!direct && typeof s.memo === 'string') {
-        const m = s.memo.match(/\[store:([^\]]+)\]/);
-        if (m && m[1]) fromMemo = m[1];
+    // 追加対象（バッチ指定があればそれ、無ければ単一選択）
+    const targets = (batchStoreNames.length > 0 ? batchStoreNames : [singleStoreName]).map(n => (n || '').trim());
+
+    // 既存同日・同店舗の募集を検出（更新対象）と、新規作成対象を振り分け
+    const updates: { id: string, storeName: string }[] = [];
+    const creates: string[] = [];
+    for (const name of targets) {
+      const match = myShifts.find((s: any) => {
+        if (s.date !== selectedDate) return false;
+        const direct = (s.store_name || '').trim();
+        let fromMemo = '';
+        if (!direct && typeof s.memo === 'string') {
+          const m = s.memo.match(/\[store:([^\]]+)\]/);
+          if (m && m[1]) fromMemo = m[1];
+        }
+        const sStoreName = direct || fromMemo;
+        // 両方空 or 完全一致を重複とみなす
+        return (sStoreName === '' && name === '') || sStoreName === name;
+      });
+      if (match) {
+        updates.push({ id: match.id, storeName: name });
+      } else {
+        creates.push(name);
       }
-      const sStoreName = direct || fromMemo;
-      const selectedStore = (selectedStoreName || '').trim();
-      
-      console.log('Comparing store names:', { sStoreName, selectedStore, match: sStoreName === selectedStore });
-      
-      // 両方とも空の場合は同じ店舗名とみなす
-      if (sStoreName === '' && selectedStore === '') return true;
-      
-      // 通常の文字列比較
-      return sStoreName === selectedStore;
-    });
-    
-    console.log('existingPosting found:', existingPosting);
-    
-    if (existingPosting) {
-      // 既存の募集がある場合は削除
-      if (confirm('この日付の募集を削除しますか？')) {
-        try {
-          const { error } = await supabase
-            .from('shift_postings')
-            .delete()
-            .eq('id', existingPosting.id);
-          
-          if (error) {
-            console.error('Shift posting deletion error:', error);
-            alert('募集の削除に失敗しました');
-            return;
-          }
-          
-          alert('募集を削除しました');
-          setSelectedDate('');
-          setTimeSlot('');
-          setRequiredStaff(null);
-          setMemo('');
-          loadData();
-        } catch (e) {
-          console.error('Exception in handlePost deletion:', e);
-          alert('募集の削除に失敗しました');
+    }
+
+    try {
+      // まず重複分の更新（ユーザー確認）
+      if (updates.length > 0) {
+        const ok = confirm(`同じ日付・店舗名の募集が${updates.length}件あります。上書き更新しますか？`);
+        if (ok) {
+          await Promise.all(
+            updates.map(u =>
+              shiftPostings.updatePosting(u.id, {
+                date: selectedDate,
+                store_name: u.storeName || null,
+                time_slot: timeSlot,
+                required_staff: requiredStaff,
+                memo
+              })
+            )
+          );
         }
       }
-    } else {
-      // 新しい募集を作成（同日でも店舗名が異なれば追加可）
-      try {
-        // リストに追加された複数店舗（なければ現在選択の1件）に対して募集作成
-        const targets = (batchStoreNames.length > 0 ? batchStoreNames : [singleStoreName]);
-        const payload = targets.map((name) => ({
+
+      // 新規作成分
+      if (creates.length > 0) {
+        const payload = creates.map((name) => ({
           pharmacy_id: user.id,
           date: selectedDate,
-          store_name: (name || '') || null,
+          store_name: name || null,
           time_slot: timeSlot,
           required_staff: requiredStaff,
           memo,
@@ -533,30 +525,21 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         }));
         console.log('Creating postings:', payload);
         const { error } = await shiftPostings.createPostings(payload);
-        
-        if (error) {
-          console.error('Shift posting error:', error);
-          alert('募集の作成に失敗しました');
-          return;
-        }
-        
-        // フォームをリセット（店舗名は保持）
-        setSelectedDate('');
-        setTimeSlot('');
-        setRequiredStaff(null);
-        setMemo('');
-        
-        // 通知は不要
-        // 募集データのみを再読み込み（プロフィールデータは保持）
-        const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
-        if (!myShiftsError) {
-          setMyShifts(myShiftsData || []);
-        }
-        
-      } catch (e) {
-        console.error('Exception in handlePost:', e);
-        alert('募集の作成に失敗しました');
+        if (error) throw error;
       }
+
+      // フォームをリセット（店舗名は保持）
+      setSelectedDate('');
+      setTimeSlot('');
+      setRequiredStaff(null);
+      setMemo('');
+
+      // 再読込（プロフィールは保持）
+      const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
+      if (!myShiftsError) setMyShifts(myShiftsData || []);
+    } catch (e) {
+      console.error('Exception in handlePost:', e);
+      alert('募集の登録/更新に失敗しました');
     }
   };
 
