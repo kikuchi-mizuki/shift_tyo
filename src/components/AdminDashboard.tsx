@@ -563,15 +563,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     const slotAvailable = slotRequests.length;
                     const slotMatched = Math.min(slotRequired, slotAvailable);
                     
+                    // 9月8日のデバッグログ
+                    if (dateStr === '2025-09-08') {
+                      console.log(`[DEBUG 9/8] TimeSlot ${timeSlot}:`, {
+                        slotRequests: slotRequests.length,
+                        slotPostings: slotPostings.length,
+                        slotRequired,
+                        slotAvailable,
+                        slotMatched
+                      });
+                    }
+                    
                     totalRequired += slotRequired;
                     totalAvailable += slotAvailable;
                     totalMatched += slotMatched;
                   }
                 });
                 
+                // 9月8日のデバッグログ
+                if (dateStr === '2025-09-08') {
+                  console.log(`[DEBUG 9/8] Final calculation:`, {
+                    totalRequired,
+                    totalAvailable,
+                    totalMatched,
+                    dayRequests: dayRequests.length,
+                    dayPostings: dayPostings.length
+                  });
+                }
+                
                 if (totalRequired === 0) {
                   // 募集がない場合は希望のみ表示（0件の場合は表示しない）
                   return totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable } : { type: 'empty', count: 0 };
+                }
+                
+                if (totalAvailable === 0) {
+                  // 希望がない場合は募集のみ表示（不足として表示）
+                  return { type: 'shortage', count: 0, shortage: totalRequired };
                 }
                 
                 if (totalMatched === totalRequired) {
