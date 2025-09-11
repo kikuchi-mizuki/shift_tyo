@@ -567,7 +567,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   });
                   
                   // 強制的にアラートで表示
-                  alert(`9月2日デバッグ:\n必要人数: ${totalRequired}\n希望人数: ${totalAvailable}\nマッチ数: ${totalMatched}`);
+                  alert(`9月2日デバッグ:\n必要人数: ${totalRequired}\n希望人数: ${totalAvailable}\nマッチ数: ${totalMatched}\n\n希望データ: ${JSON.stringify(dayRequests)}\n募集データ: ${JSON.stringify(dayPostings)}`);
                 }
                 
                 if (totalRequired === 0) {
