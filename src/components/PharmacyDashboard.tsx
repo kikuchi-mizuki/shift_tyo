@@ -646,23 +646,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                       </div>
                     </div>
                   ))}
-                  {/* 確定シフトがない場合のみ募集中シフト（青色）を表示 */}
-                  {confirmedShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`).length === 0 && 
-                   myShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`).map((shift: any, index: number) => (
-                    (() => {
-                      // 店舗名のみを表示（store_name -> memoのタグ の順で取得）
-                      const direct = (shift.store_name || '').trim();
-                      let fromMemo = '';
-                      if (!direct && typeof shift.memo === 'string') {
-                        const m = shift.memo.match(/\[store:([^\]]+)\]/);
-                        if (m && m[1]) fromMemo = m[1];
-                      }
-                      const name = direct || fromMemo;
-                      return name ? (
-                        <div key={`recruiting-${index}`} className="text-[8px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">{name}</div>
-                      ) : null;
-                    })()
-                  ))}
+                  {/* 募集中シフト数（青色）を表示（確定シフトがない場合） */}
+                  {(() => {
+                    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                    const hasConfirmed = confirmedShifts.some((s: any) => s.date === dateStr);
+                    if (hasConfirmed) return null;
+                    const count = myShifts.filter((s: any) => s.date === dateStr).length;
+                    return count > 0 ? (
+                      <div className="text-[8px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集 {count}件</div>
+                    ) : null;
+                  })()}
                 </>
               )}
             </div>
