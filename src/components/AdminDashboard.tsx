@@ -107,7 +107,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   };
 
   const deleteUser = async (profile: any) => {
-    if (!confirm(`${profile.name || profile.email} を削除しますか？`)) return;
+    console.log('deleteUser function called with profile:', profile);
+    if (!confirm(`${profile.name || profile.email} を削除しますか？`)) {
+      console.log('User cancelled deletion');
+      return;
+    }
     try {
       console.log('Starting user deletion for:', profile.id, profile.name || profile.email);
       
@@ -1848,7 +1852,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             ) : (
                               <>
                                 <button onClick={() => beginEditUser(pharmacy)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
-                                <button onClick={() => deleteUser(pharmacy)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
+                                <button onClick={() => {
+                                  console.log('Delete button clicked for pharmacy:', pharmacy);
+                                  deleteUser(pharmacy);
+                                }} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
                               </>
                             )}
                           </div>
@@ -1932,7 +1939,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             ) : (
                               <>
                                 <button onClick={() => beginEditUser(pharmacist)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
-                                <button onClick={() => deleteUser(pharmacist)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
+                                <button onClick={() => {
+                                  console.log('Delete button clicked for pharmacist:', pharmacist);
+                                  deleteUser(pharmacist);
+                                }} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
                               </>
                             )}
                           </div>
