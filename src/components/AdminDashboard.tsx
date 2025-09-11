@@ -776,7 +776,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 const totalAvailable = dayRequests.length;
 
                 // NGリストを考慮した“適合可能”な希望数を算出
-                const getProfile = (id: string) => (userProfiles && (userProfiles as any)[id]) || {};
+                const getProfile = (id: string) => {
+                  if (!userProfiles) return {} as any;
+                  // userProfiles が配列の場合と連想配列の場合の両方をサポート
+                  if (Array.isArray(userProfiles)) {
+                    return (userProfiles as any[]).find((u: any) => u?.id === id) || ({} as any);
+                  }
+                  return (userProfiles as any)[id] || ({} as any);
+                };
                 const compatibleRequestIds = new Set<string>();
                 dayRequests.forEach((r: any) => {
                   const pharmacist = getProfile(r.pharmacist_id);
