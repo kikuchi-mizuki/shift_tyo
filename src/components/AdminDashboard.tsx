@@ -1446,6 +1446,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     <span className="text-red-600 ml-1">
                                       (不足{dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0)}人)
                                     </span>
+                                    <span className="text-blue-600 ml-1">(希望0人)</span>
                                   </div>
                                 </div>
                                 <div className="text-xs text-gray-600">
@@ -1468,6 +1469,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   )}
                                   {analysis.hasExcess && (
                                     <span className="text-yellow-600 ml-1">(余裕{analysis.totalAvailable - analysis.totalRequired}人)</span>
+                                  )}
+                                  {analysis.totalMatched > 0 && (
+                                    <span className="text-green-600 ml-1">(マッチ{analysis.totalMatched}人)</span>
                                   )}
                                 </div>
                               </div>
