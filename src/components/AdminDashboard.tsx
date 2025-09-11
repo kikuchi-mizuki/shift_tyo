@@ -109,39 +109,62 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const deleteUser = async (profile: any) => {
     if (!confirm(`${profile.name || profile.email} を削除しますか？`)) return;
     try {
+      console.log('Starting user deletion for:', profile.id, profile.name || profile.email);
+      
       // 1) 関連レコードを先に削除（外部参照の可能性に備える）
       // assigned_shifts
+      console.log('Deleting assigned_shifts...');
       const assignedDelete = await supabase
         .from('assigned_shifts')
         .delete()
         .or(`pharmacist_id.eq.${profile.id},pharmacy_id.eq.${profile.id}`);
-      if ((assignedDelete as any).error) throw (assignedDelete as any).error;
+      if ((assignedDelete as any).error) {
+        console.error('assigned_shifts delete error:', (assignedDelete as any).error);
+        throw (assignedDelete as any).error;
+      }
+      console.log('assigned_shifts deleted successfully');
 
       // shift_requests（薬剤師）
+      console.log('Deleting shift_requests...');
       const reqDelete = await supabase
         .from('shift_requests')
         .delete()
         .eq('pharmacist_id', profile.id);
-      if ((reqDelete as any).error) throw (reqDelete as any).error;
+      if ((reqDelete as any).error) {
+        console.error('shift_requests delete error:', (reqDelete as any).error);
+        throw (reqDelete as any).error;
+      }
+      console.log('shift_requests deleted successfully');
 
       // shift_postings（薬局）
+      console.log('Deleting shift_postings...');
       const postDelete = await supabase
         .from('shift_postings')
         .delete()
         .eq('pharmacy_id', profile.id);
-      if ((postDelete as any).error) throw (postDelete as any).error;
+      if ((postDelete as any).error) {
+        console.error('shift_postings delete error:', (postDelete as any).error);
+        throw (postDelete as any).error;
+      }
+      console.log('shift_postings deleted successfully');
 
       // 2) プロファイルを削除
+      console.log('Deleting user profile...');
       const profileDelete = await supabase
         .from('user_profiles')
         .delete()
         .eq('id', profile.id);
-      if ((profileDelete as any).error) throw (profileDelete as any).error;
+      if ((profileDelete as any).error) {
+        console.error('user_profiles delete error:', (profileDelete as any).error);
+        throw (profileDelete as any).error;
+      }
+      console.log('user profile deleted successfully');
 
       // 3) 画面更新
+      console.log('Reloading data...');
       await loadAll();
-      // 成功通知は控えめにログのみ
-      console.log('User deleted:', profile.id);
+      console.log('User deletion completed successfully:', profile.id);
+      alert('ユーザーを削除しました');
     } catch (e: any) {
       console.error('User deletion failed:', e);
       alert(`削除に失敗しました: ${e?.message || 'Unknown error'}`);
