@@ -555,6 +555,55 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     }
   };
 
+  // 同日・同店舗の既存募集を検索
+  const findExistingPostingForCurrentSelection = () => {
+    return myShifts.find((s: any) => {
+      if (s.date !== selectedDate) return false;
+      const direct = (s.store_name || '').trim();
+      let fromMemo = '';
+      if (!direct && typeof s.memo === 'string') {
+        const m = s.memo.match(/\[store:([^\]]+)\]/);
+        if (m && m[1]) fromMemo = m[1];
+      }
+      const sStoreName = direct || fromMemo;
+      const selectedStore = (singleStoreName || '').trim();
+      if (sStoreName === '' && selectedStore === '') return true;
+      return sStoreName === selectedStore;
+    });
+  };
+
+  const handleUpdateExisting = async (postingId: string) => {
+    try {
+      await shiftPostings.updatePosting(postingId, {
+        date: selectedDate,
+        store_name: (singleStoreName || '') || null,
+        time_slot: timeSlot,
+        required_staff: requiredStaff,
+        memo
+      });
+      const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
+      if (!myShiftsError) setMyShifts(myShiftsData || []);
+    } catch (e) {
+      console.error('Update existing posting failed:', e);
+      alert('募集の更新に失敗しました');
+    }
+  };
+
+  const handleDeleteExisting = async (postingId: string) => {
+    try {
+      const { error } = await supabase
+        .from('shift_postings')
+        .delete()
+        .eq('id', postingId);
+      if (error) throw error;
+      const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
+      if (!myShiftsError) setMyShifts(myShiftsData || []);
+    } catch (e) {
+      console.error('Delete existing posting failed:', e);
+      alert('募集の削除に失敗しました');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -919,6 +968,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               確定済みのため編集できません
             </div>
           ) : (
+            <div>
             <button 
               type="button"
               onClick={() => {
@@ -934,46 +984,29 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 handlePost();
               }}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${
-                (() => {
-                  const existing = myShifts.find((s: any) => {
-                    if (s.date !== selectedDate) return false;
-                    
-                    // カレンダー表示と同じロジックで店舗名を取得
-                    const direct = (s.store_name || '').trim();
-                    let fromMemo = '';
-                    if (!direct && typeof s.memo === 'string') {
-                      const m = s.memo.match(/\[store:([^\]]+)\]/);
-                      if (m && m[1]) fromMemo = m[1];
-                    }
-                    const sStoreName = direct || fromMemo;
-                    const selectedStore = (singleStoreName || '').trim();
-                    if (sStoreName === '' && selectedStore === '') return true;
-                    return sStoreName === selectedStore;
-                  });
-                  return existing ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700';
-                })()
+                findExistingPostingForCurrentSelection() ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
               {(() => {
-                const existing = myShifts.find((s: any) => {
-                  if (s.date !== selectedDate) return false;
-                  
-                  // カレンダー表示と同じロジックで店舗名を取得
-                  const direct = (s.store_name || '').trim();
-                  let fromMemo = '';
-                  if (!direct && typeof s.memo === 'string') {
-                    const m = s.memo.match(/\[store:([^\]]+)\]/);
-                    if (m && m[1]) fromMemo = m[1];
-                  }
-                  const sStoreName = direct || fromMemo;
-                  const selectedStore = (singleStoreName || '').trim();
-                  if (sStoreName === '' && selectedStore === '') return true;
-                  return sStoreName === selectedStore;
-                });
-                
-                return existing ? '募集を削除' : '募集を追加';
+                const existing = findExistingPostingForCurrentSelection();
+                if (!existing) return '募集を追加';
+                return '募集を更新';
               })()}
             </button>
+            {(() => {
+              const existing = findExistingPostingForCurrentSelection();
+              if (!existing) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteExisting(existing.id)}
+                  className="mt-2 w-full py-2 px-4 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700"
+                >
+                  募集を削除
+                </button>
+              );
+            })()}
+            </div>
           )}
         </div>
 
