@@ -864,8 +864,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (
                         <div className="relative group">
                           <div className="text-[7px] sm:text-[8px] space-y-0.5">
-                            {/* マッチング数 */}
-                            {matchingStatus.count > 0 && (
+                            {/* マッチング数（募集がある日だけ表示） */}
+                            {matchingStatus.type !== 'requests_only' && matchingStatus.count > 0 && (
                               <div className="text-green-600 bg-green-50 border border-green-200 rounded px-1 inline-block">
                                 マッチ {matchingStatus.count}
                               </div>
