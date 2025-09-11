@@ -494,10 +494,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     }
 
     try {
-      // まず重複分の更新（ユーザー確認）
+      // 既存分の処理: 更新 or 削除 をユーザーに選択させる
       if (updates.length > 0) {
-        const ok = confirm(`同じ日付・店舗名の募集が${updates.length}件あります。上書き更新しますか？`);
-        if (ok) {
+        const doUpdate = confirm(`同じ日付・店舗名の募集が${updates.length}件あります。これらを上書き更新しますか？\n（キャンセルを選ぶと削除の確認に進みます）`);
+        if (doUpdate) {
           await Promise.all(
             updates.map(u =>
               shiftPostings.updatePosting(u.id, {
@@ -509,6 +509,18 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               })
             )
           );
+        } else {
+          const doDelete = confirm(`${updates.length}件の既存募集を削除しますか？`);
+          if (doDelete) {
+            await Promise.all(
+              updates.map(u =>
+                supabase
+                  .from('shift_postings')
+                  .delete()
+                  .eq('id', u.id)
+              )
+            );
+          }
         }
       }
 
