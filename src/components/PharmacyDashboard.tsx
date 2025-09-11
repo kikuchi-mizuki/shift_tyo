@@ -831,7 +831,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               {storeOptions.map((name, index) => (
                 <option key={index} value={name}>{name}</option>
               ))}
-              <option value="">店舗名なし</option>
+              {storeOptions.length === 0 && (
+                <option value="">店舗名なし</option>
+              )}
             </select>
             {/* 選択した店舗を一時リストに追加 → 複数店舗をまとめて登録 */}
             <div className="flex items-center gap-2 mt-2">
