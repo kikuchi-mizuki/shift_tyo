@@ -97,7 +97,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
           console.log('User type registered:', registrationData.userType);
           console.log('Registration result:', result);
           setError('');
-          alert('登録が完了しました。ログインしてください。');
+          // 通知は不要
           setIsRegistering(false); // 登録完了後はログイン画面に戻る
         }
         setIsLoading(false);
