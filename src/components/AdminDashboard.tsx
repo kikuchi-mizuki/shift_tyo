@@ -538,6 +538,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const dayRequests = requests.filter((r: any) => r.date === dateStr);
               const dayPostings = postings.filter((p: any) => p.date === dateStr);
               
+              // 9月2日のデバッグログ
+              if (dateStr === '2025-09-02') {
+                console.log(`[DEBUG 9/2] Original requests:`, requests);
+                console.log(`[DEBUG 9/2] Original postings:`, postings);
+                console.log(`[DEBUG 9/2] Filtered dayRequests:`, dayRequests);
+                console.log(`[DEBUG 9/2] Filtered dayPostings:`, dayPostings);
+              }
+              
               // マッチング状況を計算
               const calculateMatchingStatus = () => {
                 if (dayAssignedShifts.length > 0) {
@@ -567,7 +575,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   });
                   
                   // 強制的にアラートで表示
-                  alert(`9月2日デバッグ:\n必要人数: ${totalRequired}\n希望人数: ${totalAvailable}\nマッチ数: ${totalMatched}\n\n希望データ: ${JSON.stringify(dayRequests)}\n募集データ: ${JSON.stringify(dayPostings)}`);
+                  alert(`9月2日デバッグ:\n必要人数: ${totalRequired}\n希望人数: ${totalAvailable}\nマッチ数: ${totalMatched}\n\nフィルタ後希望データ: ${JSON.stringify(dayRequests)}\nフィルタ後募集データ: ${JSON.stringify(dayPostings)}\n\n元の希望データ件数: ${requests.length}\n元の募集データ件数: ${postings.length}`);
                 }
                 
                 if (totalRequired === 0) {
