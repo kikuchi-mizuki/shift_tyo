@@ -548,48 +548,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   return { type: 'empty', count: 0 };
                 }
                 
-                // 時間帯ごとにマッチング状況を分析
-                const timeSlots = ['morning', 'afternoon', 'full', 'consult'];
-                let totalMatched = 0;
-                let totalRequired = 0;
-                let totalAvailable = 0;
-                
-                timeSlots.forEach(timeSlot => {
-                  const slotRequests = dayRequests.filter((r: any) => r.time_slot === timeSlot);
-                  const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot);
-                  
-                  if (slotRequests.length > 0 || slotPostings.length > 0) {
-                    const slotRequired = slotPostings.reduce((sum: number, p: any) => sum + p.required_staff, 0);
-                    const slotAvailable = slotRequests.length;
-                    const slotMatched = Math.min(slotRequired, slotAvailable);
-                    
-                    // 9月8日のデバッグログ
-                    if (dateStr === '2025-09-08') {
-                      console.log(`[DEBUG 9/8] TimeSlot ${timeSlot}:`, {
-                        slotRequests: slotRequests.length,
-                        slotPostings: slotPostings.length,
-                        slotRequired,
-                        slotAvailable,
-                        slotMatched
-                      });
-                    }
-                    
-                    totalRequired += slotRequired;
-                    totalAvailable += slotAvailable;
-                    totalMatched += slotMatched;
-                  }
-                });
-                
-                // 9月8日のデバッグログ
-                if (dateStr === '2025-09-08') {
-                  console.log(`[DEBUG 9/8] Final calculation:`, {
-                    totalRequired,
-                    totalAvailable,
-                    totalMatched,
-                    dayRequests: dayRequests.length,
-                    dayPostings: dayPostings.length
-                  });
-                }
+                // 全体でマッチング状況を分析（時間帯に関係なく）
+                const totalRequired = dayPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0);
+                const totalAvailable = dayRequests.length;
+                const totalMatched = Math.min(totalRequired, totalAvailable);
                 
                 if (totalRequired === 0) {
                   // 募集がない場合は希望のみ表示（0件の場合は表示しない）
