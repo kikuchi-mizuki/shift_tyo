@@ -24,7 +24,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [storeNames, setStoreNames] = useState<string[]>([]);
   // 募集登録での店舗名は一時保存は残しつつ単一選択へ
   const [singleStoreName, setSingleStoreName] = useState('');
+  const [batchStoreNames, setBatchStoreNames] = useState<string[]>([]); // 追加リスト
   const TEMP_STORE_KEY = `temp_selected_store_${user?.id || ''}`;
+  const TEMP_BATCH_KEY = `temp_batch_stores_${user?.id || ''}`;
   const [quickStoreName, setQuickStoreName] = useState('');
   
   // storeNamesの状態変更を監視
@@ -53,6 +55,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       }
       const cachedSingle = localStorage.getItem(TEMP_STORE_KEY);
       if (cachedSingle) setSingleStoreName(cachedSingle);
+      const cachedBatch = localStorage.getItem(TEMP_BATCH_KEY);
+      if (cachedBatch) {
+        try {
+          const parsed = JSON.parse(cachedBatch);
+          if (Array.isArray(parsed)) setBatchStoreNames(parsed);
+        } catch {}
+      }
     } catch {}
     // 2) サーバーデータを正とする
     loadData();
@@ -522,16 +531,17 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     } else {
       // 新しい募集を作成（同日でも店舗名が異なれば追加可）
       try {
-        // 単一選択の店舗に対して募集を作成
-        const payload = [{
+        // リストに追加された複数店舗（なければ現在選択の1件）に対して募集作成
+        const targets = (batchStoreNames.length > 0 ? batchStoreNames : [singleStoreName]);
+        const payload = targets.map((name) => ({
           pharmacy_id: user.id,
           date: selectedDate,
-          store_name: (singleStoreName || '') || null,
+          store_name: (name || '') || null,
           time_slot: timeSlot,
           required_staff: requiredStaff,
           memo,
           status: 'open'
-        }];
+        }));
         console.log('Creating postings:', payload);
         const { error } = await shiftPostings.createPostings(payload);
         
@@ -834,6 +844,35 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               ))}
               <option value="">店舗名なし</option>
             </select>
+            {/* 選択した店舗を一時リストに追加 → 複数店舗をまとめて登録 */}
+            <div className="flex items-center gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const name = (singleStoreName || '').trim();
+                  if (name === '' && !storeOptions.includes('')) return; // 空のみはスキップ
+                  if (!batchStoreNames.includes(name)) {
+                    const next = [...batchStoreNames, name];
+                    setBatchStoreNames(next);
+                  }
+                }}
+                className="text-xs px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+              >リストに追加</button>
+            </div>
+            {batchStoreNames.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {batchStoreNames.map((n, i) => (
+                  <span key={`${n}-${i}`} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                    {n || '（店舗名なし）'}
+                    <button
+                      type="button"
+                      onClick={() => setBatchStoreNames(batchStoreNames.filter((x, idx) => idx !== i))}
+                      className="text-blue-600 hover:text-blue-800"
+                    >×</button>
+                  </span>
+                ))}
+              </div>
+            )}
             {/* クイック追加（プロフィールと同様に追加・ローカル保持のみ） */}
             <div className="flex items-center gap-2 mt-2">
               <input
@@ -882,6 +921,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 onClick={() => {
                   try {
                     localStorage.setItem(TEMP_STORE_KEY, singleStoreName);
+                    localStorage.setItem(TEMP_BATCH_KEY, JSON.stringify(batchStoreNames));
                   } catch {}
                 }}
                 className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
@@ -890,7 +930,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 type="button"
                 onClick={() => {
                   setSingleStoreName('');
+                  setBatchStoreNames([]);
                   try { localStorage.removeItem(TEMP_STORE_KEY); } catch {}
+                  try { localStorage.removeItem(TEMP_BATCH_KEY); } catch {}
                 }}
                 className="text-xs px-2 py-1 rounded bg-gray-500 text-white hover:bg-gray-600"
               >選択をクリア</button>
