@@ -534,9 +534,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               // その日の確定シフトを取得
               const dayAssignedShifts = assigned.filter((s: any) => s.date === dateStr && s.status === 'confirmed');
               
-              // その日の希望と募集を取得
-              const dayRequests = requests.filter((r: any) => r.date === dateStr);
-              const dayPostings = postings.filter((p: any) => p.date === dateStr);
+              // その日の希望と募集を取得（要相談を除外）
+              const dayRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult');
+              const dayPostings = postings.filter((p: any) => p.date === dateStr && p.time_slot !== 'consult');
               
               
               // マッチング状況を計算
@@ -847,7 +847,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     <option value="morning">午前 (9:00-13:00)</option>
                                     <option value="afternoon">午後 (13:00-18:00)</option>
                                     <option value="full">終日 (9:00-18:00)</option>
-                                    <option value="consult">要相談</option>
                                   </select>
                                 </div>
                               </div>
@@ -878,16 +877,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   )}
                   
                   {/* シフト募集 */}
-                  {postings.filter((p: any) => p.date === selectedDate).length > 0 && (
+                  {postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').length > 0 && (
                     <div className="bg-orange-50 rounded-lg border border-orange-200 p-4">
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-orange-800">
-                          募集している薬局 ({postings.filter((p: any) => p.date === selectedDate).length}件)
+                          募集している薬局 ({postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').length}件)
                         </h4>
                       </div>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {postings.filter((p: any) => p.date === selectedDate).map((posting: any, index: number) => {
+                      {postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').map((posting: any, index: number) => {
                         const pharmacyProfile = userProfiles[posting.pharmacy_id];
                         
                         // 店舗名を取得（store_name または memo から）
@@ -919,16 +918,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   )}
                   
                   {/* シフト希望 */}
-                  {requests.filter((r: any) => r.date === selectedDate).length > 0 && (
+                  {requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').length > 0 && (
                     <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-blue-800">
-                          応募している薬剤師 ({requests.filter((r: any) => r.date === selectedDate).length}件)
+                          応募している薬剤師 ({requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').length}件)
                         </h4>
                       </div>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {requests.filter((r: any) => r.date === selectedDate).map((request: any, index: number) => {
+                      {requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').map((request: any, index: number) => {
                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                         return (
@@ -985,7 +984,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     logToRailway('その日の募集:', dayPostings);
                     
                     // 時間帯ごとにマッチング状況を分析
-                    const timeSlots = ['morning', 'afternoon', 'full', 'consult'];
+                    const timeSlots = ['morning', 'afternoon', 'full'];
                     const matchingAnalysis = timeSlots.map(timeSlot => {
                       const slotRequests = dayRequests.filter((r: any) => r.time_slot === timeSlot);
                       const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot);
@@ -1078,8 +1077,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 <div className="text-sm font-medium text-gray-800">
                                   {analysis.timeSlot === 'morning' ? '午前' : 
                                    analysis.timeSlot === 'afternoon' ? '午後' : 
-                                   analysis.timeSlot === 'full' ? '終日' : 
-                                   analysis.timeSlot === 'consult' ? '要相談' : analysis.timeSlot}
+                                   analysis.timeSlot === 'full' ? '終日' : analysis.timeSlot}
                                 </div>
                                 <div className="text-sm text-gray-500">
                                   {analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募
@@ -1092,21 +1090,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 </div>
                               </div>
                               <div className="text-sm text-gray-600">
-                              {analysis.timeSlot === 'consult' ? (
-                                // 要相談の場合は薬剤師名を表示
-                                <div>
-                                  {analysis.requests.map((request: any) => {
-                                    const pharmacistProfile = userProfiles[request.pharmacist_id];
-                                    const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
-                                    return (
-                                      <div key={request.id} className="flex items-center justify-between">
-                                        <span>{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
-                                        <span className={`${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              ) : analysis.isMatching ? (
+                              {analysis.isMatching ? (
                                 <>
                                   {/* マッチング済みの薬剤師と薬局 */}
                                   {analysis.matchedPharmacists.length > 0 && (
