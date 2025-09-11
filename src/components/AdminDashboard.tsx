@@ -559,6 +559,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   console.log(`[DEBUG 9/2] Day requests:`, dayRequests);
                   console.log(`[DEBUG 9/2] Day postings:`, dayPostings);
                   console.log(`[DEBUG 9/2] Total required: ${totalRequired}, Total available: ${totalAvailable}, Total matched: ${totalMatched}`);
+                  
+                  // 各募集の詳細を確認
+                  dayPostings.forEach((posting: any, index: number) => {
+                    console.log(`[DEBUG 9/2] Posting ${index}:`, posting);
+                    console.log(`[DEBUG 9/2] Posting ${index} required_staff:`, posting.required_staff);
+                  });
                 }
                 
                 if (totalRequired === 0) {
@@ -583,6 +589,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               };
               
               const matchingStatus = calculateMatchingStatus();
+              
+              // 9月2日のデバッグログ
+              if (dateStr === '2025-09-02') {
+                console.log(`[DEBUG 9/2] Final matching status:`, matchingStatus);
+              }
               
               return (
                 <div 
