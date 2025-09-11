@@ -108,8 +108,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const deleteUser = async (profile: any) => {
     console.log('deleteUser function called with profile:', profile);
+    alert(`削除開始: ${profile.name || profile.email} (ID: ${profile.id})`);
     if (!confirm(`${profile.name || profile.email} を削除しますか？`)) {
       console.log('User cancelled deletion');
+      alert('削除がキャンセルされました');
       return;
     }
     try {
@@ -127,6 +129,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         throw (assignedDelete as any).error;
       }
       console.log('assigned_shifts deleted successfully');
+      alert('assigned_shifts削除完了');
 
       // shift_requests（薬剤師）
       console.log('Deleting shift_requests...');
@@ -136,9 +139,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         .eq('pharmacist_id', profile.id);
       if ((reqDelete as any).error) {
         console.error('shift_requests delete error:', (reqDelete as any).error);
+        alert(`shift_requests削除エラー: ${(reqDelete as any).error.message}`);
         throw (reqDelete as any).error;
       }
       console.log('shift_requests deleted successfully');
+      alert('shift_requests削除完了');
 
       // shift_postings（薬局）
       console.log('Deleting shift_postings...');
@@ -148,9 +153,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         .eq('pharmacy_id', profile.id);
       if ((postDelete as any).error) {
         console.error('shift_postings delete error:', (postDelete as any).error);
+        alert(`shift_postings削除エラー: ${(postDelete as any).error.message}`);
         throw (postDelete as any).error;
       }
       console.log('shift_postings deleted successfully');
+      alert('shift_postings削除完了');
 
       // 2) プロファイルを削除
       console.log('Deleting user profile...');
@@ -160,9 +167,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         .eq('id', profile.id);
       if ((profileDelete as any).error) {
         console.error('user_profiles delete error:', (profileDelete as any).error);
+        alert(`user_profiles削除エラー: ${(profileDelete as any).error.message}`);
         throw (profileDelete as any).error;
       }
       console.log('user profile deleted successfully');
+      alert('user_profiles削除完了');
 
       // 3) 画面更新
       console.log('Reloading data...');
@@ -179,6 +188,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       } else {
         console.log('Reloaded user profiles:', allProfilesData);
         console.log('Number of profiles after deletion:', allProfilesData?.length);
+        alert(`削除後のプロファイル数: ${allProfilesData?.length}`);
         
         const profilesMap: any = {};
         allProfilesData?.forEach((user: any) => {
@@ -194,7 +204,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         
         console.log('Before setUserProfiles - current state:', userProfiles);
         console.log('Setting new userProfiles state:', profilesMap);
+        alert(`状態更新前のプロファイル数: ${Object.keys(userProfiles).length}`);
         setUserProfiles(profilesMap);
+        alert(`状態更新後のプロファイル数: ${Object.keys(profilesMap).length}`);
         
         // 状態更新を確認
         setTimeout(() => {
