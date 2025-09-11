@@ -643,10 +643,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       )}
                       
                       {/* マッチング状況表示（確定シフトがない場合） */}
-                      {matchingStatus.type === 'matched' && (
+                      {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (
                         <div className="relative group">
-                          <div className="text-[8px] sm:text-[10px] text-green-600 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
-                            マッチ {matchingStatus.count}件
+                          <div className="text-[7px] sm:text-[8px] space-y-0.5">
+                            {/* マッチング数 */}
+                            {matchingStatus.count > 0 && (
+                              <div className="text-green-600 bg-green-50 border border-green-200 rounded px-1 inline-block">
+                                マッチ {matchingStatus.count}
+                              </div>
+                            )}
+                            
+                            {/* 不足数 */}
+                            {matchingStatus.shortage > 0 && (
+                              <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
+                                不足 {matchingStatus.shortage}
+                              </div>
+                            )}
+                            
+                            {/* 余裕数 */}
+                            {matchingStatus.excess > 0 && (
+                              <div className="text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-1 inline-block">
+                                余裕 {matchingStatus.excess}
+                              </div>
+                            )}
+                            
+                            {/* 希望のみ */}
+                            {matchingStatus.type === 'requests_only' && matchingStatus.count > 0 && (
+                              <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
+                                希望 {matchingStatus.count}
+                              </div>
+                            )}
                           </div>
                           
                           {/* マウスオーバーで表示される詳細情報 */}
@@ -654,63 +680,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
                               <div className="font-medium mb-2">マッチング状況</div>
                               <div>マッチング: {matchingStatus.count}件</div>
+                              {matchingStatus.shortage > 0 && <div>不足: {matchingStatus.shortage}人</div>}
+                              {matchingStatus.excess > 0 && <div>余裕: {matchingStatus.excess}人</div>}
                               <div>希望: {dayRequests.length}件</div>
                               <div>募集: {dayPostings.length}件</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {matchingStatus.type === 'shortage' && (
-                        <div className="relative group">
-                          <div className="text-[8px] sm:text-[10px] text-red-600 bg-red-50 border border-red-200 rounded px-1 mt-1 inline-block cursor-pointer">
-                            不足 {matchingStatus.shortage}人
-                          </div>
-                          
-                          {/* マウスオーバーで表示される詳細情報 */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
-                              <div className="font-medium mb-2">人員不足</div>
-                              <div>マッチング: {matchingStatus.count}件</div>
-                              <div>不足: {matchingStatus.shortage}人</div>
-                              <div>希望: {dayRequests.length}件</div>
-                              <div>募集: {dayPostings.length}件</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {matchingStatus.type === 'excess' && matchingStatus.excess > 0 && (
-                        <div className="relative group">
-                          <div className="text-[8px] sm:text-[10px] text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-1 mt-1 inline-block cursor-pointer">
-                            余裕 {matchingStatus.excess}人
-                          </div>
-                          
-                          {/* マウスオーバーで表示される詳細情報 */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
-                              <div className="font-medium mb-2">人員余裕</div>
-                              <div>マッチング: {matchingStatus.count}件</div>
-                              <div>余裕: {matchingStatus.excess}人</div>
-                              <div>希望: {dayRequests.length}件</div>
-                              <div>募集: {dayPostings.length}件</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {matchingStatus.type === 'requests_only' && matchingStatus.count > 0 && (
-                        <div className="relative group">
-                          <div className="text-[8px] sm:text-[10px] text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block cursor-pointer">
-                            希望 {matchingStatus.count}件
-                          </div>
-                          
-                          {/* マウスオーバーで表示される詳細情報 */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
-                              <div className="font-medium mb-2">希望のみ</div>
-                              <div>希望: {matchingStatus.count}件</div>
-                              <div>募集: 0件</div>
                             </div>
                           </div>
                         </div>
