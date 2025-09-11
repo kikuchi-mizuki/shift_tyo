@@ -320,7 +320,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                        email: user.email,
                        user_type: userType,
                        ng_list: profileDetails?.ng_list || [],
-                       store_names: profileDetails?.store_names || []
+                       store_names: profileDetails?.store_names || [],
+                       // 薬局の場合は追加情報も含める
+                       ...(userType === 'pharmacy' && profileDetails ? {
+                         address: profileDetails.address,
+                         phone: profileDetails.phone
+                       } : {})
                      };
                    });
                    setUserProfiles(profilesMap);
@@ -1966,22 +1971,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   return (
                                     <div className="flex flex-wrap gap-1">
                                       {ngList.map((ngId: string, idx: number) => {
-                                        // 薬局名を取得する関数
+                                        // 薬局名を取得する関数 - より確実な方法
                                         const getPharmacyName = (id: string) => {
-                                          // 直接userProfilesから検索
-                                          for (const [profileId, profile] of Object.entries(userProfiles)) {
-                                            if (profileId === id && (profile as any).user_type === 'pharmacy') {
-                                              return (profile as any).name || id;
+                                          // 1. 直接userProfilesから検索
+                                          const profile = userProfiles[id];
+                                          if (profile && profile.user_type === 'pharmacy' && profile.name) {
+                                            return profile.name;
+                                          }
+                                          
+                                          // 2. 全プロファイルから検索
+                                          for (const [profileId, profileData] of Object.entries(userProfiles)) {
+                                            if (profileId === id && (profileData as any).user_type === 'pharmacy') {
+                                              return (profileData as any).name || id;
                                             }
                                           }
-                                          return id; // 見つからない場合はIDを返す
+                                          
+                                          // 3. 見つからない場合はIDを返す
+                                          return id;
                                         };
                                         
                                         const pharmacyName = getPharmacyName(ngId);
                                         
                                         return (
                                           <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                            {pharmacyName}
+                                            {pharmacyName === ngId ? `薬局ID: ${ngId.slice(0, 8)}...` : pharmacyName}
                                           </span>
                                         );
                                       })}
