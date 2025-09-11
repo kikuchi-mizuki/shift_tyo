@@ -25,6 +25,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   // 募集登録での店舗名は一時保存は残しつつ単一選択へ
   const [singleStoreName, setSingleStoreName] = useState('');
   const TEMP_STORE_KEY = `temp_selected_store_${user?.id || ''}`;
+  const [quickStoreName, setQuickStoreName] = useState('');
   
   // storeNamesの状態変更を監視
   useEffect(() => {
@@ -833,6 +834,48 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               ))}
               <option value="">店舗名なし</option>
             </select>
+            {/* クイック追加（プロフィールと同様に追加・ローカル保持のみ） */}
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="text"
+                value={quickStoreName}
+                onChange={(e) => setQuickStoreName(e.target.value)}
+                placeholder="新しい店舗名を追加"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    const name = (quickStoreName || '').trim();
+                    if (!name) return;
+                    if (!storeNames.includes(name)) {
+                      const merged = [...storeNames, name];
+                      setStoreNames(merged);
+                      setSingleStoreName(name);
+                      try { localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(merged)); } catch {}
+                    } else {
+                      setSingleStoreName(name);
+                    }
+                    setQuickStoreName('');
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const name = (quickStoreName || '').trim();
+                  if (!name) return;
+                  if (!storeNames.includes(name)) {
+                    const merged = [...storeNames, name];
+                    setStoreNames(merged);
+                    setSingleStoreName(name);
+                    try { localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(merged)); } catch {}
+                  } else {
+                    setSingleStoreName(name);
+                  }
+                  setQuickStoreName('');
+                }}
+                className="text-xs px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+              >追加</button>
+            </div>
             <div className="flex items-center gap-2 mt-2">
               <button
                 type="button"
