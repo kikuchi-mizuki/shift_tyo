@@ -282,7 +282,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                    // user_profilesテーブルから詳細情報を取得
                    const { data: userProfilesData, error: userProfilesError } = await supabase
                      .from('user_profiles')
-                     .select('*');
+                     .select('id, name, email, ng_list, store_names, address, phone');
                    
                    if (userProfilesError) {
                      logToRailway('Error loading user_profiles:', userProfilesError);
@@ -325,7 +325,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                        ...(userType === 'pharmacy' && profileDetails ? {
                          address: profileDetails.address,
                          phone: profileDetails.phone
-                       } : {})
+                       } : {}),
+                       // 薬局の情報を確実に含める
+                       ...(profileDetails || {})
                      };
                    });
                    setUserProfiles(profilesMap);
@@ -1971,7 +1973,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   return (
                                     <div className="flex flex-wrap gap-1">
                                       {ngList.map((ngId: string, idx: number) => {
-                                        // 薬局名を取得する関数 - より確実な方法
+                                        // 薬局名を取得する関数 - シンプルな方法
                                         const getPharmacyName = (id: string) => {
                                           // 1. 直接userProfilesから検索
                                           const profile = userProfiles[id];
