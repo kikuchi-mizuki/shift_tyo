@@ -1368,7 +1368,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
                           <div className="flex items-center space-x-2 mb-3">
                             <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                            <h4 className="text-sm font-semibold text-purple-800">マッチング状況</h4>
+                            <h4 className="text-xs font-semibold text-purple-800">マッチング状況</h4>
                           </div>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             
@@ -1376,8 +1376,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             {matchingAnalysis.length === 0 && dayPostings.length > 0 && dayRequests.length === 0 && (
                               <div className="bg-white rounded border px-2 py-1">
                                 <div className="flex items-center justify-between mb-2">
-                                  <div className="text-sm font-medium text-gray-800">全体</div>
-                                  <div className="text-sm text-gray-500">
+                                  <div className="text-xs font-medium text-gray-800">全体</div>
+                                  <div className="text-xs text-gray-500">
                                     {dayPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0)}人必要 / 0人応募
                                     <span className="text-red-600 ml-1">
                                       (不足{dayPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0)}人)
@@ -1392,12 +1392,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           {matchingAnalysis.map((analysis: any, index: number) => (
                             <div key={index} className="bg-white rounded border px-2 py-1">
                               <div className="flex items-center justify-between mb-2">
-                                <div className="text-sm font-medium text-gray-800">
+                                <div className="text-xs font-medium text-gray-800">
                                   {analysis.timeSlot === 'morning' ? '午前' : 
                                    analysis.timeSlot === 'afternoon' ? '午後' : 
                                    analysis.timeSlot === 'full' ? '終日' : analysis.timeSlot}
                                 </div>
-                                <div className="text-sm text-gray-500">
+                                <div className="text-xs text-gray-500">
                                   {analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募
                                   {analysis.remainingRequired > 0 && (
                                     <span className="text-red-600 ml-1">(不足{analysis.remainingRequired}人)</span>
@@ -1407,21 +1407,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   )}
                                 </div>
                               </div>
-                              <div className="text-sm text-gray-600">
+                              <div className="text-xs text-gray-600">
                               {analysis.isMatching ? (
                                 <>
                                   {/* マッチング済みの薬剤師と薬局 */}
                                   {analysis.matchedPharmacists.length > 0 && (
                                     <div className="mb-1">
-                                      <div className="text-sm font-medium text-green-700 mb-1">✅ マッチング済み:</div>
+                                      <div className="text-xs font-medium text-green-700 mb-1">✅ マッチング済み:</div>
                                       {analysis.matchedPharmacists.map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const pharmacyProfile = userProfiles[analysis.matchedPharmacies[idx].pharmacy_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                                         return (
                                           <div key={idx} className="flex items-center justify-between">
-                                            <span className="text-sm">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'} → {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
-                                            <span className={`text-sm ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                            <span className="text-xs">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'} → {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
+                                            <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
                                           </div>
                                         );
                                       })}
@@ -1431,14 +1431,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   {/* 未マッチングの薬剤師 */}
                                   {analysis.remainingRequired === 0 && analysis.hasExcess && (
                                     <div className="mt-1">
-                                      <div className="text-sm font-medium text-orange-700 mb-1">⏳ 未マッチング:</div>
+                                      <div className="text-xs font-medium text-orange-700 mb-1">⏳ 未マッチング:</div>
                                       {analysis.requests.slice(analysis.totalRequired).map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                                         return (
                                           <div key={idx} className="flex items-center justify-between">
-                                            <span className="text-sm">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
-                                            <span className={`text-sm ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                            <span className="text-xs">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                            <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
                                           </div>
                                         );
                                       })}
@@ -1446,7 +1446,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   )}
                                 </>
                               ) : (
-                                <div className="text-sm">
+                                <div className="text-xs">
                                   {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
                                 </div>
                               )}
