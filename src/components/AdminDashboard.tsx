@@ -49,6 +49,72 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     priority: 'medium'
   });
 
+  // ユーザー管理（編集/削除）
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [userEditForm, setUserEditForm] = useState<any>({
+    name: '',
+    store_names: '', // カンマ区切り入力（薬局のみ）
+    ng_list: '' // カンマ区切り（ID）
+  });
+
+  const beginEditUser = (profile: any) => {
+    setEditingUserId(profile.id);
+    setUserEditForm({
+      name: profile.name || '',
+      store_names: Array.isArray(profile.store_names) ? profile.store_names.join(',') : '',
+      ng_list: Array.isArray(profile.ng_list) ? profile.ng_list.join(',') : ''
+    });
+  };
+
+  const saveEditUser = async (profile: any) => {
+    try {
+      const updates: any = { name: userEditForm.name };
+      if (profile.user_type === 'pharmacy' || profile.user_type === 'store') {
+        updates.store_names = (userEditForm.store_names || '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 0);
+      }
+      updates.ng_list = (userEditForm.ng_list || '')
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0);
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .update(updates)
+        .eq('id', profile.id);
+
+      if (error) {
+        alert(`ユーザー更新に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        return;
+      }
+      setEditingUserId(null);
+      await loadAll();
+      alert('ユーザー情報を更新しました');
+    } catch (e: any) {
+      alert(`ユーザー更新エラー: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const deleteUser = async (profile: any) => {
+    if (!confirm(`${profile.name || profile.email} を削除しますか？`)) return;
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', profile.id);
+      if (error) {
+        alert(`削除に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        return;
+      }
+      await loadAll();
+      alert('ユーザーを削除しました');
+    } catch (e: any) {
+      alert(`削除エラー: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -1431,47 +1497,87 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       pharmacies.map((pharmacy: any) => (
                         <div key={pharmacy.id} className="bg-white border border-gray-200 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium text-gray-800">{pharmacy.name || '名前未設定'}</h4>
+                            {editingUserId === pharmacy.id ? (
+                              <input
+                                className="text-sm border rounded px-2 py-1 w-1/2"
+                                value={userEditForm.name}
+                                onChange={(e) => setUserEditForm({ ...userEditForm, name: e.target.value })}
+                              />
+                            ) : (
+                              <h4 className="font-medium text-gray-800">{pharmacy.name || '名前未設定'}</h4>
+                            )}
                             <span className="text-xs text-gray-500">{pharmacy.email}</span>
                           </div>
                           
                           {/* 店舗名 */}
                           <div className="mb-2">
                             <div className="text-xs text-gray-600 mb-1">店舗名:</div>
-                            <div className="text-sm">
-                              {pharmacy.store_names && pharmacy.store_names.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {pharmacy.store_names.map((storeName: string, idx: number) => (
-                                    <span key={idx} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                                      {storeName}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-gray-500">未設定</span>
-                              )}
-                            </div>
+                            {editingUserId === pharmacy.id ? (
+                              <input
+                                className="text-xs border rounded px-2 py-1 w-full"
+                                placeholder="カンマ区切りで入力 (例: 渋谷,新宿)"
+                                value={userEditForm.store_names}
+                                onChange={(e) => setUserEditForm({ ...userEditForm, store_names: e.target.value })}
+                              />
+                            ) : (
+                              <div className="text-sm">
+                                {pharmacy.store_names && pharmacy.store_names.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {pharmacy.store_names.map((storeName: string, idx: number) => (
+                                      <span key={idx} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                                        {storeName}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500">未設定</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                           
                           {/* NGリスト */}
                           <div>
                             <div className="text-xs text-gray-600 mb-1">NG薬剤師:</div>
-                            <div className="text-sm">
-                              {pharmacy.ng_list && pharmacy.ng_list.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {pharmacy.ng_list.map((ngId: string, idx: number) => {
-                                    const ngPharmacist = userProfiles[ngId];
-                                    return (
-                                      <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                        {ngPharmacist?.name || ngPharmacist?.email || ngId}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <span className="text-gray-500">なし</span>
-                              )}
-                            </div>
+                            {editingUserId === pharmacy.id ? (
+                              <input
+                                className="text-xs border rounded px-2 py-1 w-full"
+                                placeholder="カンマ区切りでIDを入力"
+                                value={userEditForm.ng_list}
+                                onChange={(e) => setUserEditForm({ ...userEditForm, ng_list: e.target.value })}
+                              />
+                            ) : (
+                              <div className="text-sm">
+                                {pharmacy.ng_list && pharmacy.ng_list.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {pharmacy.ng_list.map((ngId: string, idx: number) => {
+                                      const ngPharmacist = userProfiles[ngId];
+                                      return (
+                                        <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                                          {ngPharmacist?.name || ngPharmacist?.email || ngId}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500">なし</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-3 flex items-center gap-2">
+                            {editingUserId === pharmacy.id ? (
+                              <>
+                                <button onClick={() => saveEditUser(pharmacy)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">保存</button>
+                                <button onClick={() => setEditingUserId(null)} className="text-xs bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded">キャンセル</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => beginEditUser(pharmacy)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
+                                <button onClick={() => deleteUser(pharmacy)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))
@@ -1502,29 +1608,60 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       pharmacists.map((pharmacist: any) => (
                         <div key={pharmacist.id} className="bg-white border border-gray-200 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium text-gray-800">{pharmacist.name || '名前未設定'}</h4>
+                            {editingUserId === pharmacist.id ? (
+                              <input
+                                className="text-sm border rounded px-2 py-1 w-1/2"
+                                value={userEditForm.name}
+                                onChange={(e) => setUserEditForm({ ...userEditForm, name: e.target.value })}
+                              />
+                            ) : (
+                              <h4 className="font-medium text-gray-800">{pharmacist.name || '名前未設定'}</h4>
+                            )}
                             <span className="text-xs text-gray-500">{pharmacist.email}</span>
                           </div>
                           
                           {/* NGリスト */}
                           <div>
                             <div className="text-xs text-gray-600 mb-1">NG薬局:</div>
-                            <div className="text-sm">
-                              {pharmacist.ng_list && pharmacist.ng_list.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {pharmacist.ng_list.map((ngId: string, idx: number) => {
-                                    const ngPharmacy = userProfiles[ngId];
-                                    return (
-                                      <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                        {ngPharmacy?.name || ngPharmacy?.email || ngId}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <span className="text-gray-500">なし</span>
-                              )}
-                            </div>
+                            {editingUserId === pharmacist.id ? (
+                              <input
+                                className="text-xs border rounded px-2 py-1 w-full"
+                                placeholder="カンマ区切りでIDを入力"
+                                value={userEditForm.ng_list}
+                                onChange={(e) => setUserEditForm({ ...userEditForm, ng_list: e.target.value })}
+                              />
+                            ) : (
+                              <div className="text-sm">
+                                {pharmacist.ng_list && pharmacist.ng_list.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {pharmacist.ng_list.map((ngId: string, idx: number) => {
+                                      const ngPharmacy = userProfiles[ngId];
+                                      return (
+                                        <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                                          {ngPharmacy?.name || ngPharmacy?.email || ngId}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500">なし</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-3 flex items-center gap-2">
+                            {editingUserId === pharmacist.id ? (
+                              <>
+                                <button onClick={() => saveEditUser(pharmacist)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">保存</button>
+                                <button onClick={() => setEditingUserId(null)} className="text-xs bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded">キャンセル</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => beginEditUser(pharmacist)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
+                                <button onClick={() => deleteUser(pharmacist)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))
