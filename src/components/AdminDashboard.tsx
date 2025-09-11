@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { Calendar, RefreshCw, AlertCircle } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase } from '../lib/supabase';
 
@@ -1950,43 +1951,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             ) : (
                               <div className="text-sm">
                                 {(() => {
-                                  // ng_listが配列か文字列かを確認して適切に処理
+                                  // ng_listを確実に配列として処理
                                   let ngList: string[] = [];
                                   if (Array.isArray(pharmacist.ng_list)) {
-                                    ngList = pharmacist.ng_list;
+                                    ngList = pharmacist.ng_list.filter(id => id && id.trim());
                                   } else if (typeof pharmacist.ng_list === 'string' && pharmacist.ng_list.trim()) {
                                     ngList = pharmacist.ng_list.split(',').map(s => s.trim()).filter(s => s.length > 0);
                                   }
                                   
-                                  return ngList.length > 0 ? (
+                                  if (ngList.length === 0) {
+                                    return <span className="text-gray-500">なし</span>;
+                                  }
+                                  
+                                  return (
                                     <div className="flex flex-wrap gap-1">
                                       {ngList.map((ngId: string, idx: number) => {
-                                        // 薬局の情報を取得 - より確実な方法
-                                        let ngPharmacyName = ngId; // デフォルトはID
+                                        // 薬局名を取得する関数
+                                        const getPharmacyName = (id: string) => {
+                                          // 直接userProfilesから検索
+                                          for (const [profileId, profile] of Object.entries(userProfiles)) {
+                                            if (profileId === id && (profile as any).user_type === 'pharmacy') {
+                                              return (profile as any).name || id;
+                                            }
+                                          }
+                                          return id; // 見つからない場合はIDを返す
+                                        };
                                         
-                                        // userProfilesから薬局を検索
-                                        const allProfiles = Object.values(userProfiles);
-                                        const ngPharmacy = allProfiles.find((profile: any) => 
-                                          profile.id === ngId && profile.user_type === 'pharmacy'
-                                        );
-                                        
-                                        if (ngPharmacy && ngPharmacy.name) {
-                                          ngPharmacyName = ngPharmacy.name;
-                                        } else {
-                                          // 薬局が見つからない場合、直接Supabaseから取得を試行
-                                          console.log('薬局が見つからないID:', ngId);
-                                          console.log('利用可能な薬局:', allProfiles.filter((p: any) => p.user_type === 'pharmacy'));
-                                        }
+                                        const pharmacyName = getPharmacyName(ngId);
                                         
                                         return (
                                           <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                            {ngPharmacyName}
+                                            {pharmacyName}
                                           </span>
                                         );
                                       })}
                                     </div>
-                                  ) : (
-                                    <span className="text-gray-500">なし</span>
                                   );
                                 })()}
                               </div>
