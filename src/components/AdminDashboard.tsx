@@ -1929,6 +1929,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   <div className="flex flex-wrap gap-1">
                                     {pharmacist.ng_list.map((ngId: string, idx: number) => {
                                       const ngPharmacy = userProfiles[ngId];
+                                      console.log('NG薬局表示デバッグ:', { ngId, ngPharmacy, userProfilesKeys: Object.keys(userProfiles) });
                                       return (
                                         <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
                                           {ngPharmacy?.name || ngPharmacy?.email || ngId}
