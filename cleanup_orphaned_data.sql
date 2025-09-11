@@ -14,7 +14,7 @@ WITH orphaned_ids AS (
 )
 SELECT orphaned_pharmacy_id
 FROM orphaned_ids
-WHERE orphaned_pharmacy_id NOT IN (SELECT id FROM user_profiles);
+WHERE orphaned_pharmacy_id::uuid NOT IN (SELECT id FROM user_profiles);
 
 -- 3. 存在しない薬局IDをNGリストから削除
 WITH orphaned_data AS (
@@ -27,7 +27,7 @@ UPDATE user_profiles
 SET ng_list = array_remove(ng_list, orphaned_data.unnest_pharmacy_id)
 FROM orphaned_data
 WHERE user_profiles.id = orphaned_data.user_id
-  AND orphaned_data.unnest_pharmacy_id NOT IN (SELECT id FROM user_profiles);
+  AND orphaned_data.unnest_pharmacy_id::uuid NOT IN (SELECT id FROM user_profiles);
 
 -- 4. 空のNGリストをNULLに設定
 UPDATE user_profiles 
