@@ -1387,16 +1387,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         remaining: Number(p.required_staff) || 0
                       }));
                       
-                      // 優先順位順に薬剤師をマッチング
+                      // 優先順位順に薬剤師をマッチング（NGリストを考慮）
                       sortedRequests.forEach((request: any) => {
                         if (remainingRequired > 0) {
-                          // まだ人員が必要な薬局を探す
-                          const availablePharmacy = pharmacyNeeds.find((p: any) => p.remaining > 0);
+                          // 薬剤師のNGリストを取得
+                          const pharmacistProfile = userProfiles[request.pharmacist_id];
+                          const pharmacistNg: string[] = Array.isArray(pharmacistProfile?.ng_list) ? pharmacistProfile.ng_list : [];
+                          
+                          // まだ人員が必要で、NGリストに含まれていない薬局を探す
+                          const availablePharmacy = pharmacyNeeds.find((p: any) => 
+                            p.remaining > 0 && !pharmacistNg.includes(p.pharmacy_id)
+                          );
                           if (availablePharmacy) {
-                            matchedPharmacists.push(request);
-                            matchedPharmacies.push(availablePharmacy);
-                            availablePharmacy.remaining--;
-                            remainingRequired--;
+                            // 薬局のNGリストも確認
+                            const pharmacyProfile = userProfiles[availablePharmacy.pharmacy_id];
+                            const pharmacyNg: string[] = Array.isArray(pharmacyProfile?.ng_list) ? pharmacyProfile.ng_list : [];
+                            
+                            if (!pharmacyNg.includes(request.pharmacist_id)) {
+                              matchedPharmacists.push(request);
+                              matchedPharmacies.push(availablePharmacy);
+                              availablePharmacy.remaining--;
+                              remainingRequired--;
+                            }
                           }
                         }
                       });
@@ -1486,10 +1498,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       {analysis.matchedPharmacists.map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const pharmacyProfile = userProfiles[analysis.matchedPharmacies[idx].pharmacy_id];
+                                        const storeName = analysis.matchedPharmacies[idx].store_name || '店舗名なし';
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                                         return (
                                           <div key={idx} className="flex items-center justify-between">
-                                            <span className="text-xs">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'} → {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
+                                            <span className="text-xs">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'} → {pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'} ({storeName})</span>
                                             <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
                                           </div>
                                         );
@@ -1525,7 +1538,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 <div className="mt-2">
                                   <div className="text-xs font-medium text-red-700 mb-1">🚨 不足している薬局</div>
                                   {analysis.shortagePharmacies.map((ph: any, idx: number) => {
-                                    const pharmacyProfile = (userProfiles as any)[ph.pharmacy_id] || (Array.isArray(userProfiles) ? (userProfiles as any[]).find((u:any)=>u.id===ph.pharmacy_id) : null);
+                                    const pharmacyProfile = userProfiles[ph.pharmacy_id];
                                     const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
                                     const storeLabel = ph.store_name ? `（${ph.store_name}）` : '';
                                     return (
