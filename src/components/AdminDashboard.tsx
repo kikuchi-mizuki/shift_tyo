@@ -804,14 +804,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   return { type: 'shortage', count: 0, shortage: totalRequired };
                 }
                 
+                // 以降は“適合可能数(totalCompatible)”を基準に判定
                 if (totalMatched === totalRequired) {
+                  // 必要数は全て満たせる
                   return { type: 'matched', count: totalMatched };
-                } else if (totalAvailable < totalRequired) {
-                  return { type: 'shortage', count: totalMatched, shortage: totalRequired - totalAvailable };
+                } else if (totalCompatible < totalRequired) {
+                  // 適合可能な希望が不足
+                  return { type: 'shortage', count: totalMatched, shortage: totalRequired - totalCompatible };
                 } else {
-                  // 余裕がある場合（0人の場合は表示しない）
-                  const excess = totalAvailable - totalRequired;
-                  return excess > 0 ? { type: 'excess', count: totalMatched, excess: excess } : { type: 'matched', count: totalMatched };
+                  // 適合可能な希望が余っている
+                  const excess = totalCompatible - totalRequired;
+                  return excess > 0 ? { type: 'excess', count: totalMatched, excess } : { type: 'matched', count: totalMatched };
                 }
               };
               
