@@ -1362,8 +1362,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     // 時間帯ごとにマッチング状況を分析
                     const timeSlots = ['morning', 'afternoon', 'full'];
                     const matchingAnalysis = timeSlots.map(timeSlot => {
-                      const slotRequests = dayRequests.filter((r: any) => r.time_slot === timeSlot);
-                      const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot);
+                      const slotRequests = dayRequests.filter((r: any) => r.time_slot === timeSlot || (timeSlot === 'full' && r.time_slot === 'fullday'));
+                      const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot || (timeSlot === 'full' && p.time_slot === 'fullday'));
                       
                       if (slotRequests.length === 0 && slotPostings.length === 0) return null;
                       
@@ -1373,7 +1373,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         return priorityOrder[b.priority] - priorityOrder[a.priority];
                       });
                       
-                      const totalRequired = slotPostings.reduce((sum: number, p: any) => sum + p.required_staff, 0);
+                      const totalRequired = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
                       const totalAvailable = sortedRequests.length;
                       
                       // マッチングシミュレーション（優先順位順）
@@ -1384,7 +1384,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       // 各薬局の必要人数を管理
                       const pharmacyNeeds = slotPostings.map((p: any) => ({
                         ...p,
-                        remaining: p.required_staff
+                        remaining: Number(p.required_staff) || 0
                       }));
                       
                       // 優先順位順に薬剤師をマッチング
@@ -1412,6 +1412,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         postings: slotPostings,
                         totalRequired,
                         totalAvailable,
+                        totalMatched: matchedPharmacists.length,
                         matchedPharmacists,
                         matchedPharmacies,
                         remainingRequired,
