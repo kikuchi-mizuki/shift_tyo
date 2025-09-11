@@ -235,36 +235,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   };
 
   const handleAddStoreName = () => {
-    console.log('=== ADD STORE NAME(S) START ===');
-    console.log('New store name raw:', newStoreName);
-    console.log('Current store names:', storeNames);
-
-    // 複数入力対応（カンマ / 改行 / 全角読点 で分割）
-    const candidates = (newStoreName || '')
-      .split(/[\n,、]+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
-
-    if (candidates.length === 0) {
-      console.log('No valid store names provided');
+    console.log('=== ADD STORE NAME START ===');
+    const name = (newStoreName || '').trim();
+    if (!name) return;
+    if (storeNames.includes(name)) {
+      console.log('Duplicate store name; skip');
       return;
     }
-
-    // 既存と重複しないものだけ追加
-    const existingSet = new Set(storeNames);
-    const merged = [...storeNames];
-    candidates.forEach(name => {
-      if (!existingSet.has(name)) {
-        merged.push(name);
-        existingSet.add(name);
-      }
-    });
-
-    console.log('Setting new store names:', merged);
-    setStoreNames(merged);
+    setStoreNames([...storeNames, name]);
     setNewStoreName('');
-    console.log('Store names added to local state successfully');
-    console.log('=== ADD STORE NAME(S) END ===');
+    console.log('=== ADD STORE NAME END ===');
   };
 
   const handleRemoveStoreName = (storeNameToRemove: string) => {
@@ -717,12 +697,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 <div className="space-y-2">
                   {/* 店舗名追加フォーム */}
                   <div className="flex space-x-2">
-                    <textarea
+                    <input
+                      type="text"
                       value={newStoreName}
                       onChange={(e) => setNewStoreName(e.target.value)}
-                      placeholder="店舗名を複数入力可（改行・カンマ・、で区切り）\n例: 渋谷店\n新宿店\n北海道店"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm h-20"
-                      onKeyPress={(e) => e.key === 'Enter' && (e.shiftKey ? null : handleAddStoreName())}
+                      placeholder="新しい店舗名（例：渋谷店）"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddStoreName()}
                     />
                     <button
                       onClick={handleAddStoreName}
