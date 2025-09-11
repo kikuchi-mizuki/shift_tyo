@@ -161,6 +161,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       // 2) プロファイルを削除
       console.log('Deleting user profile...');
+      alert(`削除対象ID: ${profile.id}`);
+      
+      // 削除前にプロファイルの存在確認
+      const checkProfile = await supabase
+        .from('user_profiles')
+        .select('id, name, email')
+        .eq('id', profile.id);
+      alert(`削除前確認: ${checkProfile.data?.length || 0}件のプロファイルが見つかりました`);
+      
       const profileDelete = await supabase
         .from('user_profiles')
         .delete()
@@ -171,7 +180,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         throw (profileDelete as any).error;
       }
       console.log('user profile deleted successfully');
-      alert('user_profiles削除完了');
+      alert(`user_profiles削除完了 - 削除件数: ${(profileDelete as any).data?.length || '不明'}`);
+      
+      // 削除後の確認
+      const checkAfterDelete = await supabase
+        .from('user_profiles')
+        .select('id, name, email')
+        .eq('id', profile.id);
+      alert(`削除後確認: ${checkAfterDelete.data?.length || 0}件のプロファイルが残っています`);
 
       // 3) 画面更新
       console.log('Reloading data...');
@@ -205,12 +221,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.log('Before setUserProfiles - current state:', userProfiles);
         console.log('Setting new userProfiles state:', profilesMap);
         alert(`状態更新前のプロファイル数: ${Object.keys(userProfiles).length}`);
+        alert(`新しいプロファイル数: ${Object.keys(profilesMap).length}`);
         setUserProfiles(profilesMap);
-        alert(`状態更新後のプロファイル数: ${Object.keys(profilesMap).length}`);
         
         // 状態更新を確認
         setTimeout(() => {
           console.log('After setUserProfiles - new state:', userProfiles);
+          alert(`setTimeout後のプロファイル数: ${Object.keys(userProfiles).length}`);
         }, 100);
       }
       
