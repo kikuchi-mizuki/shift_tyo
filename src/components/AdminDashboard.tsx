@@ -785,6 +785,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   return (userProfiles as any)[id] || ({} as any);
                 };
                 const compatibleRequestIds = new Set<string>();
+                const isTimeCompatible = (reqSlot: string, postSlot: string) => {
+                  // 厳密一致のみを“マッチ可能”とする（簡易化）
+                  return reqSlot === postSlot;
+                };
+
                 dayRequests.forEach((r: any) => {
                   const pharmacist = getProfile(r.pharmacist_id);
                   const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
@@ -793,7 +798,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
                     const blockedByPharmacist = pharmacistNg.includes(p.pharmacy_id);
                     const blockedByPharmacy = pharmacyNg.includes(r.pharmacist_id);
-                    return !blockedByPharmacist && !blockedByPharmacy;
+                    if (blockedByPharmacist || blockedByPharmacy) return false;
+                    // 時間帯の互換性チェック（等価のみ）
+                    if (!isTimeCompatible(r.time_slot, p.time_slot)) return false;
+                    return true;
                   });
                   if (canMatchWithAnyPosting) compatibleRequestIds.add(r.pharmacist_id);
                 });
