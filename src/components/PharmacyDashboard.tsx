@@ -551,7 +551,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         setRequiredStaff(null);
         setMemo('');
         
-        alert('募集を作成しました');
+        // 通知は不要
         // 募集データのみを再読み込み（プロフィールデータは保持）
         const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
         if (!myShiftsError) {

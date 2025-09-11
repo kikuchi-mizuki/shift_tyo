@@ -28,7 +28,7 @@ export const AdminMatchingPanel: React.FC<AdminMatchingPanelProps> = ({ userRole
     setIsLoading(true);
     try {
       const result = await createStoreOpening({ date, slot, requiredCount });
-      alert(`募集を作成しました (ID: ${result.id})`);
+      // 通知は不要
     } catch (error) {
       alert(`募集作成に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
