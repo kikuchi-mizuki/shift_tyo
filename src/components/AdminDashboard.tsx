@@ -54,7 +54,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [userEditForm, setUserEditForm] = useState<any>({
     name: '',
     store_names: '', // カンマ区切り入力（薬局のみ）
-    ng_list: '' // カンマ区切り（ID）
+    ng_list: [] as string[] // 薬局編集時: 薬剤師IDの配列
   });
 
   const beginEditUser = (profile: any) => {
@@ -62,7 +62,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     setUserEditForm({
       name: profile.name || '',
       store_names: Array.isArray(profile.store_names) ? profile.store_names.join(',') : '',
-      ng_list: Array.isArray(profile.ng_list) ? profile.ng_list.join(',') : ''
+      ng_list: Array.isArray(profile.ng_list) ? [...profile.ng_list] : []
     });
   };
 
@@ -75,10 +75,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           .map((s: string) => s.trim())
           .filter((s: string) => s.length > 0);
       }
-      updates.ng_list = (userEditForm.ng_list || '')
-        .split(',')
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
+      // ng_list は配列で保存
+      updates.ng_list = Array.isArray(userEditForm.ng_list)
+        ? userEditForm.ng_list
+        : String(userEditForm.ng_list || '')
+            .split(',')
+            .map((s: string) => s.trim())
+            .filter((s: string) => s.length > 0);
 
       const { error } = await supabase
         .from('user_profiles')
@@ -1540,12 +1543,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <div>
                             <div className="text-xs text-gray-600 mb-1">NG薬剤師:</div>
                             {editingUserId === pharmacy.id ? (
-                              <input
-                                className="text-xs border rounded px-2 py-1 w-full"
-                                placeholder="カンマ区切りでIDを入力"
-                                value={userEditForm.ng_list}
-                                onChange={(e) => setUserEditForm({ ...userEditForm, ng_list: e.target.value })}
-                              />
+                              <div className="text-xs">
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {Object.entries(userProfiles)
+                                    .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacist')
+                                    .map(([id, profile]: [string, any]) => {
+                                      const checked = userEditForm.ng_list.includes(id);
+                                      return (
+                                        <label key={id} className="inline-flex items-center gap-1 border rounded px-2 py-1 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            className="accent-red-600"
+                                            checked={checked}
+                                            onChange={(e) => {
+                                              const next = new Set<string>(userEditForm.ng_list);
+                                              if (e.target.checked) next.add(id); else next.delete(id);
+                                              setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                            }}
+                                          />
+                                          <span>{(profile as any).name || (profile as any).email || id}</span>
+                                        </label>
+                                      );
+                                    })}
+                                </div>
+                              </div>
                             ) : (
                               <div className="text-sm">
                                 {pharmacy.ng_list && pharmacy.ng_list.length > 0 ? (
