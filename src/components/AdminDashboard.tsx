@@ -788,8 +788,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 let totalExcess = 0;
 
                 timeSlots.forEach((slot) => {
-                  const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot);
-                  const slotRequests = dayRequests.filter((r: any) => r.time_slot === slot);
+                  const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
+                  const slotRequests = dayRequests.filter((r: any) => r.time_slot === slot || (slot === 'full' && r.time_slot === 'fullday'));
                   const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
                   const availableSlot = slotRequests.length;
 
