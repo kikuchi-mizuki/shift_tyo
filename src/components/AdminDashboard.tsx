@@ -1553,6 +1553,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             </div>
                           ))}
+                          
+                          {/* 希望している薬剤師（全員） */}
+                          {dayRequests.length > 0 && (
+                            <div className="mt-4 bg-white rounded border px-2 py-1">
+                              <div className="text-xs font-medium text-cyan-700 mb-2">📋 希望している薬剤師 ({dayRequests.length}件)</div>
+                              <div className="space-y-1">
+                                {dayRequests.map((request: any) => {
+                                  const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                  const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                                  
+                                  return (
+                                    <div key={request.id} className="flex items-center justify-between">
+                                      <span className="text-xs">{pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}</span>
+                                      <div className="flex items-center space-x-2">
+                                        <span className="text-xs text-gray-500">
+                                          {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : request.time_slot === 'fullday' ? '終日' : '終日'}
+                                        </span>
+                                        <span className={`text-xs font-medium ${priorityColor}`}>
+                                          {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                           </div>
                         </div>
                       );
