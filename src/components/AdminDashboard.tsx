@@ -167,6 +167,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // 3) 画面更新
       console.log('Reloading data...');
       await loadAll();
+      
+      // 4) ユーザープロフィールを強制的に再取得
+      console.log('Force reloading user profiles...');
+      const { data: allProfilesData, error: allProfilesError } = await supabase
+        .from('user_profiles')
+        .select('*');
+      
+      if (allProfilesError) {
+        console.error('Error reloading user profiles:', allProfilesError);
+      } else {
+        console.log('Reloaded user profiles:', allProfilesData);
+        const profilesMap: any = {};
+        allProfilesData?.forEach((user: any) => {
+          let userType = user.user_type;
+          if (!userType) {
+            const email = user.email?.toLowerCase() || '';
+            const name = user.name?.toLowerCase() || '';
+            userType = email.includes('store') || email.includes('pharmacy') || email.includes('sampley2') || 
+                      name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'pharmacy' : 'pharmacist';
+          }
+          profilesMap[user.id] = { ...user, user_type: userType };
+        });
+        setUserProfiles(profilesMap);
+        console.log('Updated userProfiles state:', profilesMap);
+      }
+      
       console.log('User deletion completed successfully:', profile.id);
       alert('ユーザーを削除しました');
     } catch (e: any) {
