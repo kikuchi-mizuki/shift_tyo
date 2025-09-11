@@ -1901,12 +1901,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <div>
                             <div className="text-xs text-gray-600 mb-1">NG薬局:</div>
                             {editingUserId === pharmacist.id ? (
-                              <input
-                                className="text-xs border rounded px-2 py-1 w-full"
-                                placeholder="カンマ区切りでIDを入力"
-                                value={userEditForm.ng_list}
-                                onChange={(e) => setUserEditForm({ ...userEditForm, ng_list: e.target.value })}
-                              />
+                              <div className="space-y-2">
+                                {Object.entries(userProfiles)
+                                  .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy')
+                                  .map(([id, profile]: [string, any]) => {
+                                    const checked = userEditForm.ng_list.includes(id);
+                                    return (
+                                      <label key={id} className="inline-flex items-center gap-1 border rounded px-2 py-1 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          className="accent-red-600"
+                                          checked={checked}
+                                          onChange={(e) => {
+                                            const next = new Set<string>(userEditForm.ng_list);
+                                            if (e.target.checked) next.add(id); else next.delete(id);
+                                            setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                          }}
+                                        />
+                                        <span>{(profile as any).name || (profile as any).email || id}</span>
+                                      </label>
+                                    );
+                                  })}
+                              </div>
                             ) : (
                               <div className="text-sm">
                                 {pharmacist.ng_list && pharmacist.ng_list.length > 0 ? (
