@@ -23,6 +23,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [profileName, setProfileName] = useState('');
   const [storeNames, setStoreNames] = useState<string[]>([]);
   const [multiStoreNames, setMultiStoreNames] = useState<string[]>([]);
+  const TEMP_STORE_KEY = `temp_selected_stores_${user?.id || ''}`;
   
   // storeNamesの状態変更を監視
   useEffect(() => {
@@ -48,8 +49,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         const parsed = JSON.parse(cachedStores);
         if (Array.isArray(parsed)) setStoreNames(parsed);
       }
-      const cachedSelected = localStorage.getItem(`selected_store_${user?.id || ''}`);
-      if (cachedSelected) setSelectedStoreName(cachedSelected);
+      const cachedMulti = localStorage.getItem(TEMP_STORE_KEY);
+      if (cachedMulti) {
+        const parsed = JSON.parse(cachedMulti);
+        if (Array.isArray(parsed)) setMultiStoreNames(parsed);
+      }
     } catch {}
     // 2) サーバーデータを正とする
     loadData();
@@ -838,7 +842,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             </select>
           </div>
 
-          {/* 店舗名選択（複数選択に対応） */}
+          {/* 店舗名選択（複数選択に対応・一時保存可） */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">店舗名（複数選択可）</label>
             <select
@@ -855,7 +859,26 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               ))}
               <option value="">店舗名なし</option>
             </select>
-            <p className="text-xs text-gray-500 mt-1">Cmd/Shift を押しながら選択で複数選べます</p>
+            <div className="flex items-center gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.setItem(TEMP_STORE_KEY, JSON.stringify(multiStoreNames));
+                  } catch {}
+                }}
+                className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+              >一時保存</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMultiStoreNames([]);
+                  try { localStorage.removeItem(TEMP_STORE_KEY); } catch {}
+                }}
+                className="text-xs px-2 py-1 rounded bg-gray-500 text-white hover:bg-gray-600"
+              >選択をクリア</button>
+              <span className="text-xs text-gray-500">Cmd/Shift を押しながら選択で複数選べます</span>
+            </div>
           </div>
 
           {/* 時間帯 */}
