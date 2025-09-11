@@ -1070,7 +1070,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     console.log('マッチング分析結果:', matchingAnalysis);
                     logToRailway('マッチング分析結果:', matchingAnalysis);
                     
-                    if (matchingAnalysis.length > 0) {
+                    // マッチング状況を表示（分析結果がある場合、または募集のみの場合）
+                    if (matchingAnalysis.length > 0 || (dayPostings.length > 0 && dayRequests.length === 0)) {
                       return (
                         <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
                           <div className="flex items-center space-x-2 mb-3">
@@ -1078,6 +1079,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <h4 className="text-sm font-semibold text-purple-800">マッチング状況</h4>
                           </div>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
+                            
+                            {/* 募集のみの場合の表示 */}
+                            {matchingAnalysis.length === 0 && dayPostings.length > 0 && dayRequests.length === 0 && (
+                              <div className="bg-white rounded border px-2 py-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-sm font-medium text-gray-800">全体</div>
+                                  <div className="text-sm text-gray-500">
+                                    {dayPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0)}人必要 / 0人応募
+                                    <span className="text-red-600 ml-1">
+                                      (不足{dayPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0)}人)
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-600">
+                                  薬剤師からの希望がありません
+                                </div>
+                              </div>
+                            )}
                           {matchingAnalysis.map((analysis: any, index: number) => (
                             <div key={index} className="bg-white rounded border px-2 py-1">
                               <div className="flex items-center justify-between mb-2">
