@@ -1402,6 +1402,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         }
                       });
                       
+                      // 不足の薬局一覧（remaining > 0）
+                      const shortagePharmacies = pharmacyNeeds
+                        .filter((p: any) => p.remaining > 0)
+                        .map((p: any) => ({ pharmacy_id: p.pharmacy_id, remaining: p.remaining, store_name: p.store_name }));
+
                       return {
                         timeSlot,
                         requests: sortedRequests,
@@ -1411,6 +1416,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         matchedPharmacists,
                         matchedPharmacies,
                         remainingRequired,
+                        shortagePharmacies,
                         isMatching: totalAvailable > 0 && totalRequired > 0,
                         isShortage: totalAvailable < totalRequired,
                         hasExcess: totalAvailable > totalRequired
@@ -1507,6 +1513,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               ) : (
                                 <div className="text-xs">
                                   {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
+                                </div>
+                              )}
+
+                              {/* 不足の薬局一覧 */}
+                              {analysis.shortagePharmacies && analysis.shortagePharmacies.length > 0 && (
+                                <div className="mt-2">
+                                  <div className="text-xs font-medium text-red-700 mb-1">🚨 不足している薬局</div>
+                                  {analysis.shortagePharmacies.map((ph: any, idx: number) => {
+                                    const pharmacyProfile = (userProfiles as any)[ph.pharmacy_id] || (Array.isArray(userProfiles) ? (userProfiles as any[]).find((u:any)=>u.id===ph.pharmacy_id) : null);
+                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
+                                    const storeLabel = ph.store_name ? `（${ph.store_name}）` : '';
+                                    return (
+                                      <div key={idx} className="flex items-center justify-between">
+                                        <span className="text-xs">{pharmacyName}{storeLabel}</span>
+                                        <span className="text-xs text-red-600">不足 {ph.remaining}人</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                               </div>
