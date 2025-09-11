@@ -565,6 +565,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     console.log(`[DEBUG 9/2] Posting ${index}:`, posting);
                     console.log(`[DEBUG 9/2] Posting ${index} required_staff:`, posting.required_staff);
                   });
+                  
+                  // 強制的にアラートで表示
+                  alert(`9月2日デバッグ:\n必要人数: ${totalRequired}\n希望人数: ${totalAvailable}\nマッチ数: ${totalMatched}`);
                 }
                 
                 if (totalRequired === 0) {
