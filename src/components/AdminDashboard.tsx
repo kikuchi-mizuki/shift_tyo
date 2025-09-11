@@ -1973,7 +1973,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                         
                                         return (
                                           <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                            {ngPharmacy?.name || ngPharmacy?.email || ngId}
+                                            {ngPharmacy?.name || ngId}
                                           </span>
                                         );
                                       })}
