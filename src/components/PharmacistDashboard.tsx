@@ -543,10 +543,17 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                         </div>
                       </div>
                     )}
-                    {/* 確定シフトがない場合のみ希望バッジを表示 */}
-                    {!hasMyShift(day) && hasMyRequest(day) && (
-                      <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">希望</div>
-                    )}
+                    {/* 確定シフトがない場合のみ希望バッジを表示（要相談は「相談」パッチ） */}
+                    {!hasMyShift(day) && hasMyRequest(day) && (() => {
+                      const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                      const dayReqs = myRequests.filter((r: any) => r.date === dateStr);
+                      const hasConsult = dayReqs.some((r: any) => r.time_slot === 'consult' || r.time_slot === 'negotiable');
+                      return hasConsult ? (
+                        <div className="text-[10px] text-purple-700 bg-purple-50 border border-purple-200 rounded px-1 mt-1 inline-block">相談</div>
+                      ) : (
+                        <div className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">希望</div>
+                      );
+                    })()}
                   </>
                 )}
               </div>
