@@ -21,6 +21,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     pharmacists: false
   });
 
+  // 追加フォームの表示状態
+  const [showAddForms, setShowAddForms] = useState<{[key: string]: boolean}>({
+    posting: false,
+    request: false
+  });
+
   // 追加フォーム用のローカル状態
   const [newPosting, setNewPosting] = useState<any>({
     pharmacy_id: '',
@@ -1109,55 +1115,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           募集している薬局 ({postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').length}件)
                         </h4>
                       </div>
-                      {/* 追加フォーム */}
-                      <div className="mb-3 bg-white border rounded p-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <select
-                            className="text-xs border rounded px-2 py-1"
-                            value={newPosting.pharmacy_id}
-                            onChange={(e) => setNewPosting({ ...newPosting, pharmacy_id: e.target.value })}
-                          >
-                            <option value="">薬局を選択</option>
-                            {Object.entries(userProfiles)
-                              .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy' || (profile as any).user_type === 'store')
-                              .map(([id, profile]: [string, any]) => (
-                                <option key={id} value={id}>{(profile as any).name || (profile as any).email}</option>
-                              ))}
-                          </select>
-                          <select
-                            className="text-xs border rounded px-2 py-1"
-                            value={newPosting.time_slot}
-                            onChange={(e) => setNewPosting({ ...newPosting, time_slot: e.target.value })}
-                          >
-                            <option value="morning">午前</option>
-                            <option value="afternoon">午後</option>
-                            <option value="full">終日</option>
-                          </select>
-                          <input
-                            className="text-xs border rounded px-2 py-1"
-                            type="number"
-                            min={1}
-                            value={newPosting.required_staff}
-                            onChange={(e) => setNewPosting({ ...newPosting, required_staff: e.target.value })}
-                            placeholder="必要人数"
-                          />
-                          <input
-                            className="text-xs border rounded px-2 py-1"
-                            value={newPosting.store_name}
-                            onChange={(e) => setNewPosting({ ...newPosting, store_name: e.target.value })}
-                            placeholder="店舗名（任意）"
-                          />
-                          <input
-                            className="col-span-2 text-xs border rounded px-2 py-1"
-                            value={newPosting.memo}
-                            onChange={(e) => setNewPosting({ ...newPosting, memo: e.target.value })}
-                            placeholder="メモ（任意）"
-                          />
-                        </div>
-                        <div className="mt-2">
-                          <button onClick={handleAddPosting} className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded">追加</button>
-                        </div>
+                      {/* 追加ボタン */}
+                      <div className="mb-3">
+                        <button 
+                          onClick={() => setShowAddForms({...showAddForms, posting: !showAddForms.posting})}
+                          className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded"
+                        >
+                          {showAddForms.posting ? 'フォームを閉じる' : '募集を追加'}
+                        </button>
                       </div>
+                      
+                      {/* 追加フォーム */}
+                      {showAddForms.posting && (
+                        <div className="mb-3 bg-white border rounded p-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <select
+                              className="text-xs border rounded px-2 py-1"
+                              value={newPosting.pharmacy_id}
+                              onChange={(e) => setNewPosting({ ...newPosting, pharmacy_id: e.target.value })}
+                            >
+                              <option value="">薬局を選択</option>
+                              {Object.entries(userProfiles)
+                                .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy' || (profile as any).user_type === 'store')
+                                .map(([id, profile]: [string, any]) => (
+                                  <option key={id} value={id}>{(profile as any).name || (profile as any).email}</option>
+                                ))}
+                            </select>
+                            <select
+                              className="text-xs border rounded px-2 py-1"
+                              value={newPosting.time_slot}
+                              onChange={(e) => setNewPosting({ ...newPosting, time_slot: e.target.value })}
+                            >
+                              <option value="morning">午前</option>
+                              <option value="afternoon">午後</option>
+                              <option value="full">終日</option>
+                            </select>
+                            <input
+                              className="text-xs border rounded px-2 py-1"
+                              type="number"
+                              min={1}
+                              value={newPosting.required_staff}
+                              onChange={(e) => setNewPosting({ ...newPosting, required_staff: e.target.value })}
+                              placeholder="必要人数"
+                            />
+                            <input
+                              className="text-xs border rounded px-2 py-1"
+                              value={newPosting.store_name}
+                              onChange={(e) => setNewPosting({ ...newPosting, store_name: e.target.value })}
+                              placeholder="店舗名（任意）"
+                            />
+                            <input
+                              className="col-span-2 text-xs border rounded px-2 py-1"
+                              value={newPosting.memo}
+                              onChange={(e) => setNewPosting({ ...newPosting, memo: e.target.value })}
+                              placeholder="メモ（任意）"
+                            />
+                          </div>
+                          <div className="mt-2">
+                            <button onClick={handleAddPosting} className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded">追加</button>
+                          </div>
+                        </div>
+                      )}
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').map((posting: any, index: number) => {
                         const pharmacyProfile = userProfiles[posting.pharmacy_id];
@@ -1243,44 +1261,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           応募している薬剤師 ({requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').length}件)
                         </h4>
                       </div>
-                      {/* 追加フォーム */}
-                      <div className="mb-3 bg-white border rounded p-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <select
-                            className="text-xs border rounded px-2 py-1"
-                            value={newRequest.pharmacist_id}
-                            onChange={(e) => setNewRequest({ ...newRequest, pharmacist_id: e.target.value })}
-                          >
-                            <option value="">薬剤師を選択</option>
-                            {Object.entries(userProfiles)
-                              .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacist')
-                              .map(([id, profile]: [string, any]) => (
-                                <option key={id} value={id}>{(profile as any).name || (profile as any).email}</option>
-                              ))}
-                          </select>
-                          <select
-                            className="text-xs border rounded px-2 py-1"
-                            value={newRequest.time_slot}
-                            onChange={(e) => setNewRequest({ ...newRequest, time_slot: e.target.value })}
-                          >
-                            <option value="morning">午前</option>
-                            <option value="afternoon">午後</option>
-                            <option value="full">終日</option>
-                          </select>
-                          <select
-                            className="text-xs border rounded px-2 py-1"
-                            value={newRequest.priority}
-                            onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
-                          >
-                            <option value="high">高</option>
-                            <option value="medium">中</option>
-                            <option value="low">低</option>
-                          </select>
-                        </div>
-                        <div className="mt-2">
-                          <button onClick={handleAddRequest} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">追加</button>
-                        </div>
+                      {/* 追加ボタン */}
+                      <div className="mb-3">
+                        <button 
+                          onClick={() => setShowAddForms({...showAddForms, request: !showAddForms.request})}
+                          className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded"
+                        >
+                          {showAddForms.request ? 'フォームを閉じる' : '希望を追加'}
+                        </button>
                       </div>
+                      
+                      {/* 追加フォーム */}
+                      {showAddForms.request && (
+                        <div className="mb-3 bg-white border rounded p-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <select
+                              className="text-xs border rounded px-2 py-1"
+                              value={newRequest.pharmacist_id}
+                              onChange={(e) => setNewRequest({ ...newRequest, pharmacist_id: e.target.value })}
+                            >
+                              <option value="">薬剤師を選択</option>
+                              {Object.entries(userProfiles)
+                                .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacist')
+                                .map(([id, profile]: [string, any]) => (
+                                  <option key={id} value={id}>{(profile as any).name || (profile as any).email}</option>
+                                ))}
+                            </select>
+                            <select
+                              className="text-xs border rounded px-2 py-1"
+                              value={newRequest.time_slot}
+                              onChange={(e) => setNewRequest({ ...newRequest, time_slot: e.target.value })}
+                            >
+                              <option value="morning">午前</option>
+                              <option value="afternoon">午後</option>
+                              <option value="full">終日</option>
+                            </select>
+                            <select
+                              className="text-xs border rounded px-2 py-1"
+                              value={newRequest.priority}
+                              onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
+                            >
+                              <option value="high">高</option>
+                              <option value="medium">中</option>
+                              <option value="low">低</option>
+                            </select>
+                          </div>
+                          <div className="mt-2">
+                            <button onClick={handleAddRequest} className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded">追加</button>
+                          </div>
+                        </div>
+                      )}
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').map((request: any, index: number) => {
                         const pharmacistProfile = userProfiles[request.pharmacist_id];
