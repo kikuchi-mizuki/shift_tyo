@@ -1082,7 +1082,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             placeholder="メモ（任意）"
                           />
                         </div>
-                        <div className="text-right mt-2">
+                        <div className="mt-2">
                           <button onClick={handleAddPosting} className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded">追加</button>
                         </div>
                       </div>
@@ -1205,7 +1205,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <option value="low">低</option>
                           </select>
                         </div>
-                        <div className="text-right mt-2">
+                        <div className="mt-2">
                           <button onClick={handleAddRequest} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">追加</button>
                         </div>
                       </div>
