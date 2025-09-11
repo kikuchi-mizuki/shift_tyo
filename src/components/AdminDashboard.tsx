@@ -576,6 +576,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               
               const matchingStatus = calculateMatchingStatus();
               
+              // 9月2日のデバッグログ
+              if (dateStr === '2025-09-02') {
+                console.log(`[DEBUG 9/2] Date: ${dateStr}`);
+                console.log(`[DEBUG 9/2] Day requests:`, dayRequests);
+                console.log(`[DEBUG 9/2] Day postings:`, dayPostings);
+                console.log(`[DEBUG 9/2] Matching status:`, matchingStatus);
+              }
+              
               return (
                 <div 
                   key={i} 
