@@ -553,6 +553,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 const totalAvailable = dayRequests.length;
                 const totalMatched = Math.min(totalRequired, totalAvailable);
                 
+                // 9月2日のデバッグログ
+                if (dateStr === '2025-09-02') {
+                  console.log(`[DEBUG 9/2] Date: ${dateStr}`);
+                  console.log(`[DEBUG 9/2] Day requests:`, dayRequests);
+                  console.log(`[DEBUG 9/2] Day postings:`, dayPostings);
+                  console.log(`[DEBUG 9/2] Total required: ${totalRequired}, Total available: ${totalAvailable}, Total matched: ${totalMatched}`);
+                }
+                
                 if (totalRequired === 0) {
                   // 募集がない場合は希望のみ表示（0件の場合は表示しない）
                   return totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable } : { type: 'empty', count: 0 };
@@ -575,14 +583,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               };
               
               const matchingStatus = calculateMatchingStatus();
-              
-              // 9月2日のデバッグログ
-              if (dateStr === '2025-09-02') {
-                console.log(`[DEBUG 9/2] Date: ${dateStr}`);
-                console.log(`[DEBUG 9/2] Day requests:`, dayRequests);
-                console.log(`[DEBUG 9/2] Day postings:`, dayPostings);
-                console.log(`[DEBUG 9/2] Matching status:`, matchingStatus);
-              }
               
               return (
                 <div 
