@@ -103,18 +103,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const deleteUser = async (profile: any) => {
     if (!confirm(`${profile.name || profile.email} を削除しますか？`)) return;
     try {
-      const { error } = await supabase
+      // 1) 関連レコードを先に削除（外部参照の可能性に備える）
+      // assigned_shifts
+      const assignedDelete = await supabase
+        .from('assigned_shifts')
+        .delete()
+        .or(`pharmacist_id.eq.${profile.id},pharmacy_id.eq.${profile.id}`);
+      if ((assignedDelete as any).error) throw (assignedDelete as any).error;
+
+      // shift_requests（薬剤師）
+      const reqDelete = await supabase
+        .from('shift_requests')
+        .delete()
+        .eq('pharmacist_id', profile.id);
+      if ((reqDelete as any).error) throw (reqDelete as any).error;
+
+      // shift_postings（薬局）
+      const postDelete = await supabase
+        .from('shift_postings')
+        .delete()
+        .eq('pharmacy_id', profile.id);
+      if ((postDelete as any).error) throw (postDelete as any).error;
+
+      // 2) プロファイルを削除
+      const profileDelete = await supabase
         .from('user_profiles')
         .delete()
         .eq('id', profile.id);
-      if (error) {
-        alert(`削除に失敗しました: ${error.message || error.code || 'Unknown error'}`);
-        return;
-      }
+      if ((profileDelete as any).error) throw (profileDelete as any).error;
+
+      // 3) 画面更新
       await loadAll();
-      alert('ユーザーを削除しました');
+      // 成功通知は控えめにログのみ
+      console.log('User deleted:', profile.id);
     } catch (e: any) {
-      alert(`削除エラー: ${e?.message || 'Unknown error'}`);
+      console.error('User deletion failed:', e);
+      alert(`削除に失敗しました: ${e?.message || 'Unknown error'}`);
     }
   };
 
