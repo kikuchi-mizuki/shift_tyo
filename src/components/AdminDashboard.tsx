@@ -1925,21 +1925,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             ) : (
                               <div className="text-sm">
-                                {pharmacist.ng_list && pharmacist.ng_list.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1">
-                                    {pharmacist.ng_list.map((ngId: string, idx: number) => {
-                                      const ngPharmacy = userProfiles[ngId];
-                                      console.log('NG薬局表示デバッグ:', { ngId, ngPharmacy, userProfilesKeys: Object.keys(userProfiles) });
-                                      return (
-                                        <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                          {ngPharmacy?.name || ngPharmacy?.email || ngId}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-500">なし</span>
-                                )}
+                                {(() => {
+                                  // ng_listが配列か文字列かを確認して適切に処理
+                                  let ngList: string[] = [];
+                                  if (Array.isArray(pharmacist.ng_list)) {
+                                    ngList = pharmacist.ng_list;
+                                  } else if (typeof pharmacist.ng_list === 'string' && pharmacist.ng_list.trim()) {
+                                    ngList = pharmacist.ng_list.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                                  }
+                                  
+                                  console.log('NG薬局表示デバッグ:', { 
+                                    pharmacist: pharmacist.name, 
+                                    ng_list_raw: pharmacist.ng_list, 
+                                    ng_list_processed: ngList,
+                                    userProfilesKeys: Object.keys(userProfiles)
+                                  });
+                                  
+                                  return ngList.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {ngList.map((ngId: string, idx: number) => {
+                                        const ngPharmacy = userProfiles[ngId];
+                                        console.log('NG薬局個別デバッグ:', { ngId, ngPharmacy });
+                                        return (
+                                          <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                                            {ngPharmacy?.name || ngPharmacy?.email || ngId}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-500">なし</span>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>
