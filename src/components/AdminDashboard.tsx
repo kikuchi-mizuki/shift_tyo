@@ -288,6 +288,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                      logToRailway('Error loading user_profiles:', userProfilesError);
                    } else {
                      console.log('user_profilesデータ取得成功:', userProfilesData);
+                     console.log('user_profilesデータ件数:', userProfilesData?.length);
+                     // 特定のIDのデータを確認
+                     const targetId = '89077960-0074-4b50-8d47-1f08b222db1b';
+                     const targetProfile = userProfilesData?.find(p => p.id === targetId);
+                     console.log('対象IDのプロファイル:', targetProfile);
                    }
                    
                    const profilesMap: any = {};
@@ -332,6 +337,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                        };
                      }
                    });
+                   
+                   console.log('最終的なprofilesMap:', profilesMap);
+                   console.log('対象IDの最終データ:', profilesMap['89077960-0074-4b50-8d47-1f08b222db1b']);
+                   
                    setUserProfiles(profilesMap);
                    return;
                  }
@@ -1977,19 +1986,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       {ngList.map((ngId: string, idx: number) => {
                                         // 薬局名を取得する関数 - より包括的な検索
                                         const getPharmacyName = (id: string) => {
+                                          console.log('薬局名検索開始:', id);
+                                          console.log('userProfiles全体:', userProfiles);
+                                          
                                           // 1. 直接userProfilesから検索
                                           const profile = userProfiles[id];
+                                          console.log('直接検索結果:', profile);
                                           if (profile && profile.name) {
+                                            console.log('直接検索で見つかった名前:', profile.name);
                                             return profile.name;
                                           }
                                           
                                           // 2. 全プロファイルから検索（user_typeに関係なく）
                                           for (const [profileId, profileData] of Object.entries(userProfiles)) {
                                             if (profileId === id && (profileData as any).name) {
+                                              console.log('全検索で見つかった名前:', (profileData as any).name);
                                               return (profileData as any).name;
                                             }
                                           }
                                           
+                                          console.log('薬局名が見つからなかった、IDを返す:', id);
                                           // 3. 見つからない場合はIDを返す
                                           return id;
                                         };
