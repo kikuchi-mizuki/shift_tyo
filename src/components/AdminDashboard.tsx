@@ -301,6 +301,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                      // user_profilesから詳細情報を取得
                      const profileDetails = userProfilesData?.find((p: any) => p.id === user.id);
                      
+                     // デバッグログ
+                     if (profileDetails?.ng_list && profileDetails.ng_list.length > 0) {
+                       console.log('ユーザープロファイル詳細:', {
+                         user: user.name,
+                         ng_list: profileDetails.ng_list,
+                         store_names: profileDetails.store_names
+                       });
+                     }
+                     
                      profilesMap[user.id] = {
                        id: user.id,
                        name: user.name,
@@ -1953,6 +1962,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                         const ngPharmacy = Object.values(userProfiles).find((profile: any) => 
                                           profile.id === ngId && profile.user_type === 'pharmacy'
                                         );
+                                        
+                                        // デバッグログ
+                                        console.log('NG薬局表示デバッグ:', {
+                                          pharmacist: pharmacist.name,
+                                          ngId,
+                                          ngPharmacy,
+                                          allPharmacies: Object.values(userProfiles).filter((p: any) => p.user_type === 'pharmacy')
+                                        });
                                         
                                         return (
                                           <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
