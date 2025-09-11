@@ -764,73 +764,65 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               // マッチング状況を計算
               const calculateMatchingStatus = () => {
                 if (dayAssignedShifts.length > 0) {
-                  return { type: 'confirmed', count: dayAssignedShifts.length };
+                  return { type: 'confirmed', count: dayAssignedShifts.length } as any;
                 }
-                
                 if (dayRequests.length === 0 && dayPostings.length === 0) {
-                  return { type: 'empty', count: 0 };
+                  return { type: 'empty', count: 0 } as any;
                 }
-                
-                // 全体でマッチング状況を分析（時間帯に関係なく）
-                const totalRequired = dayPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0);
-                const totalAvailable = dayRequests.length;
 
-                // NGリストを考慮した“適合可能”な希望数を算出
+                // ヘルパー
                 const getProfile = (id: string) => {
                   if (!userProfiles) return {} as any;
-                  // userProfiles が配列の場合と連想配列の場合の両方をサポート
                   if (Array.isArray(userProfiles)) {
                     return (userProfiles as any[]).find((u: any) => u?.id === id) || ({} as any);
                   }
                   return (userProfiles as any)[id] || ({} as any);
                 };
-                const compatibleRequestIds = new Set<string>();
-                const isTimeCompatible = (reqSlot: string, postSlot: string) => {
-                  // 厳密一致のみを“マッチ可能”とする（簡易化）
-                  return reqSlot === postSlot;
-                };
+                const isTimeCompatible = (reqSlot: string, postSlot: string) => reqSlot === postSlot;
 
-                dayRequests.forEach((r: any) => {
-                  const pharmacist = getProfile(r.pharmacist_id);
-                  const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
-                  const canMatchWithAnyPosting = dayPostings.some((p: any) => {
-                    const pharmacy = getProfile(p.pharmacy_id);
-                    const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
-                    const blockedByPharmacist = pharmacistNg.includes(p.pharmacy_id);
-                    const blockedByPharmacy = pharmacyNg.includes(r.pharmacist_id);
-                    if (blockedByPharmacist || blockedByPharmacy) return false;
-                    // 時間帯の互換性チェック（等価のみ）
-                    if (!isTimeCompatible(r.time_slot, p.time_slot)) return false;
-                    return true;
-                  });
-                  if (canMatchWithAnyPosting) compatibleRequestIds.add(r.pharmacist_id);
+                const timeSlots = ['morning','afternoon','full'];
+                let totalRequired = 0;
+                let totalAvailable = 0;
+                let totalMatched = 0;
+                let totalShortage = 0;
+                let totalExcess = 0;
+
+                timeSlots.forEach((slot) => {
+                  const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot);
+                  const slotRequests = dayRequests.filter((r: any) => r.time_slot === slot);
+                  const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0);
+                  const availableSlot = slotRequests.length;
+
+                  // NGと時間帯一致を満たすリクエストをカウント
+                  const compatibleCount = slotRequests.filter((r: any) => {
+                    const pharmacist = getProfile(r.pharmacist_id);
+                    const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+                    return slotPostings.some((p: any) => {
+                      const pharmacy = getProfile(p.pharmacy_id);
+                      const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+                      const blockedByPharmacist = pharmacistNg.includes(p.pharmacy_id);
+                      const blockedByPharmacy = pharmacyNg.includes(r.pharmacist_id);
+                      if (blockedByPharmacist || blockedByPharmacy) return false;
+                      return isTimeCompatible(r.time_slot, p.time_slot);
+                    });
+                  }).length;
+
+                  const matchedSlot = Math.min(requiredSlot, compatibleCount);
+                  const shortageSlot = Math.max(requiredSlot - compatibleCount, 0);
+                  const excessSlot = Math.max(compatibleCount - requiredSlot, 0);
+
+                  totalRequired += requiredSlot;
+                  totalAvailable += availableSlot;
+                  totalMatched += matchedSlot;
+                  totalShortage += shortageSlot;
+                  totalExcess += excessSlot;
                 });
-                const totalCompatible = compatibleRequestIds.size;
-                const totalMatched = Math.min(totalRequired, totalCompatible);
-                
-                
+
                 if (totalRequired === 0) {
-                  // 募集がない場合は希望のみ表示（0件の場合は表示しない）
-                  return totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable } : { type: 'empty', count: 0 };
+                  return totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable } as any : { type: 'empty', count: 0 } as any;
                 }
-                
-                if (totalAvailable === 0) {
-                  // 希望がない場合は募集のみ表示（不足として表示）
-                  return { type: 'shortage', count: 0, shortage: totalRequired };
-                }
-                
-                // 以降は“適合可能数(totalCompatible)”を基準に判定
-                if (totalMatched === totalRequired) {
-                  // 必要数は全て満たせる
-                  return { type: 'matched', count: totalMatched };
-                } else if (totalCompatible < totalRequired) {
-                  // 適合可能な希望が不足
-                  return { type: 'shortage', count: totalMatched, shortage: totalRequired - totalCompatible };
-                } else {
-                  // 適合可能な希望が余っている
-                  const excess = totalCompatible - totalRequired;
-                  return excess > 0 ? { type: 'excess', count: totalMatched, excess } : { type: 'matched', count: totalMatched };
-                }
+
+                return { type: 'summary', count: totalMatched, shortage: totalShortage, excess: totalExcess } as any;
               };
               
               const matchingStatus = calculateMatchingStatus();
