@@ -704,7 +704,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             <h2 className="text-xl font-semibold">管理者パネル</h2>
             <p className="text-sm text-purple-100 mt-1">システム全体の状態管理と調整</p>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
+          
+          {/* シフト確定ボタン - 固定表示 */}
+          <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
             <button 
               onClick={handleConfirmShifts}
               className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm ${
@@ -714,9 +716,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               <RefreshCw className="w-4 h-4" />
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
             </button>
-            
+          </div>
 
-            
+          {/* スクロール可能な詳細エリア */}
+          <div className="flex-1 overflow-y-auto p-4 lg:p-6 pt-4 space-y-4">
             {/* 選択された日付の詳細表示 */}
             {selectedDate && (
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
