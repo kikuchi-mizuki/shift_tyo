@@ -25,8 +25,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   // 募集登録での店舗名は一時保存は残しつつ単一選択へ
   const [singleStoreName, setSingleStoreName] = useState('');
   const [batchStoreNames, setBatchStoreNames] = useState<string[]>([]); // 追加リスト
-  const TEMP_STORE_KEY = `temp_selected_store_${user?.id || ''}`;
-  const TEMP_BATCH_KEY = `temp_batch_stores_${user?.id || ''}`;
   // quick add input removed per request
   
   // storeNamesの状態変更を監視
@@ -52,15 +50,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       if (cachedStores) {
         const parsed = JSON.parse(cachedStores);
         if (Array.isArray(parsed)) setStoreNames(parsed);
-      }
-      const cachedSingle = localStorage.getItem(TEMP_STORE_KEY);
-      if (cachedSingle) setSingleStoreName(cachedSingle);
-      const cachedBatch = localStorage.getItem(TEMP_BATCH_KEY);
-      if (cachedBatch) {
-        try {
-          const parsed = JSON.parse(cachedBatch);
-          if (Array.isArray(parsed)) setBatchStoreNames(parsed);
-        } catch {}
       }
     } catch {}
     // 2) サーバーデータを正とする
@@ -874,28 +863,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               </div>
             )}
             {/* quick add removed */}
-            <div className="flex items-center gap-2 mt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    localStorage.setItem(TEMP_STORE_KEY, singleStoreName);
-                    localStorage.setItem(TEMP_BATCH_KEY, JSON.stringify(batchStoreNames));
-                  } catch {}
-                }}
-                className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-              >一時保存</button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSingleStoreName('');
-                  setBatchStoreNames([]);
-                  try { localStorage.removeItem(TEMP_STORE_KEY); } catch {}
-                  try { localStorage.removeItem(TEMP_BATCH_KEY); } catch {}
-                }}
-                className="text-xs px-2 py-1 rounded bg-gray-500 text-white hover:bg-gray-600"
-              >選択をクリア</button>
-            </div>
           </div>
 
           {/* 時間帯 */}
