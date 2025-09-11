@@ -728,48 +728,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             確定 {matchingStatus.count}件
                           </div>
                           
-                          {/* マウスオーバーで表示される詳細情報 */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
-                              <div className="font-medium mb-2">確定シフト詳細</div>
-                               {dayAssignedShifts.map((shift: any, index: number) => {
-                                 const pharmacistProfile = userProfiles[shift.pharmacist_id];
-                                 const pharmacyProfile = userProfiles[shift.pharmacy_id];
-                                 
-                                 // Railwayログに出力
-                                 const logToRailway = (message: string, data?: any) => {
-                                   console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
-                                   if (typeof window !== 'undefined') {
-                                     fetch('/api/log', {
-                                       method: 'POST',
-                                       headers: { 'Content-Type': 'application/json' },
-                                       body: JSON.stringify({ message, data, timestamp: new Date().toISOString() })
-                                     }).catch(() => {});
-                                   }
-                                 };
-                                 
-                                 logToRailway('Hover - Shift:', shift);
-                                 logToRailway('Hover - Pharmacist profile:', pharmacistProfile);
-                                 logToRailway('Hover - Pharmacy profile:', pharmacyProfile);
-                                 logToRailway('Hover - User profiles count:', Object.keys(userProfiles).length);
-                                 
-                                 return (
-                                   <div key={index} className="mb-2 last:mb-0 border-b border-gray-600 pb-2 last:border-b-0">
-                                     <div className="text-green-300 font-medium">
-                                       時間: {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '夜間'}
-                                     </div>
-                                     <div className="text-blue-300">
-                                       薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || shift.pharmacist_id}
-                                     </div>
-                                     <div className="text-yellow-300">
-                                       薬局: {pharmacyProfile?.name || pharmacyProfile?.email || shift.pharmacy_id}
-                                     </div>
-                                   </div>
-                                 );
-                               })}
-                               <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 absolute top-full left-1/2 transform -translate-x-1/2"></div>
-                             </div>
-                           </div>
+                          {/* ホバー詳細は右側パネルで表示するため非表示に変更 */}
                         </div>
                       )}
                       
@@ -806,17 +765,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             )}
                           </div>
                           
-                          {/* マウスオーバーで表示される詳細情報 */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
-                              <div className="font-medium mb-2">マッチング状況</div>
-                              <div>マッチング: {matchingStatus.count}件</div>
-                              {matchingStatus.shortage > 0 && <div>不足: {matchingStatus.shortage}人</div>}
-                              {typeof matchingStatus.excess === 'number' && matchingStatus.excess > 0 && <div>余裕: {matchingStatus.excess}人</div>}
-                              <div>希望: {dayRequests.length}件</div>
-                              <div>募集: {dayPostings.length}件</div>
-                            </div>
-                          </div>
+                          {/* ホバー詳細は右側パネルで表示するため非表示に変更 */}
                         </div>
                       )}
                     </>
