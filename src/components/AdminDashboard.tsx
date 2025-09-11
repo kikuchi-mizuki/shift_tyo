@@ -790,7 +790,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 timeSlots.forEach((slot) => {
                   const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot);
                   const slotRequests = dayRequests.filter((r: any) => r.time_slot === slot);
-                  const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0);
+                  const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
                   const availableSlot = slotRequests.length;
 
                   // NGと時間帯一致を満たすリクエストをカウント
@@ -1435,9 +1435,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="text-xs font-medium text-gray-800">全体</div>
                                   <div className="text-xs text-gray-500">
-                                    {dayPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0)}人必要 / 0人応募
+                                    {dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0)}人必要 / 0人応募
                                     <span className="text-red-600 ml-1">
-                                      (不足{dayPostings.reduce((sum: number, p: any) => sum + (p.required_staff || 0), 0)}人)
+                                      (不足{dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0)}人)
                                     </span>
                                   </div>
                                 </div>
