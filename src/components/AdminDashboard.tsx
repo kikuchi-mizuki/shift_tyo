@@ -934,19 +934,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             ) : (
                               // 表示モード - 1行でシンプルに
                               <div className="flex items-start justify-between">
-                                <div className="text-xs text-gray-800 leading-snug break-words pr-2">
-                                  {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'} → {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(shift)})
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <div className="text-xs text-gray-500 whitespace-nowrap">
-                                    {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : shift.time_slot === 'full' ? '終日' : '要相談'}
+                                <div className="flex-1 pr-2">
+                                  <div className="text-xs text-gray-800 leading-snug break-words">
+                                    {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'} → {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(shift)})
                                   </div>
-                                  <button
-                                    onClick={() => handleEditShift(shift)}
-                                    className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
-                                  >
-                                    編集
-                                  </button>
+                                  <div className="mt-1">
+                                    <button
+                                      onClick={() => handleEditShift(shift)}
+                                      className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
+                                    >
+                                      編集
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-500 whitespace-nowrap">
+                                  {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : shift.time_slot === 'full' ? '終日' : '要相談'}
                                 </div>
                               </div>
                             )}
@@ -1071,14 +1073,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             ) : (
                               <div className="flex items-start justify-between">
-                                <div className="text-xs text-gray-800 leading-snug break-words pr-2">
-                                  {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(posting)})
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <div className="text-xs text-gray-500 whitespace-nowrap">
-                                    {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'} / {posting.required_staff}人
+                                <div className="flex-1 pr-2">
+                                  <div className="text-xs text-gray-800 leading-snug break-words">
+                                    {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(posting)})
                                   </div>
-                                  <button onClick={() => beginEditPosting(posting)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
+                                  <div className="mt-1">
+                                    <button onClick={() => beginEditPosting(posting)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-500 whitespace-nowrap">
+                                  {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'} / {posting.required_staff}人
                                 </div>
                               </div>
                             )}
@@ -1172,17 +1176,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             ) : (
                               <div className="flex items-start justify-between">
-                                <div className="text-xs text-gray-800 leading-snug break-words pr-2">
-                                  {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}
+                                <div className="flex-1 pr-2">
+                                  <div className="text-xs text-gray-800 leading-snug break-words">
+                                    {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}
+                                  </div>
+                                  <div className="mt-1">
+                                    <button onClick={() => beginEditRequest(request)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
+                                  </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                  <div className="text-xs text-gray-500 whitespace-nowrap">
+                                <div className="flex items-center space-x-2 whitespace-nowrap">
+                                  <div className="text-xs text-gray-500">
                                     {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'}
                                   </div>
                                   <div className={`text-xs font-medium ${priorityColor}`}>
                                     {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
                                   </div>
-                                  <button onClick={() => beginEditRequest(request)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
                                 </div>
                               </div>
                             )}
