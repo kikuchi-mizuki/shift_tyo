@@ -764,10 +764,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               // マッチング状況を計算
               const calculateMatchingStatus = () => {
                 if (dayAssignedShifts.length > 0) {
-                  return { type: 'confirmed', count: dayAssignedShifts.length } as any;
+                  return { type: 'confirmed', count: dayAssignedShifts.length, requestsCount: dayRequests.length } as any;
                 }
                 if (dayRequests.length === 0 && dayPostings.length === 0) {
-                  return { type: 'empty', count: 0 } as any;
+                  return { type: 'empty', count: 0, requestsCount: 0 } as any;
                 }
 
                 // ヘルパー
@@ -819,10 +819,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 });
 
                 if (totalRequired === 0) {
-                  return totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable } as any : { type: 'empty', count: 0 } as any;
+                  return totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable, requestsCount: totalAvailable } as any : { type: 'empty', count: 0, requestsCount: 0 } as any;
                 }
 
-                return { type: 'summary', count: totalMatched, shortage: totalShortage, excess: totalExcess } as any;
+                return { type: 'summary', count: totalMatched, shortage: totalShortage, excess: totalExcess, requestsCount: totalAvailable } as any;
               };
               
               const matchingStatus = calculateMatchingStatus();
@@ -844,8 +844,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       {/* マッチング状況表示 */}
                       {matchingStatus.type === 'confirmed' && (
                         <div className="relative group">
-                          <div className="text-[8px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
-                            確定 {matchingStatus.count}件
+                          <div className="text-[7px] sm:text-[8px] space-y-0.5">
+                            <div className="text-green-700 bg-green-50 border border-green-200 rounded px-1 inline-block">
+                              確定 {matchingStatus.count}件
+                            </div>
+                            {matchingStatus.requestsCount > 0 && (
+                              <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
+                                希望 {matchingStatus.requestsCount}
+                              </div>
+                            )}
                           </div>
                           
                           {/* ホバー詳細は右側パネルで表示するため非表示に変更 */}
@@ -877,10 +884,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             )}
                             
-                            {/* 希望のみ */}
-                            {matchingStatus.type === 'requests_only' && matchingStatus.count > 0 && (
+                            {/* 希望数（募集がある日も含めて表示） */}
+                            {matchingStatus.requestsCount > 0 && (
                               <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
-                                希望 {matchingStatus.count}
+                                希望 {matchingStatus.requestsCount}
                               </div>
                             )}
                           </div>
