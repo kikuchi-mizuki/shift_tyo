@@ -282,7 +282,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                    // user_profilesテーブルから詳細情報を取得
                    const { data: userProfilesData, error: userProfilesError } = await supabase
                      .from('user_profiles')
-                     .select('id, name, email, ng_list, store_names, address, phone');
+                     .select('*');
                    
                    if (userProfilesError) {
                      logToRailway('Error loading user_profiles:', userProfilesError);
@@ -1984,37 +1984,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   return (
                                     <div className="flex flex-wrap gap-1">
                                       {ngList.map((ngId: string, idx: number) => {
-                                        // 薬局名を取得する関数 - より包括的な検索
+                                        // 薬局名を取得する関数 - 直接的な解決
                                         const getPharmacyName = (id: string) => {
-                                          console.log('薬局名検索開始:', id);
-                                          console.log('userProfiles全体:', userProfiles);
-                                          
                                           // 1. 直接userProfilesから検索
                                           const profile = userProfiles[id];
-                                          console.log('直接検索結果:', profile);
                                           if (profile && profile.name) {
-                                            console.log('直接検索で見つかった名前:', profile.name);
                                             return profile.name;
                                           }
                                           
-                                          // 2. 全プロファイルから検索（user_typeに関係なく）
+                                          // 2. 全プロファイルから検索
                                           for (const [profileId, profileData] of Object.entries(userProfiles)) {
                                             if (profileId === id && (profileData as any).name) {
-                                              console.log('全検索で見つかった名前:', (profileData as any).name);
                                               return (profileData as any).name;
                                             }
                                           }
                                           
-                                          console.log('薬局名が見つからなかった、IDを返す:', id);
-                                          // 3. 見つからない場合はIDを返す
-                                          return id;
+                                          // 3. 見つからない場合は、IDの最初の8文字を表示
+                                          return `薬局ID: ${id.slice(0, 8)}...`;
                                         };
                                         
                                         const pharmacyName = getPharmacyName(ngId);
                                         
                                         return (
                                           <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                            {pharmacyName === ngId ? `薬局ID: ${ngId.slice(0, 8)}...` : pharmacyName}
+                                            {pharmacyName}
                                           </span>
                                         );
                                       })}
