@@ -1554,10 +1554,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     </div>
                                   )}
                                   
-                                  {/* 未マッチングの薬剤師 */}
+                                  {/* 未マッチングの薬剤師（余裕がある場合） */}
                                   {analysis.remainingRequired === 0 && analysis.hasExcess && (
                                     <div className="mt-1">
-                                      <div className="text-xs font-medium text-orange-700 mb-1">⏳ 未マッチング:</div>
+                                      <div className="text-xs font-medium text-orange-700 mb-1">⏳ 未マッチング（余裕）:</div>
                                       {analysis.requests.slice(analysis.totalRequired).map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
@@ -1570,11 +1570,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       })}
                                     </div>
                                   )}
+                                  
+                                  {/* 希望している薬剤師（全員） */}
+                                  {analysis.requests.length > 0 && (
+                                    <div className="mt-2">
+                                      <div className="text-xs font-medium text-cyan-700 mb-1">📋 希望している薬剤師 ({analysis.requests.length}人):</div>
+                                      {analysis.requests.map((request: any, idx: number) => {
+                                        const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                                        const isMatched = analysis.matchedPharmacists.some((mp: any) => mp.id === request.id);
+                                        const matchStatus = isMatched ? '✅' : '❌';
+                                        return (
+                                          <div key={idx} className="flex items-center justify-between">
+                                            <span className="text-xs">{matchStatus} {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                            <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
                                 </>
                               ) : (
-                                <div className="text-xs">
-                                  {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
-                                </div>
+                                <>
+                                  <div className="text-xs">
+                                    {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
+                                  </div>
+                                  {/* 薬剤師のみ応募の場合も希望している薬剤師を表示 */}
+                                  {analysis.requests.length > 0 && (
+                                    <div className="mt-2">
+                                      <div className="text-xs font-medium text-cyan-700 mb-1">📋 希望している薬剤師 ({analysis.requests.length}人):</div>
+                                      {analysis.requests.map((request: any, idx: number) => {
+                                        const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                                        return (
+                                          <div key={idx} className="flex items-center justify-between">
+                                            <span className="text-xs">❌ {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                            <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </>
                               )}
 
                               {/* 不足の薬局一覧 */}
@@ -1597,33 +1634,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             </div>
                           ))}
-                          
-                          {/* 希望している薬剤師（全員） */}
-                          {dayRequests.length > 0 && (
-                            <div className="mt-4 bg-white rounded border px-2 py-1">
-                              <div className="text-xs font-medium text-cyan-700 mb-2">📋 希望している薬剤師 ({dayRequests.length}件)</div>
-                              <div className="space-y-1">
-                                {dayRequests.map((request: any) => {
-                                  const pharmacistProfile = userProfiles[request.pharmacist_id];
-                                  const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
-                                  
-                                  return (
-                                    <div key={request.id} className="flex items-center justify-between">
-                                      <span className="text-xs">{pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}</span>
-                                      <div className="flex items-center space-x-2">
-                                        <span className="text-xs text-gray-500">
-                                          {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : request.time_slot === 'fullday' ? '終日' : '終日'}
-                                        </span>
-                                        <span className={`text-xs font-medium ${priorityColor}`}>
-                                          {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
                           </div>
                         </div>
                       );
