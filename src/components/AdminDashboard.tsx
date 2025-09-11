@@ -759,6 +759,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               // その日の希望と募集を取得（要相談を除外）
               const dayRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult');
               const dayPostings = postings.filter((p: any) => p.date === dateStr && p.time_slot !== 'consult');
+              // 要相談のリクエストを取得
+              const dayConsultRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot === 'consult');
               
               
               // マッチング状況を計算
@@ -853,6 +855,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 希望 {matchingStatus.requestsCount}
                               </div>
                             )}
+                            {dayConsultRequests.length > 0 && (
+                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
+                                相談 {dayConsultRequests.length}
+                              </div>
+                            )}
                           </div>
                           
                           {/* ホバー詳細は右側パネルで表示するため非表示に変更 */}
@@ -888,6 +895,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             {matchingStatus.requestsCount > 0 && (
                               <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
                                 希望 {matchingStatus.requestsCount}
+                              </div>
+                            )}
+                            
+                            {/* 相談数 */}
+                            {dayConsultRequests.length > 0 && (
+                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
+                                相談 {dayConsultRequests.length}
                               </div>
                             )}
                           </div>
@@ -1585,6 +1599,54 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       );
                     }
                     return null;
+                  })()}
+                  
+                  {/* 要相談セクション */}
+                  {(() => {
+                    const dayConsultRequests = requests.filter((r: any) => r.date === selectedDate && r.time_slot === 'consult');
+                    if (dayConsultRequests.length === 0) return null;
+                    
+                    return (
+                      <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                          <h4 className="text-sm font-semibold text-purple-800">
+                            要相談 ({dayConsultRequests.length}件)
+                          </h4>
+                        </div>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {dayConsultRequests.map((request: any) => {
+                            const pharmacistProfile = userProfiles[request.pharmacist_id];
+                            const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                            
+                            return (
+                              <div key={request.id} className="bg-white rounded border px-2 py-1">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 pr-2">
+                                    <div className="text-xs text-gray-800 leading-snug break-words">
+                                      {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}
+                                    </div>
+                                    {request.memo && (
+                                      <div className="text-xs text-gray-600 mt-1 italic">
+                                        📝 {request.memo}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center space-x-2 whitespace-nowrap">
+                                    <div className="text-xs text-purple-600 font-medium">
+                                      相談
+                                    </div>
+                                    <div className={`text-xs font-medium ${priorityColor}`}>
+                                      {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
                   })()}
                 </div>
               </div>
