@@ -908,7 +908,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
                   const matchedSlot = matchedPharmacists.length;
                   const shortageSlot = Math.max(requiredSlot - matchedSlot, 0);
-                  const excessSlot = Math.max(availableSlot - requiredSlot, 0);
+                  const excessSlot = Math.max(availableSlot - matchedSlot, 0);
 
                   // デバッグ用ログ
                   console.log(`時間帯 ${slot}: 必要=${requiredSlot}, 利用可能=${availableSlot}, マッチ=${matchedSlot}, 不足=${shortageSlot}, 余裕=${excessSlot}`);
