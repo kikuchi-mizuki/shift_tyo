@@ -411,27 +411,89 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   };
 
   // 店舗毎のNG薬局管理関数
-  const addStoreNgPharmacy = () => {
+  const addStoreNgPharmacy = async () => {
     if (selectedPharmacyForNg && selectedStoreForNg) {
-      setStoreNgLists(prev => ({
-        ...prev,
+      const newStoreNgLists = {
+        ...storeNgLists,
         [selectedPharmacyForNg]: {
-          ...(prev[selectedPharmacyForNg] || {}),
+          ...(storeNgLists[selectedPharmacyForNg] || {}),
           [selectedStoreForNg]: true
         }
-      }));
+      };
+      
+      setStoreNgLists(newStoreNgLists);
       setSelectedStoreForNg('');
+      
+      // 即座にデータベースに保存
+      try {
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+        const userIdToUse = authUser?.id || user.id;
+        
+        if (!userIdToUse) {
+          console.error('User ID is missing!');
+          alert('ユーザーIDが取得できません。ログインし直してください。');
+          return;
+        }
+        
+        console.log('Saving store NG pharmacy to database:', { pharmacyId: selectedPharmacyForNg, storeName: selectedStoreForNg });
+        const { error: storeNgError } = await storeNgPharmacies.updateStoreNgPharmacies(userIdToUse, newStoreNgLists);
+        
+        if (storeNgError) {
+          console.error('Error saving store NG pharmacy:', storeNgError);
+          alert('店舗毎NG薬局設定の保存に失敗しました');
+          // エラーの場合は状態を元に戻す
+          setStoreNgLists(storeNgLists);
+        } else {
+          console.log('Store NG pharmacy saved successfully');
+        }
+      } catch (error) {
+        console.error('Error in addStoreNgPharmacy:', error);
+        alert('店舗毎NG薬局設定の保存に失敗しました');
+        // エラーの場合は状態を元に戻す
+        setStoreNgLists(storeNgLists);
+      }
     }
   };
 
-  const removeStoreNgPharmacy = (pharmacyId: string, storeName: string) => {
-    setStoreNgLists(prev => ({
-      ...prev,
+  const removeStoreNgPharmacy = async (pharmacyId: string, storeName: string) => {
+    const newStoreNgLists = {
+      ...storeNgLists,
       [pharmacyId]: {
-        ...prev[pharmacyId],
+        ...storeNgLists[pharmacyId],
         [storeName]: false
       }
-    }));
+    };
+    
+    setStoreNgLists(newStoreNgLists);
+    
+    // 即座にデータベースに保存
+    try {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const userIdToUse = authUser?.id || user.id;
+      
+      if (!userIdToUse) {
+        console.error('User ID is missing!');
+        alert('ユーザーIDが取得できません。ログインし直してください。');
+        return;
+      }
+      
+      console.log('Removing store NG pharmacy from database:', { pharmacyId, storeName });
+      const { error: storeNgError } = await storeNgPharmacies.updateStoreNgPharmacies(userIdToUse, newStoreNgLists);
+      
+      if (storeNgError) {
+        console.error('Error removing store NG pharmacy:', storeNgError);
+        alert('店舗毎NG薬局設定の削除に失敗しました');
+        // エラーの場合は状態を元に戻す
+        setStoreNgLists(storeNgLists);
+      } else {
+        console.log('Store NG pharmacy removed successfully');
+      }
+    } catch (error) {
+      console.error('Error in removeStoreNgPharmacy:', error);
+      alert('店舗毎NG薬局設定の削除に失敗しました');
+      // エラーの場合は状態を元に戻す
+      setStoreNgLists(storeNgLists);
+    }
   };
 
   const updateNgListInDatabase = async (newNgList: string[]) => {
@@ -440,8 +502,12 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       console.log('User ID:', user.id);
       console.log('New NG list:', newNgList);
       
+      // 認証ユーザーIDを取得
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const userIdToUse = authUser?.id || user.id;
+      
       // ユーザーIDの確認
-      if (!user?.id) {
+      if (!userIdToUse) {
         console.error('User ID is missing!');
         return;
       }
