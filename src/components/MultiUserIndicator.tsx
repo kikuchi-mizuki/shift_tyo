@@ -74,9 +74,6 @@ export const MultiUserIndicator: React.FC<MultiUserIndicatorProps> = ({ currentU
         className="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors"
       >
         <Users className="w-4 h-4 text-gray-600" />
-        <span className="text-sm text-gray-700">
-          {activeUsers.length}人がオンライン
-        </span>
       </button>
 
       {showDetails && (
