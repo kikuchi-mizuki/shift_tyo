@@ -738,7 +738,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     <div className="space-y-6">
       <MultiUserGuide userType="pharmacy" />
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
-      {/* 左: カレンダー */}
+        {/* 左: カレンダー */}
       <div className="flex-1 bg-white rounded-lg shadow p-4 lg:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
@@ -1319,6 +1319,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             </ul>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
