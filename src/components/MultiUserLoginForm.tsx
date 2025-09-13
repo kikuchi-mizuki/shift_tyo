@@ -74,154 +74,157 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
     setLoading(true);
     setError('');
 
-    try {
-      if (isRegistering) {
-        // 新規登録処理
-        if (password.length < 6) {
-          setError('パスワードは6文字以上である必要があります。');
+    // 非同期でログイン処理を実行（UIのブロックを防ぐ）
+    setTimeout(async () => {
+      try {
+        if (isRegistering) {
+          // 新規登録処理
+          if (password.length < 6) {
+            setError('パスワードは6文字以上である必要があります。');
+            setLoading(false);
+            return;
+          }
+
+          const userData = {
+            name: name,
+            role: userType,
+            user_type: userType
+          };
+
+          console.log('Registering new user:', { email, userType, userData });
+
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: userData
+            }
+          });
+
+          if (error) {
+            if (error.message?.includes('User already registered')) {
+              setError('このメールアドレスは既に登録されています。ログインしてください。');
+            } else {
+              setError(error.message || '新規登録に失敗しました');
+            }
+            return;
+          }
+
+          if (data.user) {
+            setError('');
+            setIsRegistering(false);
+            setEmail('');
+            setPassword('');
+            setName('');
+            // 登録完了メッセージ
+            setError('新規登録が完了しました。ログインしてください。');
+          }
           setLoading(false);
           return;
         }
 
-        const userData = {
-          name: name,
-          role: userType,
-          user_type: userType
-        };
+        // ログイン処理
+        console.log('Attempting login with:', { email, userType });
+        
+        // デモ環境の場合はデモアカウント認証
+        if (!isProduction) {
+          const demoAccount = demoAccounts.find(acc => 
+            acc.email === email && acc.password === password && acc.type === userType
+          );
 
-        console.log('Registering new user:', { email, userType, userData });
+          if (demoAccount) {
+            // デモアカウントでのログイン成功
+            const mockUser = {
+              id: `demo-${demoAccount.type}-${Date.now()}`,
+              email: demoAccount.email
+            };
 
-        const { data, error } = await supabase.auth.signUp({
+            const mockProfile = {
+              id: mockUser.id,
+              name: demoAccount.name,
+              email: demoAccount.email,
+              user_type: demoAccount.type
+            };
+
+            // セッションを追加
+            await addSession(mockUser);
+            
+            // フォームをリセット
+            setEmail('');
+            setPassword('');
+            
+            onLoginSuccess?.();
+            setLoading(false);
+            return;
+          } else {
+            setError('ログインに失敗しました。デモアカウントをご利用ください。');
+            setLoading(false);
+            return;
+          }
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
-          options: {
-            data: userData
-          }
         });
 
         if (error) {
-          if (error.message?.includes('User already registered')) {
-            setError('このメールアドレスは既に登録されています。ログインしてください。');
-          } else {
-            setError(error.message || '新規登録に失敗しました');
-          }
+          console.error('Supabase auth error:', error);
+          setError(error.message);
           return;
         }
+
+        console.log('Supabase auth successful:', data.user?.id);
 
         if (data.user) {
-          setError('');
-          setIsRegistering(false);
-          setEmail('');
-          setPassword('');
-          setName('');
-          // 登録完了メッセージ
-          setError('新規登録が完了しました。ログインしてください。');
-        }
-        setLoading(false);
-        return;
-      }
+          // ユーザープロフィールを取得してユーザータイプを確認
+          console.log('Fetching user profile for:', data.user.id);
+          const { data: profile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
 
-      // ログイン処理
-      console.log('Attempting login with:', { email, userType });
-      
-      // デモ環境の場合はデモアカウント認証
-      if (!isProduction) {
-        const demoAccount = demoAccounts.find(acc => 
-          acc.email === email && acc.password === password && acc.type === userType
-        );
+          if (profileError) {
+            console.error('Profile fetch error:', profileError);
+            setError(`ユーザープロフィールの取得に失敗しました: ${profileError.message}`);
+            return;
+          }
 
-        if (demoAccount) {
-          // デモアカウントでのログイン成功
-          const mockUser = {
-            id: `demo-${demoAccount.type}-${Date.now()}`,
-            email: demoAccount.email
-          };
-
-          const mockProfile = {
-            id: mockUser.id,
-            name: demoAccount.name,
-            email: demoAccount.email,
-            user_type: demoAccount.type
-          };
+          console.log('User profile:', profile);
+          const actualUserType = profile.user_type as 'pharmacist' | 'pharmacy' | 'admin';
+          
+          // 選択されたユーザータイプと実際のユーザータイプが一致するかチェック
+          if (actualUserType !== userType) {
+            setError(`このアカウントは${getUserTypeLabel(actualUserType)}用です。正しいユーザータイプを選択してください。`);
+            console.error('User type mismatch:', { selected: userType, actual: actualUserType });
+            return;
+          }
 
           // セッションを追加
-          await addSession(mockUser);
-          
-          // フォームをリセット
-          setEmail('');
-          setPassword('');
-          
-          onLoginSuccess?.();
-          setLoading(false);
-          return;
-        } else {
-          setError('ログインに失敗しました。デモアカウントをご利用ください。');
-          setLoading(false);
-          return;
+          try {
+            console.log('Adding session for user:', data.user.id);
+            await addSession(data.user);
+            
+            // フォームをリセット
+            setEmail('');
+            setPassword('');
+            
+            console.log('Login successful, calling onLoginSuccess');
+            onLoginSuccess?.();
+          } catch (sessionError) {
+            console.error('Session creation error:', sessionError);
+            setError(`セッションの作成に失敗しました: ${sessionError.message || 'Unknown error'}`);
+            return;
+          }
         }
+      } catch (error) {
+        console.error('Login error:', error);
+        setError('ログインに失敗しました');
+      } finally {
+        setLoading(false);
       }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error('Supabase auth error:', error);
-        setError(error.message);
-        return;
-      }
-
-      console.log('Supabase auth successful:', data.user?.id);
-
-      if (data.user) {
-        // ユーザープロフィールを取得してユーザータイプを確認
-        console.log('Fetching user profile for:', data.user.id);
-        const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Profile fetch error:', profileError);
-          setError(`ユーザープロフィールの取得に失敗しました: ${profileError.message}`);
-          return;
-        }
-
-        console.log('User profile:', profile);
-        const actualUserType = profile.user_type as 'pharmacist' | 'pharmacy' | 'admin';
-        
-        // 選択されたユーザータイプと実際のユーザータイプが一致するかチェック
-        if (actualUserType !== userType) {
-          setError(`このアカウントは${getUserTypeLabel(actualUserType)}用です。正しいユーザータイプを選択してください。`);
-          console.error('User type mismatch:', { selected: userType, actual: actualUserType });
-          return;
-        }
-
-        // セッションを追加
-        try {
-          console.log('Adding session for user:', data.user.id);
-          await addSession(data.user);
-          
-          // フォームをリセット
-          setEmail('');
-          setPassword('');
-          
-          console.log('Login successful, calling onLoginSuccess');
-          onLoginSuccess?.();
-        } catch (sessionError) {
-          console.error('Session creation error:', sessionError);
-          setError(`セッションの作成に失敗しました: ${sessionError.message || 'Unknown error'}`);
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('ログインに失敗しました');
-    } finally {
-      setLoading(false);
-    }
+    }, 0); // 非同期実行
   };
 
   const getUserTypeLabel = (type: 'pharmacist' | 'pharmacy' | 'admin') => {
@@ -435,21 +438,36 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           <h3 className="text-lg font-semibold text-gray-800 mb-4">診断ツール</h3>
           <div className="space-y-2">
             <button
-              onClick={() => {
-                console.log('=== MANUAL DIAGNOSTICS ===');
-                console.log('Current form state:', { email, password, userType, isRegistering });
-                console.log('Browser info:', {
-                  userAgent: navigator.userAgent,
-                  platform: navigator.platform,
-                  cookieEnabled: navigator.cookieEnabled,
-                  localStorage: typeof(Storage) !== "undefined"
-                });
-                console.log('Environment:', {
-                  isProduction,
-                  supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
-                  supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
-                });
-                alert('診断情報をコンソールに出力しました。F12キーで開発者ツールを開いて確認してください。');
+              onClick={async () => {
+                try {
+                  console.log('=== MANUAL DIAGNOSTICS START ===');
+                  
+                  // 非同期で診断情報を出力
+                  setTimeout(() => {
+                    console.log('Current form state:', { email, password, userType, isRegistering });
+                    console.log('Browser info:', {
+                      userAgent: navigator.userAgent,
+                      platform: navigator.platform,
+                      cookieEnabled: navigator.cookieEnabled,
+                      localStorage: typeof(Storage) !== "undefined"
+                    });
+                    console.log('Environment:', {
+                      isProduction,
+                      supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
+                      supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
+                    });
+                    console.log('=== MANUAL DIAGNOSTICS END ===');
+                  }, 100);
+                  
+                  // アラートも非同期で表示
+                  setTimeout(() => {
+                    alert('診断情報をコンソールに出力しました。F12キーで開発者ツールを開いて確認してください。');
+                  }, 200);
+                  
+                } catch (error) {
+                  console.error('Diagnostic error:', error);
+                  alert('診断中にエラーが発生しました: ' + error.message);
+                }
               }}
               className="w-full bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700"
             >
