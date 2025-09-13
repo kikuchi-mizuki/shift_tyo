@@ -145,6 +145,14 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         console.log('My shifts count:', assignedData?.length || 0);
         if (assignedData && assignedData.length > 0) {
           console.log('My shifts details:', assignedData.map((s: any) => ({ date: s.date, status: s.status, pharmacy_id: s.pharmacy_id })));
+          console.log('Pharmacist shifts store_name analysis:', assignedData.map((shift: any) => ({
+            id: shift.id,
+            date: shift.date,
+            store_name: shift.store_name,
+            memo: shift.memo,
+            has_store_name: !!shift.store_name,
+            has_memo: !!shift.memo
+          })));
           console.log(`あなたの確定シフト: ${assignedData.length}件\n日付: ${assignedData.map((s: any) => s.date).join(', ')}`);
         } else {
           console.log('あなたの確定シフトは0件です');

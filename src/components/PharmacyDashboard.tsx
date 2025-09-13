@@ -141,6 +141,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         setConfirmedShifts([]);
       } else {
         console.log('Loaded confirmed shifts:', assignedData);
+        console.log('Confirmed shifts store_name analysis:', assignedData?.map((shift: any) => ({
+          id: shift.id,
+          date: shift.date,
+          store_name: shift.store_name,
+          memo: shift.memo,
+          has_store_name: !!shift.store_name,
+          has_memo: !!shift.memo
+        })));
         setConfirmedShifts(assignedData || []);
       }
       

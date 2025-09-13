@@ -652,7 +652,11 @@ export const shifts = {
           time_slot: shift.time_slot,
           store_name: shift.store_name,
           memo: shift.memo,
-          status: shift.status
+          status: shift.status,
+          store_name_type: typeof shift.store_name,
+          store_name_length: shift.store_name ? shift.store_name.length : 0,
+          memo_type: typeof shift.memo,
+          memo_length: shift.memo ? shift.memo.length : 0
         });
       });
       
@@ -674,7 +678,12 @@ export const shifts = {
           console.log(`Saved shift ${index}:`, {
             id: savedShift.id,
             store_name: savedShift.store_name,
-            memo: savedShift.memo
+            memo: savedShift.memo,
+            store_name_type: typeof savedShift.store_name,
+            store_name_length: savedShift.store_name ? savedShift.store_name.length : 0,
+            memo_type: typeof savedShift.memo,
+            memo_length: savedShift.memo ? savedShift.memo.length : 0,
+            all_columns: Object.keys(savedShift)
           });
         });
       }
