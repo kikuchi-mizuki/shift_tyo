@@ -749,11 +749,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   {confirmedShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`).map((shift: any, index: number) => (
                     <div key={`confirmed-${index}`} className="relative group">
                       <div className="text-[8px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
-                        ✓{shift.time_slot === 'morning' ? '午前' : 
-                          shift.time_slot === 'afternoon' ? '午後' : 
-                          shift.time_slot === 'full' ? '終日' : 
-                          shift.time_slot === 'consult' ? '要相談' : shift.time_slot}
-                        {shift.required_staff}人
+                        確定
                       </div>
                       
                       {/* マウスオーバーで表示される詳細情報 */}
@@ -796,7 +792,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Plus className="w-5 h-5" />
-              <h2 className="text-xl font-semibold">薬剤師募集登録</h2>
+              <h2 className="text-xl font-semibold">
+                {isSystemConfirmed ? '確定シフト詳細' : '薬剤師募集登録'}
+              </h2>
             </div>
             <button
               onClick={() => setShowProfileEdit(!showProfileEdit)}
@@ -805,7 +803,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               プロフィール編集
             </button>
           </div>
-          <p className="text-xs text-blue-100 mt-1">必要な薬剤師の募集条件を設定してください</p>
+          <p className="text-xs text-blue-100 mt-1">
+            {isSystemConfirmed ? '確定されたシフトの詳細を確認できます' : '必要な薬剤師の募集条件を設定してください'}
+          </p>
         </div>
         <div className="p-4 lg:p-6 space-y-6">
           {/* プロフィール編集フォーム */}
@@ -949,6 +949,34 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               >
                 更新
               </button>
+            </div>
+          )}
+          
+          {/* 確定シフトの詳細表示 */}
+          {isSystemConfirmed && confirmedShifts.length > 0 && (
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h3 className="text-sm font-medium text-green-800 mb-3">確定シフト一覧</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {confirmedShifts.map((shift: any, index: number) => {
+                  const pharmacistProfile = userProfiles[shift.pharmacist_id];
+                  return (
+                    <div key={index} className="bg-white p-3 rounded border border-green-200">
+                      <div className="text-sm font-medium text-gray-800">
+                        {new Date(shift.date).getMonth() + 1}月{new Date(shift.date).getDate()}日
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        時間: {shift.time_slot === 'morning' || shift.time_slot === 'am' ? '午前 (9:00-13:00)' :
+                              shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '午後 (13:00-18:00)' :
+                              shift.time_slot === 'full' ? '終日 (9:00-18:00)' :
+                              shift.time_slot === 'consult' ? '要相談' : '夜間'}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師名未設定'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
           

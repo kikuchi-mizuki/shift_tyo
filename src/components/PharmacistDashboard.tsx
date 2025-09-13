@@ -512,7 +512,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                     {hasMyShift(day) && (
                       <div className="relative group">
                         <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
-                          割当
+                          確定
                         </div>
                         
                         {/* マウスオーバーで表示される詳細情報 */}
@@ -564,7 +564,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         <div className="w-full lg:w-96 bg-white rounded-lg shadow">
                       <div className="p-4 lg:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">シフト希望登録</h2>
+              <h2 className="text-lg font-semibold">
+                {isSystemConfirmed ? '確定シフト詳細' : 'シフト希望登録'}
+              </h2>
               <button
                 onClick={() => setShowProfileEdit(!showProfileEdit)}
                 className="text-sm text-blue-600 hover:text-blue-800"
@@ -624,6 +626,34 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+            
+            {/* 確定シフトの詳細表示 */}
+            {isSystemConfirmed && myShifts.length > 0 && (
+              <div className="mb-6 p-4 bg-green-50 rounded-lg">
+                <h3 className="text-sm font-medium text-green-800 mb-3">確定シフト一覧</h3>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {myShifts.map((shift: any, index: number) => {
+                    const pharmacyProfile = userProfiles[shift.pharmacy_id];
+                    return (
+                      <div key={index} className="bg-white p-3 rounded border border-green-200">
+                        <div className="text-sm font-medium text-gray-800">
+                          {new Date(shift.date).getMonth() + 1}月{new Date(shift.date).getDate()}日
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          時間: {shift.time_slot === 'morning' || shift.time_slot === 'am' ? '午前 (9:00-13:00)' :
+                                shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '午後 (13:00-18:00)' :
+                                shift.time_slot === 'full' ? '終日 (9:00-18:00)' :
+                                shift.time_slot === 'consult' ? '要相談' : '夜間'}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '薬局名未設定'}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
