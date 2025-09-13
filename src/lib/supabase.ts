@@ -563,6 +563,19 @@ export const shifts = {
       console.log('Preparing to upsert into assigned_shifts table...');
       console.log('Data to upsert:', JSON.stringify(confirmedShiftsData, null, 2));
       
+      // 各シフトのstore_nameを詳細ログ
+      confirmedShiftsData.forEach((shift, index) => {
+        console.log(`Shift ${index}:`, {
+          pharmacist_id: shift.pharmacist_id,
+          pharmacy_id: shift.pharmacy_id,
+          date: shift.date,
+          time_slot: shift.time_slot,
+          store_name: shift.store_name,
+          memo: shift.memo,
+          status: shift.status
+        });
+      });
+      
       // upsertを使用して重複を自動的に処理
       const { data, error } = await supabase
         .from('assigned_shifts')
@@ -573,6 +586,18 @@ export const shifts = {
         .select();
       
       console.log('Supabase upsert result:', { data, error });
+      
+      // 保存されたデータのstore_nameを確認
+      if (data && data.length > 0) {
+        console.log('Saved data store_name values:');
+        data.forEach((savedShift, index) => {
+          console.log(`Saved shift ${index}:`, {
+            id: savedShift.id,
+            store_name: savedShift.store_name,
+            memo: savedShift.memo
+          });
+        });
+      }
       
       // テーブルが存在しない場合のエラーハンドリング
       if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
