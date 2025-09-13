@@ -69,18 +69,23 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
       }
 
       // ログイン処理
+      console.log('Attempting login with:', { email, userType });
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Supabase auth error:', error);
         setError(error.message);
         return;
       }
 
+      console.log('Supabase auth successful:', data.user?.id);
+
       if (data.user) {
         // ユーザープロフィールを取得してユーザータイプを確認
+        console.log('Fetching user profile for:', data.user.id);
         const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
@@ -88,10 +93,12 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           .single();
 
         if (profileError) {
+          console.error('Profile fetch error:', profileError);
           setError('ユーザープロフィールの取得に失敗しました');
           return;
         }
 
+        console.log('User profile:', profile);
         const actualUserType = profile.user_type as 'pharmacist' | 'pharmacy' | 'admin';
         
         // 選択されたユーザータイプと実際のユーザータイプが一致するかチェック
@@ -101,13 +108,19 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
         }
 
         // セッションを追加
-        await addSession(data.user);
-        
-        // フォームをリセット
-        setEmail('');
-        setPassword('');
-        
-        onLoginSuccess?.();
+        try {
+          await addSession(data.user);
+          
+          // フォームをリセット
+          setEmail('');
+          setPassword('');
+          
+          onLoginSuccess?.();
+        } catch (sessionError) {
+          console.error('Session creation error:', sessionError);
+          setError('セッションの作成に失敗しました。再度お試しください。');
+          return;
+        }
       }
     } catch (error) {
       console.error('Login error:', error);

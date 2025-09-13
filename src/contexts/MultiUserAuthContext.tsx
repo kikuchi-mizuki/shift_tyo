@@ -81,7 +81,7 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
 
       if (error) {
         console.error('Error fetching user profile:', error);
-        return;
+        throw new Error(`ユーザープロフィールの取得に失敗しました: ${error.message}`);
       }
 
       const userType = profile.user_type as 'pharmacist' | 'pharmacy' | 'admin';
@@ -106,6 +106,7 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
       }
     } catch (error) {
       console.error('Error adding session:', error);
+      throw error; // エラーを再スローして呼び出し元で処理できるようにする
     }
   };
 
