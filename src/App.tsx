@@ -1,6 +1,5 @@
 import React, { useState, useEffect, Component, ReactNode } from 'react';
 import { supabase, auth } from './lib/supabase';
-import LoginForm from './components/LoginForm';
 // 遅延読み込みで循環依存や初期化順の問題を回避
 const PharmacistDashboard = React.lazy(() => 
   import('./components/PharmacistDashboard').catch(error => {
@@ -38,7 +37,6 @@ const UserManagement = React.lazy(() =>
     return { default: () => <div className="p-4 text-red-600">UserManagementの読み込みに失敗しました。ページを再読み込みしてください。</div> };
   })
 );
-import { useAuth } from './hooks/useAuth';
 import { MultiUserIndicator } from './components/MultiUserIndicator';
 import { MultiUserAuthProvider, useMultiUserAuth } from './contexts/MultiUserAuthContext';
 import { MultiUserLoginForm } from './components/MultiUserLoginForm';
@@ -111,24 +109,12 @@ class ErrorBoundary extends Component<
 
 function AppContent() {
   const { currentUserType, getCurrentUser, activeSessions } = useMultiUserAuth();
-  const { user, userProfile, loading, signOut } = useAuth();
   
   console.log('App: Multi-user auth state:', {
     currentUserType,
-    activeSessions: activeSessions.length,
-    hasUser: !!user
+    activeSessions: activeSessions.length
   });
   
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
 
   // アクティブセッションがない場合はマルチユーザーログイン画面を表示
   if (activeSessions.length === 0) {
@@ -152,7 +138,7 @@ function AppContent() {
           <div className="text-xs text-yellow-700 space-y-1">
             <div>現在のユーザータイプ: {effectiveUserType}</div>
             <div>アクティブセッション数: {activeSessions.length}</div>
-            <div>現在のユーザー: {currentUser?.name}</div>
+            <div>現在のユーザー: {getCurrentUser()?.name}</div>
           </div>
         </div>
       )}
@@ -170,10 +156,10 @@ function AppContent() {
               </h1>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <MultiUserIndicator currentUser={currentUser} />
+              <MultiUserIndicator currentUser={getCurrentUser()} />
               <UserTypeSwitcher />
               <span className="text-xs sm:text-sm text-gray-600 truncate max-w-32 sm:max-w-none">
-                {currentUser?.email}
+                {getCurrentUser()?.email}
               </span>
               <span className="text-xs sm:text-sm text-gray-500">
                 {effectiveUserType === 'pharmacist' ? '薬剤師' : effectiveUserType === 'pharmacy' ? '薬局' : effectiveUserType === 'admin' ? '管理' : 'ユーザー'}
@@ -188,13 +174,13 @@ function AppContent() {
         <ErrorBoundary>
           <React.Suspense fallback={<div className="p-6 text-gray-600">読み込み中...</div>}>
             {effectiveUserType === 'pharmacist' && (
-              <PharmacistDashboard user={currentUser} />
+              <PharmacistDashboard user={getCurrentUser()} />
             )}
             {effectiveUserType === 'pharmacy' && (
-              <PharmacyDashboard user={currentUser} />
+              <PharmacyDashboard user={getCurrentUser()} />
             )}
             {effectiveUserType === 'admin' && (
-              <AdminDashboard user={currentUser} />
+              <AdminDashboard user={getCurrentUser()} />
             )}
           </React.Suspense>
         </ErrorBoundary>

@@ -59,6 +59,23 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
     }
   }, []);
 
+  // Supabase認証状態の監視
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.id);
+      
+      if (event === 'SIGNED_OUT') {
+        // ログアウト時は全てのセッションをクリア
+        setActiveSessions([]);
+        setCurrentUserType(null);
+        localStorage.removeItem('multi_user_sessions');
+        localStorage.removeItem('current_user_type');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // セッション情報をローカルストレージに保存
   useEffect(() => {
     localStorage.setItem('multi_user_sessions', JSON.stringify(activeSessions));
