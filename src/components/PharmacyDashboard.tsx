@@ -53,9 +53,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [ngList, setNgList] = useState<string[]>([]); // NG薬剤師ID（薬局全体）
-  const [selectedNgPharmacistId, setSelectedNgPharmacistId] = useState('');
+  const [selectedNgPharmacistId, setSelectedNgPharmacistId] = useState(''); // 薬局全体用
   const [storeNgLists, setStoreNgLists] = useState<{[storeName: string]: string[]}>({}); // 店舗毎のNG薬剤師ID
   const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
+  const [selectedStoreNgPharmacistId, setSelectedStoreNgPharmacistId] = useState(''); // 店舗毎用
   const [allPharmacists, setAllPharmacists] = useState<any[]>([]);
 
   useEffect(() => {
@@ -482,12 +483,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   // 店舗毎のNG薬剤師管理関数
   const addStoreNgPharmacist = () => {
-    if (selectedStoreForNg && selectedNgPharmacistId) {
+    if (selectedStoreForNg && selectedStoreNgPharmacistId) {
       setStoreNgLists(prev => ({
         ...prev,
-        [selectedStoreForNg]: [...(prev[selectedStoreForNg] || []), selectedNgPharmacistId]
+        [selectedStoreForNg]: [...(prev[selectedStoreForNg] || []), selectedStoreNgPharmacistId]
       }));
-      setSelectedNgPharmacistId('');
+      setSelectedStoreNgPharmacistId('');
     }
   };
 
@@ -868,8 +869,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     </select>
                     <div className="flex space-x-2">
                       <select
-                        value={selectedNgPharmacistId}
-                        onChange={(e) => setSelectedNgPharmacistId(e.target.value)}
+                        value={selectedStoreNgPharmacistId}
+                        onChange={(e) => setSelectedStoreNgPharmacistId(e.target.value)}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       >
                         <option value="">薬剤師を選択</option>
