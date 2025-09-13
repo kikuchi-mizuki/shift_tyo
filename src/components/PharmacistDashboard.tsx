@@ -96,6 +96,16 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       }
       
       // 直接Supabaseから確定シフトを取得
+      console.log('Current user ID:', user.id);
+      console.log('User object:', user);
+      
+      // まず全てのassigned_shiftsを取得してデバッグ
+      const { data: allAssignedData, error: allAssignedError } = await supabase
+        .from('assigned_shifts')
+        .select('*');
+      console.log('All assigned shifts:', allAssignedData);
+      console.log('All assigned shifts error:', allAssignedError);
+      
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
         .select('*')
