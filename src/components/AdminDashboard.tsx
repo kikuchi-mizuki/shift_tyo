@@ -775,6 +775,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
 
       alert(`${date}の確定シフトを取り消しました`);
+      
+      // システム状態を未確定に戻す
+      setSystemStatus('pending');
+      setLastUpdated(new Date());
+      
       loadAll();
     } catch (error) {
       console.error('Error in handleCancelConfirmedShifts:', error);
@@ -801,6 +806,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
 
       alert('全ての確定シフトを取り消しました');
+      
+      // システム状態を未確定に戻す
+      setSystemStatus('pending');
+      setLastUpdated(new Date());
+      
       loadAll();
     } catch (error) {
       console.error('Error in handleCancelAllConfirmedShifts:', error);
