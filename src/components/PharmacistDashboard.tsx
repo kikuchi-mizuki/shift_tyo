@@ -745,7 +745,8 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                     {hasMyShift(day) && (
                       <div className="relative group">
                         <div className="text-[9px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 py-0.5 mt-1 inline-block cursor-pointer">
-                          確定
+                          <span className="sm:hidden">確</span>
+                          <span className="hidden sm:inline">確定</span>
                         </div>
                         
                         {/* マウスオーバーで表示される詳細情報 */}
@@ -782,9 +783,15 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                       const dayReqs = myRequests.filter((r: any) => r.date === dateStr);
                       const hasConsult = dayReqs.some((r: any) => r.time_slot === 'consult' || r.time_slot === 'negotiable');
                       return hasConsult ? (
-                        <div className="text-[9px] sm:text-[10px] text-purple-700 bg-purple-50 border border-purple-200 rounded px-1 py-0.5 mt-1 inline-block">相談</div>
+                        <div className="text-[9px] sm:text-[10px] text-purple-700 bg-purple-50 border border-purple-200 rounded px-1 py-0.5 mt-1 inline-block">
+                          <span className="sm:hidden">相</span>
+                          <span className="hidden sm:inline">相談</span>
+                        </div>
                       ) : (
-                        <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">希望</div>
+                        <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">
+                          <span className="sm:hidden">希</span>
+                          <span className="hidden sm:inline">希望</span>
+                        </div>
                       );
                     })()}
                   </>

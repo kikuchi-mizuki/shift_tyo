@@ -1210,11 +1210,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         <div className="relative group">
                           <div className="text-[7px] sm:text-[8px] space-y-0.5">
                             <div className="text-green-700 bg-green-50 border border-green-200 rounded px-1 inline-block">
-                              確定 {matchingStatus.count}件
+                              <span className="sm:hidden">確{matchingStatus.count}</span>
+                              <span className="hidden sm:inline">確定 {matchingStatus.count}件</span>
                             </div>
                             {dayConsultRequests.length > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                相談 {dayConsultRequests.length}
+                                <span className="sm:hidden">相{dayConsultRequests.length}</span>
+                                <span className="hidden sm:inline">相談 {dayConsultRequests.length}</span>
                               </div>
                             )}
                           </div>
@@ -1230,21 +1232,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             {/* マッチング数（募集がある日だけ表示） */}
                             {matchingStatus.type !== 'requests_only' && matchingStatus.count > 0 && (
                               <div className="text-green-600 bg-green-50 border border-green-200 rounded px-1 inline-block">
-                                マッチ {matchingStatus.count}
+                                <span className="sm:hidden">マ{matchingStatus.count}</span>
+                                <span className="hidden sm:inline">マッチ {matchingStatus.count}</span>
                               </div>
                             )}
                             
                             {/* 不足数 */}
                             {matchingStatus.shortage > 0 && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
-                                不足 {matchingStatus.shortage}
+                                <span className="sm:hidden">不{matchingStatus.shortage}</span>
+                                <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
                               </div>
                             )}
                             
                             {/* 余裕数 */}
                             {typeof matchingStatus.excess === 'number' && matchingStatus.excess > 0 && (
                               <div className="text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-1 inline-block">
-                                余裕 {matchingStatus.excess}
+                                <span className="sm:hidden">余{matchingStatus.excess}</span>
+                                <span className="hidden sm:inline">余裕 {matchingStatus.excess}</span>
                               </div>
                             )}
                             
@@ -1252,7 +1257,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             {/* 相談数 */}
                             {dayConsultRequests.length > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                相談 {dayConsultRequests.length}
+                                <span className="sm:hidden">相{dayConsultRequests.length}</span>
+                                <span className="hidden sm:inline">相談 {dayConsultRequests.length}</span>
                               </div>
                             )}
                           </div>

@@ -782,7 +782,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                       return (
                         <div className="relative group">
                           <div className="text-[9px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 py-0.5 mt-1 inline-block cursor-pointer">
-                            確定{dayConfirmedShifts.length}件
+                            <span className="sm:hidden">確{dayConfirmedShifts.length}</span>
+                            <span className="hidden sm:inline">確定{dayConfirmedShifts.length}件</span>
                           </div>
                           
                           {/* マウスオーバーで表示される詳細情報 */}
@@ -815,7 +816,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     if (hasConfirmed) return null;
                     const count = myShifts.filter((s: any) => s.date === dateStr).length;
                     return count > 0 ? (
-                      <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">募集 {count}件</div>
+                      <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">
+                        <span className="sm:hidden">募{count}</span>
+                        <span className="hidden sm:inline">募集 {count}件</span>
+                      </div>
                     ) : null;
                   })()}
                 </>
