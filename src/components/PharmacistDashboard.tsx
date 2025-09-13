@@ -599,7 +599,8 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                       </div>
                     )}
                     {/* 確定シフトがない場合のみ希望バッジを表示（要相談は「相談」パッチ） */}
-                    {!hasMyShift(day) && hasMyRequest(day) && (() => {
+                    {/* シフトが確定済みの場合は希望・相談パッチを非表示 */}
+                    {!isSystemConfirmed && !hasMyShift(day) && hasMyRequest(day) && (() => {
                       const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
                       const dayReqs = myRequests.filter((r: any) => r.date === dateStr);
                       const hasConsult = dayReqs.some((r: any) => r.time_slot === 'consult' || r.time_slot === 'negotiable');

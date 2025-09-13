@@ -770,7 +770,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     </div>
                   ))}
                   {/* 募集中シフト数（青色）を表示（確定シフトがない場合） */}
-                  {(() => {
+                  {/* シフトが確定済みの場合は募集パッチを非表示 */}
+                  {!isSystemConfirmed && (() => {
                     const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                     const hasConfirmed = confirmedShifts.some((s: any) => s.date === dateStr);
                     if (hasConfirmed) return null;
