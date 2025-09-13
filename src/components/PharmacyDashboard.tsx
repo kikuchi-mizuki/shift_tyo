@@ -503,14 +503,34 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('=== handlePost START ===');
     console.log('handlePost called', { selectedDates, timeSlot, requiredStaff, memo });
     
+    // バリデーション
+    if (selectedDates.length === 0) {
+      alert('募集日を選択してください');
+      return;
+    }
+    if (!timeSlot) {
+      alert('時間帯を選択してください');
+      return;
+    }
+    if (!requiredStaff) {
+      alert('必要人数を選択してください');
+      return;
+    }
+    
     // 既存の募集があるかチェック（同日・同店舗名で判断）
     console.log('=== HANDLEPOST DEBUG ===');
     console.log('selectedDates:', selectedDates);
-    console.log('selectedStoreName:', selectedStoreName);
+    console.log('singleStoreName:', singleStoreName);
+    console.log('batchStoreNames:', batchStoreNames);
     console.log('myShifts:', myShifts);
     
     // 追加対象（バッチ指定があればそれ、無ければ単一選択）
     const targets = (batchStoreNames.length > 0 ? batchStoreNames : [singleStoreName]).map(n => (n || '').trim());
+    
+    if (targets.length === 0 || targets.every(t => t === '')) {
+      alert('店舗名を選択してください');
+      return;
+    }
 
     // 既存同日・同店舗の募集を検出（更新対象）と、新規作成対象を振り分け
     const updates: { id: string, storeName: string }[] = [];
@@ -595,7 +615,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       if (!myShiftsError) setMyShifts(myShiftsData || []);
     } catch (e) {
       console.error('Exception in handlePost:', e);
-      alert('募集の登録/更新に失敗しました');
+      console.error('Error details:', {
+        selectedDates,
+        timeSlot,
+        requiredStaff,
+        memo,
+        targets,
+        updates,
+        creates
+      });
+      alert(`募集の登録/更新に失敗しました: ${(e as any).message || 'Unknown error'}`);
     }
   };
 
