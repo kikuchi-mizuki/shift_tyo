@@ -13,6 +13,8 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
   const [userType, setUserType] = useState<'pharmacist' | 'pharmacy' | 'admin'>('pharmacist');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [name, setName] = useState('');
   
   const { addSession, isLoggedIn, activeSessions } = useMultiUserAuth();
 
@@ -22,6 +24,51 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
     setError('');
 
     try {
+      if (isRegistering) {
+        // 新規登録処理
+        if (password.length < 6) {
+          setError('パスワードは6文字以上である必要があります。');
+          setLoading(false);
+          return;
+        }
+
+        const userData = {
+          name: name,
+          role: userType,
+          user_type: userType
+        };
+
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: userData
+          }
+        });
+
+        if (error) {
+          if (error.message?.includes('User already registered')) {
+            setError('このメールアドレスは既に登録されています。ログインしてください。');
+          } else {
+            setError(error.message || '新規登録に失敗しました');
+          }
+          return;
+        }
+
+        if (data.user) {
+          setError('');
+          setIsRegistering(false);
+          setEmail('');
+          setPassword('');
+          setName('');
+          // 登録完了メッセージ
+          setError('新規登録が完了しました。ログインしてください。');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // ログイン処理
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -122,6 +169,25 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
 
         {/* ログインフォーム */}
         <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {isRegistering ? '新規登録' : 'ログイン'}
+            </h2>
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegistering(!isRegistering);
+                setError('');
+                setEmail('');
+                setPassword('');
+                setName('');
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              {isRegistering ? 'ログインに戻る' : '新規登録'}
+            </button>
+          </div>
+
           <form onSubmit={handleLogin} className="space-y-4">
             {/* ユーザータイプ選択 */}
             <div>
@@ -134,11 +200,11 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
                     key={type}
                     type="button"
                     onClick={() => setUserType(type)}
-                    disabled={isLoggedIn(type)}
+                    disabled={isLoggedIn(type) && !isRegistering}
                     className={`flex items-center justify-center space-x-2 p-3 rounded-lg border transition-colors ${
                       userType === type
                         ? 'bg-blue-600 text-white border-blue-600'
-                        : isLoggedIn(type)
+                        : isLoggedIn(type) && !isRegistering
                         ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     }`}
@@ -149,6 +215,23 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
                 ))}
               </div>
             </div>
+
+            {/* 名前（新規登録時のみ） */}
+            {isRegistering && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  名前・企業名
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required={isRegistering}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="お名前または企業名を入力"
+                />
+              </div>
+            )}
 
             {/* メールアドレス */}
             <div>
@@ -178,6 +261,9 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="パスワード"
               />
+              {isRegistering && (
+                <p className="text-xs text-gray-500 mt-1">パスワードは6文字以上で入力してください</p>
+              )}
             </div>
 
             {/* エラーメッセージ */}
@@ -190,9 +276,9 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             {/* ログインボタン */}
             <button
               type="submit"
-              disabled={loading || isLoggedIn(userType)}
+              disabled={loading || (isLoggedIn(userType) && !isRegistering)}
               className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium transition-colors ${
-                loading || isLoggedIn(userType)
+                loading || (isLoggedIn(userType) && !isRegistering)
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
@@ -200,10 +286,12 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
               <LogIn className="w-4 h-4" />
               <span>
                 {loading 
-                  ? 'ログイン中...' 
-                  : isLoggedIn(userType) 
+                  ? (isRegistering ? '登録中...' : 'ログイン中...')
+                  : isLoggedIn(userType) && !isRegistering
                     ? `${getUserTypeLabel(userType)}でログイン済み`
-                    : `${getUserTypeLabel(userType)}としてログイン`
+                    : isRegistering
+                      ? `${getUserTypeLabel(userType)}として新規登録`
+                      : `${getUserTypeLabel(userType)}としてログイン`
                 }
               </span>
             </button>
@@ -214,6 +302,9 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
         <div className="text-center text-sm text-gray-500">
           <p>複数のユーザータイプで同時にログインできます。</p>
           <p>各ユーザータイプは独立して管理されます。</p>
+          {isRegistering && (
+            <p className="mt-2 text-blue-600">新規登録後は、ログインしてご利用ください。</p>
+          )}
         </div>
       </div>
     </div>
