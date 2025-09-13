@@ -704,6 +704,18 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                         const m = shift.memo.match(/\[store:([^\]]+)\]/);
                         if (m && m[1]) fromMemo = m[1];
                       }
+                      
+                      // デバッグ情報
+                      console.log('Pharmacist shift data for store name:', {
+                        shift_id: shift.id,
+                        date: shift.date,
+                        store_name: shift.store_name,
+                        memo: shift.memo,
+                        direct: direct,
+                        fromMemo: fromMemo,
+                        result: direct || fromMemo || '（店舗名未設定）'
+                      });
+                      
                       return direct || fromMemo || '（店舗名未設定）';
                     };
                     

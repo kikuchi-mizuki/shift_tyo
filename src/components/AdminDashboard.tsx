@@ -591,12 +591,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
 
               if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+                // 店舗名を取得（postingから）
+                const getStoreNameFromPosting = (posting: any) => {
+                  const direct = (posting.store_name || '').trim();
+                  let fromMemo = '';
+                  if (!direct && typeof posting.memo === 'string') {
+                    const m = posting.memo.match(/\[store:([^\]]+)\]/);
+                    if (m && m[1]) fromMemo = m[1];
+                  }
+                  return direct || fromMemo || '';
+                };
+                
+                const storeName = getStoreNameFromPosting(pharmacyNeed);
+                
                 const confirmedShift = {
                   pharmacist_id: request.pharmacist_id,
                   pharmacy_id: pharmacyNeed.pharmacy_id,
                   date: date,
                   time_slot: request.time_slot,
                   status: 'confirmed',
+                  store_name: storeName,
+                  memo: pharmacyNeed.memo || '',
                   created_at: new Date().toISOString()
                 };
                 console.log('Creating confirmed shift:', confirmedShift);
