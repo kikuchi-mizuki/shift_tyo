@@ -650,6 +650,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 const adjustedTimeSlot = pharmacyNeed.time_slot;
                 
                 const confirmedShift = {
+                  id: crypto.randomUUID(), // 明示的にIDを生成
                   pharmacist_id: request.pharmacist_id,
                   pharmacy_id: pharmacyNeed.pharmacy_id,
                   date: date,
@@ -733,6 +734,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 const adjustedTimeSlot = pharmacyNeed.time_slot;
                 
                 const confirmedShift = {
+                  id: crypto.randomUUID(), // 明示的にIDを生成
                   pharmacist_id: request.pharmacist_id,
                   pharmacy_id: pharmacyNeed.pharmacy_id,
                   date: date,

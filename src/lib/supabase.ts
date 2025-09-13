@@ -643,8 +643,8 @@ export const shifts = {
       console.log('Preparing to upsert into assigned_shifts table...');
       console.log('Data to upsert:', JSON.stringify(confirmedShiftsData, null, 2));
       
-      // 各シフトのstore_nameを詳細ログ
-      confirmedShiftsData.forEach((shift, index) => {
+      // 各シフトのstore_nameを詳細ログとデータ検証
+      const validatedShifts = confirmedShiftsData.map((shift, index) => {
         console.log(`Shift ${index}:`, {
           pharmacist_id: shift.pharmacist_id,
           pharmacy_id: shift.pharmacy_id,
@@ -658,13 +658,29 @@ export const shifts = {
           memo_type: typeof shift.memo,
           memo_length: shift.memo ? shift.memo.length : 0
         });
+        
+        // store_nameが空の場合は、memoから抽出を試行
+        let finalStoreName = shift.store_name;
+        if (!finalStoreName && shift.memo) {
+          const match = shift.memo.match(/\[store:([^\]]+)\]/);
+          if (match && match[1]) {
+            finalStoreName = match[1];
+            console.log(`Extracted store_name from memo: ${finalStoreName}`);
+          }
+        }
+        
+        return {
+          ...shift,
+          store_name: finalStoreName || null,
+          memo: shift.memo || null
+        };
       });
       
       // upsertを使用して重複を自動的に処理
+      // onConflictを指定しないことで、主キー（id）または一意制約で重複を判定
       const { data, error } = await supabase
         .from('assigned_shifts')
-        .upsert(confirmedShiftsData, {
-          onConflict: 'pharmacist_id,date,time_slot',
+        .upsert(validatedShifts, {
           ignoreDuplicates: false
         })
         .select();

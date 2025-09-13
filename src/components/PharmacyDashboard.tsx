@@ -1016,7 +1016,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                       result: direct || fromMemo || '（店舗名未設定）'
                     });
                     
-                    return direct || fromMemo || '（店舗名未設定）';
+                    // 店舗名が取得できない場合は、薬局名を表示
+                    const fallbackName = pharmacistProfile?.name || '薬局名未設定';
+                    return direct || fromMemo || fallbackName;
                   };
                   
                   const storeName = getStoreName(shift);
