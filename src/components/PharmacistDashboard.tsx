@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, systemStatus, supabase, storeNgPharmacies } from '../lib/supabase';
-import { MultiUserGuide } from './MultiUserGuide';
 
 interface PharmacistDashboardProps {
   user: any;
@@ -690,7 +689,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
   return (
     <div className="space-y-6">
-      <MultiUserGuide userType="pharmacist" />
       
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
         {/* 左側: カレンダー */}

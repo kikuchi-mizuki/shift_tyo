@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Plus, Sun, Users } from 'lucide-react';
 import { shifts, shiftPostings, systemStatus, storeNgPharmacists, supabase } from '../lib/supabase';
-import { MultiUserGuide } from './MultiUserGuide';
 
 // デバッグ: インポートの確認
 console.log('PharmacyDashboard imports:', { shifts, shiftPostings });
@@ -736,7 +735,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   
   return (
     <div className="space-y-6">
-      <MultiUserGuide userType="pharmacy" />
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
         {/* 左: カレンダー */}
       <div className="flex-1 bg-white rounded-lg shadow p-4 lg:p-6">

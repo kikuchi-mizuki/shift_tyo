@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 import { Calendar, RefreshCw, AlertCircle } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, storeNgPharmacists, supabase } from '../lib/supabase';
-import { MultiUserGuide } from './MultiUserGuide';
 
 interface AdminDashboardProps {
   user: any;
@@ -1029,7 +1028,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   return (
     <div className="space-y-6">
-      <MultiUserGuide userType="admin" />
       
       <div className={`border rounded-lg p-4 ${systemStatus === 'confirmed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
         <div className="flex items-center space-x-2">
