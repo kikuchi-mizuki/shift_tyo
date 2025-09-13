@@ -224,12 +224,51 @@ export const userProfiles = {
   }
 };
 
+// テーブル存在チェック用のキャッシュ
+let tableExistsCache: {[tableName: string]: boolean} = {};
+
+// テーブル存在チェック関数
+const checkTableExists = async (tableName: string): Promise<boolean> => {
+  if (tableExistsCache[tableName] !== undefined) {
+    return tableExistsCache[tableName];
+  }
+
+  if (!supabase) {
+    return false;
+  }
+
+  try {
+    // テーブル存在チェック用の簡単なクエリ
+    const { error } = await supabase
+      .from(tableName)
+      .select('id')
+      .limit(1);
+    
+    const exists = !error || error.code !== 'PGRST116';
+    tableExistsCache[tableName] = exists;
+    
+    console.log(`Table ${tableName} exists:`, exists);
+    return exists;
+  } catch (error) {
+    console.error(`Error checking table ${tableName}:`, error);
+    tableExistsCache[tableName] = false;
+    return false;
+  }
+};
+
 // 店舗毎のNG薬剤師管理
 export const storeNgPharmacists = {
   // 店舗毎のNG薬剤師リストを取得
   getStoreNgPharmacists: async (pharmacyId: string) => {
     if (!supabase) {
       return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    // テーブル存在チェック
+    const tableExists = await checkTableExists('store_ng_pharmacists');
+    if (!tableExists) {
+      console.warn('store_ng_pharmacists table does not exist, returning empty data');
+      return { data: [], error: null };
     }
 
     try {
@@ -259,6 +298,7 @@ export const storeNgPharmacists = {
         // テーブルが存在しない場合のエラーハンドリング
         if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
           console.warn('store_ng_pharmacists table not found, returning empty data');
+          tableExistsCache['store_ng_pharmacists'] = false;
           return { data: [], error: null };
         }
         
@@ -382,6 +422,13 @@ export const storeNgPharmacies = {
       return { data: [], error: { message: 'Supabaseが設定されていません' } };
     }
 
+    // テーブル存在チェック
+    const tableExists = await checkTableExists('store_ng_pharmacies');
+    if (!tableExists) {
+      console.warn('store_ng_pharmacies table does not exist, returning empty data');
+      return { data: [], error: null };
+    }
+
     try {
       console.log('Attempting to fetch store NG pharmacies for pharmacist_id:', pharmacistId);
       const { data, error } = await supabase
@@ -402,6 +449,7 @@ export const storeNgPharmacies = {
         // テーブルが存在しない場合のエラーハンドリング
         if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
           console.warn('store_ng_pharmacies table not found, returning empty data');
+          tableExistsCache['store_ng_pharmacies'] = false;
           return { data: [], error: null };
         }
         
