@@ -764,7 +764,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             <div
               key={idx}
               className={`p-2 sm:p-3 text-center text-sm border border-gray-200 min-h-[80px] sm:min-h-[90px] ${
-                day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
+                day ? 'cursor-pointer' : 'bg-gray-50'
               } ${
                 selectedDates.includes(`${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`)
                   ? 'bg-blue-100 border-blue-300'
@@ -780,29 +780,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     const dayConfirmedShifts = confirmedShifts.filter((s: any) => s.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`);
                     if (dayConfirmedShifts.length > 0) {
                       return (
-                        <div className="relative group">
-                          <div className="text-[9px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 py-0.5 mt-1 inline-block cursor-pointer">
-                            <span className="sm:hidden">確{dayConfirmedShifts.length}</span>
-                            <span className="hidden sm:inline">確定{dayConfirmedShifts.length}件</span>
-                          </div>
-                          
-                          {/* マウスオーバーで表示される詳細情報 */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-                            <div className="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-xs">
-                              <div className="font-medium mb-2">確定シフト詳細</div>
-                              {dayConfirmedShifts.map((shift: any, index: number) => (
-                                <div key={index} className="mb-2 last:mb-0 border-b border-gray-600 pb-2 last:border-b-0">
-                                  <div className="text-green-300 font-medium">
-                                    時間: {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : '夜間'}
-                                  </div>
-                                  <div className="text-blue-300">
-                                    薬剤師: {userProfiles[shift.pharmacist_id]?.name || userProfiles[shift.pharmacist_id]?.email || shift.pharmacist_id}
-                                  </div>
-                                </div>
-                              ))}
-                              <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 absolute top-full left-1/2 transform -translate-x-1/2"></div>
-                            </div>
-                          </div>
+                        <div className="text-[9px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 py-0.5 mt-1 inline-block">
+                          <span className="sm:hidden">確{dayConfirmedShifts.length}</span>
+                          <span className="hidden sm:inline">確定{dayConfirmedShifts.length}件</span>
                         </div>
                       );
                     }

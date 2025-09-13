@@ -1195,7 +1195,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 <div 
                   key={i} 
                   className={`p-2 sm:p-3 text-center text-xs sm:text-sm border border-gray-200 min-h-[80px] sm:min-h-[90px] ${
-                    d ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
+                    d ? 'cursor-pointer' : 'bg-gray-50'
                   } ${
                     selectedDate === dateStr ? 'bg-blue-100 border-blue-300' : ''
                   }`}

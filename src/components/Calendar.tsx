@@ -91,8 +91,8 @@ export const Calendar: React.FC<CalendarProps> = ({ shifts, month, year, onDateC
             return (
               <div
                 key={day}
-                className={`h-24 border border-gray-200 rounded-lg p-1 cursor-pointer transition-all duration-200 hover:shadow-md hover:border-blue-300 ${
-                  dayShifts.length > 0 ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'
+                className={`h-24 border border-gray-200 rounded-lg p-1 cursor-pointer ${
+                  dayShifts.length > 0 ? 'bg-blue-50' : 'bg-white'
                 }`}
                 onClick={() => onDateClick?.(dateStr)}
               >
@@ -102,7 +102,7 @@ export const Calendar: React.FC<CalendarProps> = ({ shifts, month, year, onDateC
                     {dayShifts.slice(0, 2).map((shift, index) => (
                       <div
                         key={shift.id}
-                        className={`text-xs px-1 py-0.5 rounded mb-1 border ${getTimeSlotColor(shift.timeSlot)(shift)} cursor-pointer hover:opacity-80`}
+                        className={`text-xs px-1 py-0.5 rounded mb-1 border ${getTimeSlotColor(shift.timeSlot)(shift)}`}
                       >
                         {getTimeSlotLabel(shift.timeSlot)}
                         {shift.pharmacistId === 'pending' && <span className="ml-1 text-xs opacity-75">(募集中)</span>}
