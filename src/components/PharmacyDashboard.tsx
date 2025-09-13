@@ -969,7 +969,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     setBatchStoreNames(next);
                   }
                 }}
-                className="text-xs px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+                className="text-xs px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
               >リストに追加</button>
             </div>
             {batchStoreNames.length > 0 && (
