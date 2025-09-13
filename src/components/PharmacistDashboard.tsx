@@ -89,7 +89,10 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       // システム状態を取得
       const { data: systemStatusData, error: systemStatusError } = await systemStatus.getSystemStatus();
       if (!systemStatusError && systemStatusData) {
+        console.log('System status:', systemStatusData.status);
         setIsSystemConfirmed(systemStatusData.status === 'confirmed');
+      } else {
+        console.log('System status error:', systemStatusError);
       }
       
       // 直接Supabaseから確定シフトを取得
@@ -104,6 +107,10 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         setMyShifts([]);
       } else {
         console.log('Loaded assigned shifts:', assignedData);
+        console.log('My shifts count:', assignedData?.length || 0);
+        if (assignedData && assignedData.length > 0) {
+          console.log('My shifts details:', assignedData.map((s: any) => ({ date: s.date, status: s.status, pharmacy_id: s.pharmacy_id })));
+        }
         setMyShifts(assignedData || []);
       }
       
@@ -451,7 +458,14 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const y = currentDate.getFullYear();
   const m = (currentDate.getMonth() + 1).toString().padStart(2, '0');
   const hasMyRequest = (day: number) => myRequests.some((r: any) => r.date === `${y}-${m}-${day.toString().padStart(2, '0')}`);
-  const hasMyShift = (day: number) => myShifts.some((s: any) => s.date === `${y}-${m}-${day.toString().padStart(2, '0')}`);
+  const hasMyShift = (day: number) => {
+    const dateStr = `${y}-${m}-${day.toString().padStart(2, '0')}`;
+    const hasShift = myShifts.some((s: any) => s.date === dateStr);
+    if (hasShift) {
+      console.log(`Day ${day} has confirmed shift:`, myShifts.filter((s: any) => s.date === dateStr));
+    }
+    return hasShift;
+  };
 
   return (
     <div className="space-y-6">
