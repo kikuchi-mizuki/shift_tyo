@@ -449,66 +449,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           </div>
         )}
 
-        {/* 診断ボタン */}
-        <div className="mt-6 bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">診断ツール</h3>
-          <div className="space-y-2">
-            <button
-              onClick={async () => {
-                try {
-                  console.log('=== MANUAL DIAGNOSTICS START ===');
-                  console.log('Current form state:', { email, password, userType, isRegistering });
-                  console.log('Browser info:', {
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform,
-                    cookieEnabled: navigator.cookieEnabled,
-                    localStorage: typeof(Storage) !== "undefined"
-                  });
-                  console.log('Environment:', {
-                    isProduction,
-                    supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
-                    supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET',
-                    actualUrl: import.meta.env.VITE_SUPABASE_URL,
-                    actualKey: import.meta.env.VITE_SUPABASE_ANON_KEY?.substring(0, 20) + '...'
-                  });
-                  
-                  // Supabase接続テスト
-                  console.log('Testing Supabase connection...');
-                  try {
-                    const { data, error } = await supabase.auth.getSession();
-                    console.log('Supabase session test:', { data: !!data, error: error?.message });
-                  } catch (e) {
-                    console.error('Supabase connection test failed:', e);
-                  }
-                  
-                  console.log('=== MANUAL DIAGNOSTICS END ===');
-                  alert('診断情報をコンソールに出力しました。F12キーで開発者ツールを開いて確認してください。');
-                } catch (error) {
-                  console.error('Diagnostic error:', error);
-                  alert('診断中にエラーが発生しました: ' + error.message);
-                }
-              }}
-              className="w-full bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700"
-            >
-              診断情報を出力
-            </button>
-            <button
-              onClick={() => {
-                try {
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  alert('ローカルストレージをクリアしました。ページを再読み込みしてください。');
-                  window.location.reload();
-                } catch (e) {
-                  alert('ストレージのクリアに失敗しました: ' + e.message);
-                }
-              }}
-              className="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
-            >
-              データをクリアして再読み込み
-            </button>
-          </div>
-        </div>
 
       </div>
     </div>
