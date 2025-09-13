@@ -1,0 +1,221 @@
+import React, { useState } from 'react';
+import { User, Building, Shield, LogIn, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useMultiUserAuth } from '../contexts/MultiUserAuthContext';
+
+interface MultiUserLoginFormProps {
+  onLoginSuccess?: () => void;
+}
+
+export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginSuccess }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [userType, setUserType] = useState<'pharmacist' | 'pharmacy' | 'admin'>('pharmacist');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const { addSession, isLoggedIn, activeSessions } = useMultiUserAuth();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.user) {
+        // ユーザープロフィールを取得してユーザータイプを確認
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          setError('ユーザープロフィールの取得に失敗しました');
+          return;
+        }
+
+        const actualUserType = profile.user_type as 'pharmacist' | 'pharmacy' | 'admin';
+        
+        // 選択されたユーザータイプと実際のユーザータイプが一致するかチェック
+        if (actualUserType !== userType) {
+          setError(`このアカウントは${getUserTypeLabel(actualUserType)}用です。正しいユーザータイプを選択してください。`);
+          return;
+        }
+
+        // セッションを追加
+        await addSession(data.user);
+        
+        // フォームをリセット
+        setEmail('');
+        setPassword('');
+        
+        onLoginSuccess?.();
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('ログインに失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUserTypeLabel = (type: 'pharmacist' | 'pharmacy' | 'admin') => {
+    switch (type) {
+      case 'pharmacist': return '薬剤師';
+      case 'pharmacy': return '薬局';
+      case 'admin': return '管理者';
+    }
+  };
+
+  const getUserTypeIcon = (type: 'pharmacist' | 'pharmacy' | 'admin') => {
+    switch (type) {
+      case 'pharmacist': return <User className="w-5 h-5" />;
+      case 'pharmacy': return <Building className="w-5 h-5" />;
+      case 'admin': return <Shield className="w-5 h-5" />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-8">
+        {/* ヘッダー */}
+        <div className="text-center">
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-xl font-bold">シ</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              シフト調整システム
+            </h1>
+          </div>
+          <h2 className="text-lg text-gray-600">マルチユーザーログイン</h2>
+        </div>
+
+        {/* アクティブセッション表示 */}
+        {activeSessions.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <Users className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-800">アクティブセッション</span>
+            </div>
+            <div className="space-y-1">
+              {activeSessions.map((session) => (
+                <div key={session.user_type} className="flex items-center space-x-2 text-sm text-blue-700">
+                  {getUserTypeIcon(session.user_type)}
+                  <span>{getUserTypeLabel(session.user_type)}: {session.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ログインフォーム */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <form onSubmit={handleLogin} className="space-y-4">
+            {/* ユーザータイプ選択 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ユーザータイプ
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['pharmacist', 'pharmacy', 'admin'] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setUserType(type)}
+                    disabled={isLoggedIn(type)}
+                    className={`flex items-center justify-center space-x-2 p-3 rounded-lg border transition-colors ${
+                      userType === type
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : isLoggedIn(type)
+                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {getUserTypeIcon(type)}
+                    <span className="text-sm">{getUserTypeLabel(type)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* メールアドレス */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                メールアドレス
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="example@email.com"
+              />
+            </div>
+
+            {/* パスワード */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                パスワード
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="パスワード"
+              />
+            </div>
+
+            {/* エラーメッセージ */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
+            {/* ログインボタン */}
+            <button
+              type="submit"
+              disabled={loading || isLoggedIn(userType)}
+              className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium transition-colors ${
+                loading || isLoggedIn(userType)
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              <LogIn className="w-4 h-4" />
+              <span>
+                {loading 
+                  ? 'ログイン中...' 
+                  : isLoggedIn(userType) 
+                    ? `${getUserTypeLabel(userType)}でログイン済み`
+                    : `${getUserTypeLabel(userType)}としてログイン`
+                }
+              </span>
+            </button>
+          </form>
+        </div>
+
+        {/* ヘルプテキスト */}
+        <div className="text-center text-sm text-gray-500">
+          <p>複数のユーザータイプで同時にログインできます。</p>
+          <p>各ユーザータイプは独立して管理されます。</p>
+        </div>
+      </div>
+    </div>
+  );
+};
