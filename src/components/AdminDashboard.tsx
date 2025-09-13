@@ -953,11 +953,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <div className="text-green-700 bg-green-50 border border-green-200 rounded px-1 inline-block">
                               確定 {matchingStatus.count}件
                             </div>
-                            {matchingStatus.requestsCount > 0 && (
-                              <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
-                                希望 {matchingStatus.requestsCount}
-                              </div>
-                            )}
                             {dayConsultRequests.length > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
                                 相談 {dayConsultRequests.length}
@@ -994,12 +989,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             )}
                             
-                            {/* 希望数（募集がある日も含めて表示） */}
-                            {matchingStatus.requestsCount > 0 && (
-                              <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
-                                希望 {matchingStatus.requestsCount}
-                              </div>
-                            )}
                             
                             {/* 相談数 */}
                             {dayConsultRequests.length > 0 && (
