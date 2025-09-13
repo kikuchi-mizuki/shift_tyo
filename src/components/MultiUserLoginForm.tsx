@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Building, Shield, LogIn, Pill } from 'lucide-react';
 import { supabase, isProduction } from '../lib/supabase';
 import { useMultiUserAuth } from '../contexts/MultiUserAuthContext';
@@ -19,14 +19,25 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
   const { addSession, isLoggedIn, activeSessions } = useMultiUserAuth();
 
   // コンポーネントマウント時のデバッグ情報
-  console.log('MultiUserLoginForm mounted:', { 
-    isProduction, 
-    activeSessions: activeSessions.length,
-    userAgent: navigator.userAgent,
-    platform: navigator.platform,
-    cookieEnabled: navigator.cookieEnabled,
-    localStorage: typeof(Storage) !== "undefined"
-  });
+  useEffect(() => {
+    console.log('=== LOGIN FORM MOUNTED ===');
+    console.log('MultiUserLoginForm mounted:', { 
+      isProduction, 
+      activeSessions: activeSessions.length,
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      cookieEnabled: navigator.cookieEnabled,
+      localStorage: typeof(Storage) !== "undefined"
+    });
+
+    // フォームが正常にマウントされたことを確認
+    try {
+      const testElement = document.querySelector('form');
+      console.log('Form element found:', !!testElement);
+    } catch (e) {
+      console.error('Error checking form element:', e);
+    }
+  }, []);
 
   // デモアカウント（本番環境でも表示）
   const demoAccounts = [
@@ -418,6 +429,49 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             </div>
           </div>
         )}
+
+        {/* 診断ボタン */}
+        <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">診断ツール</h3>
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                console.log('=== MANUAL DIAGNOSTICS ===');
+                console.log('Current form state:', { email, password, userType, isRegistering });
+                console.log('Browser info:', {
+                  userAgent: navigator.userAgent,
+                  platform: navigator.platform,
+                  cookieEnabled: navigator.cookieEnabled,
+                  localStorage: typeof(Storage) !== "undefined"
+                });
+                console.log('Environment:', {
+                  isProduction,
+                  supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
+                  supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
+                });
+                alert('診断情報をコンソールに出力しました。F12キーで開発者ツールを開いて確認してください。');
+              }}
+              className="w-full bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700"
+            >
+              診断情報を出力
+            </button>
+            <button
+              onClick={() => {
+                try {
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  alert('ローカルストレージをクリアしました。ページを再読み込みしてください。');
+                  window.location.reload();
+                } catch (e) {
+                  alert('ストレージのクリアに失敗しました: ' + e.message);
+                }
+              }}
+              className="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+            >
+              データをクリアして再読み込み
+            </button>
+          </div>
+        </div>
 
       </div>
     </div>

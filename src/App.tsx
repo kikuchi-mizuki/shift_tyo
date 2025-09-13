@@ -58,6 +58,22 @@ class ErrorBoundary extends Component<
 
   componentDidCatch(error: Error, errorInfo: any) {
     console.error('Error caught by boundary:', error, errorInfo);
+    
+    // エラーを自動的に報告
+    try {
+      const errorReport = {
+        timestamp: new Date().toISOString(),
+        error: error.toString(),
+        stack: error.stack,
+        errorInfo: errorInfo.componentStack,
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      };
+      localStorage.setItem('last_error_report', JSON.stringify(errorReport));
+      console.log('Error report saved:', errorReport);
+    } catch (e) {
+      console.error('Failed to save error report:', e);
+    }
   }
 
   handleRetry = () => {
@@ -110,16 +126,44 @@ class ErrorBoundary extends Component<
 function AppContent() {
   const { currentUserType, getCurrentUser, activeSessions } = useMultiUserAuth();
   
-  console.log('App: Multi-user auth state:', {
-    currentUserType,
-    activeSessions: activeSessions.length
-  });
-  
-  console.log('App: Environment check:', {
-    isProduction: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
-    supabaseUrl: import.meta.env.VITE_SUPABASE_URL?.substring(0, 20) + '...',
-    supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
-  });
+  // アプリケーション起動時の診断
+  useEffect(() => {
+    console.log('=== APP STARTUP DIAGNOSTICS ===');
+    console.log('App: Multi-user auth state:', {
+      currentUserType,
+      activeSessions: activeSessions.length
+    });
+    
+    console.log('App: Environment check:', {
+      isProduction: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
+      supabaseUrl: import.meta.env.VITE_SUPABASE_URL?.substring(0, 20) + '...',
+      supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
+    });
+
+    // 前回のエラーレポートを確認
+    try {
+      const lastError = localStorage.getItem('last_error_report');
+      if (lastError) {
+        const errorReport = JSON.parse(lastError);
+        console.log('Previous error report found:', errorReport);
+        // エラーレポートをクリア
+        localStorage.removeItem('last_error_report');
+      }
+    } catch (e) {
+      console.error('Failed to check error report:', e);
+    }
+
+    // ブラウザ機能の確認
+    console.log('Browser capabilities:', {
+      localStorage: typeof(Storage) !== "undefined",
+      sessionStorage: typeof(Storage) !== "undefined",
+      fetch: typeof(fetch) !== "undefined",
+      Promise: typeof(Promise) !== "undefined",
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      cookieEnabled: navigator.cookieEnabled
+    });
+  }, []);
   
 
   // アクティブセッションがない場合はマルチユーザーログイン画面を表示
