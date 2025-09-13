@@ -115,6 +115,12 @@ function AppContent() {
     activeSessions: activeSessions.length
   });
   
+  console.log('App: Environment check:', {
+    isProduction: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL?.substring(0, 20) + '...',
+    supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
+  });
+  
 
   // アクティブセッションがない場合はマルチユーザーログイン画面を表示
   if (activeSessions.length === 0) {

@@ -18,6 +18,9 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
   
   const { addSession, isLoggedIn, activeSessions } = useMultiUserAuth();
 
+  // コンポーネントマウント時のデバッグ情報
+  console.log('MultiUserLoginForm mounted:', { isProduction, activeSessions: activeSessions.length });
+
   // デモアカウント（本番環境でも表示）
   const demoAccounts = [
     { 
@@ -48,6 +51,8 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('=== LOGIN FORM SUBMITTED ===');
+    console.log('Form data:', { email, password, userType, isRegistering });
     setLoading(true);
     setError('');
 
@@ -342,6 +347,7 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             <button
               type="submit"
               disabled={loading}
+              onClick={() => console.log('Login button clicked:', { email, userType, isRegistering })}
               className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium transition-colors ${
                 loading
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
