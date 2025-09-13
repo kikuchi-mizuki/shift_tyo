@@ -2,12 +2,42 @@ import React, { useState, useEffect, Component, ReactNode } from 'react';
 import { supabase, auth } from './lib/supabase';
 import LoginForm from './components/LoginForm';
 // 遅延読み込みで循環依存や初期化順の問題を回避
-const PharmacistDashboard = React.lazy(() => import('./components/PharmacistDashboard'));
-const PharmacyDashboard = React.lazy(() => import('./components/PharmacyDashboard'));
-const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
-const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
-const AdminMatchingPanel = React.lazy(() => import('./components/AdminMatchingPanel'));
-const UserManagement = React.lazy(() => import('./components/UserManagement'));
+const PharmacistDashboard = React.lazy(() => 
+  import('./components/PharmacistDashboard').catch(error => {
+    console.error('Failed to load PharmacistDashboard:', error);
+    return { default: () => <div className="p-4 text-red-600">PharmacistDashboardの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+  })
+);
+const PharmacyDashboard = React.lazy(() => 
+  import('./components/PharmacyDashboard').catch(error => {
+    console.error('Failed to load PharmacyDashboard:', error);
+    return { default: () => <div className="p-4 text-red-600">PharmacyDashboardの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+  })
+);
+const AdminDashboard = React.lazy(() => 
+  import('./components/AdminDashboard').catch(error => {
+    console.error('Failed to load AdminDashboard:', error);
+    return { default: () => <div className="p-4 text-red-600">AdminDashboardの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+  })
+);
+const AdminPanel = React.lazy(() => 
+  import('./components/AdminPanel').catch(error => {
+    console.error('Failed to load AdminPanel:', error);
+    return { default: () => <div className="p-4 text-red-600">AdminPanelの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+  })
+);
+const AdminMatchingPanel = React.lazy(() => 
+  import('./components/AdminMatchingPanel').catch(error => {
+    console.error('Failed to load AdminMatchingPanel:', error);
+    return { default: () => <div className="p-4 text-red-600">AdminMatchingPanelの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+  })
+);
+const UserManagement = React.lazy(() => 
+  import('./components/UserManagement').catch(error => {
+    console.error('Failed to load UserManagement:', error);
+    return { default: () => <div className="p-4 text-red-600">UserManagementの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+  })
+);
 import { useAuth } from './hooks/useAuth';
 import { MultiUserIndicator } from './components/MultiUserIndicator';
 
