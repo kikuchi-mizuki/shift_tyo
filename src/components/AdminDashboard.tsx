@@ -782,6 +782,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
+  // 全確定シフトの一括取り消し
+  const handleCancelAllConfirmedShifts = async () => {
+    if (!confirm('全ての確定シフトを取り消しますか？この操作は取り消せません。')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('assigned_shifts')
+        .delete()
+        .eq('status', 'confirmed');
+
+      if (error) {
+        console.error('Error canceling all confirmed shifts:', error);
+        alert(`全確定シフトの取り消しに失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        return;
+      }
+
+      alert('全ての確定シフトを取り消しました');
+      loadAll();
+    } catch (error) {
+      console.error('Error in handleCancelAllConfirmedShifts:', error);
+      alert(`全確定シフトの取り消しに失敗しました: ${(error as any).message || 'Unknown error'}`);
+    }
+  };
+
   // シフト編集の状態管理
   const [editingShift, setEditingShift] = useState<any>(null);
   const [editForm, setEditForm] = useState({
@@ -1094,7 +1120,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           </div>
           
           {/* シフト確定ボタン - 固定表示 */}
-          <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
+          <div className="p-4 lg:p-6 pb-0 flex-shrink-0 space-y-2">
             <button 
               onClick={handleConfirmShifts}
               className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm ${
@@ -1104,6 +1130,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               <RefreshCw className="w-4 h-4" />
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
             </button>
+            
+            {/* 一括確定取り消しボタン - 確定済みの場合のみ表示 */}
+            {systemStatus === 'confirmed' && (
+              <button 
+                onClick={handleCancelAllConfirmedShifts}
+                className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm bg-red-600 hover:bg-red-700"
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span>全確定シフトを取り消し</span>
+              </button>
+            )}
           </div>
 
           {/* スクロール可能な詳細エリア */}
