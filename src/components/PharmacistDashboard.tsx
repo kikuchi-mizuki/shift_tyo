@@ -104,11 +104,11 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       console.log('Auth user:', authUser);
       console.log('Auth error:', authError);
       
-      // アラートで認証状態を表示
+      // 認証状態の確認（デバッグ用）
       if (authUser) {
-        alert(`認証ユーザーID: ${authUser.id}\n現在のユーザーID: ${user.id}\n一致: ${authUser.id === user.id ? 'はい' : 'いいえ'}`);
+        console.log(`認証ユーザーID: ${authUser.id}\n現在のユーザーID: ${user.id}\n一致: ${authUser.id === user.id ? 'はい' : 'いいえ'}`);
       } else {
-        alert('認証ユーザーが取得できません');
+        console.log('認証ユーザーが取得できません');
       }
       
       // まず全てのassigned_shiftsを取得してデバッグ
@@ -118,11 +118,11 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       console.log('All assigned shifts:', allAssignedData);
       console.log('All assigned shifts error:', allAssignedError);
       
-      // アラートでも表示（コンソールが見えない場合）
+      // assigned_shiftsテーブルの状態確認（デバッグ用）
       if (allAssignedData && allAssignedData.length > 0) {
-        alert(`assigned_shiftsテーブルに${allAssignedData.length}件のデータがあります\n現在のユーザーID: ${user.id}\nテーブル内のpharmacist_id: ${allAssignedData.map((s: any) => s.pharmacist_id).slice(0, 3).join(', ')}...`);
+        console.log(`assigned_shiftsテーブルに${allAssignedData.length}件のデータがあります\n現在のユーザーID: ${user.id}\nテーブル内のpharmacist_id: ${allAssignedData.map((s: any) => s.pharmacist_id).slice(0, 3).join(', ')}...`);
       } else {
-        alert('assigned_shiftsテーブルにデータがありません');
+        console.log('assigned_shiftsテーブルにデータがありません');
       }
       
       // 認証ユーザーIDを使用してシフトを取得
@@ -141,9 +141,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         console.log('My shifts count:', assignedData?.length || 0);
         if (assignedData && assignedData.length > 0) {
           console.log('My shifts details:', assignedData.map((s: any) => ({ date: s.date, status: s.status, pharmacy_id: s.pharmacy_id })));
-          alert(`あなたの確定シフト: ${assignedData.length}件\n日付: ${assignedData.map((s: any) => s.date).join(', ')}`);
+          console.log(`あなたの確定シフト: ${assignedData.length}件\n日付: ${assignedData.map((s: any) => s.date).join(', ')}`);
         } else {
-          alert('あなたの確定シフトは0件です');
+          console.log('あなたの確定シフトは0件です');
         }
         setMyShifts(assignedData || []);
       }
@@ -502,11 +502,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const hasMyRequest = (day: number) => myRequests.some((r: any) => r.date === `${y}-${m}-${day.toString().padStart(2, '0')}`);
   const hasMyShift = (day: number) => {
     const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-    const hasShift = myShifts.some((s: any) => s.date === dateStr);
-    if (hasShift) {
-      console.log(`Day ${day} has confirmed shift:`, myShifts.filter((s: any) => s.date === dateStr));
-    }
-    return hasShift;
+    return myShifts.some((s: any) => s.date === dateStr);
   };
 
   return (
