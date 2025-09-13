@@ -93,10 +93,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   ]));
 
   useEffect(() => {
-    if (!selectedStoreName && storeOptions && storeOptions.length > 0) {
-      setSelectedStoreName(storeOptions[0]);
+    if (!singleStoreName && storeOptions && storeOptions.length > 0) {
+      setSingleStoreName(storeOptions[0]);
     }
-  }, [storeOptions]);
+  }, [storeOptions, singleStoreName]);
 
   // 変更があればローカルにキャッシュ
   useEffect(() => {
@@ -529,7 +529,20 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       .map(n => (n || '').trim())
       .filter(n => n !== ''); // 空文字列を除外
     
+    // バッチリストが空で、単一選択も空の場合はエラー
+    if (batchStoreNames.length === 0 && (!singleStoreName || singleStoreName.trim() === '')) {
+      console.log('No store name selected');
+      alert('店舗名を選択してください');
+      return;
+    }
+    
+    console.log('=== STORE NAME VALIDATION ===');
+    console.log('singleStoreName:', singleStoreName);
+    console.log('batchStoreNames:', batchStoreNames);
+    console.log('targets after filtering:', targets);
+    
     if (targets.length === 0) {
+      console.log('No valid store names found');
       alert('店舗名を選択してください');
       return;
     }
@@ -1055,12 +1068,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               onChange={(e) => setSingleStoreName(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
+              <option value="">店舗名を選択してください</option>
               {storeOptions.map((name, index) => (
                 <option key={index} value={name}>{name}</option>
               ))}
-              {storeOptions.length === 0 && (
-                <option value="">店舗名なし</option>
-              )}
             </select>
             {/* 選択した店舗を一時リストに追加 → 複数店舗をまとめて登録 */}
             <div className="flex items-center gap-2 mt-2">
