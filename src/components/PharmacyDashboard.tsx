@@ -470,11 +470,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   const handlePost = async () => {
     console.log('=== handlePost START ===');
-    console.log('handlePost called', { selectedDate, timeSlot, requiredStaff, memo });
+    console.log('handlePost called', { selectedDates, timeSlot, requiredStaff, memo });
     
     // 既存の募集があるかチェック（同日・同店舗名で判断）
     console.log('=== HANDLEPOST DEBUG ===');
-    console.log('selectedDate:', selectedDate);
+    console.log('selectedDates:', selectedDates);
     console.log('selectedStoreName:', selectedStoreName);
     console.log('myShifts:', myShifts);
     
@@ -486,7 +486,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     const creates: string[] = [];
     for (const name of targets) {
       const match = myShifts.find((s: any) => {
-        if (s.date !== selectedDate) return false;
+        if (!selectedDates.includes(s.date)) return false;
         const direct = (s.store_name || '').trim();
         let fromMemo = '';
         if (!direct && typeof s.memo === 'string') {
@@ -512,7 +512,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           await Promise.all(
             updates.map(u =>
               shiftPostings.updatePosting(u.id, {
-                date: selectedDate,
+                date: selectedDates[0],
                 store_name: u.storeName || null,
                 time_slot: timeSlot,
                 required_staff: requiredStaff,
@@ -627,7 +627,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   }
 
   console.log('PharmacyDashboard rendering, loading:', loading, 'user:', user);
-  console.log('Form state:', { selectedDate, timeSlot, requiredStaff, memo });
+  console.log('Form state:', { selectedDates, timeSlot, requiredStaff, memo });
   console.log('Calendar data:', { myShifts: myShifts.length, confirmedShifts: confirmedShifts.length });
   
   return (
@@ -662,7 +662,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               className={`p-2 text-center text-sm border border-gray-200 min-h-[72px] ${
                 day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
               } ${
-                selectedDate === `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+                selectedDates.includes(`${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`)
                   ? 'bg-blue-100 border-blue-300'
                   : ''
               }`}
@@ -828,11 +828,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           
           {/* 概要（当日の全店舗分を表示） */}
           <div className="p-3 bg-gray-100 rounded text-xs">
-            <div className="font-medium text-gray-700 mb-1">選択日: {selectedDate || '未選択'}</div>
-            {selectedDate ? (
+            <div className="font-medium text-gray-700 mb-1">選択日: {selectedDates.length > 0 ? selectedDates.join(', ') : '未選択'}</div>
+            {selectedDates.length > 0 ? (
               <div className="space-y-1">
                 {myShifts
-                  .filter((s: any) => s.date === selectedDate)
+                  .filter((s: any) => selectedDates.includes(s.date))
                   .map((s: any, idx: number) => {
                     // カレンダー表示と同じロジックを使用
                     const direct = (s.store_name || '').trim();
@@ -850,7 +850,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                       </div>
                     );
                   })}
-                {myShifts.filter((s: any) => s.date === selectedDate).length === 0 && (
+                {myShifts.filter((s: any) => selectedDates.includes(s.date)).length === 0 && (
                   <div className="text-gray-500">この日付の募集はありません</div>
                 )}
               </div>
@@ -1008,7 +1008,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           </div>
 
           {/* 作成/削除ボタン */}
-          {confirmedShifts.find((s: any) => s.date === selectedDate) ? (
+          {selectedDates.length > 0 && confirmedShifts.some((s: any) => selectedDates.includes(s.date)) ? (
             <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
               確定済みのため編集できません
             </div>
@@ -1018,9 +1018,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               type="button"
               onClick={() => {
                 console.log('=== BUTTON CLICK START ===');
-                console.log('Form state:', { selectedDate, timeSlot, requiredStaff, memo });
+                console.log('Form state:', { selectedDates, timeSlot, requiredStaff, memo });
                 
-                if (!selectedDate || !timeSlot || !requiredStaff) {
+                if (selectedDates.length === 0 || !timeSlot || !requiredStaff) {
                   alert('募集日・時間帯・人数を選択してください');
                   return;
                 }

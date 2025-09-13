@@ -483,7 +483,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 className={`p-2 text-center text-sm border border-gray-200 min-h-[72px] ${
                   day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
                 } ${
-                  selectedDate === `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day?.toString().padStart(2, '0')}`
+                  selectedDates.includes(`${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day?.toString().padStart(2, '0')}`)
                     ? 'bg-blue-100 border-blue-300'
                     : ''
                 }`}
@@ -743,20 +743,16 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
 
             {/* 登録/削除ボタン */}
-            {myShifts.find((s: any) => s.date === selectedDate) ? (
+            {selectedDates.length > 0 && myShifts.some((s: any) => selectedDates.includes(s.date)) ? (
               <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
                 確定済みのため編集できません
               </div>
             ) : (
               <button
                 onClick={handleSubmit}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                  myRequests.find((r: any) => r.date === selectedDate)
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
+                className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
               >
-                {myRequests.find((r: any) => r.date === selectedDate) ? '希望を削除' : '希望を追加'}
+                希望を追加
               </button>
             )}
 
