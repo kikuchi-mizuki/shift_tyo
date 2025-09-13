@@ -218,12 +218,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       logToRailway('Loading all data...');
       
       // 直接Supabaseからassigned_shiftsを取得
+      logToRailway('Attempting to load all assigned shifts...');
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
         .select('*');
       
       if (assignedError) {
-        logToRailway('Error loading assigned shifts:', assignedError);
+        logToRailway('Error loading assigned shifts:', {
+          error: assignedError,
+          code: assignedError.code,
+          message: assignedError.message,
+          details: assignedError.details,
+          hint: assignedError.hint
+        });
         setAssigned([]);
       } else {
         logToRailway('Loaded assigned shifts:', assignedData);

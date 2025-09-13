@@ -130,6 +130,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       }
       
       // 直接Supabaseから確定済みシフトを取得
+      console.log('Attempting to load assigned shifts for pharmacy_id:', user.id);
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
         .select('*')
@@ -137,8 +138,31 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         .eq('status', 'confirmed');
       
       if (assignedError) {
-        console.error('Error loading assigned shifts:', assignedError);
-        setConfirmedShifts([]);
+        console.error('Error loading assigned shifts:', {
+          error: assignedError,
+          code: assignedError.code,
+          message: assignedError.message,
+          details: assignedError.details,
+          hint: assignedError.hint,
+          pharmacy_id: user.id
+        });
+        
+        // RLSポリシーの問題の可能性があるため、代替手段を試行
+        console.log('Trying alternative query without status filter...');
+        const { data: altData, error: altError } = await supabase
+          .from('assigned_shifts')
+          .select('*')
+          .eq('pharmacy_id', user.id);
+        
+        if (altError) {
+          console.error('Alternative query also failed:', altError);
+          setConfirmedShifts([]);
+        } else {
+          console.log('Alternative query succeeded:', altData);
+          // statusでフィルタリング
+          const confirmedData = altData?.filter((shift: any) => shift.status === 'confirmed') || [];
+          setConfirmedShifts(confirmedData);
+        }
       } else {
         console.log('Loaded confirmed shifts:', assignedData);
         console.log('Confirmed shifts store_name analysis:', assignedData?.map((shift: any) => ({
