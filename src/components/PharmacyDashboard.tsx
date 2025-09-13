@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Plus, Sun, Users } from 'lucide-react';
-import { shifts, shiftPostings, systemStatus, supabase } from '../lib/supabase';
+import { shifts, shiftPostings, systemStatus, storeNgPharmacists, supabase } from '../lib/supabase';
 
 // デバッグ: インポートの確認
 console.log('PharmacyDashboard imports:', { shifts, shiftPostings });
@@ -163,6 +163,27 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         setProfileName(profileData.name || '');
         setStoreNames(storeNamesFromDB);
         setNgList(profileData.ng_list || []);
+        
+        // 店舗毎のNG薬剤師設定を取得
+        console.log('Loading store NG pharmacists...');
+        const { data: storeNgData, error: storeNgError } = await storeNgPharmacists.getStoreNgPharmacists(user.id);
+        if (storeNgError) {
+          console.error('Error loading store NG pharmacists:', storeNgError);
+        } else {
+          console.log('Store NG pharmacists loaded:', storeNgData);
+          // データを店舗名ごとにグループ化
+          const groupedData: {[storeName: string]: string[]} = {};
+          if (storeNgData) {
+            storeNgData.forEach((item: any) => {
+              if (!groupedData[item.store_name]) {
+                groupedData[item.store_name] = [];
+              }
+              groupedData[item.store_name].push(item.pharmacist_id);
+            });
+          }
+          setStoreNgLists(groupedData);
+          console.log('Grouped store NG data:', groupedData);
+        }
         
         console.log('=== PROFILE DATA LOADED END ===');
       } else {
@@ -332,6 +353,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       console.log('About to send update with store_names:', storeNames);
       console.log('store_names is array:', Array.isArray(storeNames));
       console.log('store_names JSON:', JSON.stringify(storeNames));
+      
+      // 店舗毎のNG薬剤師設定を保存
+      console.log('Saving store NG pharmacists:', storeNgLists);
+      const { error: storeNgError } = await storeNgPharmacists.updateStoreNgPharmacists(user.id, storeNgLists);
+      if (storeNgError) {
+        console.error('Error saving store NG pharmacists:', storeNgError);
+        alert('店舗毎のNG薬剤師設定の保存に失敗しました');
+        return;
+      }
       
       // Railwayログでも確認（認証エラーを回避）
       try {
