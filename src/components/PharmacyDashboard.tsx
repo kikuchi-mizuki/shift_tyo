@@ -11,7 +11,7 @@ interface PharmacyDashboardProps {
 
 export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [selectedStoreName, setSelectedStoreName] = useState('');
   const [timeSlot, setTimeSlot] = useState('morning'); // デフォルトで午前を選択
   const [requiredStaff, setRequiredStaff] = useState<number | null>(1); // デフォルトで1人を選択
@@ -26,6 +26,17 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [singleStoreName, setSingleStoreName] = useState('');
   const [batchStoreNames, setBatchStoreNames] = useState<string[]>([]); // 追加リスト
   // quick add input removed per request
+
+  // 日付選択のハンドラー
+  const handleDateToggle = (date: string) => {
+    setSelectedDates(prev => {
+      if (prev.includes(date)) {
+        return prev.filter(d => d !== date);
+      } else {
+        return [...prev, date];
+      }
+    });
+  };
   
   // storeNamesの状態変更を監視
   useEffect(() => {
@@ -526,15 +537,17 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
       // 新規作成分
       if (creates.length > 0) {
-        const payload = creates.map((name) => ({
-          pharmacy_id: user.id,
-          date: selectedDate,
-          store_name: name || null,
-          time_slot: timeSlot,
-          required_staff: requiredStaff,
-          memo,
-          status: 'open'
-        }));
+        const payload = selectedDates.flatMap(date => 
+          creates.map((name) => ({
+            pharmacy_id: user.id,
+            date: date,
+            store_name: name || null,
+            time_slot: timeSlot,
+            required_staff: requiredStaff,
+            memo,
+            status: 'open'
+          }))
+        );
         console.log('Creating postings:', payload);
         const { error } = await shiftPostings.createPostings(payload);
         if (error) throw error;
@@ -558,7 +571,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   // 同日・同店舗の既存募集を検索
   const findExistingPostingForCurrentSelection = () => {
     return myShifts.find((s: any) => {
-      if (s.date !== selectedDate) return false;
+      if (!selectedDates.includes(s.date)) return false;
       const direct = (s.store_name || '').trim();
       let fromMemo = '';
       if (!direct && typeof s.memo === 'string') {
@@ -574,8 +587,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   const handleUpdateExisting = async (postingId: string) => {
     try {
+      // 複数日付の場合は最初の日付を使用
       await shiftPostings.updatePosting(postingId, {
-        date: selectedDate,
+        date: selectedDates[0],
         store_name: (singleStoreName || '') || null,
         time_slot: timeSlot,
         required_staff: requiredStaff,
@@ -843,25 +857,56 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             ) : (
               <div className="text-gray-500">日付を選択してください</div>
             )}
+            
+            {/* 選択された日付の表示 */}
+            {selectedDates.length > 0 && (
+              <div className="mt-2 p-2 bg-blue-50 rounded">
+                <div className="text-xs font-medium text-blue-800 mb-1">
+                  選択された日付 ({selectedDates.length}件)
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedDates.map(date => (
+                    <span key={date} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                      {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           
           {/* 募集日 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">募集日</label>
-            <select
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">日付を選択してください</option>
+            <label className="block text-sm font-medium text-gray-700 mb-2">募集日 (複数選択可能)</label>
+            <div className="grid grid-cols-7 gap-1 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-2">
               {Array.from({ length: 31 }, (_, i) => {
                 const day = i + 1;
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth() + 1;
                 const date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                return <option key={day} value={date}>{month}月{day}日</option>;
+                const isSelected = selectedDates.includes(date);
+                
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => handleDateToggle(date)}
+                    className={`p-2 text-xs rounded border ${
+                      isSelected 
+                        ? 'bg-blue-500 text-white border-blue-500' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
               })}
-            </select>
+            </div>
+            {selectedDates.length > 0 && (
+              <div className="mt-2 text-xs text-gray-600">
+                {selectedDates.length}件の日付が選択されています
+              </div>
+            )}
           </div>
 
           {/* 店舗名選択（一時保存可・単一選択） */}

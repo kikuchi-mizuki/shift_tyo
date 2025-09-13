@@ -8,9 +8,20 @@ interface PharmacistDashboardProps {
 
 export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('morning'); // デフォルトで午前を選択
   const [selectedPriority, setSelectedPriority] = useState('medium');
+
+  // 日付選択のハンドラー
+  const handleDateToggle = (date: string) => {
+    setSelectedDates(prev => {
+      if (prev.includes(date)) {
+        return prev.filter(d => d !== date);
+      } else {
+        return [...prev, date];
+      }
+    });
+  };
   
   // Railwayログ用のヘルパー関数
   const logToRailway = (message: string, data?: any) => {
@@ -38,11 +49,11 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   // デバッグ用: 状態の変更を監視
   useEffect(() => {
     logToRailway('State changed', {
-      selectedDate,
+      selectedDates,
       selectedTimeSlot,
       selectedPriority
     });
-  }, [selectedDate, selectedTimeSlot, selectedPriority]);
+  }, [selectedDates, selectedTimeSlot, selectedPriority]);
 
   // 個別の状態変更監視
   useEffect(() => {
@@ -361,70 +372,41 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
   const handleSubmit = async () => {
     console.log('PharmacistDashboard: handleSubmit called');
-    console.log('Form data:', { selectedDate, selectedTimeSlot, selectedPriority, memo, userId: user.id });
+    console.log('Form data:', { selectedDates, selectedTimeSlot, selectedPriority, memo, userId: user.id });
     
-    if (!selectedDate || !selectedTimeSlot) {
+    if (selectedDates.length === 0 || !selectedTimeSlot) {
       alert('日付と時間帯を選択してください');
       return;
     }
 
-    // 既存のシフト希望があるかチェック
-    const existingRequest = myRequests.find((r: any) => r.date === selectedDate);
-    
-    if (existingRequest) {
-      // 既存の希望がある場合は削除
-      if (confirm('この日付のシフト希望を削除しますか？')) {
-        try {
-          const { error } = await supabase
-            .from('shift_requests')
-            .delete()
-            .eq('id', existingRequest.id);
-          
-          if (error) {
-            console.error('Error deleting shift request:', error);
-            alert(`シフト希望の削除に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
-          } else {
-            console.log('Shift request deleted successfully');
-            alert('シフト希望を削除しました');
-            setSelectedTimeSlot('');
-            setMemo('');
-            loadShifts();
-          }
-        } catch (error) {
-          console.error('Error deleting shift request:', error);
-          alert('シフト希望の削除に失敗しました');
-        }
-      }
-    } else {
-      // 新しい希望を登録
-      try {
-        const shiftRequest = {
-          pharmacist_id: user.id,
-          date: selectedDate,
-          time_slot: selectedTimeSlot,
-          priority: selectedPriority,
-          memo: memo,
-          status: 'pending'
-        };
+    // 新しい希望を登録
+    try {
+      const requestsToInsert = selectedDates.map(date => ({
+        pharmacist_id: user.id,
+        date: date,
+        time_slot: selectedTimeSlot,
+        priority: selectedPriority,
+        memo: memo,
+        status: 'pending'
+      }));
 
-        console.log('Creating shift request:', shiftRequest);
-        const { error } = await shiftRequests.createRequests([shiftRequest]);
-        
-        if (error) {
-          console.error('Error creating shift request:', error);
-          alert(`シフト希望の登録に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
-        } else {
-          console.log('Shift request created successfully');
-          // 通知は不要
-          // 登録後は時間帯とメモのみリセット、日付は保持
-          setSelectedTimeSlot('');
-          setMemo('');
-          loadShifts();
-        }
-      } catch (error) {
-        console.error('Error submitting shift request:', error);
-        alert('シフト希望の登録に失敗しました');
+      console.log('Creating shift requests:', requestsToInsert);
+      const { error } = await shiftRequests.createRequests(requestsToInsert);
+      
+      if (error) {
+        console.error('Error creating shift requests:', error);
+        alert(`シフト希望の登録に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
+      } else {
+        console.log('Shift requests created successfully');
+        alert(`${selectedDates.length}件のシフト希望を登録しました`);
+        setSelectedDates([]);
+        setSelectedTimeSlot('');
+        setMemo('');
+        loadShifts();
       }
+    } catch (error) {
+      console.error('Error submitting shift requests:', error);
+      alert('シフト希望の登録に失敗しました');
     }
   };
 
@@ -630,10 +612,17 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
             )}
             
             {/* 選択された日付と時間 */}
-            {selectedDate && (
+            {selectedDates.length > 0 && (
               <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                <div className="text-sm font-medium text-blue-800">
-                  {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日
+                <div className="text-sm font-medium text-blue-800 mb-2">
+                  選択された日付 ({selectedDates.length}件)
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedDates.map(date => (
+                    <span key={date} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                      {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
+                    </span>
+                  ))}
                 </div>
                 <div className="text-xs text-blue-600 mt-1">
                   希望時間: {selectedTimeSlot ? (
@@ -654,26 +643,37 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
             {/* 日付選択 */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                希望日
+                希望日 (複数選択可能)
               </label>
-              <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">日付を選択してください</option>
+              <div className="grid grid-cols-7 gap-1 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-2">
                 {Array.from({ length: 31 }, (_, i) => {
                   const day = i + 1;
                   const year = currentDate.getFullYear();
                   const month = currentDate.getMonth() + 1;
                   const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                  const isSelected = selectedDates.includes(date);
+                  
                   return (
-                    <option key={day} value={date}>
-                      {month}月{day}日
-                    </option>
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => handleDateToggle(date)}
+                      className={`p-2 text-xs rounded border ${
+                        isSelected 
+                          ? 'bg-blue-500 text-white border-blue-500' 
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {day}
+                    </button>
                   );
                 })}
-              </select>
+              </div>
+              {selectedDates.length > 0 && (
+                <div className="mt-2 text-xs text-gray-600">
+                  {selectedDates.length}件の日付が選択されています
+                </div>
+              )}
             </div>
 
             {/* 希望時間帯 */}
