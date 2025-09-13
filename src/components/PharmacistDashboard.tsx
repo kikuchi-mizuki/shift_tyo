@@ -9,9 +9,22 @@ interface PharmacistDashboardProps {
 export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [tempSelectedDate, setTempSelectedDate] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('morning'); // デフォルトで午前を選択
   const [selectedPriority, setSelectedPriority] = useState('medium');
 
+  // 日付をリストに追加する関数
+  const addDateToList = () => {
+    if (tempSelectedDate && !selectedDates.includes(tempSelectedDate)) {
+      setSelectedDates(prev => [...prev, tempSelectedDate]);
+      setTempSelectedDate('');
+    }
+  };
+
+  // 日付をリストから削除する関数
+  const removeDateFromList = (dateToRemove: string) => {
+    setSelectedDates(prev => prev.filter(date => date !== dateToRemove));
+  };
   
   // Railwayログ用のヘルパー関数
   const logToRailway = (message: string, data?: any) => {
@@ -633,18 +646,14 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
             {/* 日付選択 */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                希望日 (複数選択可能)
+                希望日
               </label>
               <select
-                multiple
-                value={selectedDates}
-                onChange={(e) => {
-                  const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
-                  setSelectedDates(selectedOptions);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
-                size={10}
+                value={tempSelectedDate}
+                onChange={(e) => setTempSelectedDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
+                <option value="">日付を選択してください</option>
                 {Array.from({ length: 31 }, (_, i) => {
                   const day = i + 1;
                   const year = currentDate.getFullYear();
@@ -658,12 +667,37 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                   );
                 })}
               </select>
-              <div className="mt-1 text-xs text-gray-500">
-                Ctrlキー（MacではCmdキー）を押しながらクリックで複数選択
-              </div>
+              
+              {/* リストに追加ボタン */}
+              <button
+                type="button"
+                onClick={addDateToList}
+                className="mt-2 w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                リストに追加
+              </button>
+              
+              {/* 選択済み日付の表示 */}
               {selectedDates.length > 0 && (
-                <div className="mt-2 text-xs text-gray-600">
-                  {selectedDates.length}件の日付が選択されています
+                <div className="mt-3">
+                  <div className="text-xs text-gray-600 mb-2">選択済み日付:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedDates.map(date => (
+                      <span
+                        key={date}
+                        className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs"
+                      >
+                        {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
+                        <button
+                          type="button"
+                          onClick={() => removeDateFromList(date)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
