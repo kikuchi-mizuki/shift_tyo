@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Plus, Sun, Users } from 'lucide-react';
-import { shifts, shiftPostings, supabase } from '../lib/supabase';
+import { shifts, shiftPostings, systemStatus, supabase } from '../lib/supabase';
 
 // デバッグ: インポートの確認
 console.log('PharmacyDashboard imports:', { shifts, shiftPostings });
@@ -25,6 +25,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   // 募集登録での店舗名は一時保存は残しつつ単一選択へ
   const [singleStoreName, setSingleStoreName] = useState('');
   const [batchStoreNames, setBatchStoreNames] = useState<string[]>([]); // 追加リスト
+  const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
   // quick add input removed per request
 
   // 日付をリストに追加する関数
@@ -109,6 +110,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     try {
       console.log('=== loadData START ===');
       console.log('Loading pharmacy data for user:', user.id);
+      
+      // システム状態を取得
+      const { data: systemStatusData, error: systemStatusError } = await systemStatus.getSystemStatus();
+      if (!systemStatusError && systemStatusData) {
+        setIsSystemConfirmed(systemStatusData.status === 'confirmed');
+      }
       
       // 募集シフトを取得
       console.log('Calling shiftPostings.getPostings...');
@@ -1160,6 +1167,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 console.log('=== BUTTON CLICK START ===');
                 console.log('Form state:', { selectedDates, timeSlot, requiredStaff, memo });
                 
+                if (isSystemConfirmed) {
+                  alert('シフト確定済みのため編集できません');
+                  return;
+                }
                 if (selectedDates.length === 0 || !timeSlot || !requiredStaff) {
                   alert('募集日・時間帯・人数を選択してください');
                   return;
@@ -1169,10 +1180,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 handlePost();
               }}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${
+                isSystemConfirmed ? 'bg-gray-400 text-white cursor-not-allowed' :
                 findExistingPostingForCurrentSelection() ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
+              disabled={isSystemConfirmed}
             >
               {(() => {
+                if (isSystemConfirmed) return 'シフト確定済み';
                 const existing = findExistingPostingForCurrentSelection();
                 if (!existing) return '募集を追加';
                 return '募集を更新';

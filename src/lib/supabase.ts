@@ -895,3 +895,34 @@ export const shiftRequestsAdmin = {
     }
   }
 };
+
+// システム状態管理
+export const systemStatus = {
+  // システム状態を取得
+  getSystemStatus: async () => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    try {
+      // assigned_shiftsテーブルに確定済みシフトがあるかチェック
+      const { data, error } = await supabase
+        .from('assigned_shifts')
+        .select('id')
+        .eq('status', 'confirmed')
+        .limit(1);
+
+      if (error) {
+        console.error('Error checking system status:', error);
+        return { data: null, error };
+      }
+
+      // 確定済みシフトが1件でもあれば'confirmed'、なければ'pending'
+      const status = data && data.length > 0 ? 'confirmed' : 'pending';
+      return { data: { status }, error: null };
+    } catch (error) {
+      console.error('System status check error:', error);
+      return { data: null, error } as any;
+    }
+  }
+};

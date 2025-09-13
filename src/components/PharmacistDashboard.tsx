@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, supabase } from '../lib/supabase';
+import { shifts, shiftRequests, shiftPostings, systemStatus, supabase } from '../lib/supabase';
 
 interface PharmacistDashboardProps {
   user: any;
@@ -12,6 +12,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [tempSelectedDate, setTempSelectedDate] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('morning'); // デフォルトで午前を選択
   const [selectedPriority, setSelectedPriority] = useState('medium');
+  const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
 
   // 日付をリストに追加する関数
   const addDateToList = () => {
@@ -84,6 +85,12 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const loadShifts = async () => {
     try {
       console.log('Loading pharmacist shifts...');
+      
+      // システム状態を取得
+      const { data: systemStatusData, error: systemStatusError } = await systemStatus.getSystemStatus();
+      if (!systemStatusError && systemStatusData) {
+        setIsSystemConfirmed(systemStatusData.status === 'confirmed');
+      }
       
       // 直接Supabaseから確定シフトを取得
       const { data: assignedData, error: assignedError } = await supabase
@@ -776,7 +783,11 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
 
             {/* 登録/削除ボタン */}
-            {selectedDates.length > 0 && myShifts.some((s: any) => selectedDates.includes(s.date)) ? (
+            {isSystemConfirmed ? (
+              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
+                シフト確定済みのため編集できません
+              </div>
+            ) : selectedDates.length > 0 && myShifts.some((s: any) => selectedDates.includes(s.date)) ? (
               <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
                 確定済みのため編集できません
               </div>
