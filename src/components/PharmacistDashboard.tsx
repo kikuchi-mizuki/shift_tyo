@@ -108,7 +108,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       
       // アラートでも表示（コンソールが見えない場合）
       if (allAssignedData && allAssignedData.length > 0) {
-        alert(`assigned_shiftsテーブルに${allAssignedData.length}件のデータがあります`);
+        alert(`assigned_shiftsテーブルに${allAssignedData.length}件のデータがあります\n現在のユーザーID: ${user.id}\nテーブル内のpharmacist_id: ${allAssignedData.map((s: any) => s.pharmacist_id).slice(0, 3).join(', ')}...`);
       } else {
         alert('assigned_shiftsテーブルにデータがありません');
       }
