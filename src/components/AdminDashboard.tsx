@@ -1709,8 +1709,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     </div>
                                   )}
                                   
-                                  {/* 余裕の薬剤師（未マッチング） */}
-                                  {analysis.requests.length > analysis.totalMatched && (
+                                  {/* 余裕の薬剤師（未マッチング） - マッチング済みの場合のみ表示 */}
+                                  {analysis.totalMatched > 0 && analysis.requests.length > analysis.totalMatched && (
                                     <div className="mt-2">
                                       <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕の薬剤師 ({analysis.requests.length - analysis.totalMatched}人):</div>
                                       {analysis.requests.filter((request: any) => 
@@ -1734,7 +1734,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   <div className="text-xs">
                                     {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
                                   </div>
-                                  {/* 薬剤師のみ応募の場合も余裕の薬剤師を表示 */}
+                                  {/* 薬剤師のみ応募の場合の余裕の薬剤師を表示 */}
                                   {analysis.requests.length > 0 && (
                                     <div className="mt-2">
                                       <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕の薬剤師 ({analysis.requests.length}人):</div>
