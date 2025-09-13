@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { User, Building, Shield, LogIn } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { User, Building, Shield, LogIn, Pill } from 'lucide-react';
+import { supabase, isProduction } from '../lib/supabase';
 import { useMultiUserAuth } from '../contexts/MultiUserAuthContext';
 
 interface MultiUserLoginFormProps {
@@ -17,6 +17,34 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
   const [name, setName] = useState('');
   
   const { addSession, isLoggedIn, activeSessions } = useMultiUserAuth();
+
+  // デモアカウント（本番環境でも表示）
+  const demoAccounts = [
+    { 
+      email: 'tanaka@pharmacist.com', 
+      password: 'demo123', 
+      name: '田中花子（薬剤師）', 
+      type: 'pharmacist' as const,
+      icon: Pill,
+      color: 'text-green-600 bg-green-50 border-green-200'
+    },
+    { 
+      email: 'sakura@pharmacy.com', 
+      password: 'demo123', 
+      name: 'さくら薬局', 
+      type: 'pharmacy' as const,
+      icon: Building,
+      color: 'text-blue-600 bg-blue-50 border-blue-200'
+    },
+    { 
+      email: 'admin@system.com', 
+      password: 'admin123', 
+      name: 'システム管理者', 
+      type: 'admin' as const,
+      icon: Shield,
+      color: 'text-purple-600 bg-purple-50 border-purple-200'
+    }
+  ];
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +98,44 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
 
       // ログイン処理
       console.log('Attempting login with:', { email, userType });
+      
+      // デモ環境の場合はデモアカウント認証
+      if (!isProduction) {
+        const demoAccount = demoAccounts.find(acc => 
+          acc.email === email && acc.password === password && acc.type === userType
+        );
+
+        if (demoAccount) {
+          // デモアカウントでのログイン成功
+          const mockUser = {
+            id: `demo-${demoAccount.type}-${Date.now()}`,
+            email: demoAccount.email
+          };
+
+          const mockProfile = {
+            id: mockUser.id,
+            name: demoAccount.name,
+            email: demoAccount.email,
+            user_type: demoAccount.type
+          };
+
+          // セッションを追加
+          await addSession(mockUser);
+          
+          // フォームをリセット
+          setEmail('');
+          setPassword('');
+          
+          onLoginSuccess?.();
+          setLoading(false);
+          return;
+        } else {
+          setError('ログインに失敗しました。デモアカウントをご利用ください。');
+          setLoading(false);
+          return;
+        }
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -291,6 +357,49 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             </button>
           </form>
         </div>
+
+        {/* デモアカウント */}
+        {!isProduction && (
+          <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">デモアカウント</h3>
+            <div className="space-y-3">
+              {demoAccounts.map((account, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setEmail(account.email);
+                    setPassword(account.password);
+                    setUserType(account.type);
+                    setError('');
+                  }}
+                  className={`w-full flex items-center space-x-3 p-3 rounded-lg border-2 transition-all hover:shadow-md ${account.color}`}
+                >
+                  <account.icon className="w-5 h-5" />
+                  <div className="flex-1 text-left">
+                    <div className="font-medium">{account.name}</div>
+                    <div className="text-sm opacity-75">{account.email}</div>
+                  </div>
+                  <div className="text-xs opacity-75">クリックで入力</div>
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+              <strong>注意:</strong> デモ環境では上記のアカウントのみ使用できます。
+            </div>
+          </div>
+        )}
+
+        {/* 本番環境での説明 */}
+        {isProduction && (
+          <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">本番環境</h3>
+            <div className="text-sm text-gray-600 space-y-2">
+              <p>• 新規アカウントを作成してご利用ください</p>
+              <p>• メールアドレスとパスワードでログインできます</p>
+              <p>• セキュアな認証システムを使用しています</p>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
