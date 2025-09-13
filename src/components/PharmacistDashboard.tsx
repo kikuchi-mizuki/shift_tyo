@@ -12,16 +12,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('morning'); // デフォルトで午前を選択
   const [selectedPriority, setSelectedPriority] = useState('medium');
 
-  // 日付選択のハンドラー
-  const handleDateToggle = (date: string) => {
-    setSelectedDates(prev => {
-      if (prev.includes(date)) {
-        return prev.filter(d => d !== date);
-      } else {
-        return [...prev, date];
-      }
-    });
-  };
   
   // Railwayログ用のヘルパー関数
   const logToRailway = (message: string, data?: any) => {
@@ -611,6 +601,34 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
               </div>
             )}
             
+            {/* 選択された日付と時間 */}
+            {selectedDates.length > 0 && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <div className="text-sm font-medium text-blue-800 mb-2">
+                  選択された日付 ({selectedDates.length}件)
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedDates.map(date => (
+                    <span key={date} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                      {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
+                    </span>
+                  ))}
+                </div>
+                <div className="text-xs text-blue-600 mt-1">
+                  希望時間: {selectedTimeSlot ? (
+                    selectedTimeSlot === 'morning' || selectedTimeSlot === 'am' ? '午前 (9:00-13:00)' :
+                    selectedTimeSlot === 'afternoon' || selectedTimeSlot === 'pm' ? '午後 (13:00-18:00)' :
+                    selectedTimeSlot === 'full' ? '終日 (9:00-18:00)' :
+                    selectedTimeSlot === 'consult' ? '要相談' : selectedTimeSlot
+                  ) : '未選択'}
+                </div>
+                <div className="text-xs text-blue-600 mt-1">
+                  優先度: {selectedPriority === 'high' ? '高優先度' :
+                   selectedPriority === 'medium' ? '中優先度' :
+                   selectedPriority === 'low' ? '低優先度' : selectedPriority}
+                </div>
+              </div>
+            )}
 
             {/* 日付選択 */}
             <div className="mb-4">
@@ -618,51 +636,34 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 希望日 (複数選択可能)
               </label>
               <select
-                value=""
+                multiple
+                value={selectedDates}
                 onChange={(e) => {
-                  const date = e.target.value;
-                  if (date && !selectedDates.includes(date)) {
-                    setSelectedDates(prev => [...prev, date]);
-                  }
+                  const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                  setSelectedDates(selectedOptions);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
+                size={10}
               >
-                <option value="">日付を選択してください</option>
                 {Array.from({ length: 31 }, (_, i) => {
                   const day = i + 1;
                   const year = currentDate.getFullYear();
                   const month = currentDate.getMonth() + 1;
                   const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                  const isSelected = selectedDates.includes(date);
                   
                   return (
-                    <option key={day} value={date} disabled={isSelected}>
-                      {month}月{day}日 {isSelected ? '(選択済み)' : ''}
+                    <option key={day} value={date}>
+                      {month}月{day}日
                     </option>
                   );
                 })}
               </select>
-              
-              {/* 選択された日付の表示と削除ボタン */}
+              <div className="mt-1 text-xs text-gray-500">
+                Ctrlキー（MacではCmdキー）を押しながらクリックで複数選択
+              </div>
               {selectedDates.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  <div className="text-xs text-gray-600">
-                    選択された日付 ({selectedDates.length}件):
-                  </div>
-                  {selectedDates.map(date => (
-                    <div key={date} className="flex items-center justify-between bg-blue-50 px-2 py-1 rounded">
-                      <span className="text-sm text-blue-800">
-                        {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedDates(prev => prev.filter(d => d !== date))}
-                        className="text-red-600 hover:text-red-800 text-xs"
-                      >
-                        削除
-                      </button>
-                    </div>
-                  ))}
+                <div className="mt-2 text-xs text-gray-600">
+                  {selectedDates.length}件の日付が選択されています
                 </div>
               )}
             </div>

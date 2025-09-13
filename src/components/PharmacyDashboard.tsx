@@ -27,16 +27,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [batchStoreNames, setBatchStoreNames] = useState<string[]>([]); // 追加リスト
   // quick add input removed per request
 
-  // 日付選択のハンドラー
-  const handleDateToggle = (date: string) => {
-    setSelectedDates(prev => {
-      if (prev.includes(date)) {
-        return prev.filter(d => d !== date);
-      } else {
-        return [...prev, date];
-      }
-    });
-  };
   
   // storeNamesの状態変更を監視
   useEffect(() => {
@@ -858,57 +848,55 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               <div className="text-gray-500">日付を選択してください</div>
             )}
             
+            {/* 選択された日付の表示 */}
+            {selectedDates.length > 0 && (
+              <div className="mt-2 p-2 bg-blue-50 rounded">
+                <div className="text-xs font-medium text-blue-800 mb-1">
+                  選択された日付 ({selectedDates.length}件)
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedDates.map(date => (
+                    <span key={date} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                      {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           
           {/* 募集日 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">募集日 (複数選択可能)</label>
             <select
-              value=""
+              multiple
+              value={selectedDates}
               onChange={(e) => {
-                const date = e.target.value;
-                if (date && !selectedDates.includes(date)) {
-                  setSelectedDates(prev => [...prev, date]);
-                }
+                const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                setSelectedDates(selectedOptions);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
+              size={10}
             >
-              <option value="">日付を選択してください</option>
               {Array.from({ length: 31 }, (_, i) => {
                 const day = i + 1;
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth() + 1;
                 const date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                const isSelected = selectedDates.includes(date);
                 
                 return (
-                  <option key={day} value={date} disabled={isSelected}>
-                    {month}月{day}日 {isSelected ? '(選択済み)' : ''}
+                  <option key={day} value={date}>
+                    {month}月{day}日
                   </option>
                 );
               })}
             </select>
-            
-            {/* 選択された日付の表示と削除ボタン */}
+            <div className="mt-1 text-xs text-gray-500">
+              Ctrlキー（MacではCmdキー）を押しながらクリックで複数選択
+            </div>
             {selectedDates.length > 0 && (
-              <div className="mt-2 space-y-1">
-                <div className="text-xs text-gray-600">
-                  選択された日付 ({selectedDates.length}件):
-                </div>
-                {selectedDates.map(date => (
-                  <div key={date} className="flex items-center justify-between bg-blue-50 px-2 py-1 rounded">
-                    <span className="text-sm text-blue-800">
-                      {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedDates(prev => prev.filter(d => d !== date))}
-                      className="text-red-600 hover:text-red-800 text-xs"
-                    >
-                      削除
-                    </button>
-                  </div>
-                ))}
+              <div className="mt-2 text-xs text-gray-600">
+                {selectedDates.length}件の日付が選択されています
               </div>
             )}
           </div>
