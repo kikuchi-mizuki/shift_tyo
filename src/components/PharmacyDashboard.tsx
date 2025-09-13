@@ -525,9 +525,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('myShifts:', myShifts);
     
     // 追加対象（バッチ指定があればそれ、無ければ単一選択）
-    const targets = (batchStoreNames.length > 0 ? batchStoreNames : [singleStoreName]).map(n => (n || '').trim());
+    const targets = (batchStoreNames.length > 0 ? batchStoreNames : [singleStoreName])
+      .map(n => (n || '').trim())
+      .filter(n => n !== ''); // 空文字列を除外
     
-    if (targets.length === 0 || targets.every(t => t === '')) {
+    if (targets.length === 0) {
       alert('店舗名を選択してください');
       return;
     }
@@ -600,6 +602,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           }))
         );
         console.log('Creating postings:', payload);
+        console.log('Store names being saved:', creates);
         const { error } = await shiftPostings.createPostings(payload);
         if (error) throw error;
       }
@@ -957,7 +960,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     
                     return (
                       <div key={idx} className="flex items-center justify-between bg-white rounded border px-2 py-1">
-                        <div className="text-gray-800">店舗: {name || '（店舗名未設定）'}</div>
+                        <div className="text-gray-800">店舗: {name && name.trim() !== '' ? name : '（店舗名未設定）'}</div>
                         <div className="text-gray-500">{s.time_slot === 'morning' ? '午前' : s.time_slot === 'afternoon' ? '午後' : s.time_slot === 'full' ? '終日' : s.time_slot === 'consult' ? '要相談' : s.time_slot} / {s.required_staff || 1}人</div>
                       </div>
                     );
@@ -1065,7 +1068,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 type="button"
                 onClick={() => {
                   const name = (singleStoreName || '').trim();
-                  if (name === '' && !storeOptions.includes('')) return; // 空のみはスキップ
+                  if (name === '') return; // 空文字列はスキップ
                   if (!batchStoreNames.includes(name)) {
                     const next = [...batchStoreNames, name];
                     setBatchStoreNames(next);
@@ -1078,7 +1081,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               <div className="mt-2 flex flex-wrap gap-2">
                 {batchStoreNames.map((n, i) => (
                   <span key={`${n}-${i}`} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                    {n || '（店舗名なし）'}
+                    {n && n.trim() !== '' ? n : '（店舗名なし）'}
                     <button
                       type="button"
                       onClick={() => setBatchStoreNames(batchStoreNames.filter((x, idx) => idx !== i))}
