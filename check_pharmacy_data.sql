@@ -63,3 +63,4 @@ SELECT
 FROM user_profiles 
 WHERE user_type = 'pharmacy'
 ORDER BY name;
+

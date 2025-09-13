@@ -47,3 +47,4 @@ SELECT
 FROM shift_postings sp
 LEFT JOIN user_profiles up ON sp.pharmacy_id = up.id
 ORDER BY sp.date, sp.pharmacy_id;
+

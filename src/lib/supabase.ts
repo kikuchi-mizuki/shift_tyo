@@ -355,6 +355,83 @@ export const storeNgPharmacists = {
   }
 };
 
+// 薬剤師の店舗毎NG薬局設定
+export const storeNgPharmacies = {
+  // 薬剤師の店舗毎NG薬局設定を取得
+  getStoreNgPharmacies: async (pharmacistId: string) => {
+    if (!supabase) {
+      return { data: [], error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('store_ng_pharmacies')
+        .select('*')
+        .eq('pharmacist_id', pharmacistId);
+
+      if (error) {
+        console.error('Error fetching store NG pharmacies:', error);
+        return { data: [], error };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error('Exception in getStoreNgPharmacies:', error);
+      return { data: [], error: { message: '店舗毎のNG薬局の取得に失敗しました' } };
+    }
+  },
+
+  // 薬剤師の店舗毎NG薬局設定を更新
+  updateStoreNgPharmacies: async (pharmacistId: string, storeNgLists: {[pharmacyId: string]: {[storeName: string]: boolean}}) => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    try {
+      // 既存の設定を削除
+      const { error: deleteError } = await supabase
+        .from('store_ng_pharmacies')
+        .delete()
+        .eq('pharmacist_id', pharmacistId);
+
+      if (deleteError) {
+        console.error('Error deleting existing store NG pharmacies:', deleteError);
+        return { data: null, error: deleteError };
+      }
+
+      // 新しい設定を挿入
+      const insertData: any[] = [];
+      Object.entries(storeNgLists).forEach(([pharmacyId, storeList]) => {
+        Object.entries(storeList).forEach(([storeName, isNg]) => {
+          if (isNg) {
+            insertData.push({
+              pharmacist_id: pharmacistId,
+              pharmacy_id: pharmacyId,
+              store_name: storeName
+            });
+          }
+        });
+      });
+
+      if (insertData.length > 0) {
+        const { error: insertError } = await supabase
+          .from('store_ng_pharmacies')
+          .insert(insertData);
+
+        if (insertError) {
+          console.error('Error inserting store NG pharmacies:', insertError);
+          return { data: null, error: insertError };
+        }
+      }
+
+      return { data: true, error: null };
+    } catch (error) {
+      console.error('Exception in updateStoreNgPharmacies:', error);
+      return { data: null, error: { message: '店舗毎のNG薬局の更新に失敗しました' } };
+    }
+  }
+};
+
 // シフト関連の関数
 export const shifts = {
   // シフト取得

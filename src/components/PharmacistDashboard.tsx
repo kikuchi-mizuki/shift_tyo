@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, systemStatus, supabase } from '../lib/supabase';
+import { shifts, shiftRequests, shiftPostings, systemStatus, supabase, storeNgPharmacies } from '../lib/supabase';
 
 interface PharmacistDashboardProps {
   user: any;
@@ -72,6 +72,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [allPharmacies, setAllPharmacies] = useState<any[]>([]);
   const [ngList, setNgList] = useState<string[]>([]); // 薬局IDの配列
   const [selectedNgPharmacyId, setSelectedNgPharmacyId] = useState('');
+  const [storeNgLists, setStoreNgLists] = useState<{[pharmacyId: string]: {[storeName: string]: boolean}}>({}); // 店舗毎のNG薬局設定
+  const [selectedPharmacyForNg, setSelectedPharmacyForNg] = useState('');
+  const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
 
 
   useEffect(() => {
@@ -176,6 +179,21 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');
         setNgList(profileData.ng_list || []);
+      }
+      
+      // 店舗毎NG薬局設定を読み込み
+      const { data: storeNgData, error: storeNgError } = await storeNgPharmacies.getStoreNgPharmacies(userIdToUse);
+      if (!storeNgError && storeNgData) {
+        console.log('Store NG pharmacies loaded:', storeNgData);
+        // データをグループ化
+        const groupedData: {[pharmacyId: string]: {[storeName: string]: boolean}} = {};
+        storeNgData.forEach((item: any) => {
+          if (!groupedData[item.pharmacy_id]) {
+            groupedData[item.pharmacy_id] = {};
+          }
+          groupedData[item.pharmacy_id][item.store_name] = true;
+        });
+        setStoreNgLists(groupedData);
       }
       
       // シフトに関連する薬局のプロフィールを取得
@@ -333,6 +351,13 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
           console.log('Updated ng_list:', updateResult[0].ng_list);
         }
         
+        // 店舗毎NG薬局設定を保存
+        const { error: storeNgError } = await storeNgPharmacies.updateStoreNgPharmacies(userIdToUse, storeNgLists);
+        if (storeNgError) {
+          console.error('Error updating store NG pharmacies:', storeNgError);
+          alert('店舗毎NG薬局設定の保存に失敗しました');
+        }
+        
         setShowProfileEdit(false);
         // 成功時はローカルキャッシュも更新
         try {
@@ -365,6 +390,30 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
     
     // 即座にデータベースに保存
     await updateNgListInDatabase(newNgList);
+  };
+
+  // 店舗毎のNG薬局管理関数
+  const addStoreNgPharmacy = () => {
+    if (selectedPharmacyForNg && selectedStoreForNg) {
+      setStoreNgLists(prev => ({
+        ...prev,
+        [selectedPharmacyForNg]: {
+          ...(prev[selectedPharmacyForNg] || {}),
+          [selectedStoreForNg]: true
+        }
+      }));
+      setSelectedStoreForNg('');
+    }
+  };
+
+  const removeStoreNgPharmacy = (pharmacyId: string, storeName: string) => {
+    setStoreNgLists(prev => ({
+      ...prev,
+      [pharmacyId]: {
+        ...prev[pharmacyId],
+        [storeName]: false
+      }
+    }));
   };
 
   const updateNgListInDatabase = async (newNgList: string[]) => {
@@ -700,7 +749,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
                 {/* NG薬局の設定 */}
                 <div className="mt-4">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">NG薬局の設定</h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">NG薬局の設定（薬局全体）</h3>
                   <div className="flex space-x-2 mb-2">
                     <select
                       value={selectedNgPharmacyId}
@@ -727,6 +776,66 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                           <button onClick={() => removeNgPharmacy(id)} className="text-red-600 hover:text-red-800 text-sm">削除</button>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 店舗毎NG薬局の設定 */}
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">店舗毎NG薬局の設定</h3>
+                  <div className="space-y-2 mb-2">
+                    <select
+                      value={selectedPharmacyForNg}
+                      onChange={(e) => setSelectedPharmacyForNg(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">薬局を選択</option>
+                      {allPharmacies.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name || p.email}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={selectedStoreForNg}
+                      onChange={(e) => setSelectedStoreForNg(e.target.value)}
+                      placeholder="店舗名を入力"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                    <button
+                      onClick={addStoreNgPharmacy}
+                      className="w-full px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm"
+                    >
+                      店舗をNGに追加
+                    </button>
+                  </div>
+                  {Object.keys(storeNgLists).length > 0 && (
+                    <div className="space-y-2">
+                      {Object.entries(storeNgLists).map(([pharmacyId, storeList]) => {
+                        const pharmacy = allPharmacies.find(p => p.id === pharmacyId);
+                        return (
+                          <div key={pharmacyId} className="bg-white p-3 rounded border">
+                            <div className="text-sm font-medium text-gray-700 mb-2">
+                              {pharmacy?.name || pharmacyId}
+                            </div>
+                            <div className="space-y-1">
+                              {Object.entries(storeList).map(([storeName, isNg]) => {
+                                if (!isNg) return null;
+                                return (
+                                  <div key={storeName} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                    <span className="text-sm">{storeName}</span>
+                                    <button 
+                                      onClick={() => removeStoreNgPharmacy(pharmacyId, storeName)}
+                                      className="text-red-600 hover:text-red-800 text-sm"
+                                    >
+                                      削除
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
