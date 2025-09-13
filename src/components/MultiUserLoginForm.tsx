@@ -163,14 +163,30 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           }
         }
 
+        console.log('Attempting Supabase authentication...');
+        console.log('Auth request details:', {
+          email: email,
+          hasPassword: !!password,
+          supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+          supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
+        });
+        
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (error) {
-          console.error('Supabase auth error:', error);
-          setError(error.message);
+          console.error('Supabase auth error details:', {
+            message: error.message,
+            status: error.status,
+            statusText: error.statusText,
+            email: email,
+            hasPassword: !!password,
+            errorCode: error.code,
+            errorDetails: error
+          });
+          setError(`認証エラー: ${error.message}`);
           return;
         }
 
@@ -224,7 +240,7 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
       } finally {
         setLoading(false);
       }
-    }, 0); // 非同期実行
+    }, 0); // setTimeoutの閉じ括弧
   };
 
   const getUserTypeLabel = (type: 'pharmacist' | 'pharmacy' | 'admin') => {
@@ -441,29 +457,32 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
               onClick={async () => {
                 try {
                   console.log('=== MANUAL DIAGNOSTICS START ===');
+                  console.log('Current form state:', { email, password, userType, isRegistering });
+                  console.log('Browser info:', {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    cookieEnabled: navigator.cookieEnabled,
+                    localStorage: typeof(Storage) !== "undefined"
+                  });
+                  console.log('Environment:', {
+                    isProduction,
+                    supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
+                    supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET',
+                    actualUrl: import.meta.env.VITE_SUPABASE_URL,
+                    actualKey: import.meta.env.VITE_SUPABASE_ANON_KEY?.substring(0, 20) + '...'
+                  });
                   
-                  // 非同期で診断情報を出力
-                  setTimeout(() => {
-                    console.log('Current form state:', { email, password, userType, isRegistering });
-                    console.log('Browser info:', {
-                      userAgent: navigator.userAgent,
-                      platform: navigator.platform,
-                      cookieEnabled: navigator.cookieEnabled,
-                      localStorage: typeof(Storage) !== "undefined"
-                    });
-                    console.log('Environment:', {
-                      isProduction,
-                      supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
-                      supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
-                    });
-                    console.log('=== MANUAL DIAGNOSTICS END ===');
-                  }, 100);
+                  // Supabase接続テスト
+                  console.log('Testing Supabase connection...');
+                  try {
+                    const { data, error } = await supabase.auth.getSession();
+                    console.log('Supabase session test:', { data: !!data, error: error?.message });
+                  } catch (e) {
+                    console.error('Supabase connection test failed:', e);
+                  }
                   
-                  // アラートも非同期で表示
-                  setTimeout(() => {
-                    alert('診断情報をコンソールに出力しました。F12キーで開発者ツールを開いて確認してください。');
-                  }, 200);
-                  
+                  console.log('=== MANUAL DIAGNOSTICS END ===');
+                  alert('診断情報をコンソールに出力しました。F12キーで開発者ツールを開いて確認してください。');
                 } catch (error) {
                   console.error('Diagnostic error:', error);
                   alert('診断中にエラーが発生しました: ' + error.message);
