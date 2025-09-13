@@ -1680,6 +1680,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       })}
                                     </div>
                                   )}
+
+                                  {/* マッチングしていない薬剤師（不足がある場合） */}
+                                  {analysis.remainingRequired > 0 && analysis.requests.length > 0 && (
+                                    <div className="mt-2">
+                                      <div className="text-xs font-medium text-orange-700 mb-1">❌ マッチングしていない薬剤師 ({analysis.requests.length - analysis.totalMatched}人):</div>
+                                      {analysis.requests.filter((request: any) => 
+                                        !analysis.matchedPharmacists.some((mp: any) => mp.id === request.id)
+                                      ).map((request: any, idx: number) => {
+                                        const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                                        return (
+                                          <div key={idx} className="flex items-center justify-between bg-orange-50 px-2 py-1 rounded mb-1">
+                                            <span className="text-xs font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                            <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
                                 </>
                               ) : (
                                 <>
