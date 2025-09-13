@@ -679,7 +679,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
               <button
                 type="button"
                 onClick={addDateToList}
-                className="mt-2 py-2 px-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                className="mt-2 py-2 px-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs"
               >
                 リストに追加
               </button>
