@@ -916,9 +916,44 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
             ) : (
               <button
                 onClick={handleSubmit}
-                className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                  (() => {
+                    // 選択された日付に既存の希望があるかチェック
+                    const hasExistingRequests = selectedDates.some(date => 
+                      myRequests.some((req: any) => req.date === date)
+                    );
+                    
+                    if (hasExistingRequests) {
+                      // すべての選択日付に既存の希望がある場合は「希望を更新」
+                      const allDatesHaveRequests = selectedDates.every(date => 
+                        myRequests.some((req: any) => req.date === date)
+                      );
+                      return allDatesHaveRequests 
+                        ? 'bg-amber-600 text-white hover:bg-amber-700' 
+                        : 'bg-orange-600 text-white hover:bg-orange-700';
+                    }
+                    return 'bg-green-600 text-white hover:bg-green-700';
+                  })()
+                }`}
               >
-                希望を追加
+                {(() => {
+                  if (selectedDates.length === 0) return '希望を追加';
+                  
+                  // 選択された日付に既存の希望があるかチェック
+                  const hasExistingRequests = selectedDates.some(date => 
+                    myRequests.some((req: any) => req.date === date)
+                  );
+                  
+                  if (hasExistingRequests) {
+                    // すべての選択日付に既存の希望がある場合は「希望を更新」
+                    const allDatesHaveRequests = selectedDates.every(date => 
+                      myRequests.some((req: any) => req.date === date)
+                    );
+                    return allDatesHaveRequests ? '希望を更新' : '希望を更新';
+                  }
+                  
+                  return '希望を追加';
+                })()}
               </button>
             )}
 
