@@ -476,6 +476,59 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
     }
   };
 
+  // 既存の希望を削除する関数
+  const handleDeleteExistingRequests = async () => {
+    if (selectedDates.length === 0) {
+      alert('削除する日付を選択してください');
+      return;
+    }
+
+    try {
+      // 認証ユーザーIDを取得
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const userIdToUse = authUser?.id || user.id;
+
+      // 選択された日付の既存の希望を取得
+      const existingRequests = myRequests.filter((req: any) => 
+        selectedDates.includes(req.date) && req.pharmacist_id === userIdToUse
+      );
+
+      if (existingRequests.length === 0) {
+        alert('削除する希望が見つかりません');
+        return;
+      }
+
+      // 削除確認
+      const confirmMessage = `${existingRequests.length}件の希望を削除しますか？\n日付: ${existingRequests.map((r: any) => r.date).join(', ')}`;
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+
+      // 各希望を削除
+      const deletePromises = existingRequests.map((req: any) =>
+        supabase.from('shift_requests').delete().eq('id', req.id)
+      );
+
+      const results = await Promise.all(deletePromises);
+      const errors = results.filter(result => result.error);
+
+      if (errors.length > 0) {
+        console.error('Error deleting shift requests:', errors);
+        alert(`シフト希望の削除に失敗しました: ${errors[0].error?.message || 'Unknown error'}`);
+      } else {
+        console.log('Shift requests deleted successfully');
+        alert(`${existingRequests.length}件のシフト希望を削除しました`);
+        setSelectedDates([]);
+        setSelectedTimeSlot('');
+        setMemo('');
+        loadShifts();
+      }
+    } catch (error) {
+      console.error('Error deleting shift requests:', error);
+      alert('シフト希望の削除に失敗しました');
+    }
+  };
+
   const timeSlots = [
     { id: 'morning', label: '午前 (9:00-13:00)', icon: Sun, color: 'bg-green-500 hover:bg-green-600' },
     { id: 'afternoon', label: '午後 (13:00-18:00)', icon: Sun, color: 'bg-orange-500 hover:bg-orange-600' },
@@ -913,49 +966,42 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
               <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
                 確定済みのため編集できません
               </div>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                  (() => {
-                    // 選択された日付に既存の希望があるかチェック
-                    const hasExistingRequests = selectedDates.some(date => 
-                      myRequests.some((req: any) => req.date === date)
-                    );
-                    
-                    if (hasExistingRequests) {
-                      // すべての選択日付に既存の希望がある場合は「希望を更新」
-                      const allDatesHaveRequests = selectedDates.every(date => 
-                        myRequests.some((req: any) => req.date === date)
-                      );
-                      return allDatesHaveRequests 
-                        ? 'bg-amber-600 text-white hover:bg-amber-700' 
-                        : 'bg-orange-600 text-white hover:bg-orange-700';
-                    }
-                    return 'bg-green-600 text-white hover:bg-green-700';
-                  })()
-                }`}
-              >
-                {(() => {
-                  if (selectedDates.length === 0) return '希望を追加';
-                  
-                  // 選択された日付に既存の希望があるかチェック
-                  const hasExistingRequests = selectedDates.some(date => 
-                    myRequests.some((req: any) => req.date === date)
-                  );
-                  
-                  if (hasExistingRequests) {
-                    // すべての選択日付に既存の希望がある場合は「希望を更新」
-                    const allDatesHaveRequests = selectedDates.every(date => 
-                      myRequests.some((req: any) => req.date === date)
-                    );
-                    return allDatesHaveRequests ? '希望を更新' : '希望を更新';
-                  }
-                  
-                  return '希望を追加';
-                })()}
-              </button>
-            )}
+            ) : (() => {
+              // 選択された日付に既存の希望があるかチェック
+              const hasExistingRequests = selectedDates.some(date => 
+                myRequests.some((req: any) => req.date === date)
+              );
+              
+              if (hasExistingRequests) {
+                // 既存の希望がある場合は「希望を更新」と「希望を削除」の両方を表示
+                return (
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleSubmit}
+                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-amber-600 text-white hover:bg-amber-700"
+                    >
+                      希望を更新
+                    </button>
+                    <button
+                      onClick={handleDeleteExistingRequests}
+                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-red-700"
+                    >
+                      希望を削除
+                    </button>
+                  </div>
+                );
+              } else {
+                // 既存の希望がない場合は「希望を追加」のみ表示
+                return (
+                  <button
+                    onClick={handleSubmit}
+                    className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
+                  >
+                    希望を追加
+                  </button>
+                );
+              }
+            })()}
 
             {/* 情報ボックス */}
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
