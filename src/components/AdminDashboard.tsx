@@ -861,26 +861,57 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
                   const availableSlot = slotRequests.length;
 
-                  // NGと時間帯一致を満たすリクエストをカウント
-                  const compatibleCount = slotRequests.filter((r: any) => {
-                    const pharmacist = getProfile(r.pharmacist_id);
-                    const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
-                    return slotPostings.some((p: any) => {
-                      const pharmacy = getProfile(p.pharmacy_id);
-                      const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
-                      const blockedByPharmacist = pharmacistNg.includes(p.pharmacy_id);
-                      const blockedByPharmacy = pharmacyNg.includes(r.pharmacist_id);
-                      if (blockedByPharmacist || blockedByPharmacy) return false;
-                      return isTimeCompatible(r.time_slot, p.time_slot);
-                    });
-                  }).length;
+                  // 右の詳細パネルと同じマッチングシミュレーション
+                  const sortedRequests = slotRequests.sort((a: any, b: any) => {
+                    const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+                    return priorityOrder[b.priority] - priorityOrder[a.priority];
+                  });
 
-                  const matchedSlot = Math.min(requiredSlot, compatibleCount);
-                  const shortageSlot = Math.max(requiredSlot - compatibleCount, 0);
-                  const excessSlot = Math.max(compatibleCount - requiredSlot, 0);
+                  const matchedPharmacists: any[] = [];
+                  const matchedPharmacies: any[] = [];
+                  let remainingRequired = requiredSlot;
+
+                  // 各薬局の必要人数を管理
+                  const pharmacyNeeds = slotPostings.map((p: any) => ({
+                    pharmacy_id: p.pharmacy_id,
+                    required: Number(p.required_staff) || 0,
+                    remaining: Number(p.required_staff) || 0,
+                    store_name: p.store_name
+                  }));
+
+                  // 優先順位順にマッチング
+                  for (const request of sortedRequests) {
+                    if (remainingRequired <= 0) break;
+
+                    const pharmacist = getProfile(request.pharmacist_id);
+                    const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+
+                    // 利用可能な薬局を探す
+                    for (const pharmacyNeed of pharmacyNeeds) {
+                      if (pharmacyNeed.remaining <= 0) continue;
+
+                      const pharmacy = getProfile(pharmacyNeed.pharmacy_id);
+                      const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+
+                      const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
+                      const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+
+                      if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+                        matchedPharmacists.push(request);
+                        matchedPharmacies.push(pharmacyNeed);
+                        pharmacyNeed.remaining--;
+                        remainingRequired--;
+                        break;
+                      }
+                    }
+                  }
+
+                  const matchedSlot = matchedPharmacists.length;
+                  const shortageSlot = Math.max(requiredSlot - matchedSlot, 0);
+                  const excessSlot = Math.max(availableSlot - requiredSlot, 0);
 
                   // デバッグ用ログ
-                  console.log(`時間帯 ${slot}: 必要=${requiredSlot}, 利用可能=${availableSlot}, 互換=${compatibleCount}, マッチ=${matchedSlot}, 不足=${shortageSlot}`);
+                  console.log(`時間帯 ${slot}: 必要=${requiredSlot}, 利用可能=${availableSlot}, マッチ=${matchedSlot}, 不足=${shortageSlot}`);
 
                   totalRequired += requiredSlot;
                   totalAvailable += availableSlot;
