@@ -298,14 +298,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           </form>
         </div>
 
-        {/* ヘルプテキスト */}
-        <div className="text-center text-sm text-gray-500">
-          <p>複数のユーザータイプで同時にログインできます。</p>
-          <p>各ユーザータイプは独立して管理されます。</p>
-          {isRegistering && (
-            <p className="mt-2 text-blue-600">新規登録後は、ログインしてご利用ください。</p>
-          )}
-        </div>
       </div>
     </div>
   );
