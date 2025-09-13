@@ -735,9 +735,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         {/* 左: カレンダー */}
-      <div className="flex-1 bg-white rounded-lg shadow p-4 lg:p-6">
+      <div className="flex-1 bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
             <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 rounded-lg">←</button>
@@ -759,11 +759,11 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {getDaysInMonth(currentDate).map((day, idx) => (
             <div
               key={idx}
-              className={`p-2 text-center text-sm border border-gray-200 min-h-[72px] ${
+              className={`p-2 sm:p-3 text-center text-sm border border-gray-200 min-h-[80px] sm:min-h-[90px] ${
                 day ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
               } ${
                 selectedDates.includes(`${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`)
@@ -781,7 +781,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     if (dayConfirmedShifts.length > 0) {
                       return (
                         <div className="relative group">
-                          <div className="text-[8px] text-green-700 bg-green-50 border border-green-200 rounded px-1 mt-1 inline-block cursor-pointer">
+                          <div className="text-[9px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 py-0.5 mt-1 inline-block cursor-pointer">
                             確定{dayConfirmedShifts.length}件
                           </div>
                           
@@ -815,7 +815,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     if (hasConfirmed) return null;
                     const count = myShifts.filter((s: any) => s.date === dateStr).length;
                     return count > 0 ? (
-                      <div className="text-[8px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 mt-1 inline-block">募集 {count}件</div>
+                      <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">募集 {count}件</div>
                     ) : null;
                   })()}
                 </>
@@ -826,7 +826,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       </div>
 
       {/* 右: シフト募集フォーム */}
-      <div className="w-full lg:w-96 bg-white rounded-lg shadow">
+      <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow">
         <div className="bg-blue-600 text-white p-4 rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
