@@ -9,6 +9,7 @@ const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
 const AdminMatchingPanel = React.lazy(() => import('./components/AdminMatchingPanel'));
 const UserManagement = React.lazy(() => import('./components/UserManagement'));
 import { useAuth } from './hooks/useAuth';
+import { MultiUserIndicator } from './components/MultiUserIndicator';
 
 // エラーバウンダリーコンポーネント
 class ErrorBoundary extends Component<
@@ -148,6 +149,7 @@ function App() {
                 </h1>
               </div>
               <div className="flex items-center space-x-2 sm:space-x-4">
+                <MultiUserIndicator currentUser={userProfile || user} />
                 <span className="text-xs sm:text-sm text-gray-600 truncate max-w-32 sm:max-w-none">
                   {user.email}
                 </span>
