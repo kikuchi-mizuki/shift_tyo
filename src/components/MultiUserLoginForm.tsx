@@ -19,7 +19,14 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
   const { addSession, isLoggedIn, activeSessions } = useMultiUserAuth();
 
   // コンポーネントマウント時のデバッグ情報
-  console.log('MultiUserLoginForm mounted:', { isProduction, activeSessions: activeSessions.length });
+  console.log('MultiUserLoginForm mounted:', { 
+    isProduction, 
+    activeSessions: activeSessions.length,
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    cookieEnabled: navigator.cookieEnabled,
+    localStorage: typeof(Storage) !== "undefined"
+  });
 
   // デモアカウント（本番環境でも表示）
   const demoAccounts = [
@@ -183,16 +190,18 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
 
         // セッションを追加
         try {
+          console.log('Adding session for user:', data.user.id);
           await addSession(data.user);
           
           // フォームをリセット
           setEmail('');
           setPassword('');
           
+          console.log('Login successful, calling onLoginSuccess');
           onLoginSuccess?.();
         } catch (sessionError) {
           console.error('Session creation error:', sessionError);
-          setError('セッションの作成に失敗しました。再度お試しください。');
+          setError(`セッションの作成に失敗しました: ${sessionError.message || 'Unknown error'}`);
           return;
         }
       }

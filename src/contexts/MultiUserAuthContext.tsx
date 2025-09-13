@@ -39,23 +39,35 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
 
   // ローカルストレージからセッション情報を復元
   useEffect(() => {
-    const savedSessions = localStorage.getItem('multi_user_sessions');
-    const savedCurrentType = localStorage.getItem('current_user_type');
-    
-    if (savedSessions) {
-      try {
-        const sessions = JSON.parse(savedSessions).map((session: any) => ({
-          ...session,
-          lastActive: new Date(session.lastActive)
-        }));
-        setActiveSessions(sessions);
-      } catch (error) {
-        console.error('Error parsing saved sessions:', error);
+    try {
+      console.log('MultiUserAuth: Loading sessions from localStorage');
+      const savedSessions = localStorage.getItem('multi_user_sessions');
+      const savedCurrentType = localStorage.getItem('current_user_type');
+      
+      console.log('MultiUserAuth: Saved data:', { 
+        savedSessions: savedSessions ? 'EXISTS' : 'NULL',
+        savedCurrentType: savedCurrentType || 'NULL'
+      });
+      
+      if (savedSessions) {
+        try {
+          const sessions = JSON.parse(savedSessions).map((session: any) => ({
+            ...session,
+            lastActive: new Date(session.lastActive)
+          }));
+          setActiveSessions(sessions);
+          console.log('MultiUserAuth: Loaded sessions:', sessions.length);
+        } catch (error) {
+          console.error('Error parsing saved sessions:', error);
+        }
       }
-    }
-    
-    if (savedCurrentType) {
-      setCurrentUserType(savedCurrentType as 'pharmacist' | 'pharmacy' | 'admin');
+      
+      if (savedCurrentType) {
+        setCurrentUserType(savedCurrentType as 'pharmacist' | 'pharmacy' | 'admin');
+        console.log('MultiUserAuth: Set current user type:', savedCurrentType);
+      }
+    } catch (error) {
+      console.error('MultiUserAuth: Error accessing localStorage:', error);
     }
   }, []);
 
@@ -78,7 +90,12 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
 
   // セッション情報をローカルストレージに保存
   useEffect(() => {
-    localStorage.setItem('multi_user_sessions', JSON.stringify(activeSessions));
+    try {
+      console.log('MultiUserAuth: Saving sessions to localStorage:', activeSessions.length);
+      localStorage.setItem('multi_user_sessions', JSON.stringify(activeSessions));
+    } catch (error) {
+      console.error('MultiUserAuth: Error saving sessions to localStorage:', error);
+    }
   }, [activeSessions]);
 
   useEffect(() => {
