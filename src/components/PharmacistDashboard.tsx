@@ -690,19 +690,36 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {myShifts.map((shift: any, index: number) => {
                     const pharmacyProfile = userProfiles[shift.pharmacy_id];
+                    
+                    // 店舗名を取得（memoから抽出または直接指定）
+                    const getStoreName = (shift: any) => {
+                      const direct = (shift.store_name || '').trim();
+                      let fromMemo = '';
+                      if (!direct && typeof shift.memo === 'string') {
+                        const m = shift.memo.match(/\[store:([^\]]+)\]/);
+                        if (m && m[1]) fromMemo = m[1];
+                      }
+                      return direct || fromMemo || '（店舗名未設定）';
+                    };
+                    
+                    const storeName = getStoreName(shift);
+                    
                     return (
                       <div key={index} className="bg-white p-3 rounded border border-green-200">
                         <div className="text-sm font-medium text-gray-800">
                           {new Date(shift.date).getMonth() + 1}月{new Date(shift.date).getDate()}日
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
+                          薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '薬局名未設定'}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          店舗: {storeName}
+                        </div>
+                        <div className="text-xs text-gray-600">
                           時間: {shift.time_slot === 'morning' || shift.time_slot === 'am' ? '午前 (9:00-13:00)' :
                                 shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '午後 (13:00-18:00)' :
                                 shift.time_slot === 'full' ? '終日 (9:00-18:00)' :
                                 shift.time_slot === 'consult' ? '要相談' : '夜間'}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '薬局名未設定'}
                         </div>
                       </div>
                     );
