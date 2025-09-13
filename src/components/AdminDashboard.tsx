@@ -1662,18 +1662,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     </div>
                                   )}
                                   
-                                  {/* 希望している薬剤師（全員） */}
-                                  {analysis.requests.length > 0 && (
+                                  {/* 余裕の薬剤師（未マッチング） */}
+                                  {analysis.hasExcess && analysis.requests.length > analysis.totalRequired && (
                                     <div className="mt-2">
-                                      <div className="text-xs font-medium text-cyan-700 mb-1">📋 希望している薬剤師 ({analysis.requests.length}人):</div>
-                                      {analysis.requests.map((request: any, idx: number) => {
+                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕の薬剤師 ({analysis.requests.length - analysis.totalRequired}人):</div>
+                                      {analysis.requests.slice(analysis.totalRequired).map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
-                                        const isMatched = analysis.matchedPharmacists.some((mp: any) => mp.id === request.id);
-                                        const matchStatus = isMatched ? '✅' : '❌';
                                         return (
-                                          <div key={idx} className="flex items-center justify-between">
-                                            <span className="text-xs">{matchStatus} {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                          <div key={idx} className="flex items-center justify-between bg-yellow-50 px-2 py-1 rounded mb-1">
+                                            <span className="text-xs font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
                                             <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
                                           </div>
                                         );
@@ -1686,16 +1684,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   <div className="text-xs">
                                     {analysis.requests.length > 0 ? '薬剤師のみ応募' : '薬局のみ募集'}
                                   </div>
-                                  {/* 薬剤師のみ応募の場合も希望している薬剤師を表示 */}
+                                  {/* 薬剤師のみ応募の場合も余裕の薬剤師を表示 */}
                                   {analysis.requests.length > 0 && (
                                     <div className="mt-2">
-                                      <div className="text-xs font-medium text-cyan-700 mb-1">📋 希望している薬剤師 ({analysis.requests.length}人):</div>
+                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕の薬剤師 ({analysis.requests.length}人):</div>
                                       {analysis.requests.map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                                         return (
-                                          <div key={idx} className="flex items-center justify-between">
-                                            <span className="text-xs">❌ {pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                          <div key={idx} className="flex items-center justify-between bg-yellow-50 px-2 py-1 rounded mb-1">
+                                            <span className="text-xs font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
                                             <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
                                           </div>
                                         );
