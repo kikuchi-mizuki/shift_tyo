@@ -95,8 +95,8 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
       };
 
       setActiveSessions(prev => {
-        // 同じユーザータイプのセッションがある場合は置き換え
-        const filtered = prev.filter(session => session.user_type !== userType);
+        // 同じユーザーIDのセッションがある場合は置き換え（同じユーザータイプでも異なるユーザーは許可）
+        const filtered = prev.filter(session => session.id !== user.id);
         return [...filtered, newSession];
       });
 
