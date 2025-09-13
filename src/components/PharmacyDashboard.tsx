@@ -200,7 +200,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         console.log('Loading store NG pharmacists...');
         const { data: storeNgData, error: storeNgError } = await storeNgPharmacists.getStoreNgPharmacists(user.id);
         if (storeNgError) {
-          console.error('Error loading store NG pharmacists:', storeNgError);
+          console.error('Error loading store NG pharmacists:', {
+            error: storeNgError,
+            code: storeNgError.code,
+            message: storeNgError.message,
+            details: storeNgError.details,
+            hint: storeNgError.hint
+          });
+          // エラーが発生しても空のデータで初期化
+          setStoreNgLists({});
         } else {
           console.log('Store NG pharmacists loaded:', storeNgData);
           // データを店舗名ごとにグループ化

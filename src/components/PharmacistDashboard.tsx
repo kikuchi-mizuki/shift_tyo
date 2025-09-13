@@ -216,7 +216,17 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       
       // 店舗毎NG薬局設定を読み込み
       const { data: storeNgData, error: storeNgError } = await storeNgPharmacies.getStoreNgPharmacies(userIdToUse);
-      if (!storeNgError && storeNgData) {
+      if (storeNgError) {
+        console.error('Error loading store NG pharmacies:', {
+          error: storeNgError,
+          code: storeNgError.code,
+          message: storeNgError.message,
+          details: storeNgError.details,
+          hint: storeNgError.hint
+        });
+        // エラーが発生しても空のデータで初期化
+        setStoreNgLists({});
+      } else if (storeNgData) {
         console.log('Store NG pharmacies loaded:', storeNgData);
         // データをグループ化
         const groupedData: {[pharmacyId: string]: {[storeName: string]: boolean}} = {};

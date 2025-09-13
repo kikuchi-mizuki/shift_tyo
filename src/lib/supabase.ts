@@ -233,6 +233,7 @@ export const storeNgPharmacists = {
     }
 
     try {
+      console.log('Attempting to fetch store NG pharmacists for pharmacy_id:', pharmacyId);
       const { data, error } = await supabase
         .from('store_ng_pharmacists')
         .select(`
@@ -246,10 +247,25 @@ export const storeNgPharmacists = {
         .eq('pharmacy_id', pharmacyId);
 
       if (error) {
-        console.error('Error fetching store NG pharmacists:', error);
+        console.error('Error fetching store NG pharmacists:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          pharmacy_id: pharmacyId
+        });
+        
+        // テーブルが存在しない場合のエラーハンドリング
+        if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+          console.warn('store_ng_pharmacists table not found, returning empty data');
+          return { data: [], error: null };
+        }
+        
         return { data: null, error };
       }
 
+      console.log('Store NG pharmacists fetched successfully:', data);
       return { data, error: null };
     } catch (error) {
       console.error('Exception in getStoreNgPharmacists:', error);
@@ -367,16 +383,32 @@ export const storeNgPharmacies = {
     }
 
     try {
+      console.log('Attempting to fetch store NG pharmacies for pharmacist_id:', pharmacistId);
       const { data, error } = await supabase
         .from('store_ng_pharmacies')
         .select('*')
         .eq('pharmacist_id', pharmacistId);
 
       if (error) {
-        console.error('Error fetching store NG pharmacies:', error);
+        console.error('Error fetching store NG pharmacies:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          pharmacist_id: pharmacistId
+        });
+        
+        // テーブルが存在しない場合のエラーハンドリング
+        if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+          console.warn('store_ng_pharmacies table not found, returning empty data');
+          return { data: [], error: null };
+        }
+        
         return { data: [], error };
       }
 
+      console.log('Store NG pharmacies fetched successfully:', data);
       return { data: data || [], error: null };
     } catch (error) {
       console.error('Exception in getStoreNgPharmacies:', error);
