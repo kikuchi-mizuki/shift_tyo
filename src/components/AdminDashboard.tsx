@@ -676,7 +676,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       setSystemStatus('confirmed');
       setLastUpdated(new Date());
-      alert(`${confirmedShifts.length}件のシフトを確定しました（重複は自動的に処理されました）`);
       
       // データを再読み込み
       loadAll();

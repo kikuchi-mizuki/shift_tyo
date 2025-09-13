@@ -480,7 +480,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           console.log('Updated store_names length:', updateResult[0].store_names?.length);
         }
         
-        alert('プロフィールを更新しました');
         setShowProfileEdit(false);
         // 成功時はローカルキャッシュも更新
         try {

@@ -333,7 +333,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
           console.log('Updated ng_list:', updateResult[0].ng_list);
         }
         
-        alert('プロフィールを更新しました');
         setShowProfileEdit(false);
         // 成功時はローカルキャッシュも更新
         try {
@@ -464,7 +463,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         alert(`シフト希望の登録に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
       } else {
         console.log('Shift requests created successfully');
-        alert(`${selectedDates.length}件のシフト希望を登録しました`);
         setSelectedDates([]);
         setSelectedTimeSlot('');
         setMemo('');
@@ -517,7 +515,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         alert(`シフト希望の削除に失敗しました: ${errors[0].error?.message || 'Unknown error'}`);
       } else {
         console.log('Shift requests deleted successfully');
-        alert(`${existingRequests.length}件のシフト希望を削除しました`);
         setSelectedDates([]);
         setSelectedTimeSlot('');
         setMemo('');
