@@ -75,6 +75,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [storeNgLists, setStoreNgLists] = useState<{[pharmacyId: string]: {[storeName: string]: boolean}}>({}); // 店舗毎のNG薬局設定
   const [selectedPharmacyForNg, setSelectedPharmacyForNg] = useState('');
   const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
+  const [availableStores, setAvailableStores] = useState<string[]>([]); // 選択された薬局の店舗名リスト
 
 
   useEffect(() => {
@@ -225,12 +226,28 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       try {
         const { data } = await supabase
           .from('user_profiles')
-          .select('id,name,email')
+          .select('id,name,email,store_names')
           .eq('user_type', 'pharmacy');
         setAllPharmacies(data || []);
       } catch {}
     })();
   }, []);
+
+  // 選択された薬局の店舗名リストを取得
+  useEffect(() => {
+    if (selectedPharmacyForNg) {
+      const pharmacy = allPharmacies.find(p => p.id === selectedPharmacyForNg);
+      if (pharmacy && pharmacy.store_names && Array.isArray(pharmacy.store_names)) {
+        setAvailableStores(pharmacy.store_names);
+      } else {
+        setAvailableStores([]);
+      }
+      setSelectedStoreForNg(''); // 薬局が変更されたら店舗選択をリセット
+    } else {
+      setAvailableStores([]);
+      setSelectedStoreForNg('');
+    }
+  }, [selectedPharmacyForNg, allPharmacies]);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -794,16 +811,34 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                         <option key={p.id} value={p.id}>{p.name || p.email}</option>
                       ))}
                     </select>
-                    <input
-                      type="text"
+                    <select
                       value={selectedStoreForNg}
                       onChange={(e) => setSelectedStoreForNg(e.target.value)}
-                      placeholder="店舗名を入力"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
+                      disabled={!selectedPharmacyForNg || availableStores.length === 0}
+                    >
+                      <option value="">
+                        {!selectedPharmacyForNg 
+                          ? "薬局を先に選択してください" 
+                          : availableStores.length === 0 
+                            ? "この薬局には店舗が登録されていません" 
+                            : "店舗を選択"
+                        }
+                      </option>
+                      {availableStores.map((storeName) => (
+                        <option key={storeName} value={storeName}>
+                          {storeName}
+                        </option>
+                      ))}
+                    </select>
                     <button
                       onClick={addStoreNgPharmacy}
-                      className="w-full px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm"
+                      disabled={!selectedPharmacyForNg || !selectedStoreForNg}
+                      className={`w-full px-3 py-2 rounded-lg text-sm ${
+                        !selectedPharmacyForNg || !selectedStoreForNg
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          : 'bg-orange-600 text-white hover:bg-orange-700'
+                      }`}
                     >
                       店舗をNGに追加
                     </button>
