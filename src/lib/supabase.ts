@@ -12,7 +12,10 @@ console.log('Supabase config:', {
   url: supabaseUrl ? 'SET' : 'NOT SET',
   key: supabaseAnonKey ? 'SET' : 'NOT SET',
   urlValue: supabaseUrl?.substring(0, 20) + '...',
-  keyValue: supabaseAnonKey?.substring(0, 10) + '...'
+  keyValue: supabaseAnonKey?.substring(0, 10) + '...',
+  isProduction: !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key'),
+  actualUrl: supabaseUrl,
+  actualKey: supabaseAnonKey?.substring(0, 20) + '...'
 });
 
 // Supabaseクライアントの作成（シンプル版）

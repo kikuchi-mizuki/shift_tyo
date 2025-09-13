@@ -66,6 +66,8 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           user_type: userType
         };
 
+        console.log('Registering new user:', { email, userType, userData });
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -160,7 +162,7 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
 
         if (profileError) {
           console.error('Profile fetch error:', profileError);
-          setError('ユーザープロフィールの取得に失敗しました');
+          setError(`ユーザープロフィールの取得に失敗しました: ${profileError.message}`);
           return;
         }
 
@@ -170,6 +172,7 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
         // 選択されたユーザータイプと実際のユーザータイプが一致するかチェック
         if (actualUserType !== userType) {
           setError(`このアカウントは${getUserTypeLabel(actualUserType)}用です。正しいユーザータイプを選択してください。`);
+          console.error('User type mismatch:', { selected: userType, actual: actualUserType });
           return;
         }
 
