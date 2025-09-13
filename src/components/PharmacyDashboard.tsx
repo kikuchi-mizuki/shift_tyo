@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Plus, MessageCircle, Sun, Users } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Sun, Users } from 'lucide-react';
 import { shifts, shiftPostings, supabase } from '../lib/supabase';
 
 // デバッグ: インポートの確認
@@ -89,7 +89,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const storeOptions: string[] = Array.from(new Set([
     ...(storeNames || []),
     ...((myShifts || []).map((s: any) => extractStoreName(s)).filter(Boolean))
-  ]));
+  ])).filter(name => name && name.trim() !== ''); // 空文字列を除外
 
   useEffect(() => {
     if (!singleStoreName && storeOptions && storeOptions.length > 0) {
@@ -218,11 +218,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
 
-  // 備考から [store:◯◯] タグを取り除く（UI表示用）
-  const stripStoreTag = (text: any) => {
-    if (typeof text !== 'string') return '';
-    return text.replace(/\[store:[^\]]+\]\s*/g, '').trim();
-  };
 
   // （上でfunction宣言したのでここは削除）
 
@@ -521,13 +516,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       .map(n => (n || '').trim())
       .filter(n => n !== ''); // 空文字列を除外
     
-    // バッチリストが空で、単一選択も空の場合はエラー
-    if (batchStoreNames.length === 0 && (!singleStoreName || singleStoreName.trim() === '')) {
-      console.log('No store name selected');
-      alert('店舗名を選択してください');
-      return;
-    }
-    
     console.log('=== STORE NAME VALIDATION ===');
     console.log('singleStoreName:', singleStoreName);
     console.log('batchStoreNames:', batchStoreNames);
@@ -638,6 +626,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   // 同日・同店舗の既存募集を検索
   const findExistingPostingForCurrentSelection = () => {
+    const targets = (batchStoreNames.length > 0 ? batchStoreNames : [singleStoreName])
+      .map(n => (n || '').trim())
+      .filter(n => n !== '');
+    
     return myShifts.find((s: any) => {
       if (!selectedDates.includes(s.date)) return false;
       const direct = (s.store_name || '').trim();
@@ -647,18 +639,25 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         if (m && m[1]) fromMemo = m[1];
       }
       const sStoreName = direct || fromMemo;
-      const selectedStore = (singleStoreName || '').trim();
-      if (sStoreName === '' && selectedStore === '') return true;
-      return sStoreName === selectedStore;
+      
+      // 選択された店舗名のいずれかと一致するかチェック
+      return targets.some(selectedStore => {
+        if (sStoreName === '' && selectedStore === '') return true;
+        return sStoreName === selectedStore;
+      });
     });
   };
 
   const handleUpdateExisting = async (postingId: string) => {
     try {
+      const targets = (batchStoreNames.length > 0 ? batchStoreNames : [singleStoreName])
+        .map(n => (n || '').trim())
+        .filter(n => n !== '');
+      
       // 複数日付の場合は最初の日付を使用
       await shiftPostings.updatePosting(postingId, {
         date: selectedDates[0],
-        store_name: (singleStoreName || '') || null,
+        store_name: targets[0] || null, // 最初の店舗名を使用
         time_slot: timeSlot,
         required_staff: requiredStaff,
         memo
@@ -1087,7 +1086,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     {n && n.trim() !== '' ? n : '（店舗名なし）'}
                     <button
                       type="button"
-                      onClick={() => setBatchStoreNames(batchStoreNames.filter((x, idx) => idx !== i))}
+                      onClick={() => setBatchStoreNames(batchStoreNames.filter((_, idx) => idx !== i))}
                       className="text-blue-600 hover:text-blue-800"
                     >×</button>
                   </span>
