@@ -650,15 +650,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 const adjustedTimeSlot = pharmacyNeed.time_slot;
                 
                 const confirmedShift = {
-                  id: crypto.randomUUID(), // 明示的にIDを生成
+                  // IDはSupabaseが自動生成
                   pharmacist_id: request.pharmacist_id,
                   pharmacy_id: pharmacyNeed.pharmacy_id,
                   date: date,
                   time_slot: adjustedTimeSlot, // 薬局の募集時間帯を使用
                   status: 'confirmed',
                   store_name: storeName,
-                  memo: pharmacyNeed.memo || '',
-                  created_at: new Date().toISOString()
+                  memo: pharmacyNeed.memo || ''
                 };
                 console.log('Creating confirmed shift:', confirmedShift);
                 console.log('Request pharmacist_id:', request.pharmacist_id);
@@ -734,15 +733,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 const adjustedTimeSlot = pharmacyNeed.time_slot;
                 
                 const confirmedShift = {
-                  id: crypto.randomUUID(), // 明示的にIDを生成
+                  // IDはSupabaseが自動生成
                   pharmacist_id: request.pharmacist_id,
                   pharmacy_id: pharmacyNeed.pharmacy_id,
                   date: date,
                   time_slot: adjustedTimeSlot, // 薬局の募集時間帯を使用
                   status: 'confirmed',
                   store_name: storeName,
-                  memo: pharmacyNeed.memo || '',
-                  created_at: new Date().toISOString()
+                  memo: pharmacyNeed.memo || ''
                 };
                 
                 console.log('Creating flexible matched shift:', confirmedShift);

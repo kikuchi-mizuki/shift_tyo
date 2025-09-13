@@ -669,20 +669,44 @@ export const shifts = {
           }
         }
         
+        // 必須フィールドの検証
+        if (!shift.pharmacist_id || !shift.pharmacy_id || !shift.date || !shift.time_slot) {
+          console.error('Invalid shift data - missing required fields:', shift);
+          return null;
+        }
+        
         return {
-          ...shift,
+          pharmacist_id: shift.pharmacist_id,
+          pharmacy_id: shift.pharmacy_id,
+          date: shift.date,
+          time_slot: shift.time_slot,
+          status: shift.status || 'confirmed',
           store_name: finalStoreName || null,
           memo: shift.memo || null
         };
-      });
+      }).filter(shift => shift !== null); // 無効なデータを除外
       
-      // upsertを使用して重複を自動的に処理
-      // onConflictを指定しないことで、主キー（id）または一意制約で重複を判定
+      if (validatedShifts.length === 0) {
+        console.error('No valid shifts to save');
+        return { data: [], error: { message: '保存する有効なシフトがありません' } };
+      }
+      
+      // まず既存のシフトを削除してから新規挿入
+      // 同じ日付・薬剤師・薬局の組み合わせの既存シフトを削除
+      for (const shift of validatedShifts) {
+        await supabase
+          .from('assigned_shifts')
+          .delete()
+          .eq('pharmacist_id', shift.pharmacist_id)
+          .eq('pharmacy_id', shift.pharmacy_id)
+          .eq('date', shift.date)
+          .eq('time_slot', shift.time_slot);
+      }
+      
+      // 新規シフトを挿入
       const { data, error } = await supabase
         .from('assigned_shifts')
-        .upsert(validatedShifts, {
-          ignoreDuplicates: false
-        })
+        .insert(validatedShifts)
         .select();
       
       console.log('Supabase upsert result:', { data, error });
