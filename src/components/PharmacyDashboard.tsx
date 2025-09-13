@@ -52,8 +52,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   }, [storeNames]);
   const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
-  const [ngList, setNgList] = useState<string[]>([]); // NG薬剤師ID
+  const [ngList, setNgList] = useState<string[]>([]); // NG薬剤師ID（薬局全体）
   const [selectedNgPharmacistId, setSelectedNgPharmacistId] = useState('');
+  const [storeNgLists, setStoreNgLists] = useState<{[storeName: string]: string[]}>({}); // 店舗毎のNG薬剤師ID
+  const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
   const [allPharmacists, setAllPharmacists] = useState<any[]>([]);
 
   useEffect(() => {
@@ -478,6 +480,24 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     setNgList(ngList.filter(x => x !== id));
   };
 
+  // 店舗毎のNG薬剤師管理関数
+  const addStoreNgPharmacist = () => {
+    if (selectedStoreForNg && selectedNgPharmacistId) {
+      setStoreNgLists(prev => ({
+        ...prev,
+        [selectedStoreForNg]: [...(prev[selectedStoreForNg] || []), selectedNgPharmacistId]
+      }));
+      setSelectedNgPharmacistId('');
+    }
+  };
+
+  const removeStoreNgPharmacist = (storeName: string, pharmacistId: string) => {
+    setStoreNgLists(prev => ({
+      ...prev,
+      [storeName]: (prev[storeName] || []).filter(id => id !== pharmacistId)
+    }));
+  };
+
   const handlePost = async () => {
     console.log('=== handlePost START ===');
     console.log('handlePost called', { selectedDates, timeSlot, requiredStaff, memo });
@@ -803,29 +823,81 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-2">NG薬剤師の設定</h3>
-                <div className="flex space-x-2 mb-2">
-                  <select
-                    value={selectedNgPharmacistId}
-                    onChange={(e) => setSelectedNgPharmacistId(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  >
-                    <option value="">薬剤師を選択</option>
-                    {allPharmacists.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name || p.email}</option>
-                    ))}
-                  </select>
-                  <button onClick={addNgPharmacist} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">追加</button>
-                </div>
-                {ngList.length > 0 && (
-                  <div className="space-y-1">
-                    {ngList.map((id) => (
-                      <div key={id} className="flex items-center justify-between bg-white p-2 rounded border">
-                        <span className="text-sm">{allPharmacists.find(p => p.id === id)?.name || id}</span>
-                        <button onClick={() => removeNgPharmacist(id)} className="text-red-600 hover:text-red-800 text-sm">削除</button>
-                      </div>
-                    ))}
+                
+                {/* 薬局全体のNG薬剤師設定 */}
+                <div className="mb-4">
+                  <h4 className="text-xs font-medium text-gray-600 mb-2">薬局全体</h4>
+                  <div className="flex space-x-2 mb-2">
+                    <select
+                      value={selectedNgPharmacistId}
+                      onChange={(e) => setSelectedNgPharmacistId(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">薬剤師を選択</option>
+                      {allPharmacists.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name || p.email}</option>
+                      ))}
+                    </select>
+                    <button onClick={addNgPharmacist} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">追加</button>
                   </div>
-                )}
+                  {ngList.length > 0 && (
+                    <div className="space-y-1">
+                      {ngList.map((id) => (
+                        <div key={id} className="flex items-center justify-between bg-white p-2 rounded border">
+                          <span className="text-sm">{allPharmacists.find(p => p.id === id)?.name || id}</span>
+                          <button onClick={() => removeNgPharmacist(id)} className="text-red-600 hover:text-red-800 text-sm">削除</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 店舗毎のNG薬剤師設定 */}
+                <div>
+                  <h4 className="text-xs font-medium text-gray-600 mb-2">店舗毎</h4>
+                  <div className="space-y-2 mb-2">
+                    <select
+                      value={selectedStoreForNg}
+                      onChange={(e) => setSelectedStoreForNg(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">店舗を選択</option>
+                      {storeNames.map((storeName) => (
+                        <option key={storeName} value={storeName}>{storeName}</option>
+                      ))}
+                    </select>
+                    <div className="flex space-x-2">
+                      <select
+                        value={selectedNgPharmacistId}
+                        onChange={(e) => setSelectedNgPharmacistId(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      >
+                        <option value="">薬剤師を選択</option>
+                        {allPharmacists.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name || p.email}</option>
+                        ))}
+                      </select>
+                      <button onClick={addStoreNgPharmacist} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">追加</button>
+                    </div>
+                  </div>
+                  
+                  {/* 店舗毎のNG薬剤師リスト表示 */}
+                  {Object.keys(storeNgLists).map(storeName => (
+                    storeNgLists[storeName].length > 0 && (
+                      <div key={storeName} className="mb-2">
+                        <div className="text-xs font-medium text-gray-500 mb-1">{storeName}</div>
+                        <div className="space-y-1">
+                          {storeNgLists[storeName].map((id) => (
+                            <div key={id} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
+                              <span className="text-sm">{allPharmacists.find(p => p.id === id)?.name || id}</span>
+                              <button onClick={() => removeStoreNgPharmacist(storeName, id)} className="text-red-600 hover:text-red-800 text-sm">削除</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
               </div>
               <button
                 onClick={handleProfileUpdate}
