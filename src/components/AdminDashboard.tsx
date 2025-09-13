@@ -1609,15 +1609,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   {analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募
-                                  {analysis.totalMatched > 0 && (
-                                    <span className="text-green-600 ml-1">(マッチ{analysis.totalMatched}人)</span>
-                                  )}
-                                  {analysis.remainingRequired > 0 && (
-                                    <span className="text-red-600 ml-1">(不足{analysis.remainingRequired}人)</span>
-                                  )}
-                                  {analysis.hasExcess && (
-                                    <span className="text-yellow-600 ml-1">(余裕{analysis.totalAvailable - analysis.totalRequired}人)</span>
-                                  )}
                                 </div>
                               </div>
                               <div className="text-xs text-gray-600">
