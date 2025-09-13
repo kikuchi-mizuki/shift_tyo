@@ -99,6 +99,18 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       console.log('Current user ID:', user.id);
       console.log('User object:', user);
       
+      // 認証状態を確認
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      console.log('Auth user:', authUser);
+      console.log('Auth error:', authError);
+      
+      // アラートで認証状態を表示
+      if (authUser) {
+        alert(`認証ユーザーID: ${authUser.id}\n現在のユーザーID: ${user.id}\n一致: ${authUser.id === user.id ? 'はい' : 'いいえ'}`);
+      } else {
+        alert('認証ユーザーが取得できません');
+      }
+      
       // まず全てのassigned_shiftsを取得してデバッグ
       const { data: allAssignedData, error: allAssignedError } = await supabase
         .from('assigned_shifts')
@@ -113,10 +125,12 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         alert('assigned_shiftsテーブルにデータがありません');
       }
       
+      // 認証ユーザーIDを使用してシフトを取得
+      const userIdToUse = authUser?.id || user.id;
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
         .select('*')
-        .eq('pharmacist_id', user.id)
+        .eq('pharmacist_id', userIdToUse)
         .eq('status', 'confirmed');
       
       if (assignedError) {
@@ -135,7 +149,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       }
       
       // シフト希望を取得
-      const { data: reqs, error: reqsError } = await shiftRequests.getRequests(user.id, 'pharmacist');
+      const { data: reqs, error: reqsError } = await shiftRequests.getRequests(userIdToUse, 'pharmacist');
       if (reqsError) {
         console.error('Error loading shift requests:', reqsError);
         setMyRequests([]);
@@ -156,7 +170,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userIdToUse)
         .single();
       
       if (!profileError && profileData) {
