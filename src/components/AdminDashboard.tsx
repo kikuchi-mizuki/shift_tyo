@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { Calendar, RefreshCw, AlertCircle } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase } from '../lib/supabase';
+import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, storeNgPharmacists, supabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
   user: any;
@@ -17,6 +17,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [userProfiles, setUserProfiles] = useState<any>({});
+  const [storeNgPharmacists, setStoreNgPharmacists] = useState<{[pharmacyId: string]: any[]}>({});
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     pharmacies: false,
     pharmacists: false
@@ -403,6 +404,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           });
           logToRailway('User profiles map:', profilesMap);
           setUserProfiles(profilesMap);
+          
+          // 店舗毎のNG薬剤師データを取得
+          logToRailway('Fetching store-specific NG pharmacists...');
+          const storeNgDataMap: {[pharmacyId: string]: any[]} = {};
+          
+          // 薬局ユーザーのみを対象に店舗毎NG薬剤師を取得
+          const pharmacyUsers = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacy');
+          for (const pharmacy of pharmacyUsers) {
+            try {
+              const { data: storeNgData, error: storeNgError } = await storeNgPharmacists.getStoreNgPharmacists(pharmacy.id);
+              if (!storeNgError && storeNgData) {
+                storeNgDataMap[pharmacy.id] = storeNgData;
+              }
+            } catch (error) {
+              logToRailway(`Error fetching store NG pharmacists for ${pharmacy.id}:`, error);
+            }
+          }
+          
+          setStoreNgPharmacists(storeNgDataMap);
+          logToRailway('Store NG pharmacists data:', storeNgDataMap);
           
           // シフトに含まれるユーザーIDをチェック
           const shiftUserIds = Array.from(userIds);
@@ -1907,6 +1928,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   <span className="text-gray-500">未設定</span>
                                 )}
                               </div>
+                            )}
+                          </div>
+                          
+                          {/* 店舗毎のNG薬剤師 */}
+                          <div>
+                            <div className="text-xs text-gray-600 mb-1">店舗毎NG薬剤師:</div>
+                            {storeNgPharmacists[pharmacy.id] && storeNgPharmacists[pharmacy.id].length > 0 ? (
+                              <div className="space-y-1">
+                                {storeNgPharmacists[pharmacy.id].map((storeNg: any, idx: number) => {
+                                  const pharmacist = userProfiles[storeNg.pharmacist_id];
+                                  return (
+                                    <div key={idx} className="text-xs">
+                                      <span className="font-medium text-blue-600">{storeNg.store_name}:</span>
+                                      <span className="ml-1 bg-red-100 text-red-800 px-2 py-1 rounded">
+                                        {pharmacist?.name || pharmacist?.email || storeNg.pharmacist_id}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500 text-xs">なし</span>
                             )}
                           </div>
                           
