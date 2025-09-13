@@ -509,27 +509,81 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       console.log('Date groups:', dateGroups);
       
-      // マッチング処理
+      // マッチング処理（カレンダーと同じロジック）
       dateGroups.forEach((group, date) => {
         console.log(`Processing date ${date}:`, group);
-        group.requests.forEach((request: any) => {
-          // 同じ日付・時間帯の募集があればマッチング
-          const matchingPosting = group.postings.find((posting: any) => 
-            posting.time_slot === request.time_slot
-          );
-          
-          if (matchingPosting) {
-            const confirmedShift = {
-              pharmacist_id: request.pharmacist_id,
-              pharmacy_id: matchingPosting.pharmacy_id,
-              date: date,
-              time_slot: request.time_slot,
-              status: 'confirmed',
-              created_at: new Date().toISOString()
-            };
-            console.log('Creating confirmed shift:', confirmedShift);
-            confirmedShifts.push(confirmedShift);
+        
+        // ヘルパー関数
+        const getProfile = (id: string) => {
+          if (!userProfiles) return {} as any;
+          if (Array.isArray(userProfiles)) {
+            return (userProfiles as any[]).find((u: any) => u?.id === id) || ({} as any);
           }
+          return (userProfiles as any)[id] || ({} as any);
+        };
+        const isTimeCompatible = (reqSlot: string, postSlot: string) => reqSlot === postSlot;
+
+        // 時間帯ごとにマッチング
+        const timeSlots = ['morning', 'afternoon', 'full'];
+        timeSlots.forEach((slot) => {
+          const slotPostings = group.postings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
+          const slotRequests = group.requests.filter((r: any) => r.time_slot === slot || (slot === 'full' && r.time_slot === 'fullday'));
+          
+          if (slotPostings.length === 0 || slotRequests.length === 0) return;
+          
+          // 薬剤師を優先順位でソート（高→中→低）
+          const sortedRequests = slotRequests.sort((a: any, b: any) => {
+            const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+            return priorityOrder[b.priority] - priorityOrder[a.priority];
+          });
+
+          const matchedPharmacists: any[] = [];
+          const matchedPharmacies: any[] = [];
+          let remainingRequired = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
+
+          // 各薬局の必要人数を管理
+          const pharmacyNeeds = slotPostings.map((p: any) => ({
+            ...p,
+            remaining: Number(p.required_staff) || 0
+          }));
+
+          // 優先順位順に薬剤師をマッチング（NGリストを考慮）
+          sortedRequests.forEach((request: any) => {
+            if (remainingRequired <= 0) return;
+
+            const pharmacist = getProfile(request.pharmacist_id);
+            const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+
+            // 利用可能な薬局を探す
+            for (const pharmacyNeed of pharmacyNeeds) {
+              if (pharmacyNeed.remaining <= 0) continue;
+
+              const pharmacy = getProfile(pharmacyNeed.pharmacy_id);
+              const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+
+              const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
+              const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+
+              if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+                const confirmedShift = {
+                  pharmacist_id: request.pharmacist_id,
+                  pharmacy_id: pharmacyNeed.pharmacy_id,
+                  date: date,
+                  time_slot: request.time_slot,
+                  status: 'confirmed',
+                  created_at: new Date().toISOString()
+                };
+                console.log('Creating confirmed shift:', confirmedShift);
+                confirmedShifts.push(confirmedShift);
+                
+                matchedPharmacists.push(request);
+                matchedPharmacies.push(pharmacyNeed);
+                pharmacyNeed.remaining--;
+                remainingRequired--;
+                break;
+              }
+            }
+          });
         });
       });
 
