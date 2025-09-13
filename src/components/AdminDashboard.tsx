@@ -911,7 +911,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const excessSlot = Math.max(availableSlot - requiredSlot, 0);
 
                   // デバッグ用ログ
-                  console.log(`時間帯 ${slot}: 必要=${requiredSlot}, 利用可能=${availableSlot}, マッチ=${matchedSlot}, 不足=${shortageSlot}`);
+                  console.log(`時間帯 ${slot}: 必要=${requiredSlot}, 利用可能=${availableSlot}, マッチ=${matchedSlot}, 不足=${shortageSlot}, 余裕=${excessSlot}`);
+                  console.log(`マッチング詳細:`, { matchedPharmacists, pharmacyNeeds });
 
                   totalRequired += requiredSlot;
                   totalAvailable += availableSlot;
@@ -922,6 +923,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
                 // デバッグ用ログ
                 console.log(`日付 ${dateStr}: 総必要=${totalRequired}, 総利用可能=${totalAvailable}, 総マッチ=${totalMatched}, 総不足=${totalShortage}`);
+                console.log(`カレンダー計算: 不足=${totalShortage}, 余裕=${totalExcess}`);
 
                 if (totalRequired === 0) {
                   return totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable, requestsCount: totalAvailable } as any : { type: 'empty', count: 0, requestsCount: 0 } as any;
