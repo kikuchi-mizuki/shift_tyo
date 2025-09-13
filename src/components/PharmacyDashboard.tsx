@@ -1313,7 +1313,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             <ul className="list-disc pl-5 space-y-1">
               <li>月初に必要人数を全ての日程へ一括登録することをお勧めします</li>
               <li>「終日」は選択すると募集要件を明確にしてください</li>
-              <li>NG薬局の設定は別途管理画面で行えます</li>
+              <li>NG薬剤師の設定は別途管理画面で行えます</li>
             </ul>
           </div>
         </div>
