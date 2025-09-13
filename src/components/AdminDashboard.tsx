@@ -506,6 +506,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('Current requests:', requests);
       console.log('Current postings:', postings);
       
+      // 現在のユーザーIDを確認
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      console.log('Admin auth user:', authUser);
+      console.log('Admin user prop:', user);
+      
       // 希望シフトと募集シフトをマッチングして確定済みシフトを作成
       const confirmedShifts: any[] = [];
       
@@ -595,6 +600,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   created_at: new Date().toISOString()
                 };
                 console.log('Creating confirmed shift:', confirmedShift);
+                console.log('Request pharmacist_id:', request.pharmacist_id);
+                console.log('Request object:', request);
                 confirmedShifts.push(confirmedShift);
                 
                 matchedPharmacists.push(request);

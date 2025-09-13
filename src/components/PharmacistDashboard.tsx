@@ -282,8 +282,12 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       console.log('NG list type:', typeof ngList);
       console.log('NG list length:', ngList.length);
       
+      // 認証ユーザーIDを取得
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const userIdToUse = authUser?.id || user.id;
+      
       // ユーザーIDの確認
-      if (!user?.id) {
+      if (!userIdToUse) {
         console.error('User ID is missing!');
         alert('ユーザーIDが取得できません。ログインし直してください。');
         return;
@@ -299,7 +303,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       const { data: updateResult, error } = await supabase
         .from('user_profiles')
         .update(updatePayload)
-        .eq('id', user.id)
+        .eq('id', userIdToUse)
         .select('*');
       
       console.log('Update result:', { data: updateResult, error });
@@ -385,7 +389,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       const { data: updateResult, error } = await supabase
         .from('user_profiles')
         .update(updatePayload)
-        .eq('id', user.id)
+        .eq('id', userIdToUse)
         .select('*');
       
       console.log('Update result:', { data: updateResult, error });
@@ -439,8 +443,12 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
     // 新しい希望を登録
     try {
+      // 認証ユーザーIDを取得
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const userIdToUse = authUser?.id || user.id;
+      
       const requestsToInsert = selectedDates.map(date => ({
-        pharmacist_id: user.id,
+        pharmacist_id: userIdToUse,
         date: date,
         time_slot: selectedTimeSlot,
         priority: selectedPriority,
@@ -493,7 +501,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const m = (currentDate.getMonth() + 1).toString().padStart(2, '0');
   const hasMyRequest = (day: number) => myRequests.some((r: any) => r.date === `${y}-${m}-${day.toString().padStart(2, '0')}`);
   const hasMyShift = (day: number) => {
-    const dateStr = `${y}-${m}-${day.toString().padStart(2, '0')}`;
+    const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
     const hasShift = myShifts.some((s: any) => s.date === dateStr);
     if (hasShift) {
       console.log(`Day ${day} has confirmed shift:`, myShifts.filter((s: any) => s.date === dateStr));
