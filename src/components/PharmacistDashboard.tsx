@@ -106,6 +106,13 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       console.log('All assigned shifts:', allAssignedData);
       console.log('All assigned shifts error:', allAssignedError);
       
+      // アラートでも表示（コンソールが見えない場合）
+      if (allAssignedData && allAssignedData.length > 0) {
+        alert(`assigned_shiftsテーブルに${allAssignedData.length}件のデータがあります`);
+      } else {
+        alert('assigned_shiftsテーブルにデータがありません');
+      }
+      
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
         .select('*')
@@ -120,6 +127,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         console.log('My shifts count:', assignedData?.length || 0);
         if (assignedData && assignedData.length > 0) {
           console.log('My shifts details:', assignedData.map((s: any) => ({ date: s.date, status: s.status, pharmacy_id: s.pharmacy_id })));
+          alert(`あなたの確定シフト: ${assignedData.length}件\n日付: ${assignedData.map((s: any) => s.date).join(', ')}`);
+        } else {
+          alert('あなたの確定シフトは0件です');
         }
         setMyShifts(assignedData || []);
       }
