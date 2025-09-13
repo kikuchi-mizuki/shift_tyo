@@ -146,7 +146,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
               シフト調整システム
             </h1>
           </div>
-          <h2 className="text-lg text-gray-600">マルチユーザーログイン</h2>
         </div>
 
         {/* アクティブセッション表示 */}
