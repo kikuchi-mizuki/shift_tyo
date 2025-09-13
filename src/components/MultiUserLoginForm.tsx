@@ -182,12 +182,10 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
                     key={type}
                     type="button"
                     onClick={() => setUserType(type)}
-                    disabled={isLoggedIn(type) && !isRegistering}
+                    disabled={false}
                     className={`flex items-center justify-center space-x-2 p-3 rounded-lg border transition-colors ${
                       userType === type
                         ? 'bg-blue-600 text-white border-blue-600'
-                        : isLoggedIn(type) && !isRegistering
-                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     }`}
                   >
@@ -258,9 +256,9 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             {/* ログインボタン */}
             <button
               type="submit"
-              disabled={loading || (isLoggedIn(userType) && !isRegistering)}
+              disabled={loading}
               className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium transition-colors ${
-                loading || (isLoggedIn(userType) && !isRegistering)
+                loading
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
@@ -269,11 +267,9 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
               <span>
                 {loading 
                   ? (isRegistering ? '登録中...' : 'ログイン中...')
-                  : isLoggedIn(userType) && !isRegistering
-                    ? `${getUserTypeLabel(userType)}でログイン済み`
-                    : isRegistering
-                      ? `${getUserTypeLabel(userType)}として新規登録`
-                      : `${getUserTypeLabel(userType)}としてログイン`
+                  : isRegistering
+                    ? `${getUserTypeLabel(userType)}として新規登録`
+                    : `${getUserTypeLabel(userType)}としてログイン`
                 }
               </span>
             </button>
