@@ -221,6 +221,140 @@ export const userProfiles = {
   }
 };
 
+// 店舗毎のNG薬剤師管理
+export const storeNgPharmacists = {
+  // 店舗毎のNG薬剤師リストを取得
+  getStoreNgPharmacists: async (pharmacyId: string) => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('store_ng_pharmacists')
+        .select(`
+          *,
+          pharmacist:pharmacist_id (
+            id,
+            name,
+            email
+          )
+        `)
+        .eq('pharmacy_id', pharmacyId);
+
+      if (error) {
+        console.error('Error fetching store NG pharmacists:', error);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Exception in getStoreNgPharmacists:', error);
+      return { data: null, error: { message: '店舗毎のNG薬剤師リストの取得に失敗しました' } };
+    }
+  },
+
+  // 店舗毎のNG薬剤師を追加
+  addStoreNgPharmacist: async (pharmacyId: string, storeName: string, pharmacistId: string) => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('store_ng_pharmacists')
+        .insert({
+          pharmacy_id: pharmacyId,
+          store_name: storeName,
+          pharmacist_id: pharmacistId
+        })
+        .select();
+
+      if (error) {
+        console.error('Error adding store NG pharmacist:', error);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Exception in addStoreNgPharmacist:', error);
+      return { data: null, error: { message: '店舗毎のNG薬剤師の追加に失敗しました' } };
+    }
+  },
+
+  // 店舗毎のNG薬剤師を削除
+  removeStoreNgPharmacist: async (pharmacyId: string, storeName: string, pharmacistId: string) => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    try {
+      const { error } = await supabase
+        .from('store_ng_pharmacists')
+        .delete()
+        .eq('pharmacy_id', pharmacyId)
+        .eq('store_name', storeName)
+        .eq('pharmacist_id', pharmacistId);
+
+      if (error) {
+        console.error('Error removing store NG pharmacist:', error);
+        return { data: null, error };
+      }
+
+      return { data: true, error: null };
+    } catch (error) {
+      console.error('Exception in removeStoreNgPharmacist:', error);
+      return { data: null, error: { message: '店舗毎のNG薬剤師の削除に失敗しました' } };
+    }
+  },
+
+  // 店舗毎のNG薬剤師を一括更新
+  updateStoreNgPharmacists: async (pharmacyId: string, storeNgLists: {[storeName: string]: string[]}) => {
+    if (!supabase) {
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
+    try {
+      // 既存の店舗毎NG薬剤師を削除
+      const { error: deleteError } = await supabase
+        .from('store_ng_pharmacists')
+        .delete()
+        .eq('pharmacy_id', pharmacyId);
+
+      if (deleteError) {
+        console.error('Error deleting existing store NG pharmacists:', deleteError);
+        return { data: null, error: deleteError };
+      }
+
+      // 新しい店舗毎NG薬剤師を追加
+      const insertData = Object.entries(storeNgLists).flatMap(([storeName, pharmacistIds]) =>
+        pharmacistIds.map(pharmacistId => ({
+          pharmacy_id: pharmacyId,
+          store_name: storeName,
+          pharmacist_id: pharmacistId
+        }))
+      );
+
+      if (insertData.length > 0) {
+        const { data, error } = await supabase
+          .from('store_ng_pharmacists')
+          .insert(insertData)
+          .select();
+
+        if (error) {
+          console.error('Error inserting store NG pharmacists:', error);
+          return { data: null, error };
+        }
+      }
+
+      return { data: true, error: null };
+    } catch (error) {
+      console.error('Exception in updateStoreNgPharmacists:', error);
+      return { data: null, error: { message: '店舗毎のNG薬剤師の更新に失敗しました' } };
+    }
+  }
+};
+
 // シフト関連の関数
 export const shifts = {
   // シフト取得
