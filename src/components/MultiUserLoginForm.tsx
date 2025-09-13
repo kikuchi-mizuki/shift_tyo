@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Building, Shield, LogIn, Users } from 'lucide-react';
+import { User, Building, Shield, LogIn } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useMultiUserAuth } from '../contexts/MultiUserAuthContext';
 
@@ -148,23 +148,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           </div>
         </div>
 
-        {/* アクティブセッション表示 */}
-        {activeSessions.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Users className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">アクティブセッション</span>
-            </div>
-            <div className="space-y-1">
-              {activeSessions.map((session) => (
-                <div key={session.user_type} className="flex items-center space-x-2 text-sm text-blue-700">
-                  {getUserTypeIcon(session.user_type)}
-                  <span>{getUserTypeLabel(session.user_type)}: {session.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ログインフォーム */}
         <div className="bg-white rounded-lg shadow-md p-6">
