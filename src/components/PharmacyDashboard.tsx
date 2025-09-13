@@ -858,27 +858,22 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               <div className="text-gray-500">日付を選択してください</div>
             )}
             
-            {/* 選択された日付の表示 */}
-            {selectedDates.length > 0 && (
-              <div className="mt-2 p-2 bg-blue-50 rounded">
-                <div className="text-xs font-medium text-blue-800 mb-1">
-                  選択された日付 ({selectedDates.length}件)
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {selectedDates.map(date => (
-                    <span key={date} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                      {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
           
           {/* 募集日 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">募集日 (複数選択可能)</label>
-            <div className="grid grid-cols-7 gap-1 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-2">
+            <select
+              value=""
+              onChange={(e) => {
+                const date = e.target.value;
+                if (date && !selectedDates.includes(date)) {
+                  setSelectedDates(prev => [...prev, date]);
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">日付を選択してください</option>
               {Array.from({ length: 31 }, (_, i) => {
                 const day = i + 1;
                 const year = currentDate.getFullYear();
@@ -887,24 +882,33 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                 const isSelected = selectedDates.includes(date);
                 
                 return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => handleDateToggle(date)}
-                    className={`p-2 text-xs rounded border ${
-                      isSelected 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {day}
-                  </button>
+                  <option key={day} value={date} disabled={isSelected}>
+                    {month}月{day}日 {isSelected ? '(選択済み)' : ''}
+                  </option>
                 );
               })}
-            </div>
+            </select>
+            
+            {/* 選択された日付の表示と削除ボタン */}
             {selectedDates.length > 0 && (
-              <div className="mt-2 text-xs text-gray-600">
-                {selectedDates.length}件の日付が選択されています
+              <div className="mt-2 space-y-1">
+                <div className="text-xs text-gray-600">
+                  選択された日付 ({selectedDates.length}件):
+                </div>
+                {selectedDates.map(date => (
+                  <div key={date} className="flex items-center justify-between bg-blue-50 px-2 py-1 rounded">
+                    <span className="text-sm text-blue-800">
+                      {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDates(prev => prev.filter(d => d !== date))}
+                      className="text-red-600 hover:text-red-800 text-xs"
+                    >
+                      削除
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
