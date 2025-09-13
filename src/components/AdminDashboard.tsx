@@ -1046,9 +1046,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         {/* left calendar */}
-        <div className="flex-1 bg-white rounded-lg shadow p-4 lg:p-6">
+        <div className="flex-1 bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 rounded-lg">←</button>
@@ -1070,7 +1070,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {getDaysInMonth(currentDate).map((d, i) => {
               const year = currentDate.getFullYear();
               const month = currentDate.getMonth() + 1;
@@ -1194,7 +1194,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               return (
                 <div 
                   key={i} 
-                  className={`p-1 sm:p-2 text-center text-xs sm:text-sm border border-gray-200 min-h-[60px] sm:min-h-[90px] ${
+                  className={`p-2 sm:p-3 text-center text-xs sm:text-sm border border-gray-200 min-h-[80px] sm:min-h-[90px] ${
                     d ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
                   } ${
                     selectedDate === dateStr ? 'bg-blue-100 border-blue-300' : ''
@@ -1269,7 +1269,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         </div>
 
         {/* right panel */}
-        <div className="w-full lg:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
+        <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
           <div className="bg-purple-600 text-white p-4 rounded-t-lg flex-shrink-0">
             <h2 className="text-xl font-semibold">管理者パネル</h2>
             <p className="text-sm text-purple-100 mt-1">システム全体の状態管理と調整</p>
