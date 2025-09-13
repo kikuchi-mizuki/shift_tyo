@@ -13,7 +13,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [tempSelectedDate, setTempSelectedDate] = useState('');
-  const [selectedStoreName, setSelectedStoreName] = useState('');
   const [timeSlot, setTimeSlot] = useState('morning'); // デフォルトで午前を選択
   const [requiredStaff, setRequiredStaff] = useState<number | null>(1); // デフォルトで1人を選択
   const [memo, setMemo] = useState('');
@@ -105,13 +104,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     } catch {}
   }, [storeOptions, user?.id]);
 
-  useEffect(() => {
-    try {
-      if (selectedStoreName) {
-        localStorage.setItem(`selected_store_${user?.id || ''}`, selectedStoreName);
-      }
-    } catch {}
-  }, [selectedStoreName, user?.id]);
 
   const loadData = async () => {
     try {
@@ -621,7 +613,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       }
 
       // フォームをリセット（店舗名は保持）
-      setSelectedDate('');
+      setSelectedDates([]);
       setTimeSlot('');
       setRequiredStaff(null);
       setMemo('');
