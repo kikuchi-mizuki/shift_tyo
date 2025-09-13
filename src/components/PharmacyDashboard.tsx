@@ -236,7 +236,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
     const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    setSelectedDate(formattedDate);
+    // 選択済み日付リストに追加（重複チェック付き）
+    if (!selectedDates.includes(formattedDate)) {
+      setSelectedDates(prev => [...prev, formattedDate]);
+    }
     
     // 新しい日付の場合はフォームをリセット
     setTimeSlot('');
