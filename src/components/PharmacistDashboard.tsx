@@ -684,11 +684,16 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
             )}
             
             {/* 確定シフトの詳細表示 */}
-            {isSystemConfirmed && myShifts.length > 0 && (
+            {isSystemConfirmed && selectedDates.length > 0 && (
               <div className="mb-6 p-4 bg-green-50 rounded-lg">
                 <h3 className="text-sm font-medium text-green-800 mb-3">確定シフト一覧</h3>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {myShifts.map((shift: any, index: number) => {
+                  {myShifts
+                    .filter((shift: any) => selectedDates.includes(shift.date))
+                    .length > 0 ? (
+                    myShifts
+                      .filter((shift: any) => selectedDates.includes(shift.date))
+                      .map((shift: any, index: number) => {
                     const pharmacyProfile = userProfiles[shift.pharmacy_id];
                     
                     // 店舗名を取得（memoから抽出または直接指定）
@@ -721,12 +726,17 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                                 shift.time_slot === 'full' ? '終日 (9:00-18:00)' :
                                 shift.time_slot === 'consult' ? '要相談' : '夜間'}
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    選択した日付に確定シフトはありません
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
             
             {/* 選択された日付と時間 */}
             {selectedDates.length > 0 && (
