@@ -10,9 +10,9 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
-  }
+    }
 
-  try {
+    try {
     // Create a Supabase client with the Auth context of the function
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -74,7 +74,7 @@ serve(async (req) => {
 
       case 'assigned_shifts':
         result = await supabaseClient
-          .from('assigned_shifts')
+        .from('assigned_shifts')
           .select('*')
         break
 
@@ -107,7 +107,7 @@ serve(async (req) => {
       }
     )
 
-  } catch (error) {
+    } catch (error) {
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

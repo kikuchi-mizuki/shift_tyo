@@ -234,18 +234,30 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       // シフトに関連する薬剤師のプロフィールを取得
       if (assignedData && assignedData.length > 0) {
         const pharmacistIds = [...new Set(assignedData.map((shift: any) => shift.pharmacist_id))];
-        const { data: pharmacistProfiles } = await supabase
+        console.log('Fetching pharmacist profiles for IDs:', pharmacistIds);
+        
+        const { data: pharmacistProfiles, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
           .in('id', pharmacistIds);
+        
+        if (profileError) {
+          console.error('Error fetching pharmacist profiles:', profileError);
+        } else {
+          console.log('Fetched pharmacist profiles:', pharmacistProfiles);
+        }
         
         if (pharmacistProfiles) {
           const profilesMap: any = {};
           pharmacistProfiles.forEach((profile: any) => {
             profilesMap[profile.id] = profile;
+            console.log(`Added profile for ${profile.id}:`, { name: profile.name, email: profile.email });
           });
           setUserProfiles(profilesMap);
+          console.log('Updated userProfiles state:', profilesMap);
         }
+      } else {
+        console.log('No assigned shifts found, skipping pharmacist profile fetch');
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -1020,13 +1032,30 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             <div className="p-4 bg-green-50 rounded-lg">
               <h3 className="text-sm font-medium text-green-800 mb-3">確定シフト一覧</h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {confirmedShifts
-                  .filter((shift: any) => selectedDates.includes(shift.date))
-                  .length > 0 ? (
+                {(() => {
+                  const filteredShifts = confirmedShifts.filter((shift: any) => selectedDates.includes(shift.date));
+                  console.log('Filtered confirmed shifts for display:', {
+                    selectedDates,
+                    allConfirmedShifts: confirmedShifts,
+                    filteredShifts,
+                    userProfiles
+                  });
+                  return filteredShifts.length > 0;
+                })() ? (
                   confirmedShifts
                     .filter((shift: any) => selectedDates.includes(shift.date))
                     .map((shift: any, index: number) => {
                   const pharmacistProfile = userProfiles[shift.pharmacist_id];
+                  
+                  // デバッグ情報
+                  console.log('Rendering confirmed shift:', {
+                    shift_id: shift.id,
+                    pharmacist_id: shift.pharmacist_id,
+                    pharmacistProfile: pharmacistProfile,
+                    userProfiles: userProfiles,
+                    pharmacist_name: pharmacistProfile?.name || 'NOT FOUND',
+                    pharmacist_email: pharmacistProfile?.email || 'NOT FOUND'
+                  });
                   
                   // 店舗名を取得（memoから抽出または直接指定）
                   const getStoreName = (shift: any) => {
@@ -1070,7 +1099,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                               shift.time_slot === 'consult' ? '要相談' : '夜間'}
                       </div>
                       <div className="text-xs text-gray-600">
-                        薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師名未設定'}
+                        薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || `薬剤師名未設定 (ID: ${shift.pharmacist_id})`}
                       </div>
                     </div>
                   );
