@@ -50,19 +50,6 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
     }
   };
 
-  // デバッグ用: 状態の変更を監視
-  useEffect(() => {
-    logToRailway('State changed', {
-      selectedDates,
-      selectedTimeSlot,
-      selectedPriority
-    });
-  }, [selectedDates, selectedTimeSlot, selectedPriority]);
-
-  // 個別の状態変更監視
-  useEffect(() => {
-    logToRailway('selectedTimeSlot changed', selectedTimeSlot);
-  }, [selectedTimeSlot]);
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState<any[]>([]);
   const [myRequests, setMyRequests] = useState<any[]>([]);
@@ -81,6 +68,20 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   useEffect(() => {
     loadShifts();
   }, [user]);
+
+  // デバッグ用: 状態の変更を監視
+  useEffect(() => {
+    logToRailway('State changed', {
+      selectedDates,
+      selectedTimeSlot,
+      selectedPriority
+    });
+  }, [selectedDates, selectedTimeSlot, selectedPriority]);
+
+  // 個別の状態変更監視
+  useEffect(() => {
+    logToRailway('selectedTimeSlot changed', selectedTimeSlot);
+  }, [selectedTimeSlot]);
 
 
 
