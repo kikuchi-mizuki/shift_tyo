@@ -59,6 +59,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('=== STORENG LISTS STATE CHANGED END ===');
   }, [storeNgLists]);
 
+  // storeNamesとallPharmacistsの状態を監視
+  useEffect(() => {
+    console.log('Store names for NG selection:', storeNames);
+    console.log('Available pharmacists for NG selection:', allPharmacists);
+  }, [storeNames, allPharmacists]);
+
   const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [ngList, setNgList] = useState<string[]>([]); // NG薬剤師ID（薬局全体）
@@ -1017,7 +1023,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                         <option key={storeName} value={storeName}>{storeName}</option>
                       ))}
                     </select>
-                    {console.log('Store names for NG selection:', storeNames)}
                     <div className="flex space-x-2">
                       <select
                         value={selectedStoreNgPharmacistId}
@@ -1032,7 +1037,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                           <option key={p.id} value={p.id}>{p.name || p.email}</option>
                         ))}
                       </select>
-                      {console.log('Available pharmacists for NG selection:', allPharmacists)}
                       <button onClick={addStoreNgPharmacist} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">追加</button>
                     </div>
                   </div>
