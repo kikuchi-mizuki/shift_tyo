@@ -175,11 +175,22 @@ export const userProfiles = {
     }
 
     try {
+      // 現在のセッションから認証トークンを取得
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || supabaseAnonKey;
+      
+      console.log('Edge Function request details:', {
+        apiUrl: `${supabaseUrl}/functions/v1/api/user_profiles`,
+        hasSession: !!session,
+        hasAuthToken: !!authToken,
+        tokenPrefix: authToken?.substring(0, 20) + '...'
+      });
+      
       // Edge Function経由でデータを取得
       const apiUrl = `${supabaseUrl}/functions/v1/api/user_profiles`;
       const response = await fetch(apiUrl, {
         headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         }
       });
@@ -524,11 +535,22 @@ export const shifts = {
     }
 
     try {
+      // 現在のセッションから認証トークンを取得
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || supabaseAnonKey;
+      
+      console.log('Edge Function request details (assigned_shifts):', {
+        apiUrl: `${supabaseUrl}/functions/v1/api/assigned_shifts`,
+        hasSession: !!session,
+        hasAuthToken: !!authToken,
+        tokenPrefix: authToken?.substring(0, 20) + '...'
+      });
+      
       // Edge Function経由でデータを取得
       const apiUrl = `${supabaseUrl}/functions/v1/api/assigned_shifts`;
       const response = await fetch(apiUrl, {
         headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         }
       });

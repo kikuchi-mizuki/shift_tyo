@@ -146,6 +146,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       
       // 直接Supabaseから確定済みシフトを取得
       console.log('Attempting to load assigned shifts for pharmacy_id:', user.id);
+      console.log('Supabase client status:', {
+        url: supabase.supabaseUrl,
+        hasAuth: !!supabase.auth,
+        currentUser: await supabase.auth.getUser()
+      });
+      
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
         .select('*')
