@@ -113,6 +113,34 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('Available pharmacists for NG selection:', allPharmacists);
   }, [storeNames, allPharmacists]);
 
+  // confirmedShiftsが更新された時に薬剤師プロフィールを再取得
+  useEffect(() => {
+    const fetchPharmacistProfiles = async () => {
+      if (confirmedShifts && confirmedShifts.length > 0) {
+        const pharmacistIds = [...new Set(confirmedShifts.map((shift: any) => shift.pharmacist_id))];
+        console.log('Confirmed shifts updated, fetching pharmacist profiles for:', pharmacistIds);
+        
+        const { data: pharmacistProfiles, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .in('id', pharmacistIds);
+        
+        if (profileError) {
+          console.error('Error fetching pharmacist profiles from confirmedShifts:', profileError);
+        } else if (pharmacistProfiles) {
+          const profilesMap: any = {};
+          pharmacistProfiles.forEach((profile: any) => {
+            profilesMap[profile.id] = profile;
+          });
+          setUserProfiles(prev => ({ ...prev, ...profilesMap }));
+          console.log('Updated userProfiles from confirmedShifts:', profilesMap);
+        }
+      }
+    };
+    
+    fetchPharmacistProfiles();
+  }, [confirmedShifts]);
+
   // 変更があればローカルにキャッシュ
   useEffect(() => {
     try {
@@ -253,8 +281,30 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       }
       
       // シフトに関連する薬剤師のプロフィールを取得
+      const allPharmacistIds = new Set<string>();
+      
+      // assignedDataから薬剤師IDを収集
       if (assignedData && assignedData.length > 0) {
-        const pharmacistIds = [...new Set(assignedData.map((shift: any) => shift.pharmacist_id))];
+        assignedData.forEach((shift: any) => {
+          if (shift.pharmacist_id) {
+            allPharmacistIds.add(shift.pharmacist_id);
+          }
+        });
+      }
+      
+      // confirmedShiftsからも薬剤師IDを収集
+      if (confirmedShifts && confirmedShifts.length > 0) {
+        confirmedShifts.forEach((shift: any) => {
+          if (shift.pharmacist_id) {
+            allPharmacistIds.add(shift.pharmacist_id);
+          }
+        });
+      }
+      
+      const pharmacistIds = Array.from(allPharmacistIds);
+      console.log('All pharmacist IDs found:', pharmacistIds);
+      
+      if (pharmacistIds.length > 0) {
         console.log('Fetching pharmacist profiles for IDs:', pharmacistIds);
         
         const { data: pharmacistProfiles, error: profileError } = await supabase
@@ -278,7 +328,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           console.log('Updated userProfiles state:', profilesMap);
         }
       } else {
-        console.log('No assigned shifts found, skipping pharmacist profile fetch');
+        console.log('No pharmacist IDs found in any shifts, skipping pharmacist profile fetch');
       }
     } catch (error) {
       console.error('Error loading data:', error);
