@@ -214,9 +214,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         }
       } else {
         console.log('Loaded confirmed shifts:', assignedData);
-        console.log('Confirmed shifts store_name analysis:', assignedData?.map((shift: any) => ({
+        console.log('Confirmed shifts detailed analysis:', assignedData?.map((shift: any) => ({
           id: shift.id,
           date: shift.date,
+          time_slot: shift.time_slot,
+          time_slot_type: typeof shift.time_slot,
+          pharmacist_id: shift.pharmacist_id,
+          pharmacy_id: shift.pharmacy_id,
+          status: shift.status,
           store_name: shift.store_name,
           memo: shift.memo,
           has_store_name: !!shift.store_name,
@@ -1151,7 +1156,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     pharmacistProfile: pharmacistProfile,
                     userProfiles: userProfiles,
                     pharmacist_name: pharmacistProfile?.name || 'NOT FOUND',
-                    pharmacist_email: pharmacistProfile?.email || 'NOT FOUND'
+                    pharmacist_email: pharmacistProfile?.email || 'NOT FOUND',
+                    time_slot: shift.time_slot,
+                    time_slot_type: typeof shift.time_slot,
+                    date: shift.date,
+                    store_name: shift.store_name,
+                    memo: shift.memo
                   });
                   
                   // 店舗名を取得（memoから抽出または直接指定）
@@ -1190,10 +1200,29 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                         店舗: {storeName}
                       </div>
                       <div className="text-xs text-gray-600">
-                        時間: {shift.time_slot === 'morning' || shift.time_slot === 'am' ? '午前 (9:00-13:00)' :
-                              shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '午後 (13:00-18:00)' :
-                              shift.time_slot === 'full' ? '終日 (9:00-18:00)' :
-                              shift.time_slot === 'consult' ? '要相談' : '夜間'}
+                        時間: {(() => {
+                          const timeSlot = shift.time_slot;
+                          console.log('Time slot processing:', {
+                            shift_id: shift.id,
+                            time_slot: timeSlot,
+                            time_slot_type: typeof timeSlot
+                          });
+                          
+                          if (timeSlot === 'morning' || timeSlot === 'am') {
+                            return '午前 (9:00-13:00)';
+                          } else if (timeSlot === 'afternoon' || timeSlot === 'pm') {
+                            return '午後 (13:00-18:00)';
+                          } else if (timeSlot === 'full' || timeSlot === 'fullday') {
+                            return '終日 (9:00-18:00)';
+                          } else if (timeSlot === 'consult' || timeSlot === 'negotiable') {
+                            return '要相談';
+                          } else if (timeSlot === 'evening' || timeSlot === 'night') {
+                            return '夜間';
+                          } else {
+                            console.warn('Unknown time_slot value:', timeSlot);
+                            return `不明 (${timeSlot})`;
+                          }
+                        })()}
                       </div>
                       <div className="text-xs text-gray-600">
                         薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || `薬剤師名未設定 (ID: ${shift.pharmacist_id})`}
