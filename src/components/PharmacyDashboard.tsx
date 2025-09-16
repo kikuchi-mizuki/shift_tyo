@@ -50,6 +50,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     console.log('storeNames is array:', Array.isArray(storeNames));
     console.log('=== STORENAMES STATE CHANGED END ===');
   }, [storeNames]);
+
+  // storeNgListsの状態変更を監視
+  useEffect(() => {
+    console.log('=== STORENG LISTS STATE CHANGED ===');
+    console.log('New storeNgLists value:', storeNgLists);
+    console.log('storeNgLists keys:', Object.keys(storeNgLists));
+    console.log('=== STORENG LISTS STATE CHANGED END ===');
+  }, [storeNgLists]);
+
   const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [ngList, setNgList] = useState<string[]>([]); // NG薬剤師ID（薬局全体）
@@ -558,12 +567,32 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   // 店舗毎のNG薬剤師管理関数
   const addStoreNgPharmacist = () => {
+    console.log('addStoreNgPharmacist called:', {
+      selectedStoreForNg,
+      selectedStoreNgPharmacistId,
+      currentStoreNgLists: storeNgLists
+    });
+    
     if (selectedStoreForNg && selectedStoreNgPharmacistId) {
-      setStoreNgLists(prev => ({
-        ...prev,
-        [selectedStoreForNg]: [...(prev[selectedStoreForNg] || []), selectedStoreNgPharmacistId]
-      }));
+      const newStoreNgLists = {
+        ...storeNgLists,
+        [selectedStoreForNg]: [...(storeNgLists[selectedStoreForNg] || []), selectedStoreNgPharmacistId]
+      };
+      
+      console.log('Updating storeNgLists:', {
+        from: storeNgLists,
+        to: newStoreNgLists
+      });
+      
+      setStoreNgLists(newStoreNgLists);
       setSelectedStoreNgPharmacistId('');
+      
+      console.log('Store NG pharmacist added successfully');
+    } else {
+      console.log('Cannot add store NG pharmacist - missing data:', {
+        hasStore: !!selectedStoreForNg,
+        hasPharmacist: !!selectedStoreNgPharmacistId
+      });
     }
   };
 
@@ -977,7 +1006,10 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   <div className="space-y-2 mb-2">
                     <select
                       value={selectedStoreForNg}
-                      onChange={(e) => setSelectedStoreForNg(e.target.value)}
+                      onChange={(e) => {
+                        console.log('Store selection changed:', e.target.value);
+                        setSelectedStoreForNg(e.target.value);
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     >
                       <option value="">店舗を選択</option>
@@ -985,10 +1017,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                         <option key={storeName} value={storeName}>{storeName}</option>
                       ))}
                     </select>
+                    {console.log('Store names for NG selection:', storeNames)}
                     <div className="flex space-x-2">
                       <select
                         value={selectedStoreNgPharmacistId}
-                        onChange={(e) => setSelectedStoreNgPharmacistId(e.target.value)}
+                        onChange={(e) => {
+                          console.log('Pharmacist selection changed:', e.target.value);
+                          setSelectedStoreNgPharmacistId(e.target.value);
+                        }}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       >
                         <option value="">薬剤師を選択</option>
@@ -996,6 +1032,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                           <option key={p.id} value={p.id}>{p.name || p.email}</option>
                         ))}
                       </select>
+                      {console.log('Available pharmacists for NG selection:', allPharmacists)}
                       <button onClick={addStoreNgPharmacist} className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">追加</button>
                     </div>
                   </div>
