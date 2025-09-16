@@ -41,30 +41,6 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     setSelectedDates(prev => prev.filter(date => date !== dateToRemove));
   };
   
-  // storeNamesの状態変更を監視
-  useEffect(() => {
-    console.log('=== STORENAMES STATE CHANGED ===');
-    console.log('New storeNames value:', storeNames);
-    console.log('storeNames length:', storeNames.length);
-    console.log('storeNames type:', typeof storeNames);
-    console.log('storeNames is array:', Array.isArray(storeNames));
-    console.log('=== STORENAMES STATE CHANGED END ===');
-  }, [storeNames]);
-
-  // storeNgListsの状態変更を監視
-  useEffect(() => {
-    console.log('=== STORENG LISTS STATE CHANGED ===');
-    console.log('New storeNgLists value:', storeNgLists);
-    console.log('storeNgLists keys:', Object.keys(storeNgLists));
-    console.log('=== STORENG LISTS STATE CHANGED END ===');
-  }, [storeNgLists]);
-
-  // storeNamesとallPharmacistsの状態を監視
-  useEffect(() => {
-    console.log('Store names for NG selection:', storeNames);
-    console.log('Available pharmacists for NG selection:', allPharmacists);
-  }, [storeNames, allPharmacists]);
-
   const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [ngList, setNgList] = useState<string[]>([]); // NG薬剤師ID（薬局全体）
@@ -112,6 +88,30 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       setSingleStoreName(storeOptions[0]);
     }
   }, [storeOptions, singleStoreName]);
+
+  // storeNamesの状態変更を監視
+  useEffect(() => {
+    console.log('=== STORENAMES STATE CHANGED ===');
+    console.log('New storeNames value:', storeNames);
+    console.log('storeNames length:', storeNames.length);
+    console.log('storeNames type:', typeof storeNames);
+    console.log('storeNames is array:', Array.isArray(storeNames));
+    console.log('=== STORENAMES STATE CHANGED END ===');
+  }, [storeNames]);
+
+  // storeNgListsの状態変更を監視
+  useEffect(() => {
+    console.log('=== STORENG LISTS STATE CHANGED ===');
+    console.log('New storeNgLists value:', storeNgLists);
+    console.log('storeNgLists keys:', Object.keys(storeNgLists));
+    console.log('=== STORENG LISTS STATE CHANGED END ===');
+  }, [storeNgLists]);
+
+  // storeNamesとallPharmacistsの状態を監視
+  useEffect(() => {
+    console.log('Store names for NG selection:', storeNames);
+    console.log('Available pharmacists for NG selection:', allPharmacists);
+  }, [storeNames, allPharmacists]);
 
   // 変更があればローカルにキャッシュ
   useEffect(() => {
