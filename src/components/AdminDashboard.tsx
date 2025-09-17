@@ -2064,19 +2064,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         </div>
                       )}
-                      
-                      {/* 日別確定ボタン（確定シフトがない日のみ表示） */}
-                      {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (dayRequests.length > 0 || dayPostings.length > 0) && (
-                        <div className="mt-1">
-                          <button
-                            onClick={() => handleConfirmShiftsForDate(dateStr)}
-                            className="w-full text-[8px] sm:text-[10px] bg-blue-500 hover:bg-blue-600 text-white px-1 py-0.5 rounded text-center"
-                          >
-                            <span className="sm:hidden">確定</span>
-                            <span className="hidden sm:inline">シフト確定</span>
-                          </button>
-                        </div>
-                      )}
                     </>
                   )}
                 </div>
@@ -2095,7 +2082,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           {/* 日別確定ボタンの説明 */}
           <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
             <div className="text-sm text-gray-600 mb-2">
-              <p>各日のカレンダー内の「確定」ボタンで、その日のシフトを個別に確定できます。</p>
+              <p>カレンダーの日付をクリックして選択すると、右側に「この日のシフトを確定する」ボタンが表示されます。</p>
             </div>
           </div>
 
@@ -2121,6 +2108,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     {new Date(selectedDate).getMonth() + 1}月{new Date(selectedDate).getDate()}日の詳細情報
                   </p>
                 </div>
+                
+                {/* 日別確定ボタン */}
+                {(() => {
+                  const dayRequests = requests.filter((r: any) => r.date === selectedDate);
+                  const dayPostings = postings.filter((p: any) => p.date === selectedDate);
+                  const dayAssignedShifts = assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed');
+                  
+                  // 確定シフトがない日で、希望または募集がある場合のみボタンを表示
+                  if (dayAssignedShifts.length === 0 && (dayRequests.length > 0 || dayPostings.length > 0)) {
+                    return (
+                      <div className="p-4 border-b border-gray-200">
+                        <button
+                          onClick={() => handleConfirmShiftsForDate(selectedDate)}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          <span>この日のシフトを確定する</span>
+                        </button>
+                      </div>
+                    );
+                  } else if (dayAssignedShifts.length > 0) {
+                    return (
+                      <div className="p-4 border-b border-gray-200">
+                        <div className="bg-green-100 text-green-800 py-2 px-4 rounded-lg text-sm text-center">
+                          <span className="font-medium">✓ この日のシフトは確定済みです</span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                
                 <div className="p-4 space-y-4">
                   
                   {/* 確定シフト */}
