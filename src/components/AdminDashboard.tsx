@@ -204,12 +204,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('=== データクリーンアップ開始 ===');
       console.log('クリーンアップ関数が呼び出されました');
       
-      // 1. 名称未設定の薬剤師・薬局を特定
+      // 1. 名称未設定の薬剤師・薬局を特定（より包括的な条件）
       console.log('ユーザープロフィールの検索を開始します...');
       const { data: undefinedUsers, error: undefinedUsersError } = await supabase
         .from('user_profiles')
         .select('id, name, email, user_type')
-        .or('name.is.null,name.eq.,name.eq.undefined,name.like.%未設定%,name.like.%薬剤師未設定%,email.is.null,email.eq.');
+        .or('name.is.null,name.eq.,name.eq.undefined,name.like.%未設定%,name.like.%薬剤師未設定%,name.like.%薬局未設定%,email.is.null,email.eq.,email.eq.undefined');
       
       console.log('ユーザープロフィール検索結果:', { undefinedUsers, undefinedUsersError });
       
@@ -228,11 +228,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       console.log('名称未設定のユーザー:', undefinedUsers);
       
-      // 2. 名称未設定のシフト募集を特定
+      // 2. 名称未設定のシフト募集を特定（より包括的な条件）
       const { data: undefinedPostings, error: undefinedPostingsError } = await supabase
         .from('shift_postings')
         .select('id, pharmacy_id, store_name, date, time_slot')
-        .or('store_name.is.null,store_name.eq.,store_name.like.%未設定%,store_name.like.%薬局未設定%,store_name.like.%薬剤師未設定%,store_name.eq.undefined');
+        .or('store_name.is.null,store_name.eq.,store_name.like.%未設定%,store_name.like.%薬局未設定%,store_name.like.%薬剤師未設定%,store_name.eq.undefined,store_name.like.%undefined%');
       
       if (undefinedPostingsError) {
         console.error('未設定募集の取得エラー:', undefinedPostingsError);
@@ -354,6 +354,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
       
       console.log(`=== クリーンアップ完了: 合計${deletedCount}件削除 ===`);
+      
+      // 削除後にデータを再読み込み
+      if (deletedCount > 0) {
+        console.log('データ削除後、再読み込みを実行します...');
+        await loadAll();
+        console.log('再読み込みが完了しました');
+      }
       
     } catch (error) {
       console.error('クリーンアップエラー:', error);
@@ -670,10 +677,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       setLoading(false);
       console.log('=== LOADALL END ===');
       
-      // データ読み込み完了後に自動クリーンアップを実行
-      console.log('loadAll完了後、クリーンアップを開始します');
-      await cleanupUndefinedData();
-      console.log('クリーンアップ処理が完了しました');
+      // データ読み込み完了後に自動クリーンアップを実行（初回のみ）
+      if (!window.cleanupExecuted) {
+        console.log('loadAll完了後、初回クリーンアップを開始します');
+        window.cleanupExecuted = true;
+        await cleanupUndefinedData();
+        console.log('初回クリーンアップ処理が完了しました');
+      }
     }
   };
 
@@ -1507,15 +1517,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             >
               <RefreshCw className="w-4 h-4" />
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
-            </button>
-            
-            {/* デバッグ用：手動クリーンアップボタン */}
-            <button
-              onClick={cleanupUndefinedData}
-              className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm bg-red-600 hover:bg-red-700"
-            >
-              <AlertCircle className="w-4 h-4" />
-              <span>手動クリーンアップ実行</span>
             </button>
             
             
