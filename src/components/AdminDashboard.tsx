@@ -1963,7 +1963,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   {/* 未マッチングの薬剤師（余裕がある場合） */}
                                   {analysis.remainingRequired === 0 && analysis.hasExcess && (
                                     <div className="mb-2">
-                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕 ({analysis.totalAvailable - analysis.totalRequired}人):</div>
+                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕薬剤師 ({analysis.totalAvailable - analysis.totalRequired}人):</div>
                                       {analysis.requests.slice(analysis.totalRequired).map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
@@ -1980,7 +1980,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   {/* 余裕の薬剤師（未マッチング） - マッチング済みの場合のみ表示 */}
                                   {analysis.totalMatched > 0 && analysis.requests.length > analysis.totalMatched && (
                                     <div className="mt-2">
-                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕の薬剤師 ({analysis.requests.length - analysis.totalMatched}人):</div>
+                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 未マッチ薬剤師 ({analysis.requests.length - analysis.totalMatched}人):</div>
                                       {analysis.requests.filter((request: any) => 
                                         !analysis.matchedPharmacists.some((mp: any) => mp.id === request.id)
                                       ).map((request: any, idx: number) => {
@@ -2005,7 +2005,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   {/* 薬剤師のみ応募の場合の余裕の薬剤師を表示 */}
                                   {analysis.requests.length > 0 && (
                                     <div className="mt-2">
-                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕の薬剤師 ({analysis.requests.length}人):</div>
+                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 応募薬剤師 ({analysis.requests.length}人):</div>
                                       {analysis.requests.map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
