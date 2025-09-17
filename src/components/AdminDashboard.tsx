@@ -1757,10 +1757,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
                 timeSlots.forEach((slot) => {
                   const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
-                  const slotRequests = dayRequests.filter((r: any) => r.time_slot === slot || (slot === 'full' && r.time_slot === 'fullday'));
+                  
+                  // 時間帯互換性を考慮して希望を取得
+                  const slotRequests = dayRequests.filter((r: any) => {
+                    const reqSlot = r.time_slot;
+                    const postSlot = slot;
+                    
+                    // 完全一致
+                    if (reqSlot === postSlot) return true;
+                    if (reqSlot === 'fullday' && postSlot === 'full') return true;
+                    if (reqSlot === 'full' && postSlot === 'fullday') return true;
+                    
+                    // 終日希望は午前・午後にマッチ可能
+                    if (reqSlot === 'full' || reqSlot === 'fullday') {
+                      return postSlot === 'morning' || postSlot === 'afternoon';
+                    }
+                    
+                    // 午前希望は終日にマッチ可能
+                    if (reqSlot === 'morning') {
+                      return postSlot === 'full' || postSlot === 'fullday';
+                    }
+                    
+                    // 午後希望は終日にマッチ可能
+                    if (reqSlot === 'afternoon') {
+                      return postSlot === 'full' || postSlot === 'fullday';
+                    }
+                    
+                    return false;
+                  });
                   
                   console.log(`=== 時間帯 ${slot} のマッチング処理開始 ===`);
                   console.log(`募集数: ${slotPostings.length}, 希望数: ${slotRequests.length}`);
+                  console.log(`募集詳細:`, slotPostings.map(p => ({ time_slot: p.time_slot, store_name: p.store_name })));
+                  console.log(`希望詳細:`, slotRequests.map(r => ({ time_slot: r.time_slot, pharmacist_id: r.pharmacist_id })));
                   const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
                   const availableSlot = slotRequests.length;
 
@@ -1802,9 +1831,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
                         // 終日希望が午前・午後にマッチングされた場合の特別ログ
                         if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
-                          console.log(`🎯 不足解消マッチング: 終日希望薬剤師(${getProfile(request.pharmacist_id)?.name}) → ${slot}不足薬局(${getProfile(pharmacyNeed.pharmacy_id)?.name})`);
+                          console.log(`🎯 表示用マッチング: 終日希望薬剤師(${getProfile(request.pharmacist_id)?.name}) → ${slot}募集薬局(${getProfile(pharmacyNeed.pharmacy_id)?.name})`);
                         } else {
-                          console.log(`✅ 通常マッチング: 薬剤師(${getProfile(request.pharmacist_id)?.name}) ${request.time_slot} → 薬局(${getProfile(pharmacyNeed.pharmacy_id)?.name}) ${slot}`);
+                          console.log(`✅ 表示用マッチング: 薬剤師(${getProfile(request.pharmacist_id)?.name}) ${request.time_slot} → 薬局(${getProfile(pharmacyNeed.pharmacy_id)?.name}) ${slot}`);
                         }
                         matchedPharmacists.push(request);
                         matchedPharmacies.push(pharmacyNeed);
@@ -1814,11 +1843,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       } else {
                         // マッチング失敗の理由をログ出力
                         if (blockedByPharmacist) {
-                          console.log(`❌ マッチング失敗: 薬剤師NGリストに薬局が含まれています`);
+                          console.log(`❌ 表示用マッチング失敗: 薬剤師NGリストに薬局が含まれています`);
                         } else if (blockedByPharmacy) {
-                          console.log(`❌ マッチング失敗: 薬局NGリストに薬剤師が含まれています`);
+                          console.log(`❌ 表示用マッチング失敗: 薬局NGリストに薬剤師が含まれています`);
                         } else if (!isTimeCompatible(request.time_slot, slot)) {
-                          console.log(`❌ マッチング失敗: 時間帯不適合 (薬剤師:${request.time_slot} vs 薬局:${slot})`);
+                          console.log(`❌ 表示用マッチング失敗: 時間帯不適合 (薬剤師:${request.time_slot} vs 薬局:${slot})`);
                         }
                       }
                     }
