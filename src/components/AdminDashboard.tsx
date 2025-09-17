@@ -1722,7 +1722,74 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 
                 if (dayAssignedShifts.length > 0) {
                   console.log('確定シフトが存在するため、確定状態を返します');
-                  return { type: 'confirmed', count: dayAssignedShifts.length, requestsCount: dayRequests.length } as any;
+                  
+                  // 確定シフトがある場合でも、不足や余裕の情報を計算
+                  const timeSlots = ['morning','afternoon','full'];
+                  let totalRequired = 0;
+                  let totalAvailable = 0;
+                  let totalMatched = 0;
+                  let totalShortage = 0;
+                  let totalExcess = 0;
+
+                  timeSlots.forEach((slot) => {
+                    const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
+                    
+                    // 時間帯互換性を考慮して希望を取得
+                    const slotRequests = dayRequests.filter((r: any) => {
+                      const reqSlot = r.time_slot;
+                      const postSlot = slot;
+                      
+                      // 完全一致
+                      if (reqSlot === postSlot) return true;
+                      if (reqSlot === 'fullday' && postSlot === 'full') return true;
+                      if (reqSlot === 'full' && postSlot === 'fullday') return true;
+                      
+                      // 終日希望は午前・午後にマッチ可能
+                      if (reqSlot === 'full' || reqSlot === 'fullday') {
+                        return postSlot === 'morning' || postSlot === 'afternoon';
+                      }
+                      
+                      // 午前希望は終日にマッチ可能
+                      if (reqSlot === 'morning') {
+                        return postSlot === 'full' || postSlot === 'fullday';
+                      }
+                      
+                      // 午後希望は終日にマッチ可能
+                      if (reqSlot === 'afternoon') {
+                        return postSlot === 'full' || postSlot === 'fullday';
+                      }
+                      
+                      return false;
+                    });
+
+                    // カレンダー計算でも、募集がない時間帯で終日希望のみの場合は計算から除外
+                    if (slotPostings.length === 0 && slotRequests.every((r: any) => r.time_slot === 'full' || r.time_slot === 'fullday')) {
+                      console.log(`🚫 確定後カレンダー計算スキップ: ${slot}時間帯 - 募集なし、終日希望のみ`);
+                      return;
+                    }
+                    
+                    const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
+                    const availableSlot = slotRequests.length;
+                    const matchedSlot = Math.min(requiredSlot, availableSlot);
+                    const shortageSlot = Math.max(requiredSlot - matchedSlot, 0);
+                    const excessSlot = Math.max(availableSlot - matchedSlot, 0);
+
+                    totalRequired += requiredSlot;
+                    totalAvailable += availableSlot;
+                    totalMatched += matchedSlot;
+                    totalShortage += shortageSlot;
+                    totalExcess += excessSlot;
+                  });
+                  
+                  console.log(`確定後計算: 総必要=${totalRequired}, 総利用可能=${totalAvailable}, 総マッチ=${totalMatched}, 総不足=${totalShortage}, 総余裕=${totalExcess}`);
+                  
+                  return { 
+                    type: 'confirmed', 
+                    count: dayAssignedShifts.length, 
+                    shortage: totalShortage,
+                    excess: totalExcess,
+                    requestsCount: dayRequests.length 
+                  } as any;
                 }
                 if (dayRequests.length === 0 && dayPostings.length === 0) {
                   console.log('募集も希望もないため、空状態を返します');
@@ -1962,6 +2029,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <span className="sm:hidden">確{matchingStatus.count}</span>
                               <span className="hidden sm:inline">確定 {matchingStatus.count}件</span>
                             </div>
+                            
+                            {/* 確定後も不足パッチを表示 */}
+                            {matchingStatus.shortage > 0 && (
+                              <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
+                                <span className="sm:hidden">不{matchingStatus.shortage}</span>
+                                <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
+                              </div>
+                            )}
+                            
+                            {/* 確定後も余裕パッチを表示 */}
+                            {typeof matchingStatus.excess === 'number' && matchingStatus.excess > 0 && (
+                              <div className="text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-1 inline-block">
+                                <span className="sm:hidden">余{matchingStatus.excess}</span>
+                                <span className="hidden sm:inline">余裕 {matchingStatus.excess}</span>
+                              </div>
+                            )}
+                            
                             {dayConsultRequests.length > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">相{dayConsultRequests.length}</span>
