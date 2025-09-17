@@ -1377,6 +1377,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     setEditForm({ pharmacist_id: '', pharmacy_id: '', time_slot: '' });
   };
 
+  // マッチング処理を手動で実行する関数
+  const handleRunMatching = async () => {
+    try {
+      console.log('=== 手動マッチング実行開始 ===');
+      console.log('現在のデータ:', { requests: requests.length, postings: postings.length, assigned: assigned.length });
+      
+      // データを再読み込み
+      await loadAll();
+      
+      console.log('=== 手動マッチング実行完了 ===');
+      alert('マッチング処理を実行しました。データを再読み込みしました。');
+    } catch (error) {
+      console.error('マッチング実行エラー:', error);
+      alert(`マッチング実行に失敗しました: ${(error as any).message || '不明なエラー'}`);
+    }
+  };
+
 
 
 
@@ -1392,19 +1409,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     <div className="space-y-6">
       
       <div className={`border rounded-lg p-4 ${systemStatus === 'confirmed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
-        <div className="flex items-center space-x-2">
-          <AlertCircle className={`w-5 h-5 ${systemStatus === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}`} />
-          <div>
-            <h3 className={`text-sm font-medium ${systemStatus === 'confirmed' ? 'text-green-800' : 'text-yellow-800'}`}>
-              システム状態: {systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフト未確定'}
-            </h3>
-            <p className={`text-sm mt-1 ${systemStatus === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
-              {systemStatus === 'confirmed' 
-                ? 'シフトが確定しました。変更が必要な場合は管理者にお問い合わせください。'
-                : 'シフトが未確定です。管理者が確定ボタンを押すと確定されます。'
-              }
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className={`w-5 h-5 ${systemStatus === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}`} />
+            <div>
+              <h3 className={`text-sm font-medium ${systemStatus === 'confirmed' ? 'text-green-800' : 'text-yellow-800'}`}>
+                システム状態: {systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフト未確定'}
+              </h3>
+              <p className={`text-sm mt-1 ${systemStatus === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
+                {systemStatus === 'confirmed' 
+                  ? 'シフトが確定しました。変更が必要な場合は管理者にお問い合わせください。'
+                  : 'シフトが未確定です。管理者が確定ボタンを押すと確定されます。'
+                }
+              </p>
+            </div>
           </div>
+          <button
+            onClick={handleRunMatching}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+          >
+            マッチング実行
+          </button>
         </div>
       </div>
 
