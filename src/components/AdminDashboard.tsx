@@ -837,6 +837,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         assigned: assigned.length,
         userProfiles: Object.keys(userProfiles).length
       });
+      
+      // 実際のマッチング処理を実行
+      try {
+        await executeMatching();
+        console.log('=== 自動マッチング完了 ===');
+      } catch (error) {
+        console.error('自動マッチングエラー:', error);
+      }
     }
   };
 
@@ -1387,14 +1395,160 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     setEditForm({ pharmacist_id: '', pharmacy_id: '', time_slot: '' });
   };
 
+  // 実際のマッチング処理を実行する関数
+  const executeMatching = async () => {
+    try {
+      console.log('=== 実際のマッチング処理開始 ===');
+      
+      // 日付ごとにマッチング処理を実行
+      const dates = [...new Set([...requests.map(r => r.date), ...postings.map(p => p.date)])];
+      console.log('マッチング対象日付:', dates);
+      
+      for (const date of dates) {
+        console.log(`=== 日付 ${date} のマッチング処理 ===`);
+        
+        // その日の希望と募集を取得
+        const dayRequests = requests.filter(r => r.date === date && r.time_slot !== 'consult');
+        const dayPostings = postings.filter(p => p.date === date && p.time_slot !== 'consult');
+        const dayAssigned = assigned.filter(a => a.date === date && a.status === 'confirmed');
+        
+        console.log(`日付 ${date}: 希望${dayRequests.length}件, 募集${dayPostings.length}件, 確定${dayAssigned.length}件`);
+        
+        if (dayRequests.length === 0 || dayPostings.length === 0) {
+          console.log(`日付 ${date}: 希望または募集がないためスキップ`);
+          continue;
+        }
+        
+        // 既に確定済みの場合はスキップ
+        if (dayAssigned.length > 0) {
+          console.log(`日付 ${date}: 既に確定済みのためスキップ`);
+          continue;
+        }
+        
+        // マッチング処理を実行
+        await performMatchingForDate(date, dayRequests, dayPostings);
+      }
+      
+      console.log('=== 実際のマッチング処理完了 ===');
+      
+      // データを再読み込み
+      await loadAll();
+      
+    } catch (error) {
+      console.error('マッチング実行エラー:', error);
+      throw error;
+    }
+  };
+
+  // 特定の日付のマッチング処理を実行
+  const performMatchingForDate = async (date: string, dayRequests: any[], dayPostings: any[]) => {
+    console.log(`=== 日付 ${date} のマッチング実行 ===`);
+    
+    const timeSlots = ['morning', 'afternoon', 'full'];
+    const matchedShifts: any[] = [];
+    
+    for (const slot of timeSlots) {
+      console.log(`時間帯 ${slot} のマッチング処理開始`);
+      
+      const slotPostings = dayPostings.filter(p => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
+      const slotRequests = dayRequests.filter(r => r.time_slot === slot || (slot === 'full' && r.time_slot === 'fullday'));
+      
+      if (slotPostings.length === 0 || slotRequests.length === 0) {
+        console.log(`時間帯 ${slot}: 募集または希望がないためスキップ`);
+        continue;
+      }
+      
+      // 薬剤師を優先順位でソート
+      const sortedRequests = slotRequests.sort((a, b) => {
+        const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+        return priorityOrder[b.priority] - priorityOrder[a.priority];
+      });
+      
+      // 各薬局の必要人数を管理
+      const pharmacyNeeds = slotPostings.map(p => ({
+        ...p,
+        remaining: Number(p.required_staff) || 0
+      }));
+      
+      // マッチング処理
+      for (const request of sortedRequests) {
+        for (const pharmacyNeed of pharmacyNeeds) {
+          if (pharmacyNeed.remaining <= 0) continue;
+          
+          // NGリストチェック
+          const pharmacist = userProfiles[request.pharmacist_id];
+          const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
+          
+          const pharmacistNg = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+          const pharmacyNg = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+          
+          const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
+          const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+          
+          // 時間帯互換性チェック
+          const isTimeCompatible = (reqSlot: string, postSlot: string) => {
+            if (reqSlot === postSlot) return true;
+            if (reqSlot === 'full' || reqSlot === 'fullday') {
+              return postSlot === 'morning' || postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
+            }
+            if (reqSlot === 'morning') {
+              return postSlot === 'morning' || postSlot === 'full' || postSlot === 'fullday';
+            }
+            if (reqSlot === 'afternoon') {
+              return postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
+            }
+            return false;
+          };
+          
+          if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+            console.log(`✅ マッチング成功: 薬剤師(${pharmacist?.name}) ${request.time_slot} → 薬局(${pharmacy?.name}) ${slot}`);
+            
+            // 確定シフトを作成
+            const confirmedShift = {
+              pharmacist_id: request.pharmacist_id,
+              pharmacy_id: pharmacyNeed.pharmacy_id,
+              date: date,
+              time_slot: slot,
+              status: 'confirmed',
+              store_name: pharmacyNeed.store_name || pharmacy?.name || '',
+              memo: `マッチング: ${pharmacist?.name} → ${pharmacy?.name}`
+            };
+            
+            matchedShifts.push(confirmedShift);
+            pharmacyNeed.remaining--;
+            break;
+          }
+        }
+      }
+    }
+    
+    // 確定シフトをデータベースに保存
+    if (matchedShifts.length > 0) {
+      console.log(`日付 ${date}: ${matchedShifts.length}件の確定シフトを保存`);
+      
+      const { error } = await supabase
+        .from('assigned_shifts')
+        .insert(matchedShifts);
+      
+      if (error) {
+        console.error('確定シフト保存エラー:', error);
+        throw error;
+      }
+      
+      console.log(`日付 ${date}: 確定シフトの保存が完了しました`);
+    } else {
+      console.log(`日付 ${date}: マッチング結果なし`);
+    }
+  };
+
   // マッチング処理を手動で実行する関数
   const handleRunMatching = async () => {
     try {
       console.log('=== 手動マッチング実行開始 ===');
       console.log('現在のデータ:', { requests: requests.length, postings: postings.length, assigned: assigned.length });
       
-      // データを再読み込み
-      await loadAll();
+      // 実際のマッチング処理を実行
+      await executeMatching();
       
       console.log('=== 手動マッチング実行完了 ===');
       alert('マッチング処理を実行しました。データを再読み込みしました。');
