@@ -2539,7 +2539,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       
                       const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot || (timeSlot === 'full' && p.time_slot === 'fullday'));
                       
+                      // 右側パネルでは、実際にマッチングが発生する可能性がある時間帯のみを表示
+                      // 募集がない時間帯で、終日希望の薬剤師のみの場合は表示しない
                       if (slotRequests.length === 0 && slotPostings.length === 0) return null;
+                      if (slotPostings.length === 0 && slotRequests.every((r: any) => r.time_slot === 'full' || r.time_slot === 'fullday')) {
+                        console.log(`🚫 右パネル表示スキップ: ${timeSlot}時間帯 - 募集なし、終日希望のみ`);
+                        return null;
+                      }
+                      
+                      console.log(`✅ 右パネル表示: ${timeSlot}時間帯 - 募集${slotPostings.length}件、応募${slotRequests.length}件`);
                       
                       // 薬剤師を優先順位でソート（高→中→低）
                       const sortedRequests = slotRequests.sort((a: any, b: any) => {
