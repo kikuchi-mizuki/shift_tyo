@@ -1176,12 +1176,26 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {(() => {
                   // ログインユーザー（薬局）の確定シフトのみを表示
+                  console.log('🔍 フィルタリング前の確認:', {
+                    confirmedShiftsCount: confirmedShifts.length,
+                    confirmedShifts: confirmedShifts.map(s => ({
+                      id: s.id,
+                      pharmacy_id: s.pharmacy_id,
+                      pharmacist_id: s.pharmacist_id,
+                      date: s.date,
+                      time_slot: s.time_slot
+                    })),
+                    currentUserId: user?.id,
+                    selectedDates
+                  });
+                  
                   const filteredShifts = confirmedShifts.filter((shift: any) => 
                     selectedDates.includes(shift.date) && shift.pharmacy_id === user?.id
                   );
                   console.log('Filtered confirmed shifts for display (pharmacy only):', {
                     selectedDates,
                     currentUserId: user?.id,
+                    userObject: user,
                     allConfirmedShifts: confirmedShifts,
                     filteredShifts,
                     userProfiles
