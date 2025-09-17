@@ -1001,8 +1001,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
               const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
 
-              // 完全一致のみをチェック
-              if (!blockedByPharmacist && !blockedByPharmacy && request.time_slot === slot) {
+              // 時間帯互換性を考慮したマッチング
+              if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+                // マッチング成功のログ
+                if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
+                  console.log(`🎯 確定用マッチング: 終日希望薬剤師(${pharmacist?.name}) → ${slot}募集薬局(${pharmacy?.name})`);
+                } else {
+                  console.log(`✅ 確定用マッチング: 薬剤師(${pharmacist?.name}) ${request.time_slot} → 薬局(${pharmacy?.name}) ${slot}`);
+                }
                 // 店舗名を取得（postingから）
                 const getStoreNameFromPosting = (posting: any) => {
                   console.log('getStoreNameFromPosting called with posting:', posting);
@@ -1096,6 +1102,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
               // 柔軟な時間帯マッチングをチェック
               if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+                // 柔軟なマッチング成功のログ
+                if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
+                  console.log(`🎯 確定用柔軟マッチング: 終日希望薬剤師(${pharmacist?.name}) → ${slot}募集薬局(${pharmacy?.name})`);
+                } else {
+                  console.log(`✅ 確定用柔軟マッチング: 薬剤師(${pharmacist?.name}) ${request.time_slot} → 薬局(${pharmacy?.name}) ${slot}`);
+                }
                 // 店舗名を取得（postingから）
                 const getStoreNameFromPosting = (posting: any) => {
                   const direct = (posting.store_name || '').trim();
