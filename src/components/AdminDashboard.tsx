@@ -2283,8 +2283,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     <option value="morning">午前 (9:00-13:00)</option>
                                     <option value="afternoon">午後 (13:00-18:00)</option>
                                     <option value="full">終日 (9:00-18:00)</option>
-                                    <option value="evening">夜間 (18:00-22:00)</option>
-                                    <option value="night">夜間 (18:00-22:00)</option>
                                   </select>
                                 </div>
                               </div>
