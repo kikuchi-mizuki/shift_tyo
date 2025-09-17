@@ -1960,8 +1960,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     </div>
                                   )}
                                   
-                                  {/* 未マッチングの薬剤師（余裕がある場合） */}
-                                  {analysis.remainingRequired === 0 && analysis.hasExcess && (
+                                  {/* 余裕薬剤師 - 必要人数を満たした後の余剰薬剤師 */}
+                                  {analysis.remainingRequired === 0 && analysis.hasExcess && analysis.totalMatched > 0 && (
                                     <div className="mb-2">
                                       <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕薬剤師 ({analysis.totalAvailable - analysis.totalRequired}人):</div>
                                       {analysis.requests.slice(analysis.totalRequired).map((request: any, idx: number) => {
@@ -1977,8 +1977,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     </div>
                                   )}
                                   
-                                  {/* 余裕の薬剤師（未マッチング） - マッチング済みの場合のみ表示 */}
-                                  {analysis.totalMatched > 0 && analysis.requests.length > analysis.totalMatched && (
+                                  {/* 未マッチ薬剤師 - マッチング済みの場合のみ表示（余裕薬剤師と重複しないよう条件を調整） */}
+                                  {analysis.totalMatched > 0 && analysis.requests.length > analysis.totalMatched && !(analysis.remainingRequired === 0 && analysis.hasExcess) && (
                                     <div className="mt-2">
                                       <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 未マッチ薬剤師 ({analysis.requests.length - analysis.totalMatched}人):</div>
                                       {analysis.requests.filter((request: any) => 
