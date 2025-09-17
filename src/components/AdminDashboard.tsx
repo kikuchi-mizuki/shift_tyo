@@ -195,6 +195,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     console.log('=== ADMIN DASHBOARD MOUNTED ===');
     console.log('User:', user);
     console.log('useEffectが実行されました - loadAllを開始します');
+    
+    // クリーンアップ実行フラグをリセット
+    (window as any).cleanupExecuted = false;
+    
     loadAll();
   }, [user, currentDate]);
 
@@ -346,7 +350,51 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       // 削除対象がない場合は処理を終了
       if (userIdsToDelete.length === 0 && postingIdsToDelete.length === 0 && requestIdsToDelete.length === 0) {
-        console.log('削除対象のデータはありません');
+        console.log('検索条件による削除対象のデータはありません');
+        
+        // 手動で「薬剤師未設定」を直接検索・削除
+        console.log('手動で「薬剤師未設定」を検索します...');
+        const { data: manualUndefinedUsers, error: manualError } = await supabase
+          .from('user_profiles')
+          .select('id, name, email, user_type')
+          .eq('name', '薬剤師未設定');
+        
+        console.log('手動検索結果:', manualUndefinedUsers);
+        
+        if (manualUndefinedUsers && manualUndefinedUsers.length > 0) {
+          console.log('手動検索で「薬剤師未設定」を発見しました。削除を実行します...');
+          
+          // 関連するシフト希望を削除
+          for (const user of manualUndefinedUsers) {
+            const { error: deleteRequestsError } = await supabase
+              .from('shift_requests')
+              .delete()
+              .eq('pharmacist_id', user.id);
+            
+            if (deleteRequestsError) {
+              console.error('シフト希望削除エラー:', deleteRequestsError);
+            } else {
+              console.log(`ユーザー ${user.id} のシフト希望を削除しました`);
+            }
+          }
+          
+          // ユーザーを削除
+          const { error: deleteUsersError } = await supabase
+            .from('user_profiles')
+            .delete()
+            .eq('name', '薬剤師未設定');
+          
+          if (deleteUsersError) {
+            console.error('ユーザー削除エラー:', deleteUsersError);
+          } else {
+            console.log(`${manualUndefinedUsers.length}件の「薬剤師未設定」ユーザーを削除しました`);
+            // 削除後にデータを再読み込み
+            await loadAll();
+          }
+        } else {
+          console.log('手動検索でも「薬剤師未設定」は見つかりませんでした');
+        }
+        
         return;
       }
       
@@ -751,11 +799,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('=== LOADALL END ===');
       
       // データ読み込み完了後に自動クリーンアップを実行（初回のみ）
-      if (!window.cleanupExecuted) {
+      if (!(window as any).cleanupExecuted) {
         console.log('loadAll完了後、初回クリーンアップを開始します');
-        window.cleanupExecuted = true;
+        (window as any).cleanupExecuted = true;
         await cleanupUndefinedData();
         console.log('初回クリーンアップ処理が完了しました');
+      } else {
+        console.log('クリーンアップは既に実行済みです');
       }
     }
   };
