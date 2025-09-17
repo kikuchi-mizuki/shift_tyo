@@ -530,6 +530,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       const { data: r } = await shiftRequests.getRequests('', 'admin' as any);
       setRequests(r || []);
+      
+      console.log('=== シフト希望データ読み込み完了 ===');
+      console.log('読み込まれたシフト希望数:', (r || []).length);
+      console.log('シフト希望の薬剤師ID一覧:', (r || []).map(req => req.pharmacist_id));
+      console.log('シフト希望詳細:', r);
       const { data: p } = await shiftPostings.getPostings('', 'admin' as any);
       setPostings(p || []);
       
@@ -736,6 +741,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           });
           logToRailway('User profiles map:', profilesMap);
           setUserProfiles(profilesMap);
+          
+          console.log('=== ユーザープロフィール読み込み完了 ===');
+          console.log('読み込まれたユーザー数:', Object.keys(profilesMap).length);
+          console.log('ユーザーID一覧:', Object.keys(profilesMap));
+          console.log('ユーザープロフィール詳細:', profilesMap);
           
           // 店舗毎のNG薬剤師データを取得
           logToRailway('Fetching store-specific NG pharmacists...');
@@ -2026,6 +2036,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').map((request: any, index: number) => {
                         const pharmacistProfile = userProfiles[request.pharmacist_id];
+                        
+                        // デバッグログ：薬剤師プロフィールの取得状況を確認
+                        if (!pharmacistProfile) {
+                          console.log('薬剤師プロフィールが見つかりません:', {
+                            pharmacist_id: request.pharmacist_id,
+                            available_user_ids: Object.keys(userProfiles),
+                            userProfiles_count: Object.keys(userProfiles).length
+                          });
+                        }
+                        
                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                         const isEditing = editingRequestId === request.id;
                         return (
