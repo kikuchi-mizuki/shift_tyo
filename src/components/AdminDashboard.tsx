@@ -827,6 +827,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       } else {
         console.log('クリーンアップは既に実行済みです');
       }
+      
+      // データ読み込み完了後に自動マッチングを実行
+      console.log('=== 自動マッチング開始 ===');
+      console.log('データ読み込み完了後の自動マッチングを実行します');
+      console.log('現在のデータ:', { 
+        requests: requests.length, 
+        postings: postings.length, 
+        assigned: assigned.length,
+        userProfiles: Object.keys(userProfiles).length
+      });
     }
   };
 
@@ -1428,7 +1438,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             onClick={handleRunMatching}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
           >
-            マッチング実行
+            データ再読み込み
           </button>
         </div>
       </div>
