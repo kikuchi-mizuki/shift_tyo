@@ -66,6 +66,10 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
 
   useEffect(() => {
+    // 常時可視ログ（error レベル）
+    try {
+      console.error('[PD] PharmacistDashboard mounted', { userId: user?.id });
+    } catch {}
     loadShifts();
   }, [user]);
 
@@ -167,6 +171,12 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
         }
       } else {
         console.log('Loaded assigned shifts:', assignedData);
+        try {
+          console.error('[PD] Loaded assigned_shifts', {
+            count: assignedData?.length || 0,
+            ids: (assignedData || []).map((s: any) => s.id).slice(0, 10),
+          });
+        } catch {}
         console.log('My shifts count:', assignedData?.length || 0);
         if (assignedData && assignedData.length > 0) {
           console.log('My shifts details:', assignedData.map((s: any) => ({ date: s.date, status: s.status, pharmacy_id: s.pharmacy_id })));

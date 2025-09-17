@@ -52,6 +52,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
 
   useEffect(() => {
     console.log('PharmacyDashboard mounted, user:', user);
+    try {
+      console.error('[PH] PharmacyDashboard mounted', { userId: user?.id });
+    } catch {}
     // 1) ローカルキャッシュから即座に復元（UX向上）
     try {
       const cachedStores = localStorage.getItem(`store_names_${user?.id || ''}`);
@@ -225,6 +228,12 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         }
       } else {
         console.log('Loaded confirmed shifts:', assignedData);
+        try {
+          console.error('[PH] Loaded assigned_shifts', {
+            count: assignedData?.length || 0,
+            ids: (assignedData || []).map((s: any) => s.id).slice(0, 10),
+          });
+        } catch {}
         console.log('Confirmed shifts detailed analysis:', assignedData?.map((shift: any) => ({
           id: shift.id,
           date: shift.date,
