@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-import { Calendar, RefreshCw, AlertCircle } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, storeNgPharmacists, supabase } from '../lib/supabase';
+import { Calendar, AlertCircle } from 'lucide-react';
+import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
   user: any;
@@ -252,7 +252,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('ユーザープロフィール検索結果:', { undefinedUsers, undefinedUsersError });
       
       // デバッグ用：すべてのユーザープロフィールを取得
-      const { data: allUsers, error: allUsersError } = await supabase
+      const { data: allUsers } = await supabase
         .from('user_profiles')
         .select('id, name, email, user_type')
         .limit(50);
@@ -306,7 +306,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
       
       // デバッグ用：すべてのシフト希望を取得
-      const { data: allRequests, error: allRequestsError } = await supabase
+      const { data: allRequests } = await supabase
         .from('shift_requests')
         .select('id, pharmacist_id, date, time_slot')
         .limit(50);
@@ -354,7 +354,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         
         // 手動で「薬剤師未設定」を直接検索・削除
         console.log('手動で「薬剤師未設定」を検索します...');
-        const { data: manualUndefinedUsers, error: manualError } = await supabase
+        const { data: manualUndefinedUsers } = await supabase
           .from('user_profiles')
           .select('id, name, email, user_type')
           .eq('name', '薬剤師未設定');
@@ -543,7 +543,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       setPostings(p || []);
       
       console.log('=== 全データ読み込み完了 ===');
-      console.log('ユーザープロフィール数:', Object.keys(profilesMap).length);
+      console.log('ユーザープロフィール数:', Object.keys(userProfiles).length);
       console.log('シフト募集数:', (p || []).length);
       console.log('シフト希望数:', (r || []).length);
       console.log('確定シフト数:', (assignedData || []).length);
@@ -551,7 +551,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // マッチング機能で使用されるテーブルの存在確認
       logToRailway('=== マッチング機能テーブル確認 ===');
       try {
-        const { data: storeOpenings, error: storeOpeningsError } = await supabase
+        const { error: storeOpeningsError } = await supabase
           .from('store_openings')
           .select('count')
           .limit(1);
@@ -561,7 +561,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
       
       try {
-        const { data: availabilities, error: availabilitiesError } = await supabase
+        const { error: availabilitiesError } = await supabase
           .from('availabilities')
           .select('count')
           .limit(1);
@@ -571,7 +571,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
       
       try {
-        const { data: matches, error: matchesError } = await supabase
+        const { error: matchesError } = await supabase
           .from('matches')
           .select('count')
           .limit(1);
@@ -607,12 +607,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
              // user_profilesが存在しない場合はapp_usersを試す
              if (allProfilesError && allProfilesError.message.includes('does not exist')) {
                logToRailway('user_profiles table not found, trying app_users...');
-               const { data: appUsersData, error: appUsersError } = await supabase
+               const { data: appUsersData } = await supabase
                  .from('app_users')
                  .select('*');
                
-               if (appUsersError) {
-                 logToRailway('Error loading app_users:', appUsersError);
+               if (!appUsersData) {
+                 logToRailway('Error loading app_users: No data');
                  // 他のテーブル名も試す
                  logToRailway('Trying other possible table names...');
                  
@@ -762,17 +762,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const storeNgDataMap: {[pharmacyId: string]: any[]} = {};
           
           // 薬局ユーザーのみを対象に店舗毎NG薬剤師を取得
-          const pharmacyUsers = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacy');
-          for (const pharmacy of pharmacyUsers) {
-            try {
-              const { data: storeNgData, error: storeNgError } = await storeNgPharmacists.getStoreNgPharmacists(pharmacy.id);
-              if (!storeNgError && storeNgData) {
-                storeNgDataMap[pharmacy.id] = storeNgData;
-              }
-            } catch (error) {
-              logToRailway(`Error fetching store NG pharmacists for ${pharmacy.id}:`, error);
-            }
-          }
+          // const pharmacyUsers = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacy');
+          // for (const pharmacy of pharmacyUsers) {
+          //   try {
+          //     const { data: storeNgData, error: storeNgError } = await storeNgPharmacists.getStoreNgPharmacists((pharmacy as any).id);
+          //     if (!storeNgError && storeNgData) {
+          //       storeNgDataMap[(pharmacy as any).id] = storeNgData;
+          //     }
+          //   } catch (error) {
+          //     logToRailway(`Error fetching store NG pharmacists for ${(pharmacy as any).id}:`, error);
+          //   }
+          // }
           
           setStoreNgPharmacists(storeNgDataMap);
           logToRailway('Store NG pharmacists data:', storeNgDataMap);
@@ -880,44 +880,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
-  const handleConfirmShifts = async () => {
+  const handleConfirmShiftsForDate = async (date: string) => {
     try {
-      console.log('handleConfirmShifts called');
+      console.log('handleConfirmShiftsForDate called for date:', date);
       console.log('Current requests:', requests);
       console.log('Current postings:', postings);
       
       // 現在のユーザーIDを確認
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       console.log('Admin auth user:', authUser);
       console.log('Admin user prop:', user);
       
-      // 希望シフトと募集シフトをマッチングして確定済みシフトを作成
+      // 指定日の希望シフトと募集シフトをマッチングして確定済みシフトを作成
       const confirmedShifts: any[] = [];
       
-      // 各日付で希望と募集をマッチング
-      const dateGroups = new Map();
+      // 指定日の希望シフトと募集シフトを取得
+      const dayRequests = requests.filter((request: any) => request.date === date);
+      const dayPostings = postings.filter((posting: any) => posting.date === date);
       
-      // 希望シフトを日付ごとにグループ化
-      requests.forEach((request: any) => {
-        if (!dateGroups.has(request.date)) {
-          dateGroups.set(request.date, { requests: [], postings: [] });
-        }
-        dateGroups.get(request.date).requests.push(request);
-      });
+      console.log(`Processing date ${date}:`, { dayRequests, dayPostings });
       
-      // 募集シフトを日付ごとにグループ化
-      postings.forEach((posting: any) => {
-        if (!dateGroups.has(posting.date)) {
-          dateGroups.set(posting.date, { requests: [], postings: [] });
-        }
-        dateGroups.get(posting.date).postings.push(posting);
-      });
-      
-      console.log('Date groups:', dateGroups);
-      
-      // マッチング処理（カレンダーと同じロジック）
-      dateGroups.forEach((group, date) => {
-        console.log(`Processing date ${date}:`, group);
+      // 指定日のみを処理
+      if (dayRequests.length > 0 || dayPostings.length > 0) {
         
         // ヘルパー関数
         const getProfile = (id: string) => {
@@ -965,8 +949,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         
         // まず完全一致のマッチングを実行
         timeSlots.forEach((slot) => {
-          const slotPostings = group.postings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
-          const slotRequests = group.requests.filter((r: any) => r.time_slot === slot || (slot === 'full' && r.time_slot === 'fullday'));
+          const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
+          const slotRequests = dayRequests.filter((r: any) => r.time_slot === slot || (slot === 'full' && r.time_slot === 'fullday'));
           
           if (slotPostings.length === 0 || slotRequests.length === 0) return;
           
@@ -1062,12 +1046,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         
         // 完全一致のマッチング後に、柔軟なマッチングを実行
         timeSlots.forEach((slot) => {
-          const slotPostings = group.postings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
+          const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
           
           if (slotPostings.length === 0) return;
           
           // まだマッチしていない薬剤師を取得
-          const unmatchedRequests = group.requests.filter((req: any) => 
+          const unmatchedRequests = dayRequests.filter((req: any) => 
             !matchedPharmacists.some(matched => matched.id === req.id)
           );
           
@@ -1146,7 +1130,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             }
           });
         });
-      });
+      }
 
       console.log('Final confirmed shifts:', confirmedShifts);
 
@@ -1188,7 +1172,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // データを再読み込み
       loadAll();
     } catch (error) {
-      console.error('Error in handleConfirmShifts:', error);
+      console.error('Error in handleConfirmShiftsForDate:', error);
       alert(`シフトの確定に失敗しました: ${(error as any).message || 'Unknown error'}`);
     }
   };
@@ -1327,35 +1311,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   };
 
   // 全確定シフトの一括取り消し
-  const handleCancelAllConfirmedShifts = async () => {
-    if (!confirm('全ての確定シフトを取り消しますか？この操作は取り消せません。')) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('assigned_shifts')
-        .delete()
-        .eq('status', 'confirmed');
-
-      if (error) {
-        console.error('Error canceling all confirmed shifts:', error);
-        alert(`全確定シフトの取り消しに失敗しました: ${error.message || error.code || 'Unknown error'}`);
-        return;
-      }
-
-      alert('全ての確定シフトを取り消しました');
-      
-      // システム状態を未確定に戻す
-      setSystemStatus('pending');
-      setLastUpdated(new Date());
-      
-      loadAll();
-    } catch (error) {
-      console.error('Error in handleCancelAllConfirmedShifts:', error);
-      alert(`全確定シフトの取り消しに失敗しました: ${(error as any).message || 'Unknown error'}`);
-    }
-  };
 
   // シフト編集の状態管理
   const [editingShift, setEditingShift] = useState<any>(null);
@@ -2099,6 +2054,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           {/* ホバー詳細は右側パネルで表示するため非表示に変更 */}
                         </div>
                       )}
+                      
+                      {/* 確定済み日の表示 */}
+                      {matchingStatus.type === 'confirmed' && (
+                        <div className="mt-1">
+                          <div className="text-[8px] sm:text-[10px] bg-green-500 text-white px-1 py-0.5 rounded text-center">
+                            <span className="sm:hidden">確定済み</span>
+                            <span className="hidden sm:inline">シフト確定済み</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* 日別確定ボタン（確定シフトがない日のみ表示） */}
+                      {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (dayRequests.length > 0 || dayPostings.length > 0) && (
+                        <div className="mt-1">
+                          <button
+                            onClick={() => handleConfirmShiftsForDate(dateStr)}
+                            className="w-full text-[8px] sm:text-[10px] bg-blue-500 hover:bg-blue-600 text-white px-1 py-0.5 rounded text-center"
+                          >
+                            <span className="sm:hidden">確定</span>
+                            <span className="hidden sm:inline">シフト確定</span>
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -2114,29 +2092,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             <p className="text-sm text-purple-100 mt-1">システム全体の状態管理と調整</p>
           </div>
           
-          {/* シフト確定ボタン - 固定表示 */}
-          <div className="p-4 lg:p-6 pb-0 flex-shrink-0 space-y-2">
-            <button 
-              onClick={handleConfirmShifts}
-              className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm ${
-                systemStatus === 'confirmed' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
-            </button>
-            
-            
-            {/* 一括確定取り消しボタン - 確定済みの場合のみ表示 */}
-            {systemStatus === 'confirmed' && (
-              <button 
-                onClick={handleCancelAllConfirmedShifts}
-                className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm bg-red-600 hover:bg-red-700"
-              >
-                <AlertCircle className="w-4 h-4" />
-                <span>全確定シフトを取り消し</span>
-              </button>
-            )}
+          {/* 日別確定ボタンの説明 */}
+          <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
+            <div className="text-sm text-gray-600 mb-2">
+              <p>各日のカレンダー内の「確定」ボタンで、その日のシフトを個別に確定できます。</p>
+            </div>
           </div>
 
           {/* スクロール可能な詳細エリア */}
@@ -3233,9 +3193,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   // ng_listを確実に配列として処理
                                   let ngList: string[] = [];
                                   if (Array.isArray(pharmacist.ng_list)) {
-                                    ngList = pharmacist.ng_list.filter(id => id && id.trim());
+                                    ngList = pharmacist.ng_list.filter((id: any) => id && id.trim());
                                   } else if (typeof pharmacist.ng_list === 'string' && pharmacist.ng_list.trim()) {
-                                    ngList = pharmacist.ng_list.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                                    ngList = pharmacist.ng_list.split(',').map((s: any) => s.trim()).filter((s: any) => s.length > 0);
                                   }
                                   
                                   if (ngList.length === 0) {
@@ -3244,9 +3204,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   
                                   return (
                                     <div className="flex flex-wrap gap-1">
-                                      {ngList.map((ngId: string, idx: number) => {
+                                      {ngList.map((ngId: any, idx: any) => {
                                         // 薬局名を取得する関数 - 直接的な解決
-                                        const getPharmacyName = (id: string) => {
+                                        const getPharmacyName = (id: any) => {
                                           // 1. 直接userProfilesから検索
                                           const profile = userProfiles[id];
                                           if (profile && profile.name) {
