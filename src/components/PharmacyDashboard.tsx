@@ -168,6 +168,17 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         setMyShifts([]);
       } else {
         console.log('Loaded shift postings:', myShiftsData);
+        console.log('Shift postings detailed analysis:', myShiftsData?.map((posting: any) => ({
+          id: posting.id,
+          date: posting.date,
+          time_slot: posting.time_slot,
+          required_staff: posting.required_staff,
+          required_people: posting.required_people,
+          store_name: posting.store_name,
+          memo: posting.memo,
+          status: posting.status,
+          pharmacy_id: posting.pharmacy_id
+        })));
         console.log('Setting myShifts state with:', myShiftsData);
         setMyShifts(myShiftsData || []);
       }
@@ -229,6 +240,35 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         })));
         setConfirmedShifts(assignedData || []);
       }
+      
+      // 募集人数と確定人数の比較分析
+      console.log('=== RECRUITMENT VS CONFIRMED ANALYSIS ===');
+      if (myShiftsData && assignedData) {
+        myShiftsData.forEach((posting: any) => {
+          const confirmedForThisPosting = assignedData.filter((shift: any) => 
+            shift.date === posting.date && 
+            shift.time_slot === posting.time_slot &&
+            shift.pharmacy_id === posting.pharmacy_id
+          );
+          
+          console.log('Posting vs Confirmed comparison:', {
+            posting_id: posting.id,
+            date: posting.date,
+            time_slot: posting.time_slot,
+            store_name: posting.store_name,
+            required_staff: posting.required_staff,
+            required_people: posting.required_people,
+            confirmed_count: confirmedForThisPosting.length,
+            confirmed_shifts: confirmedForThisPosting.map(s => ({
+              id: s.id,
+              pharmacist_id: s.pharmacist_id,
+              status: s.status
+            })),
+            is_over_recruited: confirmedForThisPosting.length > (posting.required_staff || posting.required_people || 1)
+          });
+        });
+      }
+      console.log('=== RECRUITMENT VS CONFIRMED ANALYSIS END ===');
       
       // ユーザープロフィールを取得
       const { data: profileData, error: profileError } = await supabase
@@ -1191,6 +1231,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   
                   const storeName = getStoreName(shift);
                   
+                  // 対応する募集データを検索
+                  const correspondingPosting = myShifts.find((posting: any) => 
+                    posting.date === shift.date && 
+                    posting.time_slot === shift.time_slot &&
+                    posting.pharmacy_id === shift.pharmacy_id
+                  );
+                  
+                  const requiredStaff = correspondingPosting?.required_staff || correspondingPosting?.required_people || 1;
+                  
                   return (
                     <div key={index} className="bg-white p-3 rounded border border-green-200">
                       <div className="text-sm font-medium text-gray-800">
@@ -1227,6 +1276,22 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                       <div className="text-xs text-gray-600">
                         薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || `薬剤師名未設定 (ID: ${shift.pharmacist_id})`}
                       </div>
+                      {correspondingPosting && (
+                        <div className="text-xs text-gray-500 mt-1 border-t pt-1">
+                          募集: {requiredStaff}人 | 確定: {confirmedShifts.filter((s: any) => 
+                            s.date === shift.date && 
+                            s.time_slot === shift.time_slot &&
+                            s.pharmacy_id === shift.pharmacy_id
+                          ).length}人
+                          {confirmedShifts.filter((s: any) => 
+                            s.date === shift.date && 
+                            s.time_slot === shift.time_slot &&
+                            s.pharmacy_id === shift.pharmacy_id
+                          ).length > requiredStaff && (
+                            <span className="text-red-600 ml-2">⚠️ 過剰確定</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })
