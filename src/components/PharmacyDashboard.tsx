@@ -50,6 +50,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [selectedStoreNgPharmacistId, setSelectedStoreNgPharmacistId] = useState(''); // 店舗毎用
   const [allPharmacists, setAllPharmacists] = useState<any[]>([]);
 
+  // 画面内デバッグ表示切替（?debug=1）
+  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
+
   useEffect(() => {
     console.log('PharmacyDashboard mounted, user:', user);
     try {
@@ -932,6 +935,13 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   
   return (
     <div className="space-y-6">
+      {isDebug && (
+        <div className="fixed right-2 top-2 z-50 text-[10px] bg-black/70 text-white px-2 py-1 rounded">
+          <div>PH debug</div>
+          <div>user: {user?.id || 'N/A'}</div>
+          <div>confirmed: {confirmedShifts?.length || 0}</div>
+        </div>
+      )}
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         {/* 左: カレンダー */}
       <div className="flex-1 bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">

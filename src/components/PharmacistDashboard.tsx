@@ -64,6 +64,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
   const [availableStores, setAvailableStores] = useState<string[]>([]); // 選択された薬局の店舗名リスト
 
+  // 画面内デバッグ表示切替（?debug=1）
+  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
+
 
   useEffect(() => {
     // 常時可視ログ（error レベル）
@@ -742,6 +745,13 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
 
   return (
     <div className="space-y-6">
+      {isDebug && (
+        <div className="fixed right-2 top-2 z-50 text-[10px] bg-black/70 text-white px-2 py-1 rounded">
+          <div>PD debug</div>
+          <div>user: {user?.id || 'N/A'}</div>
+          <div>confirmed: {myShifts?.length || 0}</div>
+        </div>
+      )}
       
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         {/* 左側: カレンダー */}
