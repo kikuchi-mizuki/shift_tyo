@@ -1514,9 +1514,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               memo: `マッチング: ${pharmacist?.name} → ${pharmacy?.name}`
             };
             
+            console.log('作成する確定シフト:', confirmedShift);
             matchedShifts.push(confirmedShift);
             pharmacyNeed.remaining--;
             break;
+          } else {
+            // マッチング失敗の理由をログ出力
+            if (blockedByPharmacist) {
+              console.log(`❌ マッチング失敗: 薬剤師NGリストに薬局が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+            } else if (blockedByPharmacy) {
+              console.log(`❌ マッチング失敗: 薬局NGリストに薬剤師が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+            } else if (!isTimeCompatible(request.time_slot, slot)) {
+              console.log(`❌ マッチング失敗: 時間帯不適合 (薬剤師:${request.time_slot} vs 薬局:${slot})`);
+            }
           }
         }
       }
@@ -1525,17 +1535,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     // 確定シフトをデータベースに保存
     if (matchedShifts.length > 0) {
       console.log(`日付 ${date}: ${matchedShifts.length}件の確定シフトを保存`);
+      console.log('保存する確定シフト詳細:', matchedShifts);
       
-      const { error } = await supabase
+      const { data: insertData, error } = await supabase
         .from('assigned_shifts')
-        .insert(matchedShifts);
+        .insert(matchedShifts)
+        .select();
       
       if (error) {
         console.error('確定シフト保存エラー:', error);
+        console.error('エラー詳細:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
       
       console.log(`日付 ${date}: 確定シフトの保存が完了しました`);
+      console.log('保存されたデータ:', insertData);
     } else {
       console.log(`日付 ${date}: マッチング結果なし`);
     }
