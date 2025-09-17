@@ -2186,6 +2186,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         const pharmacyProfile = userProfiles[shift.pharmacy_id];
                         const isEditing = editingShift?.id === shift.id;
                         
+                        // デバッグ用：確定シフトの詳細をログ出力
+                        console.log(`確定シフト詳細 (${index + 1}件目):`, {
+                          id: shift.id,
+                          date: shift.date,
+                          time_slot: shift.time_slot,
+                          pharmacist_id: shift.pharmacist_id,
+                          pharmacy_id: shift.pharmacy_id,
+                          store_name: shift.store_name,
+                          memo: shift.memo,
+                          status: shift.status
+                        });
+                        
                         // 店舗名を取得（store_name または memo から）
                         const getStoreName = (shift: any) => {
                           const direct = (shift.store_name || '').trim();
@@ -2271,6 +2283,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     <option value="morning">午前 (9:00-13:00)</option>
                                     <option value="afternoon">午後 (13:00-18:00)</option>
                                     <option value="full">終日 (9:00-18:00)</option>
+                                    <option value="evening">夜間 (18:00-22:00)</option>
+                                    <option value="night">夜間 (18:00-22:00)</option>
                                   </select>
                                 </div>
                               </div>
@@ -2279,7 +2293,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 pr-2">
                                   <div className="text-xs text-gray-800 leading-snug break-words">
-                                    {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'} → {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(shift)})
+                                    <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}</div>
+                                    <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '薬局名未設定'}</div>
+                                    <div>店舗: {getStoreName(shift)}</div>
                                   </div>
                                   <div className="mt-1">
                                     <button
@@ -2291,7 +2307,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   </div>
                                 </div>
                                 <div className="text-xs text-gray-500 whitespace-nowrap">
-                                  {shift.time_slot === 'morning' ? '午前' : shift.time_slot === 'afternoon' ? '午後' : shift.time_slot === 'full' ? '終日' : '要相談'}
+                                  {(() => {
+                                    const timeSlot = shift.time_slot;
+                                    if (timeSlot === 'morning') return '午前';
+                                    if (timeSlot === 'afternoon') return '午後';
+                                    if (timeSlot === 'full') return '終日(9:00-18:00)';
+                                    if (timeSlot === 'fullday') return '終日(9:00-18:00)';
+                                    if (timeSlot === 'evening') return '夜間';
+                                    if (timeSlot === 'night') return '夜間';
+                                    if (timeSlot === 'consult') return '要相談';
+                                    if (timeSlot === 'negotiable') return '要相談';
+                                    return timeSlot || '未設定';
+                                  })()}
                                 </div>
                               </div>
                             )}
