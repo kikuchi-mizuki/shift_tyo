@@ -493,6 +493,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('🚀🚀🚀 ADMIN DASHBOARD loadAll STARTED 🚀🚀🚀');
       console.log('=== loadAll started - データ読み込み開始 ===');
       console.log('現在の日時:', new Date().toISOString());
+      console.log('loadAll関数が実行されました - コンソールを確認してください');
       // Railwayログに出力
       const logToRailway = (message: string, data?: any) => {
         console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
@@ -1461,6 +1462,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 console.log('フィルタ後の募集:', dayPostings.length);
                 console.log('希望の時間帯:', dayRequests.map(r => r.time_slot));
                 console.log('募集の時間帯:', dayPostings.map(p => p.time_slot));
+                console.log('データフィルタリングが実行されました - コンソールを確認してください');
               }
               // 要相談のリクエストを取得
               const dayConsultRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot === 'consult');
@@ -1476,6 +1478,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   console.log('希望数:', dayRequests.length);
                   console.log('募集詳細:', dayPostings);
                   console.log('希望詳細:', dayRequests);
+                  console.log('マッチング処理が開始されました - コンソールを確認してください');
                 }
                 
                 if (dayAssignedShifts.length > 0) {
