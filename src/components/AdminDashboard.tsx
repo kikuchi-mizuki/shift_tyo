@@ -16,6 +16,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [cleanupLoading, setCleanupLoading] = useState(false);
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [storeNgPharmacists, setStoreNgPharmacists] = useState<{[pharmacyId: string]: any[]}>({});
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -196,6 +197,120 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     console.log('User:', user);
     loadAll();
   }, [user, currentDate]);
+
+  // 名称未設定のデータをクリーンアップする関数
+  const cleanupUndefinedData = async () => {
+    setCleanupLoading(true);
+    try {
+      console.log('=== データクリーンアップ開始 ===');
+      
+      // 1. 名称未設定の薬剤師・薬局を特定
+      const { data: undefinedUsers, error: undefinedUsersError } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, user_type')
+        .or('name.is.null,name.eq.,name.eq.undefined,email.is.null,email.eq.');
+      
+      if (undefinedUsersError) {
+        console.error('未設定ユーザーの取得エラー:', undefinedUsersError);
+        throw undefinedUsersError;
+      }
+      
+      console.log('名称未設定のユーザー:', undefinedUsers);
+      
+      // 2. 名称未設定のシフト募集を特定
+      const { data: undefinedPostings, error: undefinedPostingsError } = await supabase
+        .from('shift_postings')
+        .select('id, pharmacy_id, store_name, date, time_slot')
+        .or('store_name.is.null,store_name.eq.,store_name.like.%未設定%,store_name.eq.undefined');
+      
+      if (undefinedPostingsError) {
+        console.error('未設定募集の取得エラー:', undefinedPostingsError);
+        throw undefinedPostingsError;
+      }
+      
+      console.log('名称未設定の募集:', undefinedPostings);
+      
+      // 3. 削除対象のIDを収集
+      const userIdsToDelete = undefinedUsers?.map(user => user.id) || [];
+      const postingIdsToDelete = undefinedPostings?.map(posting => posting.id) || [];
+      
+      console.log('削除対象ユーザーID:', userIdsToDelete);
+      console.log('削除対象募集ID:', postingIdsToDelete);
+      
+      // 4. 関連データを削除（外部キー制約のため順序が重要）
+      let deletedCount = 0;
+      
+      // シフト募集を削除
+      if (postingIdsToDelete.length > 0) {
+        const { error: deletePostingsError } = await supabase
+          .from('shift_postings')
+          .delete()
+          .in('id', postingIdsToDelete);
+        
+        if (deletePostingsError) {
+          console.error('募集削除エラー:', deletePostingsError);
+          throw deletePostingsError;
+        }
+        deletedCount += postingIdsToDelete.length;
+        console.log(`${postingIdsToDelete.length}件の募集を削除しました`);
+      }
+      
+      // シフト希望を削除
+      if (userIdsToDelete.length > 0) {
+        const { error: deleteRequestsError } = await supabase
+          .from('shift_requests')
+          .delete()
+          .in('pharmacist_id', userIdsToDelete);
+        
+        if (deleteRequestsError) {
+          console.error('希望削除エラー:', deleteRequestsError);
+          throw deleteRequestsError;
+        }
+        console.log('関連するシフト希望を削除しました');
+      }
+      
+      // 確定シフトを削除
+      if (userIdsToDelete.length > 0) {
+        const { error: deleteAssignedError } = await supabase
+          .from('assigned_shifts')
+          .delete()
+          .or(`pharmacist_id.in.(${userIdsToDelete.join(',')}),pharmacy_id.in.(${userIdsToDelete.join(',')})`);
+        
+        if (deleteAssignedError) {
+          console.error('確定シフト削除エラー:', deleteAssignedError);
+          throw deleteAssignedError;
+        }
+        console.log('関連する確定シフトを削除しました');
+      }
+      
+      // ユーザープロフィールを削除
+      if (userIdsToDelete.length > 0) {
+        const { error: deleteUsersError } = await supabase
+          .from('user_profiles')
+          .delete()
+          .in('id', userIdsToDelete);
+        
+        if (deleteUsersError) {
+          console.error('ユーザー削除エラー:', deleteUsersError);
+          throw deleteUsersError;
+        }
+        deletedCount += userIdsToDelete.length;
+        console.log(`${userIdsToDelete.length}件のユーザーを削除しました`);
+      }
+      
+      console.log(`=== クリーンアップ完了: 合計${deletedCount}件削除 ===`);
+      alert(`データクリーンアップが完了しました。\n削除件数: ${deletedCount}件\n- ユーザー: ${userIdsToDelete.length}件\n- 募集: ${postingIdsToDelete.length}件`);
+      
+      // データを再読み込み
+      await loadAll();
+      
+    } catch (error) {
+      console.error('クリーンアップエラー:', error);
+      alert(`データクリーンアップに失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
 
   const loadAll = async () => {
     try {
@@ -1339,6 +1454,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             >
               <RefreshCw className="w-4 h-4" />
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
+            </button>
+            
+            {/* データクリーンアップボタン */}
+            <button
+              onClick={cleanupUndefinedData}
+              disabled={cleanupLoading}
+              className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm bg-red-600 hover:bg-red-700 disabled:opacity-50"
+            >
+              <AlertCircle className="w-4 h-4" />
+              <span>{cleanupLoading ? 'クリーンアップ中...' : '名称未設定データを削除'}</span>
             </button>
             
             {/* 一括確定取り消しボタン - 確定済みの場合のみ表示 */}
