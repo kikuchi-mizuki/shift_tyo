@@ -204,12 +204,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('=== データクリーンアップ開始 ===');
       console.log('クリーンアップ関数が呼び出されました');
       
-      // 1. 名称未設定の薬剤師・薬局を特定（より包括的な条件）
+      // 1. 名称未設定の薬剤師・薬局を特定（複数の検索条件を試行）
       console.log('ユーザープロフィールの検索を開始します...');
-      const { data: undefinedUsers, error: undefinedUsersError } = await supabase
+      
+      // 条件1: 基本的な未設定条件
+      const { data: undefinedUsers1, error: undefinedUsersError1 } = await supabase
         .from('user_profiles')
         .select('id, name, email, user_type')
-        .or('name.is.null,name.eq.,name.eq.undefined,name.like.%未設定%,name.like.%薬剤師未設定%,name.like.%薬局未設定%,email.is.null,email.eq.,email.eq.undefined');
+        .or('name.is.null,name.eq.,name.eq.undefined,email.is.null,email.eq.,email.eq.undefined');
+      
+      // 条件2: 未設定を含む条件
+      const { data: undefinedUsers2, error: undefinedUsersError2 } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, user_type')
+        .or('name.like.%未設定%,name.like.%薬剤師未設定%,name.like.%薬局未設定%');
+      
+      // 条件3: 薬剤師を含む条件
+      const { data: undefinedUsers3, error: undefinedUsersError3 } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, user_type')
+        .or('name.like.%薬剤師%');
+      
+      // 結果をマージ
+      const allUndefinedUsers = [
+        ...(undefinedUsers1 || []),
+        ...(undefinedUsers2 || []),
+        ...(undefinedUsers3 || [])
+      ];
+      
+      // 重複を除去
+      const uniqueUndefinedUsers = allUndefinedUsers.filter((user, index, self) => 
+        index === self.findIndex(u => u.id === user.id)
+      );
+      
+      console.log('条件1の結果:', undefinedUsers1);
+      console.log('条件2の結果:', undefinedUsers2);
+      console.log('条件3の結果:', undefinedUsers3);
+      console.log('マージ後の結果:', uniqueUndefinedUsers);
+      
+      const undefinedUsers = uniqueUndefinedUsers;
+      const undefinedUsersError = undefinedUsersError1 || undefinedUsersError2 || undefinedUsersError3;
       
       console.log('ユーザープロフィール検索結果:', { undefinedUsers, undefinedUsersError });
       
@@ -217,9 +251,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const { data: allUsers, error: allUsersError } = await supabase
         .from('user_profiles')
         .select('id, name, email, user_type')
-        .limit(20);
+        .limit(50);
       
-      console.log('すべてのユーザープロフィール（最初の20件）:', allUsers);
+      console.log('すべてのユーザープロフィール（最初の50件）:', allUsers);
+      
+      // 特に「薬剤師未設定」を含むデータを詳しく調査
+      const pharmacistUsers = allUsers?.filter(user => 
+        user.name && (
+          user.name.includes('薬剤師') || 
+          user.name.includes('未設定') ||
+          user.name.includes('undefined') ||
+          user.name === '' ||
+          user.name === null
+        )
+      ) || [];
+      
+      console.log('薬剤師関連のユーザー:', pharmacistUsers);
       
       if (undefinedUsersError) {
         console.error('未設定ユーザーの取得エラー:', undefinedUsersError);
@@ -258,9 +305,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const { data: allRequests, error: allRequestsError } = await supabase
         .from('shift_requests')
         .select('id, pharmacist_id, date, time_slot')
-        .limit(20);
+        .limit(50);
       
-      console.log('すべてのシフト希望（最初の20件）:', allRequests);
+      console.log('すべてのシフト希望（最初の50件）:', allRequests);
+      
+      // シフト希望とユーザープロフィールを結合して調査
+      if (allRequests && allUsers) {
+        const requestsWithUserInfo = allRequests.map(request => {
+          const user = allUsers.find(u => u.id === request.pharmacist_id);
+          return {
+            ...request,
+            user_name: user?.name || 'ユーザー未発見',
+            user_email: user?.email || 'メール未発見',
+            user_type: user?.user_type || 'タイプ未発見'
+          };
+        });
+        
+        console.log('シフト希望とユーザー情報の結合結果:', requestsWithUserInfo);
+        
+        // 「薬剤師未設定」に関連するシフト希望を特定
+        const undefinedRequests = requestsWithUserInfo.filter(request => 
+          request.user_name.includes('薬剤師未設定') ||
+          request.user_name.includes('未設定') ||
+          request.user_name === 'ユーザー未発見' ||
+          request.user_name === '' ||
+          request.user_name === null
+        );
+        
+        console.log('未設定関連のシフト希望:', undefinedRequests);
+      }
       
       // 4. 削除対象のIDを収集
       const userIdsToDelete = undefinedUsers?.map(user => user.id) || [];
