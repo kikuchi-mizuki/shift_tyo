@@ -1455,7 +1455,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   }
                   return (userProfiles as any)[id] || ({} as any);
                 };
-                const isTimeCompatible = (reqSlot: string, postSlot: string) => reqSlot === postSlot;
+                // 柔軟な時間帯マッチング関数（不足解消のため）
+                const isTimeCompatible = (reqSlot: string, postSlot: string) => {
+                  // 完全一致の場合は常にマッチ
+                  if (reqSlot === postSlot) return true;
+                  
+                  // 薬剤師が終日希望の場合、薬局の募集に合わせてマッチ可能（不足解消のため）
+                  if (reqSlot === 'full' || reqSlot === 'fullday') {
+                    return postSlot === 'morning' || postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
+                  }
+                  
+                  // 薬剤師が午前希望の場合
+                  if (reqSlot === 'morning') {
+                    return postSlot === 'morning' || postSlot === 'full' || postSlot === 'fullday';
+                  }
+                  
+                  // 薬剤師が午後希望の場合
+                  if (reqSlot === 'afternoon') {
+                    return postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
+                  }
+                  
+                  return false;
+                };
 
                 const timeSlots = ['morning','afternoon','full'];
                 let totalRequired = 0;
@@ -1467,6 +1488,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 timeSlots.forEach((slot) => {
                   const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
                   const slotRequests = dayRequests.filter((r: any) => r.time_slot === slot || (slot === 'full' && r.time_slot === 'fullday'));
+                  
+                  console.log(`=== 時間帯 ${slot} のマッチング処理開始 ===`);
+                  console.log(`募集数: ${slotPostings.length}, 希望数: ${slotRequests.length}`);
                   const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
                   const availableSlot = slotRequests.length;
 
@@ -1506,11 +1530,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
 
                       if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+                        // 終日希望が午前・午後にマッチングされた場合の特別ログ
+                        if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
+                          console.log(`🎯 不足解消マッチング: 終日希望薬剤師(${getProfile(request.pharmacist_id)?.name}) → ${slot}不足薬局(${getProfile(pharmacyNeed.pharmacy_id)?.name})`);
+                        } else {
+                          console.log(`✅ 通常マッチング: 薬剤師(${getProfile(request.pharmacist_id)?.name}) ${request.time_slot} → 薬局(${getProfile(pharmacyNeed.pharmacy_id)?.name}) ${slot}`);
+                        }
                         matchedPharmacists.push(request);
                         matchedPharmacies.push(pharmacyNeed);
                         pharmacyNeed.remaining--;
                         remainingRequired--;
                         break;
+                      } else {
+                        // マッチング失敗の理由をログ出力
+                        if (blockedByPharmacist) {
+                          console.log(`❌ マッチング失敗: 薬剤師NGリストに薬局が含まれています`);
+                        } else if (blockedByPharmacy) {
+                          console.log(`❌ マッチング失敗: 薬局NGリストに薬剤師が含まれています`);
+                        } else if (!isTimeCompatible(request.time_slot, slot)) {
+                          console.log(`❌ マッチング失敗: 時間帯不適合 (薬剤師:${request.time_slot} vs 薬局:${slot})`);
+                        }
                       }
                     }
                   }
