@@ -977,6 +977,15 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                       .map((shift: any, index: number) => {
                     const pharmacyProfile = userProfiles[shift.pharmacy_id];
                     
+                    // デバッグ情報
+                    console.log('🔍 薬剤師シフトの薬局プロフィール確認:', {
+                      shift_id: shift.id,
+                      pharmacy_id: shift.pharmacy_id,
+                      pharmacyProfile: pharmacyProfile,
+                      userProfiles: userProfiles,
+                      pharmacy_name: pharmacyProfile?.name || 'NOT FOUND'
+                    });
+                    
                     // 店舗名を取得（memoから抽出または直接指定）
                     const getStoreName = (shift: any) => {
                       const direct = (shift.store_name || '').trim();
