@@ -201,12 +201,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const cleanupUndefinedData = async () => {
     try {
       console.log('=== データクリーンアップ開始 ===');
+      console.log('クリーンアップ関数が呼び出されました');
       
       // 1. 名称未設定の薬剤師・薬局を特定
       const { data: undefinedUsers, error: undefinedUsersError } = await supabase
         .from('user_profiles')
         .select('id, name, email, user_type')
-        .or('name.is.null,name.eq.,name.eq.undefined,email.is.null,email.eq.');
+        .or('name.is.null,name.eq.,name.eq.undefined,name.like.%未設定%,name.like.%薬剤師未設定%,email.is.null,email.eq.');
       
       if (undefinedUsersError) {
         console.error('未設定ユーザーの取得エラー:', undefinedUsersError);
@@ -219,7 +220,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const { data: undefinedPostings, error: undefinedPostingsError } = await supabase
         .from('shift_postings')
         .select('id, pharmacy_id, store_name, date, time_slot')
-        .or('store_name.is.null,store_name.eq.,store_name.like.%未設定%,store_name.eq.undefined');
+        .or('store_name.is.null,store_name.eq.,store_name.like.%未設定%,store_name.like.%薬局未設定%,store_name.like.%薬剤師未設定%,store_name.eq.undefined');
       
       if (undefinedPostingsError) {
         console.error('未設定募集の取得エラー:', undefinedPostingsError);
@@ -228,20 +229,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       console.log('名称未設定の募集:', undefinedPostings);
       
-      // 3. 削除対象のIDを収集
+      // 3. 名称未設定のシフト希望も特定
+      const { data: undefinedRequests, error: undefinedRequestsError } = await supabase
+        .from('shift_requests')
+        .select('id, pharmacist_id, date, time_slot')
+        .in('pharmacist_id', undefinedUsers?.map(user => user.id) || []);
+      
+      if (undefinedRequestsError) {
+        console.error('未設定希望の取得エラー:', undefinedRequestsError);
+      } else {
+        console.log('名称未設定の希望:', undefinedRequests);
+      }
+      
+      // 4. 削除対象のIDを収集
       const userIdsToDelete = undefinedUsers?.map(user => user.id) || [];
       const postingIdsToDelete = undefinedPostings?.map(posting => posting.id) || [];
+      const requestIdsToDelete = undefinedRequests?.map(request => request.id) || [];
       
       console.log('削除対象ユーザーID:', userIdsToDelete);
       console.log('削除対象募集ID:', postingIdsToDelete);
+      console.log('削除対象希望ID:', requestIdsToDelete);
       
       // 削除対象がない場合は処理を終了
-      if (userIdsToDelete.length === 0 && postingIdsToDelete.length === 0) {
+      if (userIdsToDelete.length === 0 && postingIdsToDelete.length === 0 && requestIdsToDelete.length === 0) {
         console.log('削除対象のデータはありません');
         return;
       }
       
-      // 4. 関連データを削除（外部キー制約のため順序が重要）
+      // 5. 関連データを削除（外部キー制約のため順序が重要）
       let deletedCount = 0;
       
       // シフト募集を削除
@@ -259,17 +274,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         }
       }
       
-      // シフト希望を削除
-      if (userIdsToDelete.length > 0) {
+      // シフト希望を削除（直接IDで削除）
+      if (requestIdsToDelete.length > 0) {
         const { error: deleteRequestsError } = await supabase
           .from('shift_requests')
           .delete()
-          .in('pharmacist_id', userIdsToDelete);
+          .in('id', requestIdsToDelete);
         
         if (deleteRequestsError) {
           console.error('希望削除エラー:', deleteRequestsError);
         } else {
-          console.log('関連するシフト希望を削除しました');
+          deletedCount += requestIdsToDelete.length;
+          console.log(`${requestIdsToDelete.length}件の希望を削除しました`);
+        }
+      }
+      
+      // 薬剤師IDでシフト希望を削除（追加の安全措置）
+      if (userIdsToDelete.length > 0) {
+        const { error: deleteRequestsByUserError } = await supabase
+          .from('shift_requests')
+          .delete()
+          .in('pharmacist_id', userIdsToDelete);
+        
+        if (deleteRequestsByUserError) {
+          console.error('薬剤師IDによる希望削除エラー:', deleteRequestsByUserError);
+        } else {
+          console.log('薬剤師IDによる関連シフト希望を削除しました');
         }
       }
       
@@ -620,7 +650,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('=== LOADALL END ===');
       
       // データ読み込み完了後に自動クリーンアップを実行
+      console.log('loadAll完了後、クリーンアップを開始します');
       await cleanupUndefinedData();
+      console.log('クリーンアップ処理が完了しました');
     }
   };
 
