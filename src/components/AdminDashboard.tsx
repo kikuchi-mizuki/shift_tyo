@@ -880,6 +880,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
+  // 確定シフトのみを再読み込みする関数
+  const loadAssignedShifts = async () => {
+    try {
+      const { data: assignedData, error: assignedError } = await shifts.getShifts('', 'admin' as any);
+      
+      if (assignedError) {
+        console.error('Error loading assigned shifts:', assignedError);
+        setAssigned([]);
+      } else {
+        setAssigned(assignedData || []);
+      }
+    } catch (error) {
+      console.error('Error in loadAssignedShifts:', error);
+      setAssigned([]);
+    }
+  };
+
   const handleConfirmShiftsForDate = async (date: string) => {
     try {
       console.log('handleConfirmShiftsForDate called for date:', date);
@@ -1166,11 +1183,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         return;
       }
 
-      setSystemStatus('confirmed');
       setLastUpdated(new Date());
       
-      // データを再読み込み
-      loadAll();
+      // 指定日のデータのみを再読み込み（全データの再読み込みは避ける）
+      await loadAssignedShifts();
     } catch (error) {
       console.error('Error in handleConfirmShiftsForDate:', error);
       alert(`シフトの確定に失敗しました: ${(error as any).message || 'Unknown error'}`);
@@ -2059,8 +2075,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       {matchingStatus.type === 'confirmed' && (
                         <div className="mt-1">
                           <div className="text-[8px] sm:text-[10px] bg-green-500 text-white px-1 py-0.5 rounded text-center">
-                            <span className="sm:hidden">確定済み</span>
-                            <span className="hidden sm:inline">シフト確定済み</span>
+                            <span className="sm:hidden">確定</span>
+                            <span className="hidden sm:inline">確定</span>
                           </div>
                         </div>
                       )}
@@ -2132,7 +2148,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     return (
                       <div className="p-4 border-b border-gray-200">
                         <div className="bg-green-100 text-green-800 py-2 px-4 rounded-lg text-sm text-center">
-                          <span className="font-medium">✓ この日のシフトは確定済みです</span>
+                          <span className="font-medium">✓ この日のシフトは確定です</span>
                         </div>
                       </div>
                     );
