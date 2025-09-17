@@ -1785,7 +1785,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     
                     return false;
                   });
+
+                  // カレンダー計算でも、募集がない時間帯で終日希望のみの場合は計算から除外
+                  if (slotPostings.length === 0 && slotRequests.every((r: any) => r.time_slot === 'full' || r.time_slot === 'fullday')) {
+                    console.log(`🚫 カレンダー計算スキップ: ${slot}時間帯 - 募集なし、終日希望のみ`);
+                    return;
+                  }
                   
+                  console.log(`✅ カレンダー計算: ${slot}時間帯 - 募集${slotPostings.length}件、応募${slotRequests.length}件`);
                   console.log(`=== 時間帯 ${slot} のマッチング処理開始 ===`);
                   console.log(`募集数: ${slotPostings.length}, 希望数: ${slotRequests.length}`);
                   console.log(`募集詳細:`, slotPostings.map(p => ({ time_slot: p.time_slot, store_name: p.store_name })));
