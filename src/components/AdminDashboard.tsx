@@ -1399,6 +1399,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const executeMatching = async () => {
     try {
       console.log('=== 実際のマッチング処理開始 ===');
+      console.log('マッチング前の状態:', { 
+        requests: requests.length, 
+        postings: postings.length, 
+        assigned: assigned.length,
+        assignedDetails: assigned
+      });
       
       // 日付ごとにマッチング処理を実行
       const dates = [...new Set([...requests.map(r => r.date), ...postings.map(p => p.date)])];
@@ -1433,6 +1439,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       // データを再読み込み
       await loadAll();
+      
+      // マッチング結果を確認
+      console.log('=== マッチング結果確認 ===');
+      console.log('更新後のデータ:', { 
+        requests: requests.length, 
+        postings: postings.length, 
+        assigned: assigned.length 
+      });
       
     } catch (error) {
       console.error('マッチング実行エラー:', error);
@@ -1656,6 +1670,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               
               // その日の確定シフトを取得
               const dayAssignedShifts = assigned.filter((s: any) => s.date === dateStr && s.status === 'confirmed');
+              
+              // デバッグ用：確定シフトの詳細をログ出力
+              if (dayAssignedShifts.length > 0) {
+                console.log(`日付 ${dateStr} の確定シフト:`, dayAssignedShifts);
+              }
               
               // その日の希望と募集を取得（要相談を除外）
               const dayRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult');
