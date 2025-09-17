@@ -194,6 +194,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   useEffect(() => {
     console.log('=== ADMIN DASHBOARD MOUNTED ===');
     console.log('User:', user);
+    console.log('useEffectが実行されました - loadAllを開始します');
     loadAll();
   }, [user, currentDate]);
 
@@ -204,10 +205,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('クリーンアップ関数が呼び出されました');
       
       // 1. 名称未設定の薬剤師・薬局を特定
+      console.log('ユーザープロフィールの検索を開始します...');
       const { data: undefinedUsers, error: undefinedUsersError } = await supabase
         .from('user_profiles')
         .select('id, name, email, user_type')
         .or('name.is.null,name.eq.,name.eq.undefined,name.like.%未設定%,name.like.%薬剤師未設定%,email.is.null,email.eq.');
+      
+      console.log('ユーザープロフィール検索結果:', { undefinedUsers, undefinedUsersError });
+      
+      // デバッグ用：すべてのユーザープロフィールを取得
+      const { data: allUsers, error: allUsersError } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, user_type')
+        .limit(20);
+      
+      console.log('すべてのユーザープロフィール（最初の20件）:', allUsers);
       
       if (undefinedUsersError) {
         console.error('未設定ユーザーの取得エラー:', undefinedUsersError);
@@ -230,6 +242,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('名称未設定の募集:', undefinedPostings);
       
       // 3. 名称未設定のシフト希望も特定
+      console.log('シフト希望の検索を開始します...');
       const { data: undefinedRequests, error: undefinedRequestsError } = await supabase
         .from('shift_requests')
         .select('id, pharmacist_id, date, time_slot')
@@ -240,6 +253,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       } else {
         console.log('名称未設定の希望:', undefinedRequests);
       }
+      
+      // デバッグ用：すべてのシフト希望を取得
+      const { data: allRequests, error: allRequestsError } = await supabase
+        .from('shift_requests')
+        .select('id, pharmacist_id, date, time_slot')
+        .limit(20);
+      
+      console.log('すべてのシフト希望（最初の20件）:', allRequests);
       
       // 4. 削除対象のIDを収集
       const userIdsToDelete = undefinedUsers?.map(user => user.id) || [];
@@ -1486,6 +1507,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             >
               <RefreshCw className="w-4 h-4" />
               <span>{systemStatus === 'confirmed' ? 'シフト確定済み' : 'シフトを確定する'}</span>
+            </button>
+            
+            {/* デバッグ用：手動クリーンアップボタン */}
+            <button
+              onClick={cleanupUndefinedData}
+              className="w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium text-white text-sm bg-red-600 hover:bg-red-700"
+            >
+              <AlertCircle className="w-4 h-4" />
+              <span>手動クリーンアップ実行</span>
             </button>
             
             
