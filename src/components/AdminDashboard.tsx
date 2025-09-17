@@ -490,7 +490,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const loadAll = async () => {
     try {
-      console.log('loadAll started - データ読み込み開始');
+      console.log('=== loadAll started - データ読み込み開始 ===');
+      console.log('現在の日時:', new Date().toISOString());
       // Railwayログに出力
       const logToRailway = (message: string, data?: any) => {
         console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
@@ -535,8 +536,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('読み込まれたシフト希望数:', (r || []).length);
       console.log('シフト希望の薬剤師ID一覧:', (r || []).map(req => req.pharmacist_id));
       console.log('シフト希望詳細:', r);
+      
       const { data: p } = await shiftPostings.getPostings('', 'admin' as any);
       setPostings(p || []);
+      
+      console.log('=== 全データ読み込み完了 ===');
+      console.log('ユーザープロフィール数:', Object.keys(profilesMap).length);
+      console.log('シフト募集数:', (p || []).length);
+      console.log('シフト希望数:', (r || []).length);
+      console.log('確定シフト数:', (assignedData || []).length);
       
       // マッチング機能で使用されるテーブルの存在確認
       logToRailway('=== マッチング機能テーブル確認 ===');
@@ -1424,6 +1432,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
           <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {getDaysInMonth(currentDate).map((d, i) => {
+              // dがnullの場合は空白セルを返す
+              if (d === null) {
+                return (
+                  <div key={i} className="p-2 sm:p-3 text-center text-xs sm:text-sm border border-gray-200 min-h-[80px] sm:min-h-[90px] bg-gray-50">
+                  </div>
+                );
+              }
+
               const year = currentDate.getFullYear();
               const month = currentDate.getMonth() + 1;
               const dateStr = `${year}-${month.toString().padStart(2, '0')}-${d?.toString().padStart(2, '0')}`;
