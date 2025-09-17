@@ -242,6 +242,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const { data: p } = await shiftPostings.getPostings('', 'admin' as any);
       setPostings(p || []);
       
+      // マッチング機能で使用されるテーブルの存在確認
+      logToRailway('=== マッチング機能テーブル確認 ===');
+      try {
+        const { data: storeOpenings, error: storeOpeningsError } = await supabase
+          .from('store_openings')
+          .select('count')
+          .limit(1);
+        logToRailway('store_openings table check:', { exists: !storeOpeningsError, error: storeOpeningsError });
+      } catch (error) {
+        logToRailway('store_openings table check failed:', error);
+      }
+      
+      try {
+        const { data: availabilities, error: availabilitiesError } = await supabase
+          .from('availabilities')
+          .select('count')
+          .limit(1);
+        logToRailway('availabilities table check:', { exists: !availabilitiesError, error: availabilitiesError });
+      } catch (error) {
+        logToRailway('availabilities table check failed:', error);
+      }
+      
+      try {
+        const { data: matches, error: matchesError } = await supabase
+          .from('matches')
+          .select('count')
+          .limit(1);
+        logToRailway('matches table check:', { exists: !matchesError, error: matchesError });
+      } catch (error) {
+        logToRailway('matches table check failed:', error);
+      }
+      
+      logToRailway('=== マッチング機能テーブル確認終了 ===');
+      
       // ユーザープロフィールを取得（管理者用）
       logToRailway('Fetching user profiles...');
       
@@ -1175,8 +1209,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const excessSlot = Math.max(availableSlot - matchedSlot, 0);
 
                   // デバッグ用ログ
+                  console.log(`=== マッチング処理詳細 (${slot}) ===`);
                   console.log(`時間帯 ${slot}: 必要=${requiredSlot}, 利用可能=${availableSlot}, マッチ=${matchedSlot}, 不足=${shortageSlot}, 余裕=${excessSlot}`);
-                  console.log(`マッチング詳細:`, { matchedPharmacists, pharmacyNeeds });
+                  console.log(`薬局のニーズ:`, pharmacyNeeds);
+                  console.log(`薬剤師の希望:`, sortedRequests);
+                  console.log(`マッチング結果:`, { 
+                    matchedPharmacists: matchedPharmacists.map(p => ({ id: p.id, name: getProfile(p.pharmacist_id)?.name })),
+                    matchedPharmacies: matchedPharmacies.map(p => ({ id: p.id, name: getProfile(p.pharmacy_id)?.name }))
+                  });
+                  console.log(`=== マッチング処理詳細終了 ===`);
 
                   totalRequired += requiredSlot;
                   totalAvailable += availableSlot;

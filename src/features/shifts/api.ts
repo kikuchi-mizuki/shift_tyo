@@ -73,14 +73,22 @@ export async function runMatching({
   date: string;
   slot: Slot;
 }) {
-  const { error } = await supabase.rpc('match_openings', {
+  console.log('runMatching called with:', { date, slot });
+  
+  const { data, error } = await supabase.rpc('match_openings', {
     date,
     slot
   });
 
+  console.log('RPC match_openings result:', { data, error });
+
   if (error) {
+    console.error('RPC match_openings error:', error);
     throw error;
   }
+  
+  console.log('マッチング処理が正常に完了しました');
+  return data;
 }
 
 // 4) マッチ確定

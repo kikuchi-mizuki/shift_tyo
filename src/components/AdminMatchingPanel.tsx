@@ -59,14 +59,20 @@ export const AdminMatchingPanel: React.FC<AdminMatchingPanelProps> = ({ userRole
       return;
     }
 
+    console.log('=== マッチング実行開始 ===');
+    console.log('マッチング実行パラメータ:', { date, slot });
+    
     setIsLoading(true);
     try {
       await runMatching({ date, slot });
+      console.log('マッチング処理が正常に完了しました');
       alert('マッチング処理を実行しました');
     } catch (error) {
+      console.error('マッチング実行エラー:', error);
       alert(`マッチング実行に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsLoading(false);
+      console.log('=== マッチング実行終了 ===');
     }
   };
 
