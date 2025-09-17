@@ -200,7 +200,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     (window as any).cleanupExecuted = false;
     
     loadAll();
-  }, [user, currentDate]);
+  }, [user]); // currentDateを依存配列から削除
 
   // 名称未設定のデータを自動クリーンアップする関数
   const cleanupUndefinedData = async () => {
@@ -1453,7 +1453,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const dayRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult');
               const dayPostings = postings.filter((p: any) => p.date === dateStr && p.time_slot !== 'consult');
               
-              // データがある日付のみログを出力
+              // データがある日付のみログを出力（デバッグ用）
               if (dayRequests.length > 0 || dayPostings.length > 0) {
                 console.log(`🔥🔥🔥 日付 ${dateStr} のデータフィルタリング 🔥🔥🔥`);
                 console.log('全シフト希望:', requests.length);
