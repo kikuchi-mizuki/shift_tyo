@@ -490,8 +490,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const loadAll = async () => {
     try {
+      console.log('🚀🚀🚀 ADMIN DASHBOARD loadAll STARTED 🚀🚀🚀');
       console.log('=== loadAll started - データ読み込み開始 ===');
       console.log('現在の日時:', new Date().toISOString());
+      alert('loadAll関数が実行されました - コンソールを確認してください');
       // Railwayログに出力
       const logToRailway = (message: string, data?: any) => {
         console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
@@ -1451,25 +1453,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const dayRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult');
               const dayPostings = postings.filter((p: any) => p.date === dateStr && p.time_slot !== 'consult');
               
-              console.log(`=== 日付 ${dateStr} のデータフィルタリング ===`);
+              console.log(`🔥🔥🔥 日付 ${dateStr} のデータフィルタリング 🔥🔥🔥`);
               console.log('全シフト希望:', requests.length);
               console.log('全シフト募集:', postings.length);
               console.log('フィルタ後の希望:', dayRequests.length);
               console.log('フィルタ後の募集:', dayPostings.length);
               console.log('希望の時間帯:', dayRequests.map(r => r.time_slot));
               console.log('募集の時間帯:', dayPostings.map(p => p.time_slot));
+              
+              if (dayRequests.length > 0 || dayPostings.length > 0) {
+                alert(`日付 ${dateStr}: 希望${dayRequests.length}件, 募集${dayPostings.length}件 - コンソールを確認してください`);
+              }
               // 要相談のリクエストを取得
               const dayConsultRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot === 'consult');
               
               
               // マッチング状況を計算
               const calculateMatchingStatus = () => {
-                console.log(`=== マッチング状況計算開始 (${dateStr}) ===`);
+                console.log(`🎯🎯🎯 マッチング状況計算開始 (${dateStr}) 🎯🎯🎯`);
                 console.log('確定シフト数:', dayAssignedShifts.length);
                 console.log('募集数:', dayPostings.length);
                 console.log('希望数:', dayRequests.length);
                 console.log('募集詳細:', dayPostings);
                 console.log('希望詳細:', dayRequests);
+                
+                if (dayRequests.length > 0 && dayPostings.length > 0) {
+                  alert(`マッチング処理開始: ${dateStr} - 希望${dayRequests.length}件, 募集${dayPostings.length}件`);
+                }
                 
                 if (dayAssignedShifts.length > 0) {
                   console.log('確定シフトが存在するため、確定状態を返します');
