@@ -63,6 +63,10 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   // NG設定関連のUIは管理画面のみ。値の読み込みは残すが、編集UIは表示しない。
   const [ngList, setNgList] = useState<string[]>([]);
   const [storeNgLists, setStoreNgLists] = useState<{[pharmacyId: string]: {[storeName: string]: boolean}}>({});
+  // NG設定UI用の変数（非表示だが参照エラー回避のため残す）
+  const [selectedPharmacyForNg, setSelectedPharmacyForNg] = useState('');
+  const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
+  const [availableStores, setAvailableStores] = useState<string[]>([]);
 
   // 画面内デバッグ表示切替（?debug=1）
   const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
