@@ -1740,7 +1740,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     }
                     
                     const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                    const availableSlot = slotRequests.length;
+                    // 終日希望は余裕計算では午前/午後に重複計上しない
+                    const effectiveSlotRequests = slotRequests.filter((r: any) => {
+                      if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
+                        return false;
+                      }
+                      return true;
+                    });
+                    const availableSlot = effectiveSlotRequests.length;
                     const matchedSlot = Math.min(requiredSlot, availableSlot);
                     const shortageSlot = Math.max(requiredSlot - matchedSlot, 0);
                     const excessSlot = Math.max(availableSlot - matchedSlot, 0);
@@ -1916,7 +1923,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
                   // デバッグ用ログ
                   console.log(`=== マッチング処理詳細 (${slot}) ===`);
-                  console.log(`時間帯 ${slot}: 必要=${requiredSlot}, 利用可能=${availableSlot}, マッチ=${matchedSlot}, 不足=${shortageSlot}, 余裕=${excessSlot}`);
+                  console.log(`時間帯 ${slot}: 必要=${requiredSlot}, 利用可能(重複除外)=${availableSlot}, マッチ=${matchedSlot}, 不足=${shortageSlot}, 余裕=${excessSlot}`);
                   console.log(`薬局のニーズ:`, pharmacyNeeds);
                   console.log(`薬剤師の希望:`, sortedRequests);
                   console.log(`マッチング結果:`, { 
@@ -2674,7 +2681,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       });
                       
                       const totalRequired = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                      const totalAvailable = sortedRequests.length;
+                      // 終日希望は午前/午後の余裕カウントからは除外（表示の重複防止）
+                      const filteredForExcess = sortedRequests.filter((r: any) => {
+                        if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (timeSlot === 'morning' || timeSlot === 'afternoon')) {
+                          return false;
+                        }
+                        return true;
+                      });
+                      const totalAvailable = filteredForExcess.length;
                       
                       // マッチングシミュレーション（優先順位順）
                       const matchedPharmacists: any[] = [];
