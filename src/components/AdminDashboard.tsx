@@ -957,6 +957,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           return false;
         };
 
+        // 時刻範囲対応のマッチング関数（両者にstart_time/end_timeがあれば包含で判定）
+        const isRangeCompatible = (request: any, posting: any, postSlot: string) => {
+          const rs = request?.start_time;
+          const re = request?.end_time;
+          const ps = posting?.start_time;
+          const pe = posting?.end_time;
+          if (rs && re && ps && pe) {
+            // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
+            return rs <= ps && re >= pe;
+          }
+          // どちらか欠けていれば従来のスロット互換
+          return isTimeCompatible(request?.time_slot, postSlot);
+        };
+
         // この日付でマッチした薬剤師と薬局を追跡
         const matchedPharmacists: any[] = [];
         const matchedPharmacies: any[] = [];
@@ -1002,8 +1016,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
               const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
 
-              // 時間帯互換性を考慮したマッチング
-              if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+              // 時間帯/時間範囲の互換性を考慮
+              if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed, slot)) {
                 // マッチング成功のログ
                 if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
                   console.log(`🎯 確定用マッチング: 終日希望薬剤師(${pharmacist?.name}) → ${slot}募集薬局(${pharmacy?.name})`);
@@ -1101,8 +1115,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
               const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
 
-              // 柔軟な時間帯マッチングをチェック
-              if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+              // 柔軟な時間帯/時間範囲マッチングをチェック
+              if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed, slot)) {
                 // 柔軟なマッチング成功のログ
                 if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
                   console.log(`🎯 確定用柔軟マッチング: 終日希望薬剤師(${pharmacist?.name}) → ${slot}募集薬局(${pharmacy?.name})`);
@@ -1496,8 +1510,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             }
             return false;
           };
+
+          // 時刻範囲対応のマッチング関数（両者にstart_time/end_timeがあれば包含で判定）
+          const isRangeCompatible = (request: any, posting: any, postSlot: string) => {
+            const rs = request?.start_time;
+            const re = request?.end_time;
+            const ps = posting?.start_time;
+            const pe = posting?.end_time;
+            if (rs && re && ps && pe) {
+              return rs <= ps && re >= pe;
+            }
+            return isTimeCompatible(request?.time_slot, postSlot);
+          };
           
-          if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
+          if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed, slot)) {
             console.log(`✅ マッチング成功: 薬剤師(${pharmacist?.name}) ${request.time_slot} → 薬局(${pharmacy?.name}) ${slot}`);
             
             // 確定シフトを作成
