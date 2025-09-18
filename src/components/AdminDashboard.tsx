@@ -2076,7 +2076,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     console.log('結果: requests_only または empty', result);
                   }
                 } else {
-                  result = { type: 'summary', count: totalMatched, shortage: totalShortage, excess: totalExcess, requestsCount: totalAvailable } as any;
+                  // 必要>0かつ応募>0なら、マッチ数が0でも「マッチ0」を出す
+                  result = { type: 'summary', count: Math.max(totalMatched, 0), shortage: totalShortage, excess: totalExcess, requestsCount: totalAvailable } as any;
                   if (dayRequests.length > 0 || dayPostings.length > 0) {
                     console.log('結果: summary', result);
                   }
