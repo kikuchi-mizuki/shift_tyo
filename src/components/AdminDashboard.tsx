@@ -3509,7 +3509,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 onChange={(e) => setUserEditForm({ ...userEditForm, name: e.target.value })}
                               />
                             ) : (
-                              <h4 className="font-medium text-gray-800">{pharmacist.name || '名前未設定'}</h4>
+                              <div className="flex items-center space-x-2">
+                                <h4 className="font-medium text-gray-800">{pharmacist.name || '名前未設定'}</h4>
+                                {(() => {
+                                  const pharmacistRatings = ratings.filter(r => r.pharmacist_id === pharmacist.id);
+                                  if (pharmacistRatings.length > 0) {
+                                    const average = pharmacistRatings.reduce((sum, r) => sum + r.rating, 0) / pharmacistRatings.length;
+                                    return (
+                                      <div className="flex items-center space-x-1">
+                                        <div className="flex">
+                                          {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                              key={star}
+                                              className={`w-3 h-3 ${
+                                                star <= Math.round(average)
+                                                  ? 'text-yellow-400 fill-current'
+                                                  : 'text-gray-300'
+                                              }`}
+                                            />
+                                          ))}
+                                        </div>
+                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                          {average.toFixed(1)}/5 ({pharmacistRatings.length}件)
+                                        </span>
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <span className="text-xs text-gray-400 px-2 py-1 rounded bg-gray-100">
+                                      評価なし
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                             )}
                             <span className="text-xs text-gray-500">{pharmacist.email}</span>
                           </div>
