@@ -1309,6 +1309,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
 
     try {
+      // 1) 対象日の確定シフトを取得（後で復元に利用）
+      const { data: toCancel, error: fetchErr } = await supabase
+        .from('assigned_shifts')
+        .select('*')
+        .eq('date', date)
+        .eq('status', 'confirmed');
+      if (fetchErr) {
+        console.error('Error fetching confirmed shifts before cancel:', fetchErr);
+      }
+
+      // 2) 事前に薬剤師希望/薬局募集を復元（存在しない場合のみ作成）
+      if (toCancel && toCancel.length > 0) {
+        for (const s of toCancel) {
+          const pharmacistId = s.pharmacist_id;
+          const pharmacyId = s.pharmacy_id;
+          const timeSlot = s.time_slot || 'full';
+
+          // 希望の復元（薬剤師）
+          try {
+            const { data: existingReq, error: findReqErr } = await supabase
+              .from('shift_requests')
+              .select('id')
+              .eq('pharmacist_id', pharmacistId)
+              .eq('date', date)
+              .eq('time_slot', timeSlot)
+              .limit(1);
+            if (!findReqErr && (!existingReq || existingReq.length === 0)) {
+              await supabase.from('shift_requests').insert({
+                pharmacist_id: pharmacistId,
+                date,
+                time_slot: timeSlot,
+                priority: 'medium'
+              });
+            }
+          } catch (e) {
+            console.error('restore request failed:', e);
+          }
+
+          // 募集の復元（薬局）: 同日の同時間帯の募集が無い場合に1名分を再作成
+          try {
+            const { data: existingPost, error: findPostErr } = await supabase
+              .from('shift_postings')
+              .select('id')
+              .eq('pharmacy_id', pharmacyId)
+              .eq('date', date)
+              .eq('time_slot', timeSlot)
+              .limit(1);
+            if (!findPostErr && (!existingPost || existingPost.length === 0)) {
+              await supabase.from('shift_postings').insert({
+                pharmacy_id: pharmacyId,
+                date,
+                time_slot: timeSlot,
+                required_staff: 1,
+                store_name: s.store_name || null,
+                memo: 'auto-restored after cancel'
+              });
+            }
+          } catch (e) {
+            console.error('restore posting failed:', e);
+          }
+        }
+      }
+
+      // 3) 確定シフトを削除
       const { error } = await supabase
         .from('assigned_shifts')
         .delete()
