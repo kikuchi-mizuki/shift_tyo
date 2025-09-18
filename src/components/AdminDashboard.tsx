@@ -2080,9 +2080,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 }
                 let result;
                 if (totalRequired === 0) {
-                  result = totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable, requestsCount: totalAvailable } as any : { type: 'empty', count: 0, requestsCount: 0 } as any;
+                  if (totalAvailable > 0) {
+                    result = { type: 'requests_only', count: totalAvailable, requestsCount: totalAvailable } as any;
+                  } else if (dayPostings.length > 0) {
+                    // 薬局の募集のみの場合
+                    result = { type: 'postings_only', count: dayPostings.length, postingsCount: dayPostings.length } as any;
+                  } else {
+                    result = { type: 'empty', count: 0, requestsCount: 0 } as any;
+                  }
                   if (dayRequests.length > 0 || dayPostings.length > 0) {
-                    console.log('結果: requests_only または empty', result);
+                    console.log('結果: requests_only/postings_only/empty', result);
                   }
                 } else {
                   // 必要>0かつ応募>0なら、右パネルと同じ計算に合わせて表示
@@ -2167,6 +2174,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">希{matchingStatus.requestsCount}</span>
                                 <span className="hidden sm:inline">希望 {matchingStatus.requestsCount}</span>
+                              </div>
+                            )}
+                            {/* 募集のみの日（希望が無い）を表示 */}
+                            {matchingStatus.type === 'postings_only' && (
+                              <div className="text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 inline-block">
+                                <span className="sm:hidden">募{matchingStatus.postingsCount}</span>
+                                <span className="hidden sm:inline">募集 {matchingStatus.postingsCount}</span>
                               </div>
                             )}
                             
