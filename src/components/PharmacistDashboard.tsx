@@ -11,6 +11,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [tempSelectedDate, setTempSelectedDate] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('morning'); // デフォルトで午前を選択
+  const [customTimeMode, setCustomTimeMode] = useState(false); // カスタム時間入力モード
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('13:00');
   const [selectedPriority, setSelectedPriority] = useState('medium');
   const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
 
@@ -359,6 +362,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       } else {
         // 新しい日付の場合は時間帯をリセット
         setSelectedTimeSlot('');
+        setCustomTimeMode(false);
+        setStartTime('09:00');
+        setEndTime('13:00');
         setMemo('');
       }
     }
@@ -623,8 +629,16 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
     console.log('PharmacistDashboard: handleSubmit called');
     console.log('Form data:', { selectedDates, selectedTimeSlot, selectedPriority, memo, userId: user.id });
     
-    if (selectedDates.length === 0 || !selectedTimeSlot) {
+    if (selectedDates.length === 0 || (!customTimeMode && !selectedTimeSlot)) {
       alert('日付と時間帯を選択してください');
+      return;
+    }
+    if (customTimeMode && (!startTime || !endTime)) {
+      alert('開始時間と終了時間を入力してください');
+      return;
+    }
+    if (customTimeMode && startTime >= endTime) {
+      alert('開始時間は終了時間より早く設定してください');
       return;
     }
 
@@ -637,7 +651,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
       const requestsToInsert = selectedDates.map(date => ({
         pharmacist_id: userIdToUse,
         date: date,
-        time_slot: selectedTimeSlot,
+        time_slot: customTimeMode ? 'custom' : selectedTimeSlot,
+        start_time: customTimeMode ? startTime + ':00' : undefined,
+        end_time: customTimeMode ? endTime + ':00' : undefined,
         priority: selectedPriority,
         memo: memo,
         status: 'pending'
@@ -1155,29 +1171,76 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 希望時間帯
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                {timeSlots.map((slot) => {
-                  const Icon = slot.icon;
-                  return (
-                                      <button
-                    key={slot.id}
-                    onClick={() => {
-                      logToRailway('Time slot clicked', slot.id);
-                      logToRailway('Before setSelectedTimeSlot', selectedTimeSlot);
-                      setSelectedTimeSlot(slot.id);
-                      logToRailway('After setSelectedTimeSlot call');
-                    }}
-                    className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
-                      selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
-                    }`}
-                    style={{ border: selectedTimeSlot === slot.id ? '2px solid blue' : 'none' }}
+              
+              {/* 時間帯選択モード切り替え */}
+              <div className="mb-3">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setCustomTimeMode(false)}
+                    className={`px-3 py-1 rounded text-sm ${!customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span>{slot.label}</span>
+                    定型時間
                   </button>
-                  );
-                })}
+                  <button
+                    onClick={() => setCustomTimeMode(true)}
+                    className={`px-3 py-1 rounded text-sm ${customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                  >
+                    時間を選択
+                  </button>
+                </div>
               </div>
+
+              {!customTimeMode ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {timeSlots.map((slot) => {
+                    const Icon = slot.icon;
+                    return (
+                      <button
+                        key={slot.id}
+                        onClick={() => {
+                          logToRailway('Time slot clicked', slot.id);
+                          logToRailway('Before setSelectedTimeSlot', selectedTimeSlot);
+                          setSelectedTimeSlot(slot.id);
+                          logToRailway('After setSelectedTimeSlot call');
+                        }}
+                        className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
+                          selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
+                        }`}
+                        style={{ border: selectedTimeSlot === slot.id ? '2px solid blue' : 'none' }}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{slot.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">開始時間</label>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">終了時間</label>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    選択時間: {startTime} - {endTime}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 優先度 */}
