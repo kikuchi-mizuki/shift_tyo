@@ -2071,15 +2071,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       
-                      {/* 確定済み日の表示 */}
-                      {matchingStatus.type === 'confirmed' && (
-                        <div className="mt-1">
-                          <div className="text-[8px] sm:text-[10px] bg-green-500 text-white px-1 py-0.5 rounded text-center">
-                            <span className="sm:hidden">確定</span>
-                            <span className="hidden sm:inline">確定</span>
-                          </div>
-                        </div>
-                      )}
+                      {/* 確定のパッチは非表示にする（不足・余裕・相談のみ表示） */}
                     </>
                   )}
                 </div>
@@ -2142,14 +2134,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <Calendar className="w-4 h-4" />
                           <span>この日のシフトを確定する</span>
                         </button>
-                      </div>
-                    );
-                  } else if (dayAssignedShifts.length > 0) {
-                    return (
-                      <div className="p-4 border-b border-gray-200">
-                        <div className="bg-green-100 text-green-800 py-2 px-4 rounded-lg text-sm text-center">
-                          <span className="font-medium">✓ この日のシフトは確定です</span>
-                        </div>
                       </div>
                     );
                   }
