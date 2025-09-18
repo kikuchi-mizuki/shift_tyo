@@ -3866,45 +3866,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                       type="checkbox"
                                                       className="accent-orange-600"
                                                       checked={storeChecked}
-                                                      onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        
-                                                        console.log('店舗チェックボックスクリック:', {
+                                                      disabled={isPharmacySelected}
+                                                      onChange={(e) => {
+                                                        console.log('店舗チェックボックス変更:', {
                                                           storeName,
                                                           storeKey,
-                                                          currentChecked: storeChecked,
+                                                          checked: e.target.checked,
                                                           currentNgList: userEditForm.ng_list,
                                                           isPharmacySelected,
-                                                          isStoreSelected
+                                                          isStoreSelected,
+                                                          disabled: isPharmacySelected
                                                         });
+                                                        
+                                                        // 薬局全体が選択されている場合は何もしない
+                                                        if (isPharmacySelected) {
+                                                          console.log('薬局全体が選択されているため、店舗個別選択は無効');
+                                                          return;
+                                                        }
                                                         
                                                         const next = new Set<string>(userEditForm.ng_list);
                                                         
-                                                        if (storeChecked) {
-                                                          // 現在チェックされているので、チェックを外す
-                                                          next.delete(storeKey);
-                                                          next.delete(id);
-                                                          
-                                                          // 他の店舗も個別に追加（薬局全体選択から個別選択に切り替え）
-                                                          const pharmacyProfile = userProfiles[id];
-                                                          const storeNames = pharmacyProfile?.store_names || ['本店'];
-                                                          storeNames.forEach((otherStoreName: string) => {
-                                                            if (otherStoreName !== storeName) {
-                                                              const otherStoreKey = `${id}_${otherStoreName}`;
-                                                              next.add(otherStoreKey);
-                                                            }
-                                                          });
-                                                        } else {
-                                                          // 現在チェックされていないので、チェックを入れる
+                                                        if (e.target.checked) {
+                                                          // チェックを入れる場合
                                                           next.add(storeKey);
+                                                        } else {
+                                                          // チェックを外す場合
+                                                          next.delete(storeKey);
                                                         }
                                                         
                                                         console.log('更新後のng_list:', Array.from(next));
                                                         setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
                                                       }}
                                                     />
-                                                    <span>{storeName}</span>
+                                                    <span className={isPharmacySelected ? "text-gray-400" : ""}>{storeName}</span>
                                                   </label>
                                                 );
                                               });
