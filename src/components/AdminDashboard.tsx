@@ -3803,7 +3803,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                             checked={checked}
                                             onChange={(e) => {
                                               const next = new Set<string>(userEditForm.ng_list);
-                                              if (e.target.checked) next.add(id); else next.delete(id);
+                                              
+                                              if (e.target.checked) {
+                                                // 薬局全体を選択する場合
+                                                // 1. 薬局IDを追加
+                                                next.add(id);
+                                                // 2. その薬局の店舗個別選択をすべて削除
+                                                const pharmacyProfile = userProfiles[id];
+                                                const storeNames = pharmacyProfile?.store_names || ['本店'];
+                                                storeNames.forEach((storeName: string) => {
+                                                  next.delete(`${id}_${storeName}`);
+                                                });
+                                              } else {
+                                                // 薬局全体の選択を解除
+                                                next.delete(id);
+                                              }
+                                              
                                               setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
                                             }}
                                           />
@@ -3813,43 +3828,64 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                         {/* 店舗選択 */}
                                         {checked && (
                                           <div className="mt-2 ml-6 space-y-1">
-                                            <div className="text-xs text-gray-500">店舗選択:</div>
                                             {(() => {
-                                              // この薬局の店舗一覧を取得
-                                              const pharmacyProfile = userProfiles[id];
-                                              const storeNames = pharmacyProfile?.store_names || [];
+                                              // 薬局全体が選択されているかチェック
+                                              const isPharmacySelected = userEditForm.ng_list.includes(id);
                                               
-                                              // デバッグログ
-                                              console.log('店舗情報デバッグ:', {
-                                                pharmacyId: id,
-                                                pharmacyProfile: pharmacyProfile,
-                                                storeNames: storeNames,
-                                                storeNamesType: typeof storeNames,
-                                                storeNamesIsArray: Array.isArray(storeNames)
-                                              });
-                                              
-                                              // 店舗情報がない場合はデフォルトの店舗名を表示
-                                              const displayStoreNames = storeNames.length > 0 ? storeNames : ['本店'];
-                                              
-                                              return displayStoreNames.map((storeName: string) => {
-                                                const storeKey = `${id}_${storeName}`;
-                                                const storeChecked = userEditForm.ng_list.includes(storeKey);
+                                              if (isPharmacySelected) {
+                                                // 薬局全体が選択されている場合
                                                 return (
-                                                  <label key={storeKey} className="inline-flex items-center gap-1 text-xs cursor-pointer">
-                                                    <input
-                                                      type="checkbox"
-                                                      className="accent-orange-600"
-                                                      checked={storeChecked}
-                                                      onChange={(e) => {
-                                                        const next = new Set<string>(userEditForm.ng_list);
-                                                        if (e.target.checked) next.add(storeKey); else next.delete(storeKey);
-                                                        setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
-                                                      }}
-                                                    />
-                                                    <span>{storeName}</span>
-                                                  </label>
+                                                  <div className="text-xs text-blue-600 font-medium">
+                                                    全店舗
+                                                  </div>
                                                 );
-                                              });
+                                              } else {
+                                                // 店舗個別選択の場合
+                                                return (
+                                                  <>
+                                                    <div className="text-xs text-gray-500">店舗選択:</div>
+                                                    {(() => {
+                                                      // この薬局の店舗一覧を取得
+                                                      const pharmacyProfile = userProfiles[id];
+                                                      const storeNames = pharmacyProfile?.store_names || [];
+                                                      
+                                                      // 店舗情報がない場合はデフォルトの店舗名を表示
+                                                      const displayStoreNames = storeNames.length > 0 ? storeNames : ['本店'];
+                                                      
+                                                      return displayStoreNames.map((storeName: string) => {
+                                                        const storeKey = `${id}_${storeName}`;
+                                                        const storeChecked = userEditForm.ng_list.includes(storeKey);
+                                                        return (
+                                                          <label key={storeKey} className="inline-flex items-center gap-1 text-xs cursor-pointer">
+                                                            <input
+                                                              type="checkbox"
+                                                              className="accent-orange-600"
+                                                              checked={storeChecked}
+                                                              onChange={(e) => {
+                                                                const next = new Set<string>(userEditForm.ng_list);
+                                                                
+                                                                if (e.target.checked) {
+                                                                  // 店舗個別を選択する場合
+                                                                  // 1. 店舗キーを追加
+                                                                  next.add(storeKey);
+                                                                  // 2. 薬局全体の選択を削除
+                                                                  next.delete(id);
+                                                                } else {
+                                                                  // 店舗個別の選択を解除
+                                                                  next.delete(storeKey);
+                                                                }
+                                                                
+                                                                setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                                              }}
+                                                            />
+                                                            <span>{storeName}</span>
+                                                          </label>
+                                                        );
+                                                      });
+                                                    })()}
+                                                  </>
+                                                );
+                                              }
                                             })()}
                                           </div>
                                         )}
