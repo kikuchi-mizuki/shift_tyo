@@ -1244,10 +1244,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       alert('薬剤師を選択してください');
       return;
     }
+    // start_time/end_time を time_slot から補完（将来: UIで直接入力できるように）
+    const toRange = (slot: string) => {
+      if (slot === 'morning') return { start_time: '09:00', end_time: '13:00' };
+      if (slot === 'afternoon') return { start_time: '13:00', end_time: '18:00' };
+      return { start_time: '09:00', end_time: '18:00' };
+    };
+    const range = toRange(newRequest.time_slot);
     const payload = [{
       pharmacist_id: newRequest.pharmacist_id,
       date: selectedDate,
       time_slot: newRequest.time_slot,
+      start_time: range.start_time,
+      end_time: range.end_time,
       priority: newRequest.priority
     }];
     const { error } = await shiftRequests.createRequests(payload);
