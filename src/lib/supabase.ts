@@ -995,7 +995,7 @@ export const shiftRequests = {
       const { data, error } = await supabase
         .from('shift_requests')
         .insert(normalized)
-        .select();
+        .select('id,start_time,end_time,time_slot');
       
       console.log('Insert result:', { data, error });
       
@@ -1016,7 +1016,7 @@ export const shiftRequests = {
             .from('shift_requests')
             .update({ start_time: range.start_time, end_time: range.end_time })
             .eq('id', row.id)
-            .select();
+            .select('id,start_time,end_time');
         }).filter(Boolean) as Promise<any>[];
         if (followups.length > 0) {
           await Promise.all(followups);
