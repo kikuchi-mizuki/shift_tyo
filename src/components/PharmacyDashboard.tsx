@@ -1569,24 +1569,24 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   })}
               </div>
             ) : (
-              <div className="space-y-3 w-full min-w-0">
-                <div className="grid grid-cols-2 gap-3 w-full min-w-0">
-                  <div className="min-w-0">
+              <div className="space-y-3 w-full min-w-0 overflow-x-hidden">
+                <div className="grid grid-cols-2 gap-2 w-full min-w-0 overflow-hidden">
+                  <div className="min-w-0 w-full">
                     <label className="block text-xs font-medium text-gray-600 mb-1">開始時間</label>
                     <input
                       type="time"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                     />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 w-full">
                     <label className="block text-xs font-medium text-gray-600 mb-1">終了時間</label>
                     <input
                       type="time"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                     />
                   </div>
                 </div>
