@@ -2100,6 +2100,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   if (dayRequests.length > 0 || dayPostings.length > 0) {
                     console.log('結果: requests_only/postings_only/empty', result);
                   }
+                } else if (totalAvailable === 0) {
+                  // 募集はあるが希望がない場合
+                  result = { type: 'postings_only', count: dayPostings.length, postingsCount: dayPostings.length } as any;
+                  if (dayRequests.length > 0 || dayPostings.length > 0) {
+                    console.log('結果: postings_only (募集のみ)', result);
+                  }
                 } else {
                   // 必要>0かつ応募>0なら、右パネルと同じ計算に合わせて表示
                   result = { type: 'summary', count: Math.max(effectiveMatched, 0), shortage: totalShortage, excess: totalExcess, requestsCount: uniqueAvailableCount } as any;
