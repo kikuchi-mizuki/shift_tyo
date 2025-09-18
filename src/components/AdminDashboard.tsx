@@ -3577,9 +3577,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                           <div className="mt-2 ml-6 space-y-1">
                                             <div className="text-xs text-gray-500">店舗選択:</div>
                                             {(() => {
-                                              // この薬局の店舗一覧を取得（仮想的な店舗名を生成）
-                                              const storeNames = ['本店', '支店1', '支店2', '支店3'];
-                                              return storeNames.map((storeName) => {
+                                              // この薬局の店舗一覧を取得
+                                              const pharmacyProfile = userProfiles[id];
+                                              const storeNames = pharmacyProfile?.store_names || [];
+                                              
+                                              // デバッグログ
+                                              console.log('店舗情報デバッグ:', {
+                                                pharmacyId: id,
+                                                pharmacyProfile: pharmacyProfile,
+                                                storeNames: storeNames,
+                                                storeNamesType: typeof storeNames,
+                                                storeNamesIsArray: Array.isArray(storeNames)
+                                              });
+                                              
+                                              // 店舗情報がない場合はデフォルトの店舗名を表示
+                                              const displayStoreNames = storeNames.length > 0 ? storeNames : ['本店'];
+                                              
+                                              return displayStoreNames.map((storeName: string) => {
                                                 const storeKey = `${id}_${storeName}`;
                                                 const storeChecked = userEditForm.ng_list.includes(storeKey);
                                                 return (
