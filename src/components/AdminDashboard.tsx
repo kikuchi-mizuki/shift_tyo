@@ -3808,6 +3808,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                             className="accent-red-600"
                                             checked={checked}
                                             onChange={(e) => {
+                                              console.log('薬局チェックボックス変更:', {
+                                                pharmacyId: id,
+                                                pharmacyName,
+                                                checked: e.target.checked,
+                                                currentNgList: userEditForm.ng_list
+                                              });
+                                              
                                               const next = new Set<string>(userEditForm.ng_list);
                                               
                                               if (e.target.checked) {
@@ -3826,6 +3833,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                 });
                                               }
                                               
+                                              console.log('薬局更新後のng_list:', Array.from(next));
                                               setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
                                             }}
                                           />
@@ -3858,6 +3866,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                       className="accent-orange-600"
                                                       checked={storeChecked}
                                                       onChange={(e) => {
+                                                        console.log('店舗チェックボックス変更:', {
+                                                          storeName,
+                                                          storeKey,
+                                                          checked: e.target.checked,
+                                                          currentNgList: userEditForm.ng_list,
+                                                          isPharmacySelected,
+                                                          isStoreSelected
+                                                        });
+                                                        
                                                         const next = new Set<string>(userEditForm.ng_list);
                                                         
                                                         if (e.target.checked) {
@@ -3881,6 +3898,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                           });
                                                         }
                                                         
+                                                        console.log('更新後のng_list:', Array.from(next));
                                                         setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
                                                       }}
                                                     />
