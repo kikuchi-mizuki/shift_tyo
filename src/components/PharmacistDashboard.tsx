@@ -67,6 +67,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [selectedPharmacyForNg, setSelectedPharmacyForNg] = useState('');
   const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
   const [availableStores, setAvailableStores] = useState<string[]>([]);
+  const [selectedNgPharmacyId, setSelectedNgPharmacyId] = useState('');
 
   // 画面内デバッグ表示切替（?debug=1）
   const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
