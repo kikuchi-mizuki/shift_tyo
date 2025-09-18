@@ -1246,9 +1246,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
     // start_time/end_time を time_slot から補完（将来: UIで直接入力できるように）
     const toRange = (slot: string) => {
-      if (slot === 'morning') return { start_time: '09:00', end_time: '13:00' };
-      if (slot === 'afternoon') return { start_time: '13:00', end_time: '18:00' };
-      return { start_time: '09:00', end_time: '18:00' };
+      // Supabaseの time 型は HH:MM:SS を推奨
+      if (slot === 'morning') return { start_time: '09:00:00', end_time: '13:00:00' };
+      if (slot === 'afternoon') return { start_time: '13:00:00', end_time: '18:00:00' };
+      return { start_time: '09:00:00', end_time: '18:00:00' };
     };
     const range = toRange(newRequest.time_slot);
     const payload = [{
@@ -1266,7 +1267,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       return;
     }
     setNewRequest({ pharmacist_id: '', time_slot: 'morning', priority: 'medium' });
-    loadAll();
+    await loadAll();
   };
 
   // 募集 編集開始/保存
