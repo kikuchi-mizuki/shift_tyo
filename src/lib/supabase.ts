@@ -1094,6 +1094,19 @@ export const shiftPostings = {
       
       // テーブル定義の相違に備えて、許可されたカラムだけを送る
       const sanitized = postingsData.map((p: any) => {
+        // HH:MM も HH:MM:SS に正規化
+        const toHHMMSS = (v?: string) => {
+          if (!v) return v as any;
+          if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v;
+          if (/^\d{2}:\d{2}$/.test(v)) return `${v}:00`;
+          return v;
+        };
+        // time_slotから時間範囲を補完
+        const toRange = (slot: string) => {
+          if (slot === 'morning') return { start_time: '09:00:00', end_time: '13:00:00' };
+          if (slot === 'afternoon') return { start_time: '13:00:00', end_time: '18:00:00' };
+          return { start_time: '09:00:00', end_time: '18:00:00' };
+        };
         // time_slot を既存スキーマに合わせて正規化
         const normalizedTimeSlot =
           p.time_slot === 'full' ? 'fullday' :
@@ -1106,6 +1119,15 @@ export const shiftPostings = {
         // ステータスの既定値 ('open' / 'recruiting') どちらでも運用できるように 'recruiting' を採用
         const status = p.status === 'open' ? 'recruiting' : (p.status || 'recruiting');
 
+        // start/end を補完・正規化
+        let start_time = toHHMMSS(p.start_time);
+        let end_time = toHHMMSS(p.end_time);
+        if (!start_time || !end_time) {
+          const r = toRange(p.time_slot || 'full');
+          start_time = r.start_time;
+          end_time = r.end_time;
+        }
+
         // store_nameも保存するように修正
         return {
           pharmacy_id: p.pharmacy_id,
@@ -1114,7 +1136,9 @@ export const shiftPostings = {
           required_staff: requiredStaff,
           memo: p.memo ?? null,
           status,
-          store_name: p.store_name ?? null
+          store_name: p.store_name ?? null,
+          start_time,
+          end_time
         };
       });
 
@@ -1123,9 +1147,31 @@ export const shiftPostings = {
       const { data, error } = await supabase
         .from('shift_postings')
         .insert(sanitized)
-        .select();
+        .select('id,start_time,end_time,time_slot');
       
       console.log('Insert result:', { data, error });
+      // フォローアップ更新（NULLで返った場合）
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const followups = (data as any[]).map((row: any) => {
+          if (row?.start_time && row?.end_time) return null;
+          const slot = row?.time_slot || 'full';
+          const range = slot === 'morning'
+            ? { start_time: '09:00:00', end_time: '13:00:00' }
+            : slot === 'afternoon'
+            ? { start_time: '13:00:00', end_time: '18:00:00' }
+            : { start_time: '09:00:00', end_time: '18:00:00' };
+          console.warn('Detected NULL times after insert (postings), issuing update for id:', row.id, range);
+          return supabase
+            .from('shift_postings')
+            .update({ start_time: range.start_time, end_time: range.end_time })
+            .eq('id', row.id)
+            .select('id,start_time,end_time');
+        }).filter(Boolean) as Promise<any>[];
+        if (followups.length > 0) {
+          await Promise.all(followups);
+          console.log('Follow-up time updates for postings completed');
+        }
+      }
       return { data: data || [], error };
       
     } catch (error) {
