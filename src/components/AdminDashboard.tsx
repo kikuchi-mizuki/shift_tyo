@@ -2915,17 +2915,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           {matchingAnalysis.map((analysis: any, index: number) => (
                             <div key={index} className="bg-white rounded border px-2 py-1">
                               <div className="flex items-center justify-between mb-2">
-                                <div className="text-xs font-medium text-gray-800">
-                                  {analysis.timeSlot === 'morning' ? '午前' : 
-                                   analysis.timeSlot === 'afternoon' ? '午後' : 
-                                   analysis.timeSlot === 'full' ? '終日' : analysis.timeSlot}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募
-                                </div>
+                                <div className="text-xs font-medium text-gray-800"></div>
+                                <div className="text-xs text-gray-500"></div>
                               </div>
                               <div className="text-xs text-gray-600">
-                              {analysis.isMatching ? (
+                              {true ? (
                                 <>
                                   {/* マッチング済みの薬剤師と薬局 */}
                                   {analysis.matchedPharmacists.length > 0 && (
