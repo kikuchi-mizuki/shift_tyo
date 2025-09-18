@@ -2071,7 +2071,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       
-                      {/* 確定のパッチは非表示にする（不足・余裕・相談のみ表示） */}
+                      {/* 確定は数のみ表示（パッチは非表示） */}
+                      {matchingStatus.type === 'confirmed' && (
+                        <div className="text-[7px] sm:text-[8px] space-y-0.5">
+                          <div className="text-green-700 bg-green-50 border border-green-200 rounded px-1 inline-block">
+                            <span className="sm:hidden">確{matchingStatus.count}</span>
+                            <span className="hidden sm:inline">確定 {matchingStatus.count}件</span>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
