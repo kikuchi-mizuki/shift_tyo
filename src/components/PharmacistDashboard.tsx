@@ -1174,16 +1174,16 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
               
               {/* 時間帯選択モード切り替え */}
               <div className="mb-3">
-                <div className="flex space-x-2">
+                <div className="grid grid-cols-2 gap-2 w-full">
                   <button
                     onClick={() => setCustomTimeMode(false)}
-                    className={`px-3 py-1 rounded text-sm ${!customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                    className={`w-full px-3 py-2 rounded text-sm ${!customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
                   >
                     定型時間
                   </button>
                   <button
                     onClick={() => setCustomTimeMode(true)}
-                    className={`px-3 py-1 rounded text-sm ${customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                    className={`w-full px-3 py-2 rounded text-sm ${customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
                   >
                     時間を選択
                   </button>
@@ -1191,7 +1191,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
               </div>
 
               {!customTimeMode ? (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {timeSlots.map((slot) => {
                     const Icon = slot.icon;
                     return (
@@ -1203,7 +1203,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                           setSelectedTimeSlot(slot.id);
                           logToRailway('After setSelectedTimeSlot call');
                         }}
-                        className={`flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
+                        className={`w-full flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
                           selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
                         }`}
                         style={{ border: selectedTimeSlot === slot.id ? '2px solid blue' : 'none' }}
@@ -1216,7 +1216,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">開始時間</label>
                       <input
