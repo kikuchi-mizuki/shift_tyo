@@ -111,7 +111,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         return;
       }
       setEditingUserId(null);
+      console.log('ユーザー情報を保存しました。データを再読み込み中...');
       await loadAll();
+      console.log('データ再読み込み完了');
       alert('ユーザー情報を更新しました');
     } catch (e: any) {
       alert(`ユーザー更新エラー: ${e?.message || 'Unknown error'}`);
@@ -760,7 +762,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             };
           });
           logToRailway('User profiles map:', profilesMap);
+          console.log('=== userProfiles更新前のデバッグ ===');
+          console.log('更新前のuserProfiles:', userProfiles);
+          console.log('新しいprofilesMap:', profilesMap);
           setUserProfiles(profilesMap);
+          console.log('=== userProfiles更新完了 ===');
           
           console.log('=== ユーザープロフィール読み込み完了 ===');
           console.log('読み込まれたユーザー数:', Object.keys(profilesMap).length);
@@ -3629,6 +3635,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   } else if (typeof pharmacist.ng_list === 'string' && pharmacist.ng_list.trim()) {
                                     ngList = pharmacist.ng_list.split(',').map((s: any) => s.trim()).filter((s: any) => s.length > 0);
                                   }
+                                  
+                                  // デバッグログ
+                                  console.log('NG薬局表示デバッグ:', {
+                                    pharmacistId: pharmacist.id,
+                                    pharmacistName: pharmacist.name,
+                                    ng_list: pharmacist.ng_list,
+                                    ng_listType: typeof pharmacist.ng_list,
+                                    ng_listIsArray: Array.isArray(pharmacist.ng_list),
+                                    processedNgList: ngList
+                                  });
                                   
                                   if (ngList.length === 0) {
                                     return <span className="text-gray-500">なし</span>;
