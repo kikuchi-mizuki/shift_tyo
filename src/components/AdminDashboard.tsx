@@ -144,6 +144,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // 薬剤師の場合、NG薬局設定をstore_ng_pharmaciesテーブルに保存
       if (profile.user_type === 'pharmacist') {
         // 既存のNG薬局設定を削除
+        console.log('既存NG薬局設定を削除中...', profile.id);
         const { error: deleteError } = await supabase
           .from('store_ng_pharmacies')
           .delete()
@@ -151,7 +152,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
         if (deleteError) {
           console.error('既存NG薬局設定の削除エラー:', deleteError);
+          alert(`既存NG薬局設定の削除に失敗しました: ${deleteError.message}`);
+          return;
         }
+        console.log('既存NG薬局設定の削除完了');
 
         // 新しいNG薬局設定を追加
         const ngList = Array.isArray(userEditForm.ng_list)
@@ -163,30 +167,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
         if (ngList.length > 0) {
           const ngEntries = [];
+          const seenEntries = new Set<string>();
+          
           for (const ngId of ngList) {
             if (ngId.includes('_')) {
               // 店舗指定の場合 (pharmacyId_storeName)
               const [pharmacyId, storeName] = ngId.split('_');
-              ngEntries.push({
-                pharmacist_id: profile.id,
-                pharmacy_id: pharmacyId,
-                store_name: storeName
-              });
+              const entryKey = `${profile.id}_${pharmacyId}_${storeName}`;
+              
+              if (!seenEntries.has(entryKey)) {
+                seenEntries.add(entryKey);
+                ngEntries.push({
+                  pharmacist_id: profile.id,
+                  pharmacy_id: pharmacyId,
+                  store_name: storeName
+                });
+              }
             } else {
               // 薬局全体の場合
               const pharmacyProfile = userProfiles[ngId];
               const storeNames = pharmacyProfile?.store_names || ['本店'];
               for (const storeName of storeNames) {
-                ngEntries.push({
-                  pharmacist_id: profile.id,
-                  pharmacy_id: ngId,
-                  store_name: storeName
-                });
+                const entryKey = `${profile.id}_${ngId}_${storeName}`;
+                
+                if (!seenEntries.has(entryKey)) {
+                  seenEntries.add(entryKey);
+                  ngEntries.push({
+                    pharmacist_id: profile.id,
+                    pharmacy_id: ngId,
+                    store_name: storeName
+                  });
+                }
               }
             }
           }
 
           if (ngEntries.length > 0) {
+            console.log('保存するNG薬局エントリ:', ngEntries);
             const { error: insertError } = await supabase
               .from('store_ng_pharmacies')
               .insert(ngEntries);
@@ -201,6 +218,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       } else if (profile.user_type === 'pharmacy') {
         // 薬局の場合、NG薬剤師設定をstore_ng_pharmacistsテーブルに保存
         // 既存のNG薬剤師設定を削除
+        console.log('既存NG薬剤師設定を削除中...', profile.id);
         const { error: deleteError } = await supabase
           .from('store_ng_pharmacists')
           .delete()
@@ -208,7 +226,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
         if (deleteError) {
           console.error('既存NG薬剤師設定の削除エラー:', deleteError);
+          alert(`既存NG薬剤師設定の削除に失敗しました: ${deleteError.message}`);
+          return;
         }
+        console.log('既存NG薬剤師設定の削除完了');
 
         // 新しいNG薬剤師設定を追加
         const ngList = Array.isArray(userEditForm.ng_list)
@@ -220,19 +241,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
         if (ngList.length > 0) {
           const ngEntries = [];
+          const seenEntries = new Set<string>();
           const storeNames = profile.store_names || ['本店'];
           
           for (const ngId of ngList) {
             for (const storeName of storeNames) {
-              ngEntries.push({
-                pharmacy_id: profile.id,
-                store_name: storeName,
-                pharmacist_id: ngId
-              });
+              const entryKey = `${profile.id}_${storeName}_${ngId}`;
+              
+              if (!seenEntries.has(entryKey)) {
+                seenEntries.add(entryKey);
+                ngEntries.push({
+                  pharmacy_id: profile.id,
+                  store_name: storeName,
+                  pharmacist_id: ngId
+                });
+              }
             }
           }
 
           if (ngEntries.length > 0) {
+            console.log('保存するNG薬剤師エントリ:', ngEntries);
             const { error: insertError } = await supabase
               .from('store_ng_pharmacists')
               .insert(ngEntries);
