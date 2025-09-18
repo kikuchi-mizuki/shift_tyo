@@ -14,6 +14,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [tempSelectedDate, setTempSelectedDate] = useState('');
   const [timeSlot, setTimeSlot] = useState('morning'); // デフォルトで午前を選択
+  const [customTimeMode, setCustomTimeMode] = useState(false); // カスタム時間入力モード
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('13:00');
   const [requiredStaff, setRequiredStaff] = useState<number | null>(1); // デフォルトで1人を選択
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState<any[]>([]);
@@ -445,6 +448,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
     
     // 新しい日付の場合はフォームをリセット
     setTimeSlot('');
+    setCustomTimeMode(false);
+    setStartTime('09:00');
+    setEndTime('13:00');
     setRequiredStaff(null);
     setMemo('');
     // 店舗名はリセットしない（ユーザーが選択した店舗名を保持）
@@ -731,8 +737,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       alert('募集日を選択してください');
       return;
     }
-    if (!timeSlot) {
+    if (!customTimeMode && !timeSlot) {
       alert('時間帯を選択してください');
+      return;
+    }
+    if (customTimeMode && (!startTime || !endTime)) {
+      alert('開始時間と終了時間を入力してください');
+      return;
+    }
+    if (customTimeMode && startTime >= endTime) {
+      alert('開始時間は終了時間より早く設定してください');
       return;
     }
     if (!requiredStaff) {
@@ -796,7 +810,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
               shiftPostings.updatePosting(u.id, {
                 date: selectedDates[0],
                 store_name: u.storeName || null,
-                time_slot: timeSlot,
+                time_slot: customTimeMode ? 'custom' : timeSlot,
+                start_time: customTimeMode ? startTime + ':00' : undefined,
+                end_time: customTimeMode ? endTime + ':00' : undefined,
                 required_staff: requiredStaff,
                 memo
               })
@@ -824,7 +840,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
             pharmacy_id: user.id,
             date: date,
             store_name: name || null,
-            time_slot: timeSlot,
+            time_slot: customTimeMode ? 'custom' : timeSlot,
+            start_time: customTimeMode ? startTime + ':00' : undefined,
+            end_time: customTimeMode ? endTime + ':00' : undefined,
             required_staff: requiredStaff,
             memo,
             status: 'open'
@@ -839,6 +857,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       // フォームをリセット（店舗名は保持）
       setSelectedDates([]);
       setTimeSlot('');
+      setCustomTimeMode(false);
+      setStartTime('09:00');
+      setEndTime('13:00');
       setRequiredStaff(null);
       setMemo('');
 
@@ -894,7 +915,9 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
       await shiftPostings.updatePosting(postingId, {
         date: selectedDates[0],
         store_name: targets[0] || null, // 最初の店舗名を使用
-        time_slot: timeSlot,
+        time_slot: customTimeMode ? 'custom' : timeSlot,
+        start_time: customTimeMode ? startTime + ':00' : undefined,
+        end_time: customTimeMode ? endTime + ':00' : undefined,
         required_staff: requiredStaff,
         memo
       });
@@ -1304,6 +1327,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                             return '要相談';
                           } else if (timeSlot === 'evening' || timeSlot === 'night') {
                             return '夜間';
+                          } else if (timeSlot === 'custom' && shift.start_time && shift.end_time) {
+                            return `${shift.start_time.substring(0, 5)}-${shift.end_time.substring(0, 5)}`;
                           } else {
                             console.warn('Unknown time_slot value:', timeSlot);
                             return `不明 (${timeSlot})`;
@@ -1361,7 +1386,15 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                     return (
                       <div key={idx} className="flex items-center justify-between bg-white rounded border px-2 py-1">
                         <div className="text-gray-800">店舗: {name && name.trim() !== '' ? name : '（店舗名未設定）'}</div>
-                        <div className="text-gray-500">{s.time_slot === 'morning' ? '午前' : s.time_slot === 'afternoon' ? '午後' : s.time_slot === 'full' ? '終日' : s.time_slot === 'consult' ? '要相談' : s.time_slot} / {s.required_staff || 1}人</div>
+                        <div className="text-gray-500">
+                          {s.time_slot === 'morning' ? '午前' : 
+                           s.time_slot === 'afternoon' ? '午後' : 
+                           s.time_slot === 'full' ? '終日' : 
+                           s.time_slot === 'consult' ? '要相談' : 
+                           s.time_slot === 'custom' && s.start_time && s.end_time ? 
+                             `${s.start_time.substring(0, 5)}-${s.end_time.substring(0, 5)}` : 
+                           s.time_slot} / {s.required_staff || 1}人
+                        </div>
                       </div>
                     );
                   })}
@@ -1495,26 +1528,73 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           {/* 時間帯 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">募集時間帯</label>
-            <div className="grid grid-cols-2 gap-2">
-                              {[{id:'morning',label:'午前 (9:00-13:00)',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
-                {id:'afternoon',label:'午後 (13:00-18:00)',icon:Sun,color:'bg-orange-500 hover:bg-orange-600'},
-                {id:'full',label:'終日 (9:00-18:00)',icon:Users,color:'bg-yellow-500 hover:bg-yellow-600'}].map(slot=>{
-                  const Icon = slot.icon as any;
-                  return (
-                    <button 
-                      key={slot.id} 
-                      onClick={() => {
-                        console.log('Time slot clicked:', slot.id);
-                        setTimeSlot(slot.id);
-                      }} 
-                      className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${timeSlot===slot.id?slot.color:'bg-gray-300 hover:bg-gray-400'}`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{slot.label}</span>
-                    </button>
-                  );
-                })}
+            
+            {/* 時間帯選択モード切り替え */}
+            <div className="mb-3">
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setCustomTimeMode(false)}
+                  className={`px-3 py-1 rounded text-sm ${!customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                >
+                  定型時間
+                </button>
+                <button
+                  onClick={() => setCustomTimeMode(true)}
+                  className={`px-3 py-1 rounded text-sm ${customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                >
+                  時間を選択
+                </button>
+              </div>
             </div>
+
+            {!customTimeMode ? (
+              <div className="grid grid-cols-2 gap-2">
+                {[{id:'morning',label:'午前 (9:00-13:00)',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
+                  {id:'afternoon',label:'午後 (13:00-18:00)',icon:Sun,color:'bg-orange-500 hover:bg-orange-600'},
+                  {id:'full',label:'終日 (9:00-18:00)',icon:Users,color:'bg-yellow-500 hover:bg-yellow-600'}].map(slot=>{
+                    const Icon = slot.icon as any;
+                    return (
+                      <button 
+                        key={slot.id} 
+                        onClick={() => {
+                          console.log('Time slot clicked:', slot.id);
+                          setTimeSlot(slot.id);
+                        }} 
+                        className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${timeSlot===slot.id?slot.color:'bg-gray-300 hover:bg-gray-400'}`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{slot.label}</span>
+                      </button>
+                    );
+                  })}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">開始時間</label>
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">終了時間</label>
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500">
+                  選択時間: {startTime} - {endTime}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 募集人数 */}
@@ -1560,7 +1640,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   alert('シフト確定済みのため編集できません');
                   return;
                 }
-                if (selectedDates.length === 0 || !timeSlot || !requiredStaff) {
+                if (selectedDates.length === 0 || (!customTimeMode && !timeSlot) || (customTimeMode && (!startTime || !endTime)) || !requiredStaff) {
                   alert('募集日・時間帯・人数を選択してください');
                   return;
                 }
