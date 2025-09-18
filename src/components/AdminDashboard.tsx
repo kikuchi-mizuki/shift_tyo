@@ -1955,14 +1955,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   }).length;
                   const availableSlot = slotRequestsFiltered;
 
-                  // 右の詳細パネルと同じマッチングシミュレーション
+                  // 右パネルと同じロジックでマッチングを行う（終日希望はマッチング対象に含める）
                   const sortedRequests = slotRequests
-                    .filter((r: any) => {
-                      if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
-                        return false;
-                      }
-                      return true;
-                    })
                     .sort((a: any, b: any) => {
                     const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
                     return priorityOrder[b.priority] - priorityOrder[a.priority];
