@@ -1118,6 +1118,8 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   </div>
                 </div>
               </div>
+              {/* 管理画面のみ許可: NG設定UIは非表示 */}
+              {false && (
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-2">NG薬剤師の設定</h3>
                 
@@ -1202,6 +1204,7 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                   ))}
                 </div>
               </div>
+              )}
               <button
                 onClick={handleProfileUpdate}
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"

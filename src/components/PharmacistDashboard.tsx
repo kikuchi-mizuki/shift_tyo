@@ -60,12 +60,9 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [allPharmacies, setAllPharmacies] = useState<any[]>([]);
-  const [ngList, setNgList] = useState<string[]>([]); // 薬局IDの配列
-  const [selectedNgPharmacyId, setSelectedNgPharmacyId] = useState('');
-  const [storeNgLists, setStoreNgLists] = useState<{[pharmacyId: string]: {[storeName: string]: boolean}}>({}); // 店舗毎のNG薬局設定
-  const [selectedPharmacyForNg, setSelectedPharmacyForNg] = useState('');
-  const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
-  const [availableStores, setAvailableStores] = useState<string[]>([]); // 選択された薬局の店舗名リスト
+  // NG設定関連のUIは管理画面のみ。値の読み込みは残すが、編集UIは表示しない。
+  const [ngList, setNgList] = useState<string[]>([]);
+  const [storeNgLists, setStoreNgLists] = useState<{[pharmacyId: string]: {[storeName: string]: boolean}}>({});
 
   // 画面内デバッグ表示切替（?debug=1）
   const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1';
@@ -1326,6 +1323,7 @@ export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }
             })()}
 
             {/* 情報ボックス */}
+            {/* 管理画面のみ許可: NG設定UIは非表示（この情報ブロックはそのまま） */}
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <h3 className="text-sm font-medium text-blue-800 mb-2">
                 シフト希望登録のポイント
