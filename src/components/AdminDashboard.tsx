@@ -3547,27 +3547,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           
                           {/* NGリスト */}
                           <div>
-                            <div className="text-xs text-gray-600 mb-1">NG薬局:</div>
+                            <div className="text-xs text-gray-600 mb-1">NG薬局・店舗:</div>
                             {editingUserId === pharmacist.id ? (
                               <div className="space-y-2">
                                 {Object.entries(userProfiles)
                                   .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy')
                                   .map(([id, profile]: [string, any]) => {
+                                    const pharmacyName = (profile as any).name || (profile as any).email || id;
                                     const checked = userEditForm.ng_list.includes(id);
+                                    
                                     return (
-                                      <label key={id} className="inline-flex items-center gap-1 border rounded px-2 py-1 cursor-pointer">
-                                        <input
-                                          type="checkbox"
-                                          className="accent-red-600"
-                                          checked={checked}
-                                          onChange={(e) => {
-                                            const next = new Set<string>(userEditForm.ng_list);
-                                            if (e.target.checked) next.add(id); else next.delete(id);
-                                            setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
-                                          }}
-                                        />
-                                        <span>{(profile as any).name || (profile as any).email || id}</span>
-                                      </label>
+                                      <div key={id} className="border rounded p-2">
+                                        <label className="inline-flex items-center gap-1 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            className="accent-red-600"
+                                            checked={checked}
+                                            onChange={(e) => {
+                                              const next = new Set<string>(userEditForm.ng_list);
+                                              if (e.target.checked) next.add(id); else next.delete(id);
+                                              setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                            }}
+                                          />
+                                          <span className="font-medium">{pharmacyName}</span>
+                                        </label>
+                                        
+                                        {/* 店舗選択 */}
+                                        {checked && (
+                                          <div className="mt-2 ml-6 space-y-1">
+                                            <div className="text-xs text-gray-500">店舗選択:</div>
+                                            {(() => {
+                                              // この薬局の店舗一覧を取得（仮想的な店舗名を生成）
+                                              const storeNames = ['本店', '支店1', '支店2', '支店3'];
+                                              return storeNames.map((storeName) => {
+                                                const storeKey = `${id}_${storeName}`;
+                                                const storeChecked = userEditForm.ng_list.includes(storeKey);
+                                                return (
+                                                  <label key={storeKey} className="inline-flex items-center gap-1 text-xs cursor-pointer">
+                                                    <input
+                                                      type="checkbox"
+                                                      className="accent-orange-600"
+                                                      checked={storeChecked}
+                                                      onChange={(e) => {
+                                                        const next = new Set<string>(userEditForm.ng_list);
+                                                        if (e.target.checked) next.add(storeKey); else next.delete(storeKey);
+                                                        setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                                      }}
+                                                    />
+                                                    <span>{storeName}</span>
+                                                  </label>
+                                                );
+                                              });
+                                            })()}
+                                          </div>
+                                        )}
+                                      </div>
                                     );
                                   })}
                               </div>
@@ -3587,35 +3621,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   }
                                   
                                   return (
-                                    <div className="flex flex-wrap gap-1">
-                                      {ngList.map((ngId: any, idx: any) => {
-                                        // 薬局名を取得する関数 - 直接的な解決
-                                        const getPharmacyName = (id: any) => {
-                                          // 1. 直接userProfilesから検索
-                                          const profile = userProfiles[id];
-                                          if (profile && profile.name) {
-                                            return profile.name;
-                                          }
-                                          
-                                          // 2. 全プロファイルから検索
-                                          for (const [profileId, profileData] of Object.entries(userProfiles)) {
-                                            if (profileId === id && (profileData as any).name) {
-                                              return (profileData as any).name;
+                                    <div className="space-y-1">
+                                      {(() => {
+                                        // 薬局単位と店舗単位でグループ化
+                                        const pharmacyGroups: {[pharmacyId: string]: string[]} = {};
+                                        
+                                        ngList.forEach((ngId: any) => {
+                                          if (ngId.includes('_')) {
+                                            // 店舗指定の場合 (pharmacyId_storeName)
+                                            const [pharmacyId, storeName] = ngId.split('_');
+                                            if (!pharmacyGroups[pharmacyId]) {
+                                              pharmacyGroups[pharmacyId] = [];
+                                            }
+                                            pharmacyGroups[pharmacyId].push(storeName);
+                                          } else {
+                                            // 薬局全体の場合
+                                            if (!pharmacyGroups[ngId]) {
+                                              pharmacyGroups[ngId] = [];
                                             }
                                           }
+                                        });
+                                        
+                                        return Object.entries(pharmacyGroups).map(([pharmacyId, stores]) => {
+                                          const getPharmacyName = (id: any) => {
+                                            const profile = userProfiles[id];
+                                            if (profile && profile.name) {
+                                              return profile.name;
+                                            }
+                                            return `薬局ID: ${id.slice(0, 8)}...`;
+                                          };
                                           
-                                          // 3. 見つからない場合は、IDの最初の8文字を表示
-                                          return `薬局ID: ${id.slice(0, 8)}...`;
-                                        };
-                                        
-                                        const pharmacyName = getPharmacyName(ngId);
-                                        
-                                        return (
-                                          <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                            {pharmacyName}
-                                          </span>
-                                        );
-                                      })}
+                                          const pharmacyName = getPharmacyName(pharmacyId);
+                                          
+                                          return (
+                                            <div key={pharmacyId} className="border border-red-200 rounded p-2 bg-red-50">
+                                              <div className="font-medium text-red-800 text-xs">{pharmacyName}</div>
+                                              {stores.length > 0 ? (
+                                                <div className="mt-1 flex flex-wrap gap-1">
+                                                  {stores.map((store, idx) => (
+                                                    <span key={idx} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
+                                                      {store}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              ) : (
+                                                <span className="text-xs text-red-600">全店舗</span>
+                                              )}
+                                            </div>
+                                          );
+                                        });
+                                      })()}
                                     </div>
                                   );
                                 })()}
