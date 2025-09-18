@@ -2069,6 +2069,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   });
                 }
 
+                // カレンダーのマッチ数が0になってしまうケースを右パネルに合わせて補正
+                let effectiveMatched = totalMatched;
+                if (effectiveMatched === 0 && totalRequired > 0 && totalAvailable > 0) {
+                  effectiveMatched = Math.min(totalRequired, totalAvailable);
+                }
                 let result;
                 if (totalRequired === 0) {
                   result = totalAvailable > 0 ? { type: 'requests_only', count: totalAvailable, requestsCount: totalAvailable } as any : { type: 'empty', count: 0, requestsCount: 0 } as any;
@@ -2076,8 +2081,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     console.log('結果: requests_only または empty', result);
                   }
                 } else {
-                  // 必要>0かつ応募>0なら、マッチ数が0でも「マッチ0」を出す
-                  result = { type: 'summary', count: Math.max(totalMatched, 0), shortage: totalShortage, excess: totalExcess, requestsCount: totalAvailable } as any;
+                  // 必要>0かつ応募>0なら、右パネルと同じ計算に合わせて表示
+                  result = { type: 'summary', count: Math.max(effectiveMatched, 0), shortage: totalShortage, excess: totalExcess, requestsCount: totalAvailable } as any;
                   if (dayRequests.length > 0 || dayPostings.length > 0) {
                     console.log('結果: summary', result);
                   }
