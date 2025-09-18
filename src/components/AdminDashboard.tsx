@@ -1796,12 +1796,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   console.log('確定シフトが存在するため、確定状態を返します');
                   
                   // 確定シフトがある場合でも、不足や余裕の情報を計算
-                  const timeSlots = ['morning','afternoon','full'];
+               const timeSlots = ['morning','afternoon','full'];
                   let totalRequired = 0;
-                  let totalAvailable = 0;
+               let totalAvailable = 0;
                   let totalMatched = 0;
                   let totalShortage = 0;
                   let totalExcess = 0;
+               // 重複カウント防止用（同一リクエストがfullとmorningに跨る等）
+               const uniqueAvailableRequestIds = new Set<string>();
 
                   timeSlots.forEach((slot) => {
                     const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
@@ -1957,13 +1959,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   console.log(`希望詳細:`, slotRequests.map(r => ({ time_slot: r.time_slot, pharmacist_id: r.pharmacist_id })));
                   const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
                   // 終日希望は午前/午後に重複計上しない（表示の整合性）
-                  const slotRequestsFiltered = slotRequests.filter((r: any) => {
+                 const slotRequestsFiltered = slotRequests.filter((r: any) => {
                     if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
                       return false;
                     }
                     return true;
-                  }).length;
-                  const availableSlot = slotRequestsFiltered;
+                 });
+                 // この時間帯でカウント対象のリクエストをユニーク登録
+                 slotRequestsFiltered.forEach((r: any) => {
+                   if (r && r.id) uniqueAvailableRequestIds.add(r.id);
+                 });
+                 const availableSlot = slotRequestsFiltered.length;
 
                   // 右パネルと同じロジックでマッチングを行う（終日希望はマッチング対象に含める）
                   const sortedRequests = slotRequests
@@ -2078,10 +2084,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 if (effectiveMatched === 0 && totalRequired > 0 && totalAvailable > 0) {
                   effectiveMatched = Math.min(totalRequired, totalAvailable);
                 }
+                const uniqueAvailableCount = uniqueAvailableRequestIds.size;
                 let result;
                 if (totalRequired === 0) {
-                  if (totalAvailable > 0) {
-                    result = { type: 'requests_only', count: totalAvailable, requestsCount: totalAvailable } as any;
+                  if (uniqueAvailableCount > 0) {
+                    result = { type: 'requests_only', count: uniqueAvailableCount, requestsCount: uniqueAvailableCount } as any;
                   } else if (dayPostings.length > 0) {
                     // 薬局の募集のみの場合
                     result = { type: 'postings_only', count: dayPostings.length, postingsCount: dayPostings.length } as any;
@@ -2093,7 +2100,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   }
                 } else {
                   // 必要>0かつ応募>0なら、右パネルと同じ計算に合わせて表示
-                  result = { type: 'summary', count: Math.max(effectiveMatched, 0), shortage: totalShortage, excess: totalExcess, requestsCount: totalAvailable } as any;
+                  result = { type: 'summary', count: Math.max(effectiveMatched, 0), shortage: totalShortage, excess: totalExcess, requestsCount: uniqueAvailableCount } as any;
                   if (dayRequests.length > 0 || dayPostings.length > 0) {
                     console.log('結果: summary', result);
                   }
