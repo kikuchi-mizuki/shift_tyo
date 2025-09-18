@@ -2916,7 +2916,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <div key={index} className="bg-white rounded border px-2 py-1">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="text-xs font-medium text-gray-800"></div>
-                                <div className="text-xs text-gray-500"></div>
+                                <div className="text-xs text-gray-500">{analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募</div>
                               </div>
                               <div className="text-xs text-gray-600">
                               {true ? (
@@ -2930,6 +2930,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                         const pharmacyProfile = userProfiles[analysis.matchedPharmacies[idx].pharmacy_id];
                                         const storeName = analysis.matchedPharmacies[idx].store_name || '店舗名なし';
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                                        const s = (request.start_time || '').toString();
+                                        const e = (request.end_time || '').toString();
+                                        const timeLabel = s && e ? `${s.slice(0,5)}-${e.slice(0,5)}` : (
+                                          request.time_slot === 'morning' ? '09:00-13:00' :
+                                          request.time_slot === 'afternoon' ? '13:00-18:00' :
+                                          (request.time_slot === 'full' || request.time_slot === 'fullday') ? '09:00-18:00' :
+                                          '要相談'
+                                        );
                                         return (
                                           <div key={idx} className="flex items-center justify-between bg-green-50 px-2 py-1 rounded mb-1">
                                             <span className="text-xs">
@@ -2937,6 +2945,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                               <span className="text-gray-500"> → </span>
                                               <span className="font-medium">{pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
                                               <span className="text-gray-500"> ({storeName})</span>
+                                              <span className="text-gray-500 ml-1">{timeLabel}</span>
                                             </span>
                                             <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
                                           </div>
@@ -2952,9 +2961,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       {analysis.requests.slice(analysis.totalRequired).map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                                        const s = (request.start_time || '').toString();
+                                        const e = (request.end_time || '').toString();
+                                        const timeLabel = s && e ? `${s.slice(0,5)}-${e.slice(0,5)}` : (
+                                          request.time_slot === 'morning' ? '09:00-13:00' :
+                                          request.time_slot === 'afternoon' ? '13:00-18:00' :
+                                          (request.time_slot === 'full' || request.time_slot === 'fullday') ? '09:00-18:00' :
+                                          '要相談'
+                                        );
                                         return (
                                           <div key={idx} className="flex items-center justify-between bg-yellow-50 px-2 py-1 rounded mb-1">
                                             <span className="text-xs font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                            <span className="text-[10px] text-gray-600 mr-2">{timeLabel}</span>
                                             <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
                                           </div>
                                         );
