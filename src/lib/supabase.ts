@@ -1320,3 +1320,120 @@ export const systemStatus = {
     }
   }
 };
+
+// 薬剤師評価関連のAPI
+export const pharmacistRatings = {
+  // 評価の取得
+  async getRatings(filters?: {
+    pharmacy_id?: string;
+    pharmacist_id?: string;
+    assigned_shift_id?: string;
+  }) {
+    try {
+      let query = supabase
+        .from('pharmacist_ratings')
+        .select(`
+          *,
+          pharmacy:pharmacy_id(name, email),
+          pharmacist:pharmacist_id(name, email),
+          assigned_shift:assigned_shift_id(date, time_slot, start_time, end_time)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (filters?.pharmacy_id) {
+        query = query.eq('pharmacy_id', filters.pharmacy_id);
+      }
+      if (filters?.pharmacist_id) {
+        query = query.eq('pharmacist_id', filters.pharmacist_id);
+      }
+      if (filters?.assigned_shift_id) {
+        query = query.eq('assigned_shift_id', filters.assigned_shift_id);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error fetching pharmacist ratings:', error);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Pharmacist ratings fetch error:', error);
+      return { data: null, error } as any;
+    }
+  },
+
+  // 評価の作成・更新
+  async upsertRating(ratingData: {
+    pharmacy_id: string;
+    pharmacist_id: string;
+    assigned_shift_id: string;
+    rating: number;
+    comment?: string;
+  }) {
+    try {
+      const { data, error } = await supabase
+        .from('pharmacist_ratings')
+        .upsert(ratingData, {
+          onConflict: 'pharmacy_id,pharmacist_id,assigned_shift_id'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error upserting pharmacist rating:', error);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Pharmacist rating upsert error:', error);
+      return { data: null, error } as any;
+    }
+  },
+
+  // 薬剤師の平均評価を取得
+  async getAverageRating(pharmacist_id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('pharmacist_ratings')
+        .select('rating')
+        .eq('pharmacist_id', pharmacist_id);
+
+      if (error) {
+        console.error('Error fetching average rating:', error);
+        return { data: null, error };
+      }
+
+      if (!data || data.length === 0) {
+        return { data: { average: 0, count: 0 }, error: null };
+      }
+
+      const average = data.reduce((sum, item) => sum + item.rating, 0) / data.length;
+      return { data: { average: Math.round(average * 10) / 10, count: data.length }, error: null };
+    } catch (error) {
+      console.error('Average rating calculation error:', error);
+      return { data: null, error } as any;
+    }
+  },
+
+  // 評価の削除
+  async deleteRating(rating_id: string) {
+    try {
+      const { error } = await supabase
+        .from('pharmacist_ratings')
+        .delete()
+        .eq('id', rating_id);
+
+      if (error) {
+        console.error('Error deleting pharmacist rating:', error);
+        return { data: null, error };
+      }
+
+      return { data: { success: true }, error: null };
+    } catch (error) {
+      console.error('Pharmacist rating deletion error:', error);
+      return { data: null, error } as any;
+    }
+  }
+};

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Plus, Sun, Users } from 'lucide-react';
-import { shifts, shiftPostings, systemStatus, storeNgPharmacists, supabase } from '../lib/supabase';
+import { Calendar as CalendarIcon, Plus, Sun, Users, Star } from 'lucide-react';
+import { shifts, shiftPostings, systemStatus, storeNgPharmacists, supabase, pharmacistRatings } from '../lib/supabase';
 
 // デバッグ: インポートの確認
 console.log('PharmacyDashboard imports:', { shifts, shiftPostings });
@@ -47,6 +47,14 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
   const [newStoreName, setNewStoreName] = useState('');
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [ngList, setNgList] = useState<string[]>([]); // NG薬剤師ID（薬局全体）
+  
+  // 評価関連のstate
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [editingRating, setEditingRating] = useState<string | null>(null);
+  const [ratingForm, setRatingForm] = useState<{
+    rating: number;
+    comment: string;
+  }>({ rating: 5, comment: '' });
   const [selectedNgPharmacistId, setSelectedNgPharmacistId] = useState(''); // 薬局全体用
   const [storeNgLists, setStoreNgLists] = useState<{[storeName: string]: string[]}>({}); // 店舗毎のNG薬剤師ID
   const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
@@ -386,6 +394,16 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
           });
           setUserProfiles(profilesMap);
           console.log('Updated userProfiles state:', profilesMap);
+        }
+
+        // 評価データを取得
+        if (user?.id) {
+          const { data: ratingsData } = await pharmacistRatings.getRatings({
+            pharmacy_id: user.id
+          });
+          if (ratingsData) {
+            setRatings(ratingsData);
+          }
         }
       } else {
         console.log('No pharmacist IDs found in any shifts, skipping pharmacist profile fetch');
@@ -1341,6 +1359,102 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
                       <div className="text-xs text-gray-600">
                         薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || `薬剤師名未設定 (ID: ${shift.pharmacist_id})`}
                       </div>
+                      
+                      {/* 評価セクション */}
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        {(() => {
+                          const existingRating = getExistingRating(ratings, shift.id);
+                          const isEditing = editingRating === shift.id;
+                          
+                          if (isEditing) {
+                            return (
+                              <div className="space-y-2">
+                                <div className="text-xs font-medium text-gray-700">薬剤師の評価</div>
+                                {renderStarRating(ratingForm.rating, (rating) => 
+                                  setRatingForm(prev => ({ ...prev, rating }))
+                                )}
+                                <textarea
+                                  value={ratingForm.comment}
+                                  onChange={(e) => setRatingForm(prev => ({ ...prev, comment: e.target.value }))}
+                                  placeholder="コメント（任意）"
+                                  className="w-full p-2 text-xs border border-gray-300 rounded resize-none"
+                                  rows={2}
+                                />
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => handleRatingSubmit(
+                                      shift.id,
+                                      shift.pharmacist_id,
+                                      user.id,
+                                      ratingForm.rating,
+                                      ratingForm.comment,
+                                      setRatings,
+                                      setEditingRating,
+                                      setRatingForm
+                                    )}
+                                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                                  >
+                                    保存
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingRating(null);
+                                      setRatingForm({ rating: 5, comment: '' });
+                                    }}
+                                    className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+                                  >
+                                    キャンセル
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          } else if (existingRating) {
+                            return (
+                              <div className="space-y-1">
+                                <div className="text-xs font-medium text-gray-700">評価済み</div>
+                                <div className="flex items-center space-x-2">
+                                  {renderStarRating(existingRating.rating)}
+                                  <span className="text-xs text-gray-600">
+                                    ({existingRating.rating}/5)
+                                  </span>
+                                </div>
+                                {existingRating.comment && (
+                                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                                    {existingRating.comment}
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setEditingRating(shift.id);
+                                    setRatingForm({
+                                      rating: existingRating.rating,
+                                      comment: existingRating.comment || ''
+                                    });
+                                  }}
+                                  className="text-xs text-blue-600 hover:text-blue-800"
+                                >
+                                  編集
+                                </button>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="space-y-1">
+                                <div className="text-xs font-medium text-gray-700">薬剤師の評価</div>
+                                <button
+                                  onClick={() => {
+                                    setEditingRating(shift.id);
+                                    setRatingForm({ rating: 5, comment: '' });
+                                  }}
+                                  className="text-xs text-blue-600 hover:text-blue-800 border border-blue-300 px-2 py-1 rounded"
+                                >
+                                  評価する
+                                </button>
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
                       {correspondingPosting && (
                         <div className="text-xs text-gray-500 mt-1 border-t pt-1">
                           募集: {requiredStaff}人 | 確定: {confirmedShifts.filter((s: any) => 
@@ -1693,6 +1807,76 @@ export const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) =>
         </div>
       </div>
       </div>
+    </div>
+  );
+};
+
+// 評価機能の関数（コンポーネント外で定義）
+const handleRatingSubmit = async (
+  shiftId: string, 
+  pharmacistId: string, 
+  pharmacyId: string,
+  rating: number,
+  comment: string,
+  setRatings: (ratings: any[]) => void,
+  setEditingRating: (id: string | null) => void,
+  setRatingForm: (form: { rating: number; comment: string }) => void
+) => {
+  try {
+    const { data, error } = await pharmacistRatings.upsertRating({
+      pharmacy_id: pharmacyId,
+      pharmacist_id: pharmacistId,
+      assigned_shift_id: shiftId,
+      rating: rating,
+      comment: comment
+    });
+
+    if (error) {
+      console.error('Error saving rating:', error);
+      alert('評価の保存に失敗しました');
+      return;
+    }
+
+    // 評価データを再読み込み
+    const { data: ratingsData } = await pharmacistRatings.getRatings({
+      pharmacy_id: pharmacyId
+    });
+    if (ratingsData) {
+      setRatings(ratingsData);
+    }
+
+    setEditingRating(null);
+    setRatingForm({ rating: 5, comment: '' });
+    alert('評価を保存しました');
+  } catch (error) {
+    console.error('Rating submission error:', error);
+    alert('評価の保存中にエラーが発生しました');
+  }
+};
+
+const getExistingRating = (ratings: any[], shiftId: string) => {
+  return ratings.find(r => r.assigned_shift_id === shiftId);
+};
+
+const renderStarRating = (rating: number, onRatingChange?: (rating: number) => void) => {
+  return (
+    <div className="flex space-x-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onRatingChange?.(star)}
+          className={`${onRatingChange ? 'cursor-pointer' : 'cursor-default'}`}
+        >
+          <Star
+            className={`w-5 h-5 ${
+              star <= rating
+                ? 'text-yellow-400 fill-current'
+                : 'text-gray-300'
+            }`}
+          />
+        </button>
+      ))}
     </div>
   );
 };

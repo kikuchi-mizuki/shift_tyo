@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-import { Calendar, AlertCircle } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase } from '../lib/supabase';
+import { Calendar, AlertCircle, Star } from 'lucide-react';
+import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
 
 interface AdminDashboardProps {
   user: any;
@@ -18,6 +18,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [storeNgPharmacists, setStoreNgPharmacists] = useState<{[pharmacyId: string]: any[]}>({});
+  const [ratings, setRatings] = useState<any[]>([]);
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     pharmacies: false,
     pharmacists: false
@@ -756,6 +757,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           console.log('読み込まれたユーザー数:', Object.keys(profilesMap).length);
           console.log('ユーザーID一覧:', Object.keys(profilesMap));
           console.log('ユーザープロフィール詳細:', profilesMap);
+
+          // 評価データを取得
+          logToRailway('Fetching pharmacist ratings...');
+          const { data: ratingsData } = await pharmacistRatings.getRatings();
+          if (ratingsData) {
+            setRatings(ratingsData);
+            logToRailway('Loaded pharmacist ratings:', ratingsData.length);
+          }
           
           // 店舗毎のNG薬剤師データを取得
           logToRailway('Fetching store-specific NG pharmacists...');
@@ -969,6 +978,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const matchedPharmacists: any[] = [];
         const matchedPharmacies: any[] = [];
 
+        // 薬剤師の評価を取得する関数
+        const getPharmacistRating = (pharmacistId: string) => {
+          const pharmacistRatings = ratings.filter(r => r.pharmacist_id === pharmacistId);
+          if (pharmacistRatings.length === 0) return 0;
+          
+          const average = pharmacistRatings.reduce((sum, r) => sum + r.rating, 0) / pharmacistRatings.length;
+          return Math.round(average * 10) / 10; // 小数点第1位まで
+        };
+
         // 時間帯ごとにマッチング（完全一致を優先）
         const timeSlots = ['morning', 'afternoon', 'full'];
         
@@ -979,8 +997,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           
           if (slotPostings.length === 0 || slotRequests.length === 0) return;
           
-          // 薬剤師を優先順位でソート（高→中→低）
+          // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
           const sortedRequests = slotRequests.sort((a: any, b: any) => {
+            const aRating = getPharmacistRating(a.pharmacist_id);
+            const bRating = getPharmacistRating(b.pharmacist_id);
+            
+            // 評価が異なる場合は評価の高い順
+            if (aRating !== bRating) {
+              return bRating - aRating;
+            }
+            
+            // 評価が同じ場合は優先度順
             const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
             return priorityOrder[b.priority] - priorityOrder[a.priority];
           });
@@ -1542,8 +1569,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         continue;
       }
       
-      // 薬剤師を優先順位でソート
+      // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
       const sortedRequests = slotRequests.sort((a, b) => {
+        const aRating = getPharmacistRating(a.pharmacist_id);
+        const bRating = getPharmacistRating(b.pharmacist_id);
+        
+        // 評価が異なる場合は評価の高い順
+        if (aRating !== bRating) {
+          return bRating - aRating;
+        }
+        
+        // 評価が同じ場合は優先度順
         const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
         return priorityOrder[b.priority] - priorityOrder[a.priority];
       });
@@ -2357,6 +2393,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           return direct || fromMemo || '（店舗名未設定）';
                         };
                         
+                        // 評価情報を取得
+                        const existingRating = ratings.find(r => r.assigned_shift_id === shift.id);
+                        
                         return (
                           <div key={index} className="bg-white rounded border px-2 py-1">
                             {isEditing ? (
@@ -2442,6 +2481,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}</div>
                                     <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '薬局名未設定'}</div>
                                     <div>店舗: {getStoreName(shift)}</div>
+                                    
+                                    {/* 評価情報表示 */}
+                                    {existingRating && (
+                                      <div className="mt-1 pt-1 border-t border-gray-200">
+                                        <div className="flex items-center space-x-1">
+                                          <span className="text-xs text-gray-600">評価:</span>
+                                          <div className="flex space-x-0.5">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                              <Star
+                                                key={star}
+                                                className={`w-3 h-3 ${
+                                                  star <= existingRating.rating
+                                                    ? 'text-yellow-400 fill-current'
+                                                    : 'text-gray-300'
+                                                }`}
+                                              />
+                                            ))}
+                                          </div>
+                                          <span className="text-xs text-gray-600">
+                                            ({existingRating.rating}/5)
+                                          </span>
+                                        </div>
+                                        {existingRating.comment && (
+                                          <div className="text-xs text-gray-600 mt-1 bg-gray-50 p-1 rounded">
+                                            {existingRating.comment}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="mt-1">
                                     <button
@@ -2849,8 +2917,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       
                       console.log(`✅ 右パネル表示: ${timeSlot}時間帯 - 募集${slotPostings.length}件、応募${slotRequests.length}件`);
                       
-                      // 薬剤師を優先順位でソート（高→中→低）
+                      // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
                       const sortedRequests = slotRequests.sort((a: any, b: any) => {
+                        const aRating = getPharmacistRating(a.pharmacist_id);
+                        const bRating = getPharmacistRating(b.pharmacist_id);
+                        
+                        // 評価が異なる場合は評価の高い順
+                        if (aRating !== bRating) {
+                          return bRating - aRating;
+                        }
+                        
+                        // 評価が同じ場合は優先度順
                         const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
                         return priorityOrder[b.priority] - priorityOrder[a.priority];
                       });
