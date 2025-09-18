@@ -91,16 +91,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         if (!pharmacyGroups[pharmacyId]) {
           pharmacyGroups[pharmacyId] = [];
         }
-        pharmacyGroups[pharmacyId].push(storeName);
+        
+        if (storeName === 'ALL') {
+          // 薬局全体の場合は空配列のまま（全店舗を意味）
+          // pharmacyGroups[pharmacyId]は空配列のまま
+        } else {
+          pharmacyGroups[pharmacyId].push(storeName);
+        }
       });
       
       // 薬局全体がNGの場合は薬局IDのみ、店舗指定の場合はpharmacyId_storeName形式
       Object.entries(pharmacyGroups).forEach(([pharmacyId, stores]) => {
-        const pharmacyProfile = userProfiles[pharmacyId];
-        const allStoreNames = pharmacyProfile?.store_names || ['本店'];
-        
-        if (stores.length === allStoreNames.length && stores.every(store => allStoreNames.includes(store))) {
-          // 全店舗がNGの場合は薬局IDのみ
+        if (stores.length === 0) {
+          // 薬局全体がNGの場合（store_name: 'ALL'）
           ngList.push(pharmacyId);
         } else {
           // 特定店舗のみNGの場合は店舗指定
@@ -184,20 +187,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 });
               }
             } else {
-              // 薬局全体の場合
-              const pharmacyProfile = userProfiles[ngId];
-              const storeNames = pharmacyProfile?.store_names || ['本店'];
-              for (const storeName of storeNames) {
-                const entryKey = `${profile.id}_${ngId}_${storeName}`;
-                
-                if (!seenEntries.has(entryKey)) {
-                  seenEntries.add(entryKey);
-                  ngEntries.push({
-                    pharmacist_id: profile.id,
-                    pharmacy_id: ngId,
-                    store_name: storeName
-                  });
-                }
+              // 薬局全体の場合 - 薬局IDのみを保存（店舗は指定しない）
+              const entryKey = `${profile.id}_${ngId}_ALL`;
+              
+              if (!seenEntries.has(entryKey)) {
+                seenEntries.add(entryKey);
+                ngEntries.push({
+                  pharmacist_id: profile.id,
+                  pharmacy_id: ngId,
+                  store_name: 'ALL' // 薬局全体を表す特別な値
+                });
               }
             }
           }
@@ -3889,7 +3888,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                           if (!pharmacyGroups[pharmacyId]) {
                                             pharmacyGroups[pharmacyId] = [];
                                           }
-                                          pharmacyGroups[pharmacyId].push(storeName);
+                                          
+                                          if (storeName === 'ALL') {
+                                            // 薬局全体の場合は空配列のまま（全店舗を意味）
+                                            // pharmacyGroups[pharmacyId]は空配列のまま
+                                          } else {
+                                            pharmacyGroups[pharmacyId].push(storeName);
+                                          }
                                         });
                                         
                                         return Object.entries(pharmacyGroups).map(([pharmacyId, stores]) => {
