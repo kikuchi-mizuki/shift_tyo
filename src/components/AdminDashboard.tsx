@@ -77,10 +77,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   const beginEditUser = (profile: any) => {
     setEditingUserId(profile.id);
+    
+    let ngList: string[] = [];
+    if (profile.user_type === 'pharmacist') {
+      // 薬剤師の場合はstore_ng_pharmaciesから読み込み
+      const ngPharmacies = storeNgPharmacists[profile.id] || [];
+      const pharmacyGroups: {[pharmacyId: string]: string[]} = {};
+      
+      ngPharmacies.forEach((ngPharmacy: any) => {
+        const pharmacyId = ngPharmacy.pharmacy_id;
+        const storeName = ngPharmacy.store_name;
+        
+        if (!pharmacyGroups[pharmacyId]) {
+          pharmacyGroups[pharmacyId] = [];
+        }
+        pharmacyGroups[pharmacyId].push(storeName);
+      });
+      
+      // 薬局全体がNGの場合は薬局IDのみ、店舗指定の場合はpharmacyId_storeName形式
+      Object.entries(pharmacyGroups).forEach(([pharmacyId, stores]) => {
+        const pharmacyProfile = userProfiles[pharmacyId];
+        const allStoreNames = pharmacyProfile?.store_names || ['本店'];
+        
+        if (stores.length === allStoreNames.length && stores.every(store => allStoreNames.includes(store))) {
+          // 全店舗がNGの場合は薬局IDのみ
+          ngList.push(pharmacyId);
+        } else {
+          // 特定店舗のみNGの場合は店舗指定
+          stores.forEach(store => {
+            ngList.push(`${pharmacyId}_${store}`);
+          });
+        }
+      });
+    } else {
+      // 薬局の場合は従来通り
+      ngList = Array.isArray(profile.ng_list) ? [...profile.ng_list] : [];
+    }
+    
     setUserEditForm({
       name: profile.name || '',
       store_names: Array.isArray(profile.store_names) ? profile.store_names.join(',') : '',
-      ng_list: Array.isArray(profile.ng_list) ? [...profile.ng_list] : []
+      ng_list: ngList
     });
   };
 
@@ -93,13 +130,73 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           .map((s: string) => s.trim())
           .filter((s: string) => s.length > 0);
       }
-      // ng_list は配列で保存
-      updates.ng_list = Array.isArray(userEditForm.ng_list)
-        ? userEditForm.ng_list
-        : String(userEditForm.ng_list || '')
-            .split(',')
-            .map((s: string) => s.trim())
-            .filter((s: string) => s.length > 0);
+
+      // 薬剤師の場合、NG薬局設定をstore_ng_pharmaciesテーブルに保存
+      if (profile.user_type === 'pharmacist') {
+        // 既存のNG薬局設定を削除
+        const { error: deleteError } = await supabase
+          .from('store_ng_pharmacies')
+          .delete()
+          .eq('pharmacist_id', profile.id);
+
+        if (deleteError) {
+          console.error('既存NG薬局設定の削除エラー:', deleteError);
+        }
+
+        // 新しいNG薬局設定を追加
+        const ngList = Array.isArray(userEditForm.ng_list)
+          ? userEditForm.ng_list
+          : String(userEditForm.ng_list || '')
+              .split(',')
+              .map((s: string) => s.trim())
+              .filter((s: string) => s.length > 0);
+
+        if (ngList.length > 0) {
+          const ngEntries = [];
+          for (const ngId of ngList) {
+            if (ngId.includes('_')) {
+              // 店舗指定の場合 (pharmacyId_storeName)
+              const [pharmacyId, storeName] = ngId.split('_');
+              ngEntries.push({
+                pharmacist_id: profile.id,
+                pharmacy_id: pharmacyId,
+                store_name: storeName
+              });
+            } else {
+              // 薬局全体の場合
+              const pharmacyProfile = userProfiles[ngId];
+              const storeNames = pharmacyProfile?.store_names || ['本店'];
+              for (const storeName of storeNames) {
+                ngEntries.push({
+                  pharmacist_id: profile.id,
+                  pharmacy_id: ngId,
+                  store_name: storeName
+                });
+              }
+            }
+          }
+
+          if (ngEntries.length > 0) {
+            const { error: insertError } = await supabase
+              .from('store_ng_pharmacies')
+              .insert(ngEntries);
+
+            if (insertError) {
+              console.error('NG薬局設定の保存エラー:', insertError);
+              alert(`NG薬局設定の保存に失敗しました: ${insertError.message}`);
+              return;
+            }
+          }
+        }
+      } else {
+        // 薬局の場合は従来通りng_listを保存
+        updates.ng_list = Array.isArray(userEditForm.ng_list)
+          ? userEditForm.ng_list
+          : String(userEditForm.ng_list || '')
+              .split(',')
+              .map((s: string) => s.trim())
+              .filter((s: string) => s.length > 0);
+      }
 
       const { error } = await supabase
         .from('user_profiles')
@@ -800,6 +897,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           
           setStoreNgPharmacists(storeNgDataMap);
           logToRailway('Store NG pharmacists data:', storeNgDataMap);
+          
+          // 薬剤師のNG薬局情報を読み込み
+          logToRailway('Loading pharmacist NG pharmacies...');
+          const pharmacistNgPharmaciesMap: {[pharmacistId: string]: any[]} = {};
+          
+          // 薬剤師ユーザーのみを対象にNG薬局情報を取得
+          const pharmacistUsers = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacist');
+          for (const pharmacist of pharmacistUsers) {
+            try {
+              const { data: ngPharmaciesData, error: ngPharmaciesError } = await supabase
+                .from('store_ng_pharmacies')
+                .select('*')
+                .eq('pharmacist_id', (pharmacist as any).id);
+              
+              if (!ngPharmaciesError && ngPharmaciesData) {
+                pharmacistNgPharmaciesMap[(pharmacist as any).id] = ngPharmaciesData;
+              }
+            } catch (error) {
+              logToRailway(`Error fetching NG pharmacies for pharmacist ${(pharmacist as any).id}:`, error);
+            }
+          }
+          
+          setStoreNgPharmacists(prev => ({
+            ...prev,
+            ...pharmacistNgPharmaciesMap
+          }));
+          logToRailway('Pharmacist NG pharmacies data:', pharmacistNgPharmaciesMap);
           
           // シフトに含まれるユーザーIDをチェック
           const shiftUserIds = Array.from(userIds);
@@ -3628,25 +3752,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             ) : (
                               <div className="text-sm">
                                 {(() => {
-                                  // ng_listを確実に配列として処理
-                                  let ngList: string[] = [];
-                                  if (Array.isArray(pharmacist.ng_list)) {
-                                    ngList = pharmacist.ng_list.filter((id: any) => id && id.trim());
-                                  } else if (typeof pharmacist.ng_list === 'string' && pharmacist.ng_list.trim()) {
-                                    ngList = pharmacist.ng_list.split(',').map((s: any) => s.trim()).filter((s: any) => s.length > 0);
-                                  }
+                                  // store_ng_pharmaciesテーブルからNG薬局情報を取得
+                                  const ngPharmacies = storeNgPharmacists[pharmacist.id] || [];
                                   
                                   // デバッグログ
                                   console.log('NG薬局表示デバッグ:', {
                                     pharmacistId: pharmacist.id,
                                     pharmacistName: pharmacist.name,
-                                    ng_list: pharmacist.ng_list,
-                                    ng_listType: typeof pharmacist.ng_list,
-                                    ng_listIsArray: Array.isArray(pharmacist.ng_list),
-                                    processedNgList: ngList
+                                    ngPharmacies: ngPharmacies,
+                                    storeNgPharmacists: storeNgPharmacists
                                   });
                                   
-                                  if (ngList.length === 0) {
+                                  if (ngPharmacies.length === 0) {
                                     return <span className="text-gray-500">なし</span>;
                                   }
                                   
@@ -3656,20 +3773,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                         // 薬局単位と店舗単位でグループ化
                                         const pharmacyGroups: {[pharmacyId: string]: string[]} = {};
                                         
-                                        ngList.forEach((ngId: any) => {
-                                          if (ngId.includes('_')) {
-                                            // 店舗指定の場合 (pharmacyId_storeName)
-                                            const [pharmacyId, storeName] = ngId.split('_');
-                                            if (!pharmacyGroups[pharmacyId]) {
-                                              pharmacyGroups[pharmacyId] = [];
-                                            }
-                                            pharmacyGroups[pharmacyId].push(storeName);
-                                          } else {
-                                            // 薬局全体の場合
-                                            if (!pharmacyGroups[ngId]) {
-                                              pharmacyGroups[ngId] = [];
-                                            }
+                                        ngPharmacies.forEach((ngPharmacy: any) => {
+                                          const pharmacyId = ngPharmacy.pharmacy_id;
+                                          const storeName = ngPharmacy.store_name;
+                                          
+                                          if (!pharmacyGroups[pharmacyId]) {
+                                            pharmacyGroups[pharmacyId] = [];
                                           }
+                                          pharmacyGroups[pharmacyId].push(storeName);
                                         });
                                         
                                         return Object.entries(pharmacyGroups).map(([pharmacyId, stores]) => {
@@ -3686,17 +3797,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                           return (
                                             <div key={pharmacyId} className="border border-red-200 rounded p-2 bg-red-50">
                                               <div className="font-medium text-red-800 text-xs">{pharmacyName}</div>
-                                              {stores.length > 0 ? (
-                                                <div className="mt-1 flex flex-wrap gap-1">
-                                                  {stores.map((store, idx) => (
-                                                    <span key={idx} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
-                                                      {store}
-                                                    </span>
-                                                  ))}
-                                                </div>
-                                              ) : (
-                                                <span className="text-xs text-red-600">全店舗</span>
-                                              )}
+                                              <div className="mt-1 flex flex-wrap gap-1">
+                                                {stores.map((store, idx) => (
+                                                  <span key={idx} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
+                                                    {store}
+                                                  </span>
+                                                ))}
+                                              </div>
                                             </div>
                                           );
                                         });
