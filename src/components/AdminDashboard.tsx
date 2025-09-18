@@ -21,8 +21,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [ratings, setRatings] = useState<any[]>([]);
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     pharmacies: false,
-    pharmacists: false,
-    ratings: false
+    pharmacists: false
   });
 
   // 薬剤師の評価を取得する関数
@@ -3648,105 +3647,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 )}
               </div>
 
-              {/* 薬剤師評価一覧 */}
-              <div className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => toggleSection('ratings')}
-                  className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center justify-between"
-                >
-                  <span className="font-medium text-gray-800">
-                    薬剤師評価一覧 ({ratings.length}件)
-                  </span>
-                  <span className="text-gray-500">
-                    {expandedSections.ratings ? '▼' : '▶'}
-                  </span>
-                </button>
-                {expandedSections.ratings && (
-                  <div className="p-4 space-y-3">
-                    {ratings.length === 0 ? (
-                      <div className="text-gray-500 text-center py-4">
-                        評価データがありません
-                      </div>
-                    ) : (
-                      ratings.map((rating: any) => {
-                        const pharmacistProfile = userProfiles[rating.pharmacist_id];
-                        const pharmacyProfile = userProfiles[rating.pharmacy_id];
-                        const shift = assigned.find((s: any) => s.id === rating.assigned_shift_id);
-                        
-                        return (
-                          <div key={rating.id} className="border border-gray-200 rounded-lg p-3 bg-white">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <div className="flex">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                      <Star
-                                        key={star}
-                                        className={`w-4 h-4 ${
-                                          star <= rating.rating
-                                            ? 'text-yellow-400 fill-current'
-                                            : 'text-gray-300'
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
-                                  <span className="text-sm font-medium text-gray-700">
-                                    {rating.rating}/5
-                                  </span>
-                                </div>
-                                
-                                <div className="text-sm text-gray-600 space-y-1">
-                                  <div>
-                                    <span className="font-medium">薬剤師:</span> {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}
-                                    {(() => {
-                                      const pharmacistRatings = ratings.filter(r => r.pharmacist_id === rating.pharmacist_id);
-                                      if (pharmacistRatings.length > 1) {
-                                        const average = pharmacistRatings.reduce((sum, r) => sum + r.rating, 0) / pharmacistRatings.length;
-                                        return (
-                                          <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                            平均: {average.toFixed(1)}/5 ({pharmacistRatings.length}件)
-                                          </span>
-                                        );
-                                      }
-                                      return null;
-                                    })()}
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">薬局:</span> {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'}
-                                  </div>
-                                  {shift && (
-                                    <div>
-                                      <span className="font-medium">シフト日時:</span> {shift.date} {(() => {
-                                        const timeSlot = shift.time_slot;
-                                        if (timeSlot === 'morning') return '午前';
-                                        if (timeSlot === 'afternoon') return '午後';
-                                        if (timeSlot === 'full' || timeSlot === 'fullday') return '終日';
-                                        if (timeSlot === 'custom' && shift.start_time && shift.end_time) {
-                                          return `${shift.start_time.slice(0, 5)}-${shift.end_time.slice(0, 5)}`;
-                                        }
-                                        return timeSlot || '未設定';
-                                      })()}
-                                    </div>
-                                  )}
-                                  {rating.comment && (
-                                    <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                                      <span className="font-medium">コメント:</span> {rating.comment}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="text-xs text-gray-500 ml-4">
-                                {new Date(rating.created_at).toLocaleDateString('ja-JP')}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           );
         })()}
