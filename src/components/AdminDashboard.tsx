@@ -2459,6 +2459,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     const timeSlot = shift.time_slot;
                                     if (timeSlot === 'morning') return '09:00-13:00';
                                     if (timeSlot === 'afternoon') return '13:00-18:00';
+                                    if (timeSlot === 'custom') return 'カスタム時間';
                                     if (timeSlot === 'full' || timeSlot === 'fullday') return '09:00-18:00';
                                     if (timeSlot === 'consult' || timeSlot === 'negotiable') return '要相談';
                                     return timeSlot || '未設定';
