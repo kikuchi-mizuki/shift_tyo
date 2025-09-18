@@ -838,13 +838,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         userProfiles: Object.keys(userProfiles).length
       });
       
-      // 実際のマッチング処理を実行
-      try {
-        await executeMatching();
-        console.log('=== 自動マッチング完了 ===');
-      } catch (error) {
-        console.error('自動マッチングエラー:', error);
-      }
+      // 自動マッチングは意図しない再確定を避けるため停止（必要時に手動実行）
     }
   };
 
@@ -1333,7 +1327,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       setSystemStatus('pending');
       setLastUpdated(new Date());
       
-      loadAll();
+      // 全再読込だと自動マッチングが走るため、確定データのみ再取得
+      await loadAssignedShifts();
     } catch (error) {
       console.error('Error in handleCancelConfirmedShifts:', error);
       alert(`確定シフトの取り消しに失敗しました: ${(error as any).message || 'Unknown error'}`);
