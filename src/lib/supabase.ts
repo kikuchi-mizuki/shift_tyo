@@ -746,6 +746,17 @@ export const shifts = {
       console.log('Data to upsert:', JSON.stringify(confirmedShiftsData, null, 2));
       
       // 各シフトのstore_nameを詳細ログとデータ検証
+      const toHHMMSS = (v?: string) => {
+        if (!v) return v as any;
+        if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v;
+        if (/^\d{2}:\d{2}$/.test(v)) return `${v}:00`;
+        return v;
+      };
+      const toRange = (slot: string) => {
+        if (slot === 'morning') return { start_time: '09:00:00', end_time: '13:00:00' };
+        if (slot === 'afternoon') return { start_time: '13:00:00', end_time: '18:00:00' };
+        return { start_time: '09:00:00', end_time: '18:00:00' };
+      };
       const validatedShifts = confirmedShiftsData.map((shift, index) => {
         console.log(`Shift ${index}:`, {
           pharmacist_id: shift.pharmacist_id,
@@ -777,6 +788,15 @@ export const shifts = {
           return null;
         }
         
+        // 時間の補完・正規化
+        let start_time = toHHMMSS(shift.start_time as any);
+        let end_time = toHHMMSS(shift.end_time as any);
+        if (!start_time || !end_time) {
+          const r = toRange(shift.time_slot || 'full');
+          start_time = r.start_time;
+          end_time = r.end_time;
+        }
+
         return {
           pharmacist_id: shift.pharmacist_id,
           pharmacy_id: shift.pharmacy_id,
@@ -784,7 +804,9 @@ export const shifts = {
           time_slot: shift.time_slot,
           status: shift.status || 'confirmed',
           store_name: finalStoreName || null,
-          memo: shift.memo || null
+          memo: shift.memo || null,
+          start_time,
+          end_time
         };
       }).filter(shift => shift !== null); // 無効なデータを除外
       
@@ -809,11 +831,11 @@ export const shifts = {
       const { data, error } = await supabase
         .from('assigned_shifts')
         .insert(validatedShifts)
-        .select();
+        .select('id, pharmacist_id, pharmacy_id, date, time_slot, start_time, end_time, status, store_name, memo');
       
       console.log('Supabase upsert result:', { data, error });
       
-      // 保存されたデータのstore_nameを確認
+      // 保存されたデータのstore_name/timeを確認
       if (data && data.length > 0) {
         console.log('Saved data store_name values:');
         data.forEach((savedShift, index) => {
@@ -821,6 +843,8 @@ export const shifts = {
             id: savedShift.id,
             store_name: savedShift.store_name,
             memo: savedShift.memo,
+            start_time: savedShift.start_time,
+            end_time: savedShift.end_time,
             store_name_type: typeof savedShift.store_name,
             store_name_length: savedShift.store_name ? savedShift.store_name.length : 0,
             memo_type: typeof savedShift.memo,
@@ -828,6 +852,26 @@ export const shifts = {
             all_columns: Object.keys(savedShift)
           });
         });
+        // もしstart_time/end_timeがNULLで返ってきたものがあれば補完して更新
+        const followups = (data as any[]).map((row: any) => {
+          if (row?.start_time && row?.end_time) return null;
+          const slot = row?.time_slot || 'full';
+          const r = slot === 'morning'
+            ? { start_time: '09:00:00', end_time: '13:00:00' }
+            : slot === 'afternoon'
+            ? { start_time: '13:00:00', end_time: '18:00:00' }
+            : { start_time: '09:00:00', end_time: '18:00:00' };
+          console.warn('Detected NULL times after insert (assigned_shifts), updating id:', row.id, r);
+          return supabase
+            .from('assigned_shifts')
+            .update({ start_time: r.start_time, end_time: r.end_time })
+            .eq('id', row.id)
+            .select('id,start_time,end_time');
+        }).filter(Boolean) as Promise<any>[];
+        if (followups.length > 0) {
+          await Promise.all(followups);
+          console.log('Follow-up time updates for assigned_shifts completed');
+        }
       }
       
       // テーブルが存在しない場合のエラーハンドリング
