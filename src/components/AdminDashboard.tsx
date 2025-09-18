@@ -1947,15 +1947,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   console.log(`希望詳細:`, slotRequests.map(r => ({ time_slot: r.time_slot, pharmacist_id: r.pharmacist_id })));
                   const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
                   // 終日希望は午前/午後に重複計上しない（表示の整合性）
-                  const availableSlot = slotRequests.filter((r: any) => {
+                  const slotRequestsFiltered = slotRequests.filter((r: any) => {
                     if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
                       return false;
                     }
                     return true;
                   }).length;
+                  const availableSlot = slotRequestsFiltered;
 
                   // 右の詳細パネルと同じマッチングシミュレーション
-                  const sortedRequests = slotRequests.sort((a: any, b: any) => {
+                  const sortedRequests = slotRequests
+                    .filter((r: any) => {
+                      if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
+                        return false;
+                      }
+                      return true;
+                    })
+                    .sort((a: any, b: any) => {
                     const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
                     return priorityOrder[b.priority] - priorityOrder[a.priority];
                   });
