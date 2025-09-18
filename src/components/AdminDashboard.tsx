@@ -2901,8 +2901,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             
                             {/* 募集のみの場合の表示 */}
-                            {/* 募集のみで応募がない場合のサマリー */}
-                            {dayPostings.length > 0 && dayRequests.length === 0 && (
+                            {/* 募集のみで応募がない場合のサマリー（必要が0のときは非表示） */}
+                            {dayPostings.length > 0 && dayRequests.length === 0 && dayPostings.reduce((s: number, p: any) => s + (Number(p.required_staff) || 0), 0) > 0 && (
                               <div className="bg-white rounded border px-2 py-1">
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="text-xs font-medium text-gray-800">全体</div>
@@ -2919,7 +2919,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 </div>
                               </div>
                             )}
-                          {matchingAnalysis.map((analysis: any, index: number) => (
+                          {matchingAnalysis.filter((a: any) => (a.totalRequired || 0) > 0).map((analysis: any, index: number) => (
                             <div key={index} className="bg-white rounded border px-2 py-1">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="text-xs font-medium text-gray-800"></div>
