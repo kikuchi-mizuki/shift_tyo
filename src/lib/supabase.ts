@@ -999,6 +999,31 @@ export const shiftRequests = {
       
       console.log('Insert result:', { data, error });
       
+      // 万が一、DB側でstart_time/end_timeがNULLで保存された場合はフォローアップ更新
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const followups = (data as any[]).map((row: any) => {
+          const s = row?.start_time;
+          const e = row?.end_time;
+          if (s && e) return null; // 問題なし
+          const slot = row?.time_slot || 'full';
+          const range = slot === 'morning'
+            ? { start_time: '09:00:00', end_time: '13:00:00' }
+            : slot === 'afternoon'
+            ? { start_time: '13:00:00', end_time: '18:00:00' }
+            : { start_time: '09:00:00', end_time: '18:00:00' };
+          console.warn('Detected NULL times after insert, issuing update for id:', row.id, range);
+          return supabase
+            .from('shift_requests')
+            .update({ start_time: range.start_time, end_time: range.end_time })
+            .eq('id', row.id)
+            .select();
+        }).filter(Boolean) as Promise<any>[];
+        if (followups.length > 0) {
+          await Promise.all(followups);
+          console.log('Follow-up time updates completed');
+        }
+      }
+
       // テーブルが存在しない場合のエラーハンドリング
       if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
         console.warn('shift_requests table not found, falling back to demo mode');
