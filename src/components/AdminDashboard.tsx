@@ -1946,7 +1946,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   console.log(`募集詳細:`, slotPostings.map(p => ({ time_slot: p.time_slot, store_name: p.store_name })));
                   console.log(`希望詳細:`, slotRequests.map(r => ({ time_slot: r.time_slot, pharmacist_id: r.pharmacist_id })));
                   const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                  const availableSlot = slotRequests.length;
+                  // 終日希望は午前/午後に重複計上しない（表示の整合性）
+                  const availableSlot = slotRequests.filter((r: any) => {
+                    if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
+                      return false;
+                    }
+                    return true;
+                  }).length;
 
                   // 右の詳細パネルと同じマッチングシミュレーション
                   const sortedRequests = slotRequests.sort((a: any, b: any) => {
@@ -2895,7 +2901,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             
                             {/* 募集のみの場合の表示 */}
-                            {matchingAnalysis.length === 0 && dayPostings.length > 0 && dayRequests.length === 0 && (
+                            {/* 募集のみで応募がない場合のサマリー */}
+                            {dayPostings.length > 0 && dayRequests.length === 0 && (
                               <div className="bg-white rounded border px-2 py-1">
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="text-xs font-medium text-gray-800">全体</div>
