@@ -1791,6 +1791,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   console.log('希望詳細:', dayRequests);
                   console.log('マッチング処理が開始されました - コンソールを確認してください');
                 }
+                // 重複カウント防止用セット（終日が午前/午後に跨っても1件扱い）
+                const uniqueAvailableRequestIds = new Set<string>();
                 
                 if (dayAssignedShifts.length > 0) {
                   console.log('確定シフトが存在するため、確定状態を返します');
