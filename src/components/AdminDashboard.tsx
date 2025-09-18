@@ -2983,16 +2983,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                           (request.time_slot === 'full' || request.time_slot === 'fullday') ? '09:00-18:00' :
                                           '要相談'
                                         );
-                                        return (
-                                          <div key={idx} className="flex items-center justify-between bg-green-50 px-2 py-1 rounded mb-1">
-                                            <span className="text-xs">
-                                              <span className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
-                                              <span className="text-gray-500"> → </span>
-                                              <span className="font-medium">{pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
-                                              <span className="text-gray-500"> ({storeName})</span>
-                                              <span className="text-gray-500 ml-1">{timeLabel}</span>
-                                            </span>
-                                            <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                      return (
+                                          <div key={idx} className="bg-green-50 px-2 py-1 rounded mb-1">
+                                            <div className="flex items-start justify-between">
+                                              <div className="text-xs">
+                                                <div>
+                                                  <span className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                                  <span className="text-gray-500"> → </span>
+                                                  <span className="font-medium">{pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
+                                                </div>
+                                                <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
+                                                {storeName && (
+                                                  <div className="text-[11px] text-gray-500">（{storeName}）</div>
+                                                )}
+                                              </div>
+                                              <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                            </div>
                                           </div>
                                         );
                                       })}
@@ -3015,10 +3021,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                           '要相談'
                                         );
                                         return (
-                                          <div key={idx} className="flex items-center justify-between bg-yellow-50 px-2 py-1 rounded mb-1">
-                                            <span className="text-xs font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
-                                            <span className="text-[10px] text-gray-600 mr-2">{timeLabel}</span>
-                                            <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                          <div key={idx} className="bg-yellow-50 px-2 py-1 rounded mb-1">
+                                            <div className="text-xs">
+                                              <div className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
+                                              <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
+                                            </div>
                                           </div>
                                         );
                                       })}
@@ -3043,10 +3050,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                           '要相談'
                                         );
                                         return (
-                                          <div key={idx} className="flex items-center justify-between bg-yellow-50 px-2 py-1 rounded mb-1">
-                                            <span className="text-xs font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
-                                            <span className="text-[10px] text-gray-600 mr-2">{timeLabel}</span>
-                                            <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                          <div key={idx} className="bg-yellow-50 px-2 py-1 rounded mb-1">
+                                            <div className="text-xs">
+                                              <div className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
+                                              <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
+                                            </div>
                                           </div>
                                         );
                                       })}
