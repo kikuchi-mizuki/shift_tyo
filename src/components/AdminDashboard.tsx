@@ -76,12 +76,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   });
 
   const beginEditUser = (profile: any) => {
+    console.log('編集開始:', { profileId: profile.id, userType: profile.user_type });
     setEditingUserId(profile.id);
     
     let ngList: string[] = [];
     if (profile.user_type === 'pharmacist') {
       // 薬剤師の場合はstore_ng_pharmaciesから読み込み
       const ngPharmacies = storeNgPharmacists[profile.id] || [];
+      console.log('薬剤師のNG薬局データ:', { profileId: profile.id, ngPharmacies });
+      
       const pharmacyGroups: {[pharmacyId: string]: string[]} = {};
       
       ngPharmacies.forEach((ngPharmacy: any) => {
@@ -95,10 +98,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         pharmacyGroups[pharmacyId].push(storeName);
       });
       
+      console.log('薬局グループ化結果:', pharmacyGroups);
+      
       // 薬局の全店舗がNGの場合は薬局IDのみ、一部店舗のみNGの場合は店舗指定
       Object.entries(pharmacyGroups).forEach(([pharmacyId, stores]) => {
         const pharmacyProfile = userProfiles[pharmacyId];
         const allStoreNames = pharmacyProfile?.store_names || ['本店'];
+        
+        console.log('薬局分析:', { pharmacyId, stores, allStoreNames });
         
         // 全店舗がNGに含まれているかチェック
         const allStoresInNg = allStoreNames.every(storeName => stores.includes(storeName));
@@ -106,16 +113,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         if (allStoresInNg && stores.length === allStoreNames.length) {
           // 全店舗がNGの場合
           ngList.push(pharmacyId);
+          console.log('全店舗NGとして追加:', pharmacyId);
         } else {
           // 一部店舗のみNGの場合は店舗指定
           stores.forEach(store => {
             ngList.push(`${pharmacyId}_${store}`);
+            console.log('個別店舗NGとして追加:', `${pharmacyId}_${store}`);
           });
         }
       });
     } else if (profile.user_type === 'pharmacy') {
       // 薬局の場合はstore_ng_pharmacistsから読み込み
       const ngPharmacists = storeNgPharmacists[profile.id] || [];
+      console.log('薬局のNG薬剤師データ:', { profileId: profile.id, ngPharmacists });
+      
       const pharmacistIds = new Set<string>();
       
       ngPharmacists.forEach((ngPharmacist: any) => {
@@ -123,10 +134,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       });
       
       ngList = Array.from(pharmacistIds);
+      console.log('薬局のNG薬剤師リスト:', ngList);
     } else {
       // その他の場合は従来通り
       ngList = Array.isArray(profile.ng_list) ? [...profile.ng_list] : [];
+      console.log('その他のNGリスト:', ngList);
     }
+    
+    console.log('編集フォーム設定:', { name: profile.name, store_names: profile.store_names, ng_list: ngList });
     
     setUserEditForm({
       name: profile.name || '',
