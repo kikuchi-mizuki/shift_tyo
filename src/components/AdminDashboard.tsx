@@ -3847,7 +3847,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                               return displayStoreNames.map((storeName: string) => {
                                                 const storeKey = `${id}_${storeName}`;
                                                 // 薬局全体が選択されている場合は全店舗にチェック、そうでなければ個別チェック
-                                                const storeChecked = userEditForm.ng_list.includes(id) || userEditForm.ng_list.includes(storeKey);
+                                                const isPharmacySelected = userEditForm.ng_list.includes(id);
+                                                const isStoreSelected = userEditForm.ng_list.includes(storeKey);
+                                                const storeChecked = isPharmacySelected || isStoreSelected;
                                                 
                                                 return (
                                                   <label key={storeKey} className="inline-flex items-center gap-1 text-xs cursor-pointer">
@@ -3867,6 +3869,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                           next.delete(storeKey);
                                                           // 薬局全体の選択も削除
                                                           next.delete(id);
+                                                          
+                                                          // 他の店舗も個別に追加（薬局全体選択から個別選択に切り替え）
+                                                          const pharmacyProfile = userProfiles[id];
+                                                          const storeNames = pharmacyProfile?.store_names || ['本店'];
+                                                          storeNames.forEach((otherStoreName: string) => {
+                                                            if (otherStoreName !== storeName) {
+                                                              const otherStoreKey = `${id}_${otherStoreName}`;
+                                                              next.add(otherStoreKey);
+                                                            }
+                                                          });
                                                         }
                                                         
                                                         setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
