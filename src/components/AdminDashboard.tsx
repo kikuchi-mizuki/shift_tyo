@@ -1050,6 +1050,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   pharmacy_id: pharmacyNeed.pharmacy_id,
                   date: date,
                   time_slot: adjustedTimeSlot, // 薬局の募集時間帯を使用
+                  start_time: pharmacyNeed.start_time || request.start_time || null,
+                  end_time: pharmacyNeed.end_time || request.end_time || null,
                   status: 'confirmed',
                   store_name: storeName,
                   memo: pharmacyNeed.memo || ''
@@ -1139,6 +1141,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   pharmacy_id: pharmacyNeed.pharmacy_id,
                   date: date,
                   time_slot: adjustedTimeSlot, // 薬局の募集時間帯を使用
+                  start_time: pharmacyNeed.start_time || request.start_time || null,
+                  end_time: pharmacyNeed.end_time || request.end_time || null,
                   status: 'confirmed',
                   store_name: storeName,
                   memo: pharmacyNeed.memo || ''
@@ -1591,6 +1595,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               pharmacy_id: pharmacyNeed.pharmacy_id,
               date: date,
               time_slot: slot,
+              start_time: pharmacyNeed.start_time || request.start_time || null,
+              end_time: pharmacyNeed.end_time || request.end_time || null,
               status: 'confirmed',
               store_name: pharmacyNeed.store_name || pharmacy?.name || '',
               memo: `マッチング: ${pharmacist?.name} → ${pharmacy?.name}`
@@ -2388,15 +2394,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 </div>
                                 <div className="text-xs text-gray-500 whitespace-nowrap">
                                   {(() => {
+                                    // 時間範囲優先表示（DBにあれば）
+                                    const s = (shift.start_time || '').toString();
+                                    const e = (shift.end_time || '').toString();
+                                    if (s && e) {
+                                      const fmt = (t: string) => t.slice(0,5);
+                                      return `${fmt(s)}-${fmt(e)}`;
+                                    }
+                                    // 既存スロットから時間範囲を導出
                                     const timeSlot = shift.time_slot;
-                                    if (timeSlot === 'morning') return '午前';
-                                    if (timeSlot === 'afternoon') return '午後';
-                                    if (timeSlot === 'full') return '終日(9:00-18:00)';
-                                    if (timeSlot === 'fullday') return '終日(9:00-18:00)';
-                                    if (timeSlot === 'evening') return '夜間';
-                                    if (timeSlot === 'night') return '夜間';
-                                    if (timeSlot === 'consult') return '要相談';
-                                    if (timeSlot === 'negotiable') return '要相談';
+                                    if (timeSlot === 'morning') return '09:00-13:00';
+                                    if (timeSlot === 'afternoon') return '13:00-18:00';
+                                    if (timeSlot === 'full' || timeSlot === 'fullday') return '09:00-18:00';
+                                    if (timeSlot === 'consult' || timeSlot === 'negotiable') return '要相談';
                                     return timeSlot || '未設定';
                                   })()}
                                 </div>
