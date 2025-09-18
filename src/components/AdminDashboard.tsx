@@ -2563,12 +2563,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   <div className="text-xs text-gray-800 leading-snug break-words">
                                     {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(posting)})
                                   </div>
+                                  <div className="text-[11px] text-gray-500 mt-0.5">
+                                    {(() => {
+                                      const s = (posting.start_time || '').toString();
+                                      const e = (posting.end_time || '').toString();
+                                      if (s && e) return `${s.slice(0,5)}-${e.slice(0,5)}`;
+                                      if (posting.time_slot === 'morning') return '09:00-13:00';
+                                      if (posting.time_slot === 'afternoon') return '13:00-18:00';
+                                      if (posting.time_slot === 'full' || posting.time_slot === 'fullday') return '09:00-18:00';
+                                      return '要相談';
+                                    })()}
+                                  </div>
                                   <div className="mt-1">
                                     <button onClick={() => beginEditPosting(posting)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
                                   </div>
                                 </div>
                                 <div className="text-xs text-gray-500 whitespace-nowrap">
-                                  {posting.time_slot === 'morning' ? '午前' : posting.time_slot === 'afternoon' ? '午後' : '終日'} / {posting.required_staff}人
+                                  {posting.required_staff}人
                                 </div>
                               </div>
                             )}
@@ -2688,14 +2699,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   <div className="text-xs text-gray-800 leading-snug break-words">
                                     {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}
                                   </div>
+                                  <div className="text-[11px] text-gray-500 mt-0.5">
+                                    {(() => {
+                                      const s = (request.start_time || '').toString();
+                                      const e = (request.end_time || '').toString();
+                                      if (s && e) return `${s.slice(0,5)}-${e.slice(0,5)}`;
+                                      if (request.time_slot === 'morning') return '09:00-13:00';
+                                      if (request.time_slot === 'afternoon') return '13:00-18:00';
+                                      if (request.time_slot === 'full' || request.time_slot === 'fullday') return '09:00-18:00';
+                                      return '要相談';
+                                    })()}
+                                  </div>
                                   <div className="mt-1">
                                     <button onClick={() => beginEditRequest(request)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-2 whitespace-nowrap">
-                                  <div className="text-xs text-gray-500">
-                                    {request.time_slot === 'morning' ? '午前' : request.time_slot === 'afternoon' ? '午後' : '終日'}
-                                  </div>
                                   <div className={`text-xs font-medium ${priorityColor}`}>
                                     {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
                                   </div>
