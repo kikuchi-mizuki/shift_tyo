@@ -2162,6 +2162,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 <span className="hidden sm:inline">マッチ {matchingStatus.count}</span>
                               </div>
                             )}
+                            {/* 希望のみの日（募集が無い）を表示 */}
+                            {matchingStatus.type === 'requests_only' && (
+                              <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
+                                <span className="sm:hidden">希{matchingStatus.requestsCount}</span>
+                                <span className="hidden sm:inline">希望 {matchingStatus.requestsCount}</span>
+                              </div>
+                            )}
                             
                             {/* 不足数 */}
                             {matchingStatus.shortage > 0 && (
