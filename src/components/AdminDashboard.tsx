@@ -109,8 +109,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           });
         }
       });
+    } else if (profile.user_type === 'pharmacy') {
+      // 薬局の場合はstore_ng_pharmacistsから読み込み
+      const ngPharmacists = storeNgPharmacists[profile.id] || [];
+      const pharmacistIds = new Set<string>();
+      
+      ngPharmacists.forEach((ngPharmacist: any) => {
+        pharmacistIds.add(ngPharmacist.pharmacist_id);
+      });
+      
+      ngList = Array.from(pharmacistIds);
     } else {
-      // 薬局の場合は従来通り
+      // その他の場合は従来通り
       ngList = Array.isArray(profile.ng_list) ? [...profile.ng_list] : [];
     }
     
@@ -188,8 +198,54 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             }
           }
         }
+      } else if (profile.user_type === 'pharmacy') {
+        // 薬局の場合、NG薬剤師設定をstore_ng_pharmacistsテーブルに保存
+        // 既存のNG薬剤師設定を削除
+        const { error: deleteError } = await supabase
+          .from('store_ng_pharmacists')
+          .delete()
+          .eq('pharmacy_id', profile.id);
+
+        if (deleteError) {
+          console.error('既存NG薬剤師設定の削除エラー:', deleteError);
+        }
+
+        // 新しいNG薬剤師設定を追加
+        const ngList = Array.isArray(userEditForm.ng_list)
+          ? userEditForm.ng_list
+          : String(userEditForm.ng_list || '')
+              .split(',')
+              .map((s: string) => s.trim())
+              .filter((s: string) => s.length > 0);
+
+        if (ngList.length > 0) {
+          const ngEntries = [];
+          const storeNames = profile.store_names || ['本店'];
+          
+          for (const ngId of ngList) {
+            for (const storeName of storeNames) {
+              ngEntries.push({
+                pharmacy_id: profile.id,
+                store_name: storeName,
+                pharmacist_id: ngId
+              });
+            }
+          }
+
+          if (ngEntries.length > 0) {
+            const { error: insertError } = await supabase
+              .from('store_ng_pharmacists')
+              .insert(ngEntries);
+
+            if (insertError) {
+              console.error('NG薬剤師設定の保存エラー:', insertError);
+              alert(`NG薬剤師設定の保存に失敗しました: ${insertError.message}`);
+              return;
+            }
+          }
+        }
       } else {
-        // 薬局の場合は従来通りng_listを保存
+        // その他の場合は従来通りng_listを保存
         updates.ng_list = Array.isArray(userEditForm.ng_list)
           ? userEditForm.ng_list
           : String(userEditForm.ng_list || '')
@@ -883,17 +939,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const storeNgDataMap: {[pharmacyId: string]: any[]} = {};
           
           // 薬局ユーザーのみを対象に店舗毎NG薬剤師を取得
-          // const pharmacyUsers = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacy');
-          // for (const pharmacy of pharmacyUsers) {
-          //   try {
-          //     const { data: storeNgData, error: storeNgError } = await storeNgPharmacists.getStoreNgPharmacists((pharmacy as any).id);
-          //     if (!storeNgError && storeNgData) {
-          //       storeNgDataMap[(pharmacy as any).id] = storeNgData;
-          //     }
-          //   } catch (error) {
-          //     logToRailway(`Error fetching store NG pharmacists for ${(pharmacy as any).id}:`, error);
-          //   }
-          // }
+          const pharmacyUsers = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacy');
+          for (const pharmacy of pharmacyUsers) {
+            try {
+              const { data: storeNgData, error: storeNgError } = await supabase
+                .from('store_ng_pharmacists')
+                .select('*')
+                .eq('pharmacy_id', (pharmacy as any).id);
+              
+              if (!storeNgError && storeNgData) {
+                storeNgDataMap[(pharmacy as any).id] = storeNgData;
+              }
+            } catch (error) {
+              logToRailway(`Error fetching store NG pharmacists for ${(pharmacy as any).id}:`, error);
+            }
+          }
           
           setStoreNgPharmacists(storeNgDataMap);
           logToRailway('Store NG pharmacists data:', storeNgDataMap);
@@ -3564,20 +3624,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             ) : (
                               <div className="text-sm">
-                                {pharmacy.ng_list && pharmacy.ng_list.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1">
-                                    {pharmacy.ng_list.map((ngId: string, idx: number) => {
-                                      const ngPharmacist = userProfiles[ngId];
-                                      return (
-                                        <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                          {ngPharmacist?.name || ngPharmacist?.email || ngId}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-500">なし</span>
-                                )}
+                                {(() => {
+                                  // store_ng_pharmacistsテーブルからNG薬剤師情報を取得
+                                  const ngPharmacists = storeNgPharmacists[pharmacy.id] || [];
+                                  
+                                  // デバッグログ
+                                  console.log('NG薬剤師表示デバッグ:', {
+                                    pharmacyId: pharmacy.id,
+                                    pharmacyName: pharmacy.name,
+                                    ngPharmacists: ngPharmacists,
+                                    storeNgPharmacists: storeNgPharmacists
+                                  });
+                                  
+                                  if (ngPharmacists.length === 0) {
+                                    return <span className="text-gray-500">なし</span>;
+                                  }
+                                  
+                                  // 薬剤師IDでグループ化（重複を除去）
+                                  const uniquePharmacistIds = new Set<string>();
+                                  ngPharmacists.forEach((ngPharmacist: any) => {
+                                    uniquePharmacistIds.add(ngPharmacist.pharmacist_id);
+                                  });
+                                  
+                                  return (
+                                    <div className="flex flex-wrap gap-1">
+                                      {Array.from(uniquePharmacistIds).map((pharmacistId: string, idx: number) => {
+                                        const ngPharmacist = userProfiles[pharmacistId];
+                                        return (
+                                          <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                                            {ngPharmacist?.name || ngPharmacist?.email || pharmacistId}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>
