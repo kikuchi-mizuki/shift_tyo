@@ -968,10 +968,33 @@ export const shiftRequests = {
     }
 
     try {
+      // サーバー側で時間帯を補完（クライアントから来ない場合の保険）
+      const toHHMMSS = (v: string) => {
+        if (!v) return v;
+        if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v;
+        if (/^\d{2}:\d{2}$/.test(v)) return `${v}:00`;
+        return v;
+      };
+      const toRange = (slot: string) => {
+        if (slot === 'morning') return { start_time: '09:00:00', end_time: '13:00:00' };
+        if (slot === 'afternoon') return { start_time: '13:00:00', end_time: '18:00:00' };
+        return { start_time: '09:00:00', end_time: '18:00:00' };
+      };
+      const normalized = (requestsData || []).map((r: any) => {
+        let start_time = toHHMMSS(r?.start_time);
+        let end_time = toHHMMSS(r?.end_time);
+        if (!start_time || !end_time) {
+          const range = toRange(r?.time_slot || 'full');
+          start_time = range.start_time;
+          end_time = range.end_time;
+        }
+        return { ...r, start_time, end_time };
+      });
+      console.log('Normalized requests payload:', normalized);
       console.log('Inserting into shift_requests table...');
       const { data, error } = await supabase
         .from('shift_requests')
-        .insert(requestsData)
+        .insert(normalized)
         .select();
       
       console.log('Insert result:', { data, error });
