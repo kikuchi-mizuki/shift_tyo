@@ -3103,10 +3103,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     const pharmacyProfile = userProfiles[ph.pharmacy_id];
                                     const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
                                     const storeLabel = ph.store_name ? `（${ph.store_name}）` : '';
+                                    const timeLabel = (() => {
+                                      const s = (ph.start_time || '').toString();
+                                      const e = (ph.end_time || '').toString();
+                                      if (s && e) return `${s.slice(0,5)}-${e.slice(0,5)}`;
+                                      return '09:00-18:00';
+                                    })();
                                     return (
-                                      <div key={idx} className="flex items-center justify-between bg-red-50 px-2 py-1 rounded mb-1">
-                                        <span className="text-xs font-medium">{pharmacyName}{storeLabel}</span>
-                                        <span className="text-xs text-red-600 font-medium">不足 {ph.remaining}人</span>
+                                      <div key={idx} className="bg-red-50 px-2 py-1 rounded mb-1">
+                                        <div className="flex items-start justify-between">
+                                          <div className="text-xs">
+                                            <div className="font-medium">{pharmacyName}{storeLabel}</div>
+                                            <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
+                                          </div>
+                                          <span className="text-xs text-red-600 font-medium">不足 {ph.remaining}人</span>
+                                        </div>
                                       </div>
                                     );
                                   })}
