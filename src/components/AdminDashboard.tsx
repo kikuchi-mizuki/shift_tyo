@@ -3854,9 +3854,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                               
                                               return displayStoreNames.map((storeName: string) => {
                                                 const storeKey = `${id}_${storeName}`;
-                                                // 薬局全体が選択されている場合は全店舗にチェック、そうでなければ個別チェック
                                                 const isPharmacySelected = userEditForm.ng_list.includes(id);
                                                 const isStoreSelected = userEditForm.ng_list.includes(storeKey);
+                                                
+                                                // 薬局全体が選択されている場合は全店舗にチェック、そうでなければ個別チェック
                                                 const storeChecked = isPharmacySelected || isStoreSelected;
                                                 
                                                 return (
@@ -3865,11 +3866,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                       type="checkbox"
                                                       className="accent-orange-600"
                                                       checked={storeChecked}
-                                                      onChange={(e) => {
-                                                        console.log('店舗チェックボックス変更:', {
+                                                      onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        
+                                                        console.log('店舗チェックボックスクリック:', {
                                                           storeName,
                                                           storeKey,
-                                                          checked: e.target.checked,
+                                                          currentChecked: storeChecked,
                                                           currentNgList: userEditForm.ng_list,
                                                           isPharmacySelected,
                                                           isStoreSelected
@@ -3877,14 +3881,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                         
                                                         const next = new Set<string>(userEditForm.ng_list);
                                                         
-                                                        if (e.target.checked) {
-                                                          // 店舗を選択する場合
-                                                          next.add(storeKey);
-                                                          // 薬局全体の選択は削除しない（個別店舗選択として扱う）
-                                                        } else {
-                                                          // 店舗の選択を解除する場合
+                                                        if (storeChecked) {
+                                                          // 現在チェックされているので、チェックを外す
                                                           next.delete(storeKey);
-                                                          // 薬局全体の選択も削除
                                                           next.delete(id);
                                                           
                                                           // 他の店舗も個別に追加（薬局全体選択から個別選択に切り替え）
@@ -3896,6 +3895,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                               next.add(otherStoreKey);
                                                             }
                                                           });
+                                                        } else {
+                                                          // 現在チェックされていないので、チェックを入れる
+                                                          next.add(storeKey);
                                                         }
                                                         
                                                         console.log('更新後のng_list:', Array.from(next));
