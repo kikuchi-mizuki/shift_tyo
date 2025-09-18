@@ -3157,8 +3157,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       });
                       
                       const totalRequired = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                      // 右パネルの余裕判定では終日希望も応募数に含める（カレンダーとは別ロジック）
-                      const totalAvailable = sortedRequests.length;
+                      // カレンダーと同じロジック：終日希望は午前/午後に重複計上しない
+                      const slotRequestsFiltered = sortedRequests.filter((r: any) => {
+                        if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (timeSlot === 'morning' || timeSlot === 'afternoon')) {
+                          return false;
+                        }
+                        return true;
+                      });
+                      const totalAvailable = slotRequestsFiltered.length;
                       
                       // マッチングシミュレーション（優先順位順）
                       const matchedPharmacists: any[] = [];
@@ -3172,7 +3178,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       }));
                       
                       // 優先順位順に薬剤師をマッチング（NGリストと時間帯互換性を考慮）
-                      sortedRequests.forEach((request: any) => {
+                      // フィルタリングされたリクエストを使用（カレンダーと同じロジック）
+                      slotRequestsFiltered.forEach((request: any) => {
                         if (remainingRequired > 0) {
                           // 薬剤師のNGリストを取得
                           const pharmacistProfile = userProfiles[request.pharmacist_id];
@@ -3238,6 +3245,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         .filter((p: any) => p.remaining > 0)
                         .map((p: any) => ({ pharmacy_id: p.pharmacy_id, remaining: p.remaining, store_name: p.store_name }));
 
+                      // 余裕の計算：利用可能な薬剤師数 - マッチした薬剤師数
+                      const excessPharmacists = totalAvailable - matchedPharmacists.length;
+
                       return {
                         timeSlot,
                         requests: sortedRequests,
@@ -3249,9 +3259,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         matchedPharmacies,
                         remainingRequired,
                         shortagePharmacies,
+                        excessPharmacists,
                         isMatching: totalAvailable > 0 && totalRequired > 0,
                         isShortage: totalAvailable < totalRequired,
-                        hasExcess: totalAvailable > totalRequired
+                        hasExcess: excessPharmacists > 0
                       };
                     }).filter(Boolean);
                     
@@ -3347,10 +3358,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     </div>
                                   )}
                                   
-                                  {/* 余裕薬剤師 - 必要人数を満たした後の余剰薬剤師 */}
-                                  {analysis.remainingRequired === 0 && analysis.totalAvailable > analysis.totalRequired && (
+                                  {/* 余裕薬剤師 - マッチング済み以外の薬剤師 */}
+                                  {analysis.excessPharmacists > 0 && (
                                     <div className="mb-2">
-                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕薬剤師 ({Math.max(analysis.totalAvailable - analysis.totalRequired, 0)}人):</div>
+                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕薬剤師 ({analysis.excessPharmacists}人):</div>
                                       {analysis.requests.slice(analysis.totalMatched).map((request: any, idx: number) => {
                                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                                         const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
@@ -3374,8 +3385,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     </div>
                                   )}
                                   
-                                  {/* 未マッチ薬剤師 - マッチング済みの場合のみ表示（余裕薬剤師と重複しないよう条件を調整） */}
-                                  {analysis.totalMatched > 0 && analysis.requests.length > analysis.totalMatched && !(analysis.remainingRequired === 0 && analysis.totalAvailable > analysis.totalRequired) && (
+                                  {/* 未マッチ薬剤師 - 余裕薬剤師と重複しないよう条件を調整 */}
+                                  {analysis.totalMatched > 0 && analysis.requests.length > analysis.totalMatched && analysis.excessPharmacists === 0 && (
                                     <div className="mt-2">
                                       <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 未マッチ薬剤師 ({analysis.requests.length - analysis.totalMatched}人):</div>
                                       {analysis.requests.filter((request: any) => 
