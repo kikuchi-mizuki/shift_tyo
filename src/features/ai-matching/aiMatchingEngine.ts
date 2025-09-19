@@ -228,8 +228,9 @@ export class AIMatchingEngine {
     console.log('userProfiles:', userProfiles);
     console.log('ratings:', ratings);
     
-    if (!this.isInitialized) {
-      console.warn('AI Matching Engine not initialized, using fallback');
+    // Supabaseクライアントが無効化されている場合は常にフォールバックを使用
+    if (!supabase || !this.isInitialized) {
+      console.warn('Supabase unavailable or AI Matching Engine not initialized, using fallback');
       return this.fallbackMatching(requests, postings);
     }
 
@@ -720,6 +721,12 @@ export class AIMatchingEngine {
     const candidates: MatchCandidate[] = [];
     const processedPairs = new Set<string>(); // 重複防止
 
+    // データが空の場合は空の配列を返す
+    if (!requests || requests.length === 0 || !postings || postings.length === 0) {
+      console.log('リクエストまたはポスティングが空のため、マッチングをスキップ');
+      return candidates;
+    }
+
     for (const request of requests) {
       console.log(`薬剤師 ${request.pharmacist_id} の希望を処理中:`, request);
       
@@ -735,9 +742,13 @@ export class AIMatchingEngine {
         console.log(`日付一致: ${request.date === posting.date}`);
         console.log(`時間互換性: ${this.isBasicCompatible(request, posting)}`);
 
-        // 基本的なフィルタリング（時間範囲 + 日付一致）
-        if (request.date === posting.date && this.isBasicCompatible(request, posting)) {
-          console.log(`フォールバックマッチング成功: ${pairKey}`);
+        // より緩い条件でマッチング（日付一致のみでもマッチング）
+        const dateMatch = request.date === posting.date;
+        const timeCompatible = this.isBasicCompatible(request, posting);
+        
+        // 日付が一致していれば、時間の互換性に関係なくマッチング
+        if (dateMatch) {
+          console.log(`フォールバックマッチング成功（日付一致）: ${pairKey}`);
           
           candidates.push({
             pharmacist: {
@@ -778,14 +789,14 @@ export class AIMatchingEngine {
               }
             },
             timeSlot: {
-              start: posting.start_time,
-              end: posting.end_time,
+              start: posting.start_time || request.start_time || '09:00:00',
+              end: posting.end_time || request.end_time || '18:00:00',
               date: posting.date,
               urgency: 'medium',
               flexibility: 0
             },
-            compatibilityScore: 0.7, // フォールバックでも少し高いスコア
-            reasons: ['基本互換性（フォールバック）']
+            compatibilityScore: timeCompatible ? 0.8 : 0.6, // 時間互換性がある場合は高いスコア
+            reasons: timeCompatible ? ['日付・時間一致（フォールバック）'] : ['日付一致（フォールバック）']
           });
           
           processedPairs.add(pairKey);

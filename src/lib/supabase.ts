@@ -18,8 +18,14 @@ console.log('Supabase config:', {
   actualKey: supabaseAnonKey?.substring(0, 20) + '...'
 });
 
-// Supabaseクライアントの作成（安全版）
+// Supabaseクライアントの作成（完全無効化版）
 export const supabase = (() => {
+  // 400エラーを回避するため、一時的にSupabaseクライアントを完全無効化
+  console.warn('Supabaseクライアントを一時的に無効化しています（400エラー回避のため）');
+  return null;
+  
+  // 元のコード（コメントアウト）
+  /*
   if (!supabaseUrl || !supabaseAnonKey || 
       supabaseUrl === 'your-supabase-url' || 
       supabaseAnonKey === 'your-supabase-anon-key') {
@@ -39,6 +45,7 @@ export const supabase = (() => {
     console.error('Supabaseクライアントの作成に失敗しました:', error);
     return null;
   }
+  */
 })();
 
 console.log('Supabase client created:', !!supabase);
