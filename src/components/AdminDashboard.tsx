@@ -874,7 +874,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           request.user_name === 'ユーザー未発見' ||
           request.user_name === '' ||
           request.user_name === null
-        );
+        ) : [];
         
         console.log('未設定関連のシフト希望:', undefinedRequests);
       }
