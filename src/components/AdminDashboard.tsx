@@ -2483,7 +2483,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           {/* 日別確定ボタンの説明 */}
           <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
             <div className="text-sm text-gray-600 mb-2">
-              <p>カレンダーの日付をクリックして選択すると、右側に「この日のシフトを確定する」ボタンが表示されます。</p>
+              <p>カレンダーの日付をクリックして選択すると、右側に「マッチングを実行」→「シフトを確定」のボタンが表示されます。</p>
             </div>
           </div>
 
@@ -2573,14 +2573,100 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   // 確定シフトがない日で、希望または募集がある場合のみボタンを表示
                   if (dayAssignedShifts.length === 0 && (dayRequests.length > 0 || dayPostings.length > 0)) {
                     return (
-                      <div className="p-4 border-b border-gray-200">
-                        <button
-                          onClick={() => handleConfirmShiftsForDate(selectedDate)}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
-                        >
-                          <Calendar className="w-4 h-4" />
-                          <span>この日のシフトを確定する</span>
-                        </button>
+                      <div className="p-4 border-b border-gray-200 space-y-3">
+                        {/* マッチング実行ボタン */}
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Brain className="w-4 h-4 text-purple-600" />
+                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング</h4>
+                          </div>
+                          <p className="text-xs text-purple-700 mb-3">
+                            希望シフトと募集シフトをAIで最適にマッチングします
+                          </p>
+                          <button
+                            onClick={() => executeAIMatching(selectedDate)}
+                            disabled={aiMatchingLoading}
+                            className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                          >
+                            {aiMatchingLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span>マッチング実行中...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Brain className="w-4 h-4" />
+                                <span>マッチングを実行</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* AIマッチング結果表示 */}
+                        {aiMatches.length > 0 && (
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Brain className="w-4 h-4 text-purple-600" />
+                              <h4 className="text-sm font-semibold text-gray-800">マッチング結果</h4>
+                              <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                                {aiMatches.length}件
+                              </span>
+                            </div>
+                            <div className="space-y-2 max-h-32 overflow-y-auto">
+                              {aiMatches.slice(0, 2).map((match, index) => (
+                                <div key={index} className="bg-white rounded border p-2 text-xs">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <div className="font-medium text-gray-800">
+                                        {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
+                                      </div>
+                                      <div className="text-gray-600">
+                                        {match.timeSlot.start} - {match.timeSlot.end}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-purple-600 font-medium">
+                                        {Math.round(match.compatibilityScore * 100)}%
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              {aiMatches.length > 2 && (
+                                <div className="text-xs text-gray-500 text-center">
+                                  他 {aiMatches.length - 2} 件のマッチング結果
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* シフト確定ボタン */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Calendar className="w-4 h-4 text-blue-600" />
+                            <h4 className="text-sm font-semibold text-blue-800">シフト確定</h4>
+                          </div>
+                          <p className="text-xs text-blue-700 mb-3">
+                            マッチング結果を確定してシフトを保存します
+                          </p>
+                          <button
+                            onClick={() => {
+                              if (aiMatches.length > 0) {
+                                // AIマッチング結果がある場合はそれを使用
+                                const shifts = convertAIMatchesToShifts(aiMatches, selectedDate);
+                                handleConfirmShiftsForDate(selectedDate, shifts);
+                              } else {
+                                // AIマッチング結果がない場合は従来の方法で確定
+                                handleConfirmShiftsForDate(selectedDate);
+                              }
+                            }}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                          >
+                            <Calendar className="w-4 h-4" />
+                            <span>シフトを確定</span>
+                          </button>
+                        </div>
                       </div>
                     );
                   }
