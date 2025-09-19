@@ -1564,7 +1564,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           alert('AIマッチングに失敗しました。時間帯やNGリストを確認してください。');
           return;
         }
-
+      } else {
+        console.log('希望シフトまたは募集シフトがありません');
+        alert(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n希望シフトと募集シフトの日付・時間帯が一致するものを確認してください。`);
+        return;
+      }
     } catch (error) {
       console.error('Error in handleConfirmShiftsForDate:', error);
       alert(`シフトの確定に失敗しました: ${(error as any).message || 'Unknown error'}`);
