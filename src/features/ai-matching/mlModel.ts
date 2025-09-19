@@ -94,14 +94,10 @@ export class MLModel {
    */
   private async loadTrainingData() {
     try {
-      // 確定シフトデータを取得
+      // 確定シフトデータを取得（embedded selectを削除して400エラーを回避）
       const { data: shifts, error: shiftsError } = await supabase
         .from('assigned_shifts')
-        .select(`
-          *,
-          pharmacist:pharmacist_id(id, name, email, user_type),
-          pharmacy:pharmacy_id(id, name, email, user_type)
-        `)
+        .select('*')
         .eq('status', 'confirmed')
         .order('created_at', { ascending: false })
         .limit(1000); // 最新1000件
