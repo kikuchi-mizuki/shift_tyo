@@ -374,9 +374,9 @@ export class AIMatchingEngine {
 
     if (!rs || !re || !ps || !pe) return false;
 
-    // 完全包含: 薬剤師の希望時間が薬局の募集時間を完全に包含していればマッチ
-    // つまり、薬剤師の開始時間 <= 薬局の開始時間 かつ 薬剤師の終了時間 >= 薬局の終了時間
-    return rs <= ps && re >= pe;
+    // オーバーラップ判定: 少しでも時間が重なればマッチ
+    // re > ps かつ rs < pe であれば時間帯が交差
+    return re > ps && rs < pe;
   }
 
   /**
