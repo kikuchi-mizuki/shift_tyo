@@ -69,11 +69,7 @@ export class DataCollector {
     try {
       const { data, error } = await supabase
         .from('assigned_shifts')
-        .select(`
-          *,
-          pharmacist:pharmacist_id(id, name, email),
-          pharmacy:pharmacy_id(id, name, email)
-        `)
+        .select('*')
         .eq('status', 'confirmed')
         .order('created_at', { ascending: false })
         .limit(1000); // 最新1000件
