@@ -2636,15 +2636,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
                           <div className="flex items-center space-x-2 mb-2">
                             <Brain className="w-4 h-4 text-purple-600" />
-                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果</h4>
+                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {aiMatches.length}件</h4>
                           </div>
-                          <div className="space-y-2">
-                            {aiMatches.slice(0, 3).map((match, index) => (
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {aiMatches.map((match, index) => (
                               <div key={index} className="bg-white rounded border p-2 text-xs">
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <div className="font-medium text-gray-800">
                                       {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
+                                    </div>
+                                    <div className="text-gray-600">
+                                      薬局: {userProfiles[match.pharmacy.id]?.name || 'Unknown'} / 店舗: {match.pharmacy.name || '店舗名なし'}
                                     </div>
                                     <div className="text-gray-600">
                                       {match.timeSlot.start} - {match.timeSlot.end}
@@ -2661,11 +2664,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 </div>
                               </div>
                             ))}
-                            {aiMatches.length > 3 && (
-                              <div className="text-xs text-gray-500 text-center">
-                                他 {aiMatches.length - 3} 件のマッチング結果
-                              </div>
-                            )}
                           </div>
                         </div>
                         <button
@@ -3423,145 +3421,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     console.log('マッチング分析結果:', matchingAnalysis);
                     logToRailway('マッチング分析結果:', matchingAnalysis);
                     
-                    // マッチング状況と不足薬局の表示
-                    if (matchingAnalysis.length > 0 || (dayPostings.length > 0 && dayRequests.length === 0)) {
+                    // 不足薬局の表示（マッチング状況とは独立）
+                    const shortagePharmacies = analyzePharmacyShortage(dayRequests, dayPostings);
+                    if (shortagePharmacies.length > 0) {
                       return (
-                        <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
+                        <div className="bg-red-50 rounded-lg border border-red-200 p-4">
                           <div className="flex items-center space-x-2 mb-3">
-                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                            <h4 className="text-xs font-semibold text-purple-800">マッチング状況</h4>
+                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <h4 className="text-xs font-semibold text-red-800">人数が不足している薬局</h4>
                           </div>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
-                            
-                            {/* 募集のみの場合の表示 */}
-                            {dayPostings.length > 0 && dayRequests.length === 0 && dayPostings.reduce((s: number, p: any) => s + (Number(p.required_staff) || 0), 0) > 0 && (
-                              <div className="bg-white rounded border px-2 py-1">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="text-xs font-medium text-gray-800">全体</div>
-                                  <div className="text-xs text-gray-500">
-                                    {dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0)}人必要 / 0人応募
-                                    <span className="text-red-600 ml-1">
-                                      (不足{dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0)}人)
-                                    </span>
-                                    <span className="text-blue-600 ml-1">(希望0人)</span>
+                            {shortagePharmacies.map((pharmacy: any, index: number) => {
+                              const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
+                              const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
+                              const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
+                              const timeLabel = (() => {
+                                const s = (pharmacy.start_time || '').toString();
+                                const e = (pharmacy.end_time || '').toString();
+                                if (s && e) return `${s.slice(0,5)}-${e.slice(0,5)}`;
+                                return '09:00-18:00';
+                              })();
+                              return (
+                                <div key={index} className="bg-white rounded border px-2 py-1">
+                                  <div className="flex items-start justify-between">
+                                    <div className="text-xs">
+                                      <div className="font-medium text-gray-800">{pharmacyName}{storeLabel}</div>
+                                      <div className="text-[11px] text-gray-600 mt-0.5">{timeLabel}</div>
+                                    </div>
+                                    <span className="text-xs text-red-600 font-medium">不足 {pharmacy.shortage}人</span>
                                   </div>
                                 </div>
-                                <div className="text-xs text-gray-600">
-                                  薬剤師からの希望がありません
-                                </div>
-                              </div>
-                            )}
-
-                            {/* マッチング分析結果の表示 */}
-                          {matchingAnalysis.filter((a: any) => (a.totalRequired || 0) > 0).map((analysis: any, index: number) => (
-                            <div key={index} className="bg-white rounded border px-2 py-1">
-                              <div className="flex items-center justify-between mb-2">
-                                  <div className="text-xs font-medium text-gray-800">
-                                    薬局: {analysis.pharmacyName} / 店舗: {analysis.storeName}
-                                  </div>
-                                <div className="text-xs text-gray-500">
-                                    {analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募
-                                </div>
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                  
-                                  {/* マッチング済みの薬剤師と薬局 */}
-                                  {analysis.matchedPharmacists.length > 0 && (
-                                    <div className="mb-2">
-                                      <div className="text-xs font-medium text-green-700 mb-1">✅ マッチング済み ({analysis.totalMatched}人):</div>
-                                      {analysis.matchedPharmacists.map((request: any, idx: number) => {
-                                        const pharmacistProfile = userProfiles[request.pharmacist_id];
-                                        const pharmacyProfile = userProfiles[analysis.matchedPharmacies[idx].pharmacy_id];
-                                        const storeName = analysis.matchedPharmacies[idx].store_name || '店舗名なし';
-                                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
-                                        const s = (request.start_time || '').toString();
-                                        const e = (request.end_time || '').toString();
-                                        const timeLabel = s && e ? `${s.slice(0,5)}-${e.slice(0,5)}` : (
-                                          request.time_slot === 'morning' ? '09:00-13:00' :
-                                          request.time_slot === 'afternoon' ? '13:00-18:00' :
-                                          (request.time_slot === 'full' || request.time_slot === 'fullday') ? '09:00-18:00' :
-                                          '要相談'
-                                        );
-                                      return (
-                                          <div key={idx} className="bg-green-50 px-2 py-1 rounded mb-1">
-                                            <div className="flex items-start justify-between">
-                                              <div className="text-xs">
-                                                <div>
-                                                  <span className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
-                                                  <span className="text-gray-500"> → </span>
-                                                  <span className="font-medium">{pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
-                                                </div>
-                                                <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
-                                                {storeName && (
-                                                  <div className="text-[11px] text-gray-500">（{storeName}）</div>
-                                                )}
-                                              </div>
-                                              <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                  
-                                  {/* 余裕薬剤師 */}
-                                  {analysis.excessPharmacists > 0 && (
-                                    <div className="mb-2">
-                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕薬剤師 ({analysis.excessPharmacists}人):</div>
-                                      {analysis.requests.slice(analysis.totalMatched).map((request: any, idx: number) => {
-                                        const pharmacistProfile = userProfiles[request.pharmacist_id];
-                                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
-                                        const s = (request.start_time || '').toString();
-                                        const e = (request.end_time || '').toString();
-                                        const timeLabel = s && e ? `${s.slice(0,5)}-${e.slice(0,5)}` : (
-                                          request.time_slot === 'morning' ? '09:00-13:00' :
-                                          request.time_slot === 'afternoon' ? '13:00-18:00' :
-                                          (request.time_slot === 'full' || request.time_slot === 'fullday') ? '09:00-18:00' :
-                                          '要相談'
-                                        );
-                                        return (
-                                          <div key={idx} className="bg-yellow-50 px-2 py-1 rounded mb-1">
-                                            <div className="text-xs">
-                                              <div className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
-                                              <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                  
-                                  {/* 不足の薬局 */}
-                              {analysis.shortagePharmacies && analysis.shortagePharmacies.length > 0 && (
-                                <div className="mb-2">
-                                      <div className="text-xs font-medium text-red-700 mb-1">🚨 不足している薬局 ({analysis.remainingRequired}人):</div>
-                                  {analysis.shortagePharmacies.map((ph: any, idx: number) => {
-                                    const pharmacyProfile = userProfiles[ph.pharmacy_id];
-                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
-                                    const storeLabel = ph.store_name ? `（${ph.store_name}）` : '';
-                                    const timeLabel = (() => {
-                                      const s = (ph.start_time || '').toString();
-                                      const e = (ph.end_time || '').toString();
-                                      if (s && e) return `${s.slice(0,5)}-${e.slice(0,5)}`;
-                                      return '09:00-18:00';
-                                    })();
-                                    return (
-                                      <div key={idx} className="bg-red-50 px-2 py-1 rounded mb-1">
-                                        <div className="flex items-start justify-between">
-                                          <div className="text-xs">
-                                            <div className="font-medium">{pharmacyName}{storeLabel}</div>
-                                            <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
-                                          </div>
-                                          <span className="text-xs text-red-600 font-medium">不足 {ph.remaining}人</span>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                              </div>
-                            </div>
-                          ))}
+                              );
+                            })}
                           </div>
                         </div>
                       );
