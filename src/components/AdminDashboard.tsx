@@ -293,6 +293,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         debugInfo += `募集詳細: データなし\n\n`;
       }
 
+      // 時間適合性の詳細分析を追加
+      debugInfo += `\n=== 時間適合性分析 ===\n`;
+      let compatibleCount = 0;
+      let incompatibleCount = 0;
+      
+      monthlyRequests.forEach((request, i) => {
+        debugInfo += `\n希望 ${i+1}: 薬剤師ID ${request.pharmacist_id}, 日付 ${request.date}, 時間 ${request.start_time}-${request.end_time}\n`;
+        
+        const compatiblePostings = monthlyPostings.filter(posting => {
+          if (posting.date !== request.date) return false;
+          
+          const rs = request.start_time;
+          const re = request.end_time;
+          const ps = posting.start_time;
+          const pe = posting.end_time;
+          
+          if (!rs || !re || !ps || !pe) return false;
+          
+          // 薬剤師が薬局の希望時間を完全に満たしているかチェック
+          const isCompatible = rs <= ps && re >= pe;
+          
+          debugInfo += `  - 募集 ${posting.id}: 薬局ID ${posting.pharmacy_id}, 時間 ${ps}-${pe}, 適合: ${isCompatible ? 'YES' : 'NO'}\n`;
+          
+          return isCompatible;
+        });
+        
+        if (compatiblePostings.length > 0) {
+          compatibleCount++;
+          debugInfo += `  → 適合する募集: ${compatiblePostings.length}件\n`;
+        } else {
+          incompatibleCount++;
+          debugInfo += `  → 適合する募集: 0件\n`;
+        }
+      });
+      
+      debugInfo += `\n適合性サマリー: 適合あり ${compatibleCount}件, 適合なし ${incompatibleCount}件\n`;
+
       // 1ヶ月分のマッチングを実行（重複防止付き）
       const monthlyMatches = await aiMatchingEngine.executeOptimalMatching(monthlyRequests, monthlyPostings, {
         useAPI: false, // APIを使わずにローカルマッチングで重複防止を確実に
