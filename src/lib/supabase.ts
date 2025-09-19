@@ -54,6 +54,12 @@ export const supabase = (() => {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false
+      },
+      global: {
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`
+        }
       }
     });
     
@@ -74,6 +80,17 @@ console.log('Supabase client created:', !!supabase);
 if (supabase) {
   console.log('Supabase client URL:', supabase.supabaseUrl);
   console.log('Supabase client key prefix:', supabase.supabaseKey?.substring(0, 20) + '...');
+  
+  // API keyが正しく設定されているかテスト
+  supabase.from('shift_requests').select('id').limit(1).then(({ data, error }) => {
+    if (error) {
+      console.error('Supabase API key test failed:', error);
+    } else {
+      console.log('Supabase API key test successful:', data);
+    }
+  }).catch(err => {
+    console.error('Supabase API key test error:', err);
+  });
 } else {
   console.error('Failed to create Supabase client!');
 }
