@@ -248,7 +248,7 @@ export const userProfiles = {
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.warn('Failed to fetch user profile:', error);
