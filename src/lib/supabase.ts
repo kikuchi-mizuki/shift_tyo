@@ -95,6 +95,20 @@ if (supabase) {
   console.error('Failed to create Supabase client!');
 }
 
+// Supabaseクライアントが利用可能かどうかを確認する関数
+export const isSupabaseReady = () => {
+  return !!supabase;
+};
+
+// Supabaseクライアントが利用可能になるまで待つ関数
+export const waitForSupabase = async (timeout = 5000) => {
+  const startTime = Date.now();
+  while (!supabase && (Date.now() - startTime) < timeout) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  return !!supabase;
+};
+
 // 認証関連のヘルパー関数
 export const auth = {
   // ログイン

@@ -1,9 +1,11 @@
 // src/lib/api.ts – Direct Supabase client calls (JWT認証エラー回避)
-import { supabase } from './supabase';
+import { supabase, waitForSupabase } from './supabase';
 
 async function getDirect(tableName: string, params?: Record<string, string | number>) {
-  if (!supabase) {
-    throw new Error('Supabase client not available');
+  // Supabaseクライアントが利用可能になるまで待つ
+  const isReady = await waitForSupabase();
+  if (!isReady) {
+    throw new Error('Supabase client not available after waiting');
   }
   
   let query = supabase.from(tableName).select('*');
