@@ -159,9 +159,10 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promi
       console.log(`Checking compatibility:`, {
         request_id: request.id,
         posting_id: posting.id,
-        request_time: `${request.start_time}-${request.end_time}`,
-        posting_time: `${posting.start_time}-${posting.end_time}`,
-        isCompatible
+        pharmacist_time: `${request.start_time}-${request.end_time}`,
+        pharmacy_time: `${posting.start_time}-${posting.end_time}`,
+        isCompatible,
+        logic: `pharmacist_start(${request.start_time}) <= pharmacy_start(${posting.start_time}) && pharmacist_end(${request.end_time}) >= pharmacy_end(${posting.end_time})`
       });
       
       if (
@@ -273,18 +274,19 @@ const executeHybridMatching = async (requests: any[], postings: any[]): Promise<
 
 /**
  * 基本的な互換性チェック
+ * 薬剤師が薬局の希望時間を完全に満たしているかチェック
  */
 const isBasicCompatible = (request: any, posting: any): boolean => {
-  const rs = request?.start_time;
-  const re = request?.end_time;
-  const ps = posting?.start_time;
-  const pe = posting?.end_time;
+  const rs = request?.start_time; // 薬剤師の開始時間
+  const re = request?.end_time;   // 薬剤師の終了時間
+  const ps = posting?.start_time; // 薬局の希望開始時間
+  const pe = posting?.end_time;   // 薬局の希望終了時間
 
   if (!rs || !re || !ps || !pe) return false;
 
-  // オーバーラップ判定: 少しでも時間が重なればマッチ
-  // re > ps かつ rs < pe であれば時間帯が交差
-  return re > ps && rs < pe;
+  // 薬剤師が薬局の希望時間を完全に満たしているかチェック
+  // 薬剤師の開始時間 <= 薬局の開始時間 かつ 薬剤師の終了時間 >= 薬局の終了時間
+  return rs <= ps && re >= pe;
 };
 
 /**
