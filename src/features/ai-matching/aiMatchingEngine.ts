@@ -135,11 +135,7 @@ export class AIMatchingEngine {
       // Supabaseから確定シフトを取得
       const { data, error } = await supabase
         .from('assigned_shifts')
-        .select(`
-          *,
-          pharmacist:pharmacist_id(id, name, email),
-          pharmacy:pharmacy_id(id, name, email)
-        `)
+        .select('*')
         .eq('status', 'confirmed');
 
       if (error) {
