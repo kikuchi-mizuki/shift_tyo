@@ -232,8 +232,14 @@ export class AIMatchingEngine {
     let actualRequests = requests;
     let actualPostings = postings;
     
+    console.log('=== SUPABASE CLIENT CHECK ===');
+    console.log('supabase exists:', !!supabase);
+    console.log('this.isInitialized:', this.isInitialized);
+    console.log('Condition result:', !!(supabase && this.isInitialized));
+    
     if (supabase && this.isInitialized) {
       try {
+        console.log('Attempting to fetch shift_requests...');
         // 実際のシフト希望データを取得（正しいカラム名を使用）
         const { data: shiftRequests, error: requestsError } = await supabase
           .from('shift_requests')
