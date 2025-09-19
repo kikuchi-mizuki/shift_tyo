@@ -324,6 +324,7 @@ const calculateAIScore = async (request: any, posting: any): Promise<number> => 
  */
 const getPharmacistProfile = async (pharmacistId: string): Promise<any> => {
   try {
+    // テーブルが存在しない場合のエラーハンドリング
     const { data, error } = await supabase
       .from('pharmacist_profiles')
       .select('*')
@@ -331,6 +332,15 @@ const getPharmacistProfile = async (pharmacistId: string): Promise<any> => {
       .single();
 
     if (error) {
+      // テーブルが存在しない場合はデフォルト値を返す
+      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+        console.warn('pharmacist_profiles table not found, using default profile');
+        return {
+          skills: [],
+          experience: 2,
+          average_satisfaction: 4.0
+        };
+      }
       console.error('Error fetching pharmacist profile:', error);
       return null;
     }
@@ -347,6 +357,7 @@ const getPharmacistProfile = async (pharmacistId: string): Promise<any> => {
  */
 const getPharmacyProfile = async (pharmacyId: string): Promise<any> => {
   try {
+    // テーブルが存在しない場合のエラーハンドリング
     const { data, error } = await supabase
       .from('pharmacy_profiles')
       .select('*')
@@ -354,6 +365,15 @@ const getPharmacyProfile = async (pharmacyId: string): Promise<any> => {
       .single();
 
     if (error) {
+      // テーブルが存在しない場合はデフォルト値を返す
+      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+        console.warn('pharmacy_profiles table not found, using default profile');
+        return {
+          required_skills: [],
+          experience_level: 'intermediate',
+          average_pharmacist_satisfaction: 4.0
+        };
+      }
       console.error('Error fetching pharmacy profile:', error);
       return null;
     }
@@ -439,6 +459,11 @@ const saveMatchingHistory = async (history: any): Promise<void> => {
       .insert(history);
 
     if (error) {
+      // テーブルが存在しない場合は警告のみ
+      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+        console.warn('matching_history table not found, skipping history save');
+        return;
+      }
       console.error('Error saving matching history:', error);
     }
   } catch (error) {
@@ -470,6 +495,11 @@ export const recordMatchOutcome = async (outcome: any): Promise<void> => {
       });
 
     if (error) {
+      // テーブルが存在しない場合は警告のみ
+      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+        console.warn('match_outcomes table not found, skipping outcome recording');
+        return;
+      }
       console.error('Error recording match outcome:', error);
     }
   } catch (error) {
@@ -489,6 +519,11 @@ export const getLearningData = async (limit: number = 1000): Promise<any[]> => {
       .limit(limit);
 
     if (error) {
+      // テーブルが存在しない場合は空配列を返す
+      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+        console.warn('learning_data table not found, returning empty array');
+        return [];
+      }
       console.error('Error fetching learning data:', error);
       return [];
     }
@@ -519,6 +554,16 @@ export const getMatchingStatistics = async (dateRange?: { start: string; end: st
     const { data, error } = await query.limit(100);
 
     if (error) {
+      // テーブルが存在しない場合はデフォルト統計を返す
+      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+        console.warn('matching_history table not found, returning default statistics');
+        return {
+          totalMatches: 0,
+          averageSuccessRate: 0,
+          averageExecutionTime: 0,
+          algorithmPerformance: {}
+        };
+      }
       console.error('Error fetching matching statistics:', error);
       return null;
     }
