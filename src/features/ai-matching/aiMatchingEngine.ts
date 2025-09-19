@@ -239,7 +239,8 @@ export class AIMatchingEngine {
         // 実際のシフト希望データを取得（正しいカラム名を使用）
         const { data: shiftRequests, error: requestsError } = await supabase
           .from('shift_requests')
-          .select('id, pharmacist_id, date, time_slot, start_time, end_time, priority, status, memo');
+          .select('id, pharmacist_id, date, time_slot, start_time, end_time, priority, status, memo')
+          .limit(10); // デバッグ用に制限
         
         if (!requestsError && shiftRequests) {
           actualRequests = shiftRequests;
@@ -258,7 +259,8 @@ export class AIMatchingEngine {
         // 実際のシフト募集データを取得（正しいカラム名を使用）
         const { data: shiftPostings, error: postingsError } = await supabase
           .from('shift_postings')
-          .select('id, pharmacy_id, date, time_slot, start_time, end_time, required_staff, status, memo, store_name');
+          .select('id, pharmacy_id, date, time_slot, start_time, end_time, required_staff, status, memo, store_name')
+          .limit(10); // デバッグ用に制限
         
         if (!postingsError && shiftPostings) {
           // スキーマ差異（required_people/notes）を吸収

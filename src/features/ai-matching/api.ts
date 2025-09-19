@@ -42,10 +42,20 @@ export const executeAIMatching = async (request: AIMatchingRequest): Promise<AIM
   
   try {
     console.log('AI Matching API called:', request);
+    console.log('Requests data:', request.requests);
+    console.log('Postings data:', request.postings);
     
     // 基本的なバリデーション
     if (!request.date || !request.requests || !request.postings) {
       throw new Error('Invalid request parameters');
+    }
+    
+    // データの存在確認
+    if (request.requests.length === 0) {
+      console.warn('No shift requests found');
+    }
+    if (request.postings.length === 0) {
+      console.warn('No shift postings found');
     }
 
     // マッチングアルゴリズムの選択
