@@ -634,6 +634,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           } catch (e) {
             console.warn('Failed to update legacy ng_list on user_profiles for pharmacy', profile.id, e);
           }
+        } else {
+          // 全て外した場合も、旧カラムを空配列に明示更新
+          try {
+            await supabase
+              .from('user_profiles')
+              .update({ ng_list: [] })
+              .eq('id', profile.id);
+          } catch (e) {
+            console.warn('Failed to clear legacy ng_list on user_profiles for pharmacy', profile.id, e);
+          }
         }
       } else {
         // その他の場合は従来通りng_listを保存
