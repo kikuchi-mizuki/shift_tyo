@@ -158,6 +158,7 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promi
           pharmacist_id: request.pharmacist_id,
           pharmacy_id: posting.pharmacy_id,
           date: posting.date,
+          time_slot: posting.time_slot, // time_slotを追加
           start_time: posting.start_time,
           end_time: posting.end_time,
           status: 'confirmed',
@@ -196,6 +197,7 @@ const executeAIBasedMatching = async (requests: any[], postings: any[]): Promise
             pharmacist_id: request.pharmacist_id,
             pharmacy_id: posting.pharmacy_id,
             date: posting.date,
+            time_slot: posting.time_slot, // time_slotを追加
             start_time: posting.start_time,
             end_time: posting.end_time,
             status: 'confirmed',
