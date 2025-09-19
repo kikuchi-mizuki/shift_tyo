@@ -102,19 +102,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
     // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
     const sortedRequests = requests.sort((a: any, b: any) => {
-      const aRating = getPharmacistRating(a.pharmacist_id);
-      const bRating = getPharmacistRating(b.pharmacist_id);
+          const aRating = getPharmacistRating(a.pharmacist_id);
+          const bRating = getPharmacistRating(b.pharmacist_id);
       
       // 評価が異なる場合は評価の高い順
-      if (aRating !== bRating) {
-        return bRating - aRating;
-      }
+          if (aRating !== bRating) {
+            return bRating - aRating;
+          }
       
       // 評価が同じ場合は優先度順
-      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
-    });
-
+          const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+          return priorityOrder[b.priority] - priorityOrder[a.priority];
+        });
+      
     let remainingRequired = postings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
 
     // 各薬局の必要人数を管理
@@ -124,7 +124,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }));
 
     // 時間範囲ベースのマッチング（優先順位順に薬剤師をマッチング）
-    sortedRequests.forEach((request: any) => {
+      sortedRequests.forEach((request: any) => {
       if (remainingRequired <= 0) return;
 
       const pharmacist = getProfile(request.pharmacist_id);
@@ -262,6 +262,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
     setAiMatchingLoading(true);
     try {
+      // 既存のマッチング結果をクリア
+      setAiMatches([]);
+      setAiMatchesByDate({});
+      console.log('既存のマッチング結果をクリアしました');
+
       // 現在の月の全ての日付を取得
       const currentMonth = currentDate.getMonth();
       const currentYear = currentDate.getFullYear();
@@ -305,7 +310,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       setAiMatchesByDate(matchesByDate);
 
       console.log(`1ヶ月分のAIマッチング完了: ${monthlyMatches.length}件のマッチ`);
-      alert(`${monthlyMatches.length}件のマッチングが完了しました。各日付をクリックしてシフトを確定してください。`);
+      
+      // マッチング結果のサマリーを表示
+      const totalMatches = monthlyMatches.length;
+      const datesWithMatches = Object.keys(matchesByDate).length;
+      alert(`1ヶ月分のマッチングが完了しました。\n\nマッチング件数: ${totalMatches}件\nマッチング日数: ${datesWithMatches}日\n\n右側のパネルでマッチング状況を確認できます。`);
     } catch (error) {
       console.error('1ヶ月分のAIマッチングに失敗:', error);
       alert('1ヶ月分のAIマッチングに失敗しました。');
@@ -350,7 +359,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
       const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
       
-      return {
+      return { 
         pharmacist_id: match.pharmacist.id,
         pharmacy_id: match.pharmacy.id,
         date: date,
@@ -1510,8 +1519,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         
         console.log(`日付 ${date}: ${predefinedShifts.length}件の事前定義シフトを保存しました`);
         
-        // データを再読み込み
+        // データを再読み込み（管理者画面）
         await loadAssignedShifts();
+        
+        // 他のダッシュボードでも更新されるように、ページリロードを提案
+        alert(`${predefinedShifts.length}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
         return;
       }
 
@@ -1537,7 +1549,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             algorithm: 'hybrid',
             priority: 'pharmacy_satisfaction'
           }, userProfiles, ratings);
-        } else {
+                } else {
           // 簡易AIマッチングロジック
           console.log('簡易AIマッチングを使用します');
           aiMatches = await executeSimpleAIMatching(dayRequests, dayPostings);
@@ -1555,11 +1567,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             return {
               pharmacist_id: match.pharmacist.id,
               pharmacy_id: match.pharmacy.id,
-              date: date,
+                  date: date,
               start_time: match.timeSlot.start,
               end_time: match.timeSlot.end,
-              status: 'confirmed',
-              store_name: storeName,
+                  status: 'confirmed',
+                  store_name: storeName,
               memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
             };
           });
@@ -1572,14 +1584,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           
           console.log(`AIマッチング完了: ${aiShifts.length}件のシフトを確定しました`);
           
-          // データを再読み込み
+          // データを再読み込み（管理者画面）
           await loadAssignedShifts();
+          
+          // 他のダッシュボードでも更新されるように、ページリロードを提案
+          alert(`${aiShifts.length}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
           return;
-        } else {
+                } else {
           console.log('AIマッチングでマッチが見つかりませんでした');
           alert(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n時間帯やNGリストを確認してください。`);
-          return;
-        }
+        return;
+      }
       } else {
         console.log('希望シフトまたは募集シフトがありません');
         alert(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n希望シフトと募集シフトの日付・時間帯が一致するものを確認してください。`);
@@ -1926,38 +1941,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     if (validRequests.length === 0 || validPostings.length === 0) {
       console.log(`時間範囲がある希望または募集がないためスキップ`);
       return;
-    }
-    
-    // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
-    const sortedRequests = validRequests.sort((a, b) => {
-      const aRating = getPharmacistRating(a.pharmacist_id);
-      const bRating = getPharmacistRating(b.pharmacist_id);
-      
-      // 評価が異なる場合は評価の高い順
-      if (aRating !== bRating) {
-        return bRating - aRating;
       }
       
-      // 評価が同じ場合は優先度順
-      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
-    });
-    
-    // 各薬局の必要人数を管理
+      // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
+    const sortedRequests = validRequests.sort((a, b) => {
+        const aRating = getPharmacistRating(a.pharmacist_id);
+        const bRating = getPharmacistRating(b.pharmacist_id);
+        
+        // 評価が異なる場合は評価の高い順
+        if (aRating !== bRating) {
+          return bRating - aRating;
+        }
+        
+        // 評価が同じ場合は優先度順
+        const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+        return priorityOrder[b.priority] - priorityOrder[a.priority];
+      });
+      
+      // 各薬局の必要人数を管理
     const pharmacyNeeds = validPostings.map(p => ({
-      ...p,
-      remaining: Number(p.required_staff) || 0
-    }));
-    
-    // マッチング処理
-    for (const request of sortedRequests) {
-      for (const pharmacyNeed of pharmacyNeeds) {
-        if (pharmacyNeed.remaining <= 0) continue;
-        
+        ...p,
+        remaining: Number(p.required_staff) || 0
+      }));
+      
+      // マッチング処理
+      for (const request of sortedRequests) {
+        for (const pharmacyNeed of pharmacyNeeds) {
+          if (pharmacyNeed.remaining <= 0) continue;
+          
         // NGリストチェック
-        const pharmacist = userProfiles[request.pharmacist_id];
-        const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
-        
+          const pharmacist = userProfiles[request.pharmacist_id];
+          const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
+          
         const pharmacistNg = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
         const pharmacyNg = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
         
@@ -1966,47 +1981,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         
         // 時間範囲ベースのマッチング
         const isRangeCompatible = (request: any, posting: any) => {
-          const rs = request?.start_time;
-          const re = request?.end_time;
-          const ps = posting?.start_time;
-          const pe = posting?.end_time;
+            const rs = request?.start_time;
+            const re = request?.end_time;
+            const ps = posting?.start_time;
+            const pe = posting?.end_time;
           
           // 両方に時間範囲がある場合は重複関係で判定
-          if (rs && re && ps && pe) {
+            if (rs && re && ps && pe) {
             // 重複判定: 薬剤師の希望時間が薬局の募集時間と重複していればマッチ
             // つまり、薬剤師が薬局の応募時間を満たしていればマッチ
             return rs < pe && re > ps;
-          }
+            }
           
           // 片方でも時間範囲がない場合はマッチしない
           return false;
-        };
-        
-        if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
-          console.log(`✅ 時間範囲マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
-          
-          // 確定シフトを作成
-          const confirmedShift = {
-            pharmacist_id: request.pharmacist_id,
-            pharmacy_id: pharmacyNeed.pharmacy_id,
-            date: date,
-            start_time: pharmacyNeed.start_time,
-            end_time: pharmacyNeed.end_time,
-            status: 'confirmed',
-            store_name: pharmacyNeed.store_name || pharmacy?.name || '',
-            memo: `マッチング: ${pharmacist?.name} → ${pharmacy?.name}`
           };
           
-          console.log('作成する確定シフト:', confirmedShift);
-          matchedShifts.push(confirmedShift);
-          pharmacyNeed.remaining--;
-          break;
-        } else {
-          // マッチング失敗の理由をログ出力
-          if (blockedByPharmacist) {
-            console.log(`❌ マッチング失敗: 薬剤師NGリストに薬局が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
-          } else if (blockedByPharmacy) {
-            console.log(`❌ マッチング失敗: 薬局NGリストに薬剤師が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+        if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
+          console.log(`✅ 時間範囲マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
+            
+            // 確定シフトを作成
+            const confirmedShift = {
+              pharmacist_id: request.pharmacist_id,
+              pharmacy_id: pharmacyNeed.pharmacy_id,
+              date: date,
+            start_time: pharmacyNeed.start_time,
+            end_time: pharmacyNeed.end_time,
+              status: 'confirmed',
+              store_name: pharmacyNeed.store_name || pharmacy?.name || '',
+              memo: `マッチング: ${pharmacist?.name} → ${pharmacy?.name}`
+            };
+            
+            console.log('作成する確定シフト:', confirmedShift);
+            matchedShifts.push(confirmedShift);
+            pharmacyNeed.remaining--;
+            break;
+          } else {
+            // マッチング失敗の理由をログ出力
+            if (blockedByPharmacist) {
+              console.log(`❌ マッチング失敗: 薬剤師NGリストに薬局が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+            } else if (blockedByPharmacy) {
+              console.log(`❌ マッチング失敗: 薬局NGリストに薬剤師が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
           } else if (!isRangeCompatible(request, pharmacyNeed)) {
             console.log(`❌ マッチング失敗: 時間範囲不適合 (薬剤師:${request.start_time}-${request.end_time} vs 薬局:${pharmacyNeed.start_time}-${pharmacyNeed.end_time})`);
           }
@@ -2119,7 +2134,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           </div>
         </div>
       )}
-
+      
       <div className={`border rounded-lg p-4 ${systemStatus === 'confirmed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -2306,20 +2321,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 
                 // 薬剤師を評価順にソート
                 const sortedRequests = dayRequests.sort((a: any, b: any) => {
-                  const aRating = getPharmacistRating(a.pharmacist_id);
-                  const bRating = getPharmacistRating(b.pharmacist_id);
+                      const aRating = getPharmacistRating(a.pharmacist_id);
+                      const bRating = getPharmacistRating(b.pharmacist_id);
                   if (aRating !== bRating) return bRating - aRating;
-                  const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-                  return priorityOrder[b.priority] - priorityOrder[a.priority];
-                });
+                      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+                      return priorityOrder[b.priority] - priorityOrder[a.priority];
+                    });
 
-                // 各薬局の必要人数を管理
+                  // 各薬局の必要人数を管理
                 const pharmacyNeeds = dayPostings.map((p: any) => ({
-                  ...p,
-                  remaining: Number(p.required_staff) || 0
-                }));
+                    ...p,
+                    remaining: Number(p.required_staff) || 0
+                  }));
 
-                sortedRequests.forEach((request: any) => {
+                  sortedRequests.forEach((request: any) => {
                   const pharmacist = getProfile(request.pharmacist_id);
                   const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
                   
@@ -2448,7 +2463,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (
                         <div className="relative group">
                           <div className="text-[7px] sm:text-[8px] space-y-0.5">
-                            {/* マッチング数バッジを削除（右パネルと重複するため） */}
+                            {/* AIマッチング結果のパッチ表示 */}
+                            {aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0 && (
+                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
+                                <span className="sm:hidden">マ{aiMatchesByDate[dateStr].length}</span>
+                                <span className="hidden sm:inline">マッチ {aiMatchesByDate[dateStr].length}</span>
+                              </div>
+                            )}
                             {/* 希望のみの日（募集が無い）を表示 */}
                             {matchingStatus.type === 'requests_only' && (
                               <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
@@ -2509,7 +2530,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         }
                         return null;
                       })()}
-
+                      
                       {/* 確定は上のブロックで件数ラベルのみ表示 */}
                     </>
                   )}
@@ -2661,7 +2682,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       </div>
                     );
                   }
-
+                  
                   // 確定シフトがない日で、希望または募集がある場合のみボタンを表示
                   if (dayAssignedShifts.length === 0 && (dayRequests.length > 0 || dayPostings.length > 0)) {
                     // 選択された日付のマッチング結果を取得
@@ -2750,7 +2771,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <p className="text-xs text-blue-700 mb-3">
                             {dayMatches.length > 0 ? 'マッチング結果を確定してシフトを保存します' : '従来の方法でシフトを確定します'}
                           </p>
-                          <button
+                        <button
                             onClick={() => {
                               if (dayMatches.length > 0) {
                                 // AIマッチング結果がある場合はそれを使用
@@ -2761,11 +2782,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 handleConfirmShiftsForDate(selectedDate);
                               }
                             }}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
-                          >
-                            <Calendar className="w-4 h-4" />
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                        >
+                          <Calendar className="w-4 h-4" />
                             <span>シフトを確定</span>
-                          </button>
+                        </button>
                         </div>
                       </div>
                     );
@@ -3039,8 +3060,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               onChange={(e) => setNewPosting({ ...newPosting, required_staff: e.target.value })}
                               placeholder="必要人数"
                             />
-                            <input
-                              className="text-xs border rounded px-2 py-1"
+                                <input
+                                  className="text-xs border rounded px-2 py-1"
                               value={newPosting.store_name}
                               onChange={(e) => setNewPosting({ ...newPosting, store_name: e.target.value })}
                               placeholder="店舗名（任意）"
@@ -3339,9 +3360,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         const aRating = getPharmacistRating(a.pharmacist_id);
                         const bRating = getPharmacistRating(b.pharmacist_id);
                         if (aRating !== bRating) return bRating - aRating;
-                        const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-                        return priorityOrder[b.priority] - priorityOrder[a.priority];
-                      });
+                      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+                      return priorityOrder[b.priority] - priorityOrder[a.priority];
+                    });
                     
                     // 各薬局の必要人数を管理
                     const pharmacyNeeds = dayPostings.map((p: any) => ({
@@ -3363,31 +3384,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         
                         const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
                         const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
-                        
-                        // 時間範囲互換性をチェック
-                        const rs = request?.start_time;
-                        const re = request?.end_time;
+                            
+                            // 時間範囲互換性をチェック
+                            const rs = request?.start_time;
+                            const re = request?.end_time;
                         const ps = pharmacyNeed?.start_time;
                         const pe = pharmacyNeed?.end_time;
                         
                         // 両方に時間範囲がある場合は包含関係で判定
                         let isCompatible = false;
-                        if (rs && re && ps && pe) {
+                            if (rs && re && ps && pe) {
                           // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
                           isCompatible = rs <= ps && re >= pe;
                         }
                         
                         if (!blockedByPharmacist && !blockedByPharmacy && isCompatible) {
-                          // 右側パネル用のマッチングログ
+                              // 右側パネル用のマッチングログ
                           console.log(`✅ 右パネル時間範囲マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
-                          
+                              
                           matchedCount++;
-                          matchedPharmacists.push(request);
+                              matchedPharmacists.push(request);
                           matchedPharmacies.push(pharmacyNeed);
                           pharmacyNeed.remaining--;
                           break;
+                          }
                         }
-                      }
                     });
                     
                     // 結果を更新
@@ -3402,7 +3423,149 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     console.log('マッチング分析結果:', matchingAnalysis);
                     logToRailway('マッチング分析結果:', matchingAnalysis);
                     
-                    // マッチング状況表示を削除（カレンダーと重複するため）
+                    // マッチング状況と不足薬局の表示
+                    if (matchingAnalysis.length > 0 || (dayPostings.length > 0 && dayRequests.length === 0)) {
+                      return (
+                        <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                            <h4 className="text-xs font-semibold text-purple-800">マッチング状況</h4>
+                          </div>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            
+                            {/* 募集のみの場合の表示 */}
+                            {dayPostings.length > 0 && dayRequests.length === 0 && dayPostings.reduce((s: number, p: any) => s + (Number(p.required_staff) || 0), 0) > 0 && (
+                              <div className="bg-white rounded border px-2 py-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-xs font-medium text-gray-800">全体</div>
+                                  <div className="text-xs text-gray-500">
+                                    {dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0)}人必要 / 0人応募
+                                    <span className="text-red-600 ml-1">
+                                      (不足{dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0)}人)
+                                    </span>
+                                    <span className="text-blue-600 ml-1">(希望0人)</span>
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-600">
+                                  薬剤師からの希望がありません
+                                </div>
+                              </div>
+                            )}
+
+                            {/* マッチング分析結果の表示 */}
+                          {matchingAnalysis.filter((a: any) => (a.totalRequired || 0) > 0).map((analysis: any, index: number) => (
+                            <div key={index} className="bg-white rounded border px-2 py-1">
+                              <div className="flex items-center justify-between mb-2">
+                                  <div className="text-xs font-medium text-gray-800">
+                                    薬局: {analysis.pharmacyName} / 店舗: {analysis.storeName}
+                                  </div>
+                                <div className="text-xs text-gray-500">
+                                    {analysis.totalRequired}人必要 / {analysis.totalAvailable}人応募
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                  
+                                  {/* マッチング済みの薬剤師と薬局 */}
+                                  {analysis.matchedPharmacists.length > 0 && (
+                                    <div className="mb-2">
+                                      <div className="text-xs font-medium text-green-700 mb-1">✅ マッチング済み ({analysis.totalMatched}人):</div>
+                                      {analysis.matchedPharmacists.map((request: any, idx: number) => {
+                                        const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                        const pharmacyProfile = userProfiles[analysis.matchedPharmacies[idx].pharmacy_id];
+                                        const storeName = analysis.matchedPharmacies[idx].store_name || '店舗名なし';
+                                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                                        const s = (request.start_time || '').toString();
+                                        const e = (request.end_time || '').toString();
+                                        const timeLabel = s && e ? `${s.slice(0,5)}-${e.slice(0,5)}` : (
+                                          request.time_slot === 'morning' ? '09:00-13:00' :
+                                          request.time_slot === 'afternoon' ? '13:00-18:00' :
+                                          (request.time_slot === 'full' || request.time_slot === 'fullday') ? '09:00-18:00' :
+                                          '要相談'
+                                        );
+                                      return (
+                                          <div key={idx} className="bg-green-50 px-2 py-1 rounded mb-1">
+                                            <div className="flex items-start justify-between">
+                                              <div className="text-xs">
+                                                <div>
+                                                  <span className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</span>
+                                                  <span className="text-gray-500"> → </span>
+                                                  <span className="font-medium">{pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定'}</span>
+                                                </div>
+                                                <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
+                                                {storeName && (
+                                                  <div className="text-[11px] text-gray-500">（{storeName}）</div>
+                                                )}
+                                              </div>
+                                              <span className={`text-xs ${priorityColor}`}>({request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'})</span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  
+                                  {/* 余裕薬剤師 */}
+                                  {analysis.excessPharmacists > 0 && (
+                                    <div className="mb-2">
+                                      <div className="text-xs font-medium text-yellow-700 mb-1">⏳ 余裕薬剤師 ({analysis.excessPharmacists}人):</div>
+                                      {analysis.requests.slice(analysis.totalMatched).map((request: any, idx: number) => {
+                                        const pharmacistProfile = userProfiles[request.pharmacist_id];
+                                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
+                                        const s = (request.start_time || '').toString();
+                                        const e = (request.end_time || '').toString();
+                                        const timeLabel = s && e ? `${s.slice(0,5)}-${e.slice(0,5)}` : (
+                                          request.time_slot === 'morning' ? '09:00-13:00' :
+                                          request.time_slot === 'afternoon' ? '13:00-18:00' :
+                                          (request.time_slot === 'full' || request.time_slot === 'fullday') ? '09:00-18:00' :
+                                          '要相談'
+                                        );
+                                        return (
+                                          <div key={idx} className="bg-yellow-50 px-2 py-1 rounded mb-1">
+                                            <div className="text-xs">
+                                              <div className="font-medium">{pharmacistProfile?.name || pharmacistProfile?.email || '名前未設定'}</div>
+                                              <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  
+                                  {/* 不足の薬局 */}
+                              {analysis.shortagePharmacies && analysis.shortagePharmacies.length > 0 && (
+                                <div className="mb-2">
+                                      <div className="text-xs font-medium text-red-700 mb-1">🚨 不足している薬局 ({analysis.remainingRequired}人):</div>
+                                  {analysis.shortagePharmacies.map((ph: any, idx: number) => {
+                                    const pharmacyProfile = userProfiles[ph.pharmacy_id];
+                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
+                                    const storeLabel = ph.store_name ? `（${ph.store_name}）` : '';
+                                    const timeLabel = (() => {
+                                      const s = (ph.start_time || '').toString();
+                                      const e = (ph.end_time || '').toString();
+                                      if (s && e) return `${s.slice(0,5)}-${e.slice(0,5)}`;
+                                      return '09:00-18:00';
+                                    })();
+                                    return (
+                                      <div key={idx} className="bg-red-50 px-2 py-1 rounded mb-1">
+                                        <div className="flex items-start justify-between">
+                                          <div className="text-xs">
+                                            <div className="font-medium">{pharmacyName}{storeLabel}</div>
+                                            <div className="text-[11px] text-gray-800 mt-0.5">{timeLabel}</div>
+                                          </div>
+                                          <span className="text-xs text-red-600 font-medium">不足 {ph.remaining}人</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              </div>
+                            </div>
+                          ))}
+                          </div>
+                        </div>
+                      );
+                    }
                     return null;
                   })()}
                   
@@ -3564,27 +3727,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             {editingUserId === pharmacy.id ? (
                               <div className="text-xs">
                                 <div className="flex flex-wrap gap-2 mb-2">
-                                  {Object.entries(userProfiles)
-                                    .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacist')
-                                    .map(([id, profile]: [string, any]) => {
+                                        {Object.entries(userProfiles)
+                                          .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacist')
+                                          .map(([id, profile]: [string, any]) => {
                                       const checked = userEditForm.ng_list.includes(id);
-                                      return (
-                                        <label key={id} className="inline-flex items-center gap-1 border rounded px-2 py-1 cursor-pointer">
-                                          <input
-                                            type="checkbox"
-                                            className="accent-red-600"
-                                            checked={checked}
-                                            onChange={(e) => {
-                                              const next = new Set<string>(userEditForm.ng_list);
+                                            return (
+                                              <label key={id} className="inline-flex items-center gap-1 border rounded px-2 py-1 cursor-pointer">
+                                                <input
+                                                  type="checkbox"
+                                                  className="accent-red-600"
+                                                  checked={checked}
+                                                  onChange={(e) => {
+                                                    const next = new Set<string>(userEditForm.ng_list);
                                               if (e.target.checked) next.add(id); else next.delete(id);
-                                              setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
-                                            }}
-                                          />
-                                          <span>{(profile as any).name || (profile as any).email || id}</span>
-                                        </label>
-                                      );
-                                    })}
-                                </div>
+                                                    setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                                  }}
+                                                />
+                                                <span>{(profile as any).name || (profile as any).email || id}</span>
+                                              </label>
+                                            );
+                                          })}
+                                      </div>
                               </div>
                             ) : (
                               <div className="text-sm">
