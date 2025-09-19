@@ -563,7 +563,7 @@ export class AIMatchingEngine {
     options?: {
       useAPI?: boolean;
       algorithm?: 'rule_based' | 'ai_based' | 'hybrid';
-      priority?: 'satisfaction' | 'efficiency' | 'balance';
+      priority?: 'satisfaction' | 'efficiency' | 'balance' | 'pharmacy_satisfaction';
     }
   ): Promise<MatchCandidate[]> {
     // APIを使用する場合はAPI経由でマッチングを実行
@@ -644,16 +644,143 @@ export class AIMatchingEngine {
     // フォールバック: ローカルマッチング
     const candidates = await this.generateMatchCandidates(requests, postings);
     
-    // 最適化アルゴリズム（貪欲法）
+    // 薬局の応募満足度を優先する最適化アルゴリズム
+    return await this.executePharmacySatisfactionMatching(candidates, requests, postings, options?.priority);
+  }
+
+  /**
+   * 薬局の応募満足度を優先するマッチングアルゴリズム
+   */
+  private async executePharmacySatisfactionMatching(
+    candidates: MatchCandidate[],
+    requests: any[],
+    postings: any[],
+    priority?: string
+  ): Promise<MatchCandidate[]> {
+    if (priority !== 'pharmacy_satisfaction') {
+      // 従来の貪欲法アルゴリズム
+      return this.executeGreedyMatching(candidates);
+    }
+
+    console.log('薬局の応募満足度を優先したマッチングを実行');
+
+    // 薬局ごとの募集状況を分析
+    const pharmacyNeeds = this.analyzePharmacyNeeds(postings);
+    
+    // 薬剤師の評価と優先度を考慮
+    const pharmacistScores = this.calculatePharmacistScores(requests);
+    
+    // 薬局の応募満足度を最大化するマッチング
     const selectedMatches: MatchCandidate[] = [];
     const usedPharmacists = new Set<string>();
     const usedPharmacies = new Set<string>();
 
-    for (const candidate of candidates) {
+    // 薬局の需要が高い順にソート
+    const sortedPharmacies = Object.entries(pharmacyNeeds)
+      .sort(([, a], [, b]) => b.priority - a.priority);
+
+    for (const [pharmacyId, need] of sortedPharmacies) {
+      if (usedPharmacies.has(pharmacyId)) continue;
+
+      // この薬局に対する候補を取得
+      const pharmacyCandidates = candidates.filter(c => 
+        c.pharmacy.id === pharmacyId && 
+        !usedPharmacists.has(c.pharmacist.id)
+      );
+
+      if (pharmacyCandidates.length === 0) continue;
+
+      // 薬剤師の評価と適合度を考慮して最適な候補を選択
+      const bestCandidate = pharmacyCandidates.reduce((best, current) => {
+        const currentScore = this.calculatePharmacySatisfactionScore(current, pharmacistScores);
+        const bestScore = this.calculatePharmacySatisfactionScore(best, pharmacistScores);
+        return currentScore > bestScore ? current : best;
+      });
+
+      if (bestCandidate.compatibilityScore > 0.3) {
+        selectedMatches.push(bestCandidate);
+        usedPharmacists.add(bestCandidate.pharmacist.id);
+        usedPharmacies.add(bestCandidate.pharmacy.id);
+      }
+    }
+
+    // 残りの薬剤師と薬局で従来のマッチングを実行
+    const remainingCandidates = candidates.filter(c => 
+      !usedPharmacists.has(c.pharmacist.id) && !usedPharmacies.has(c.pharmacy.id)
+    );
+
+    const remainingMatches = this.executeGreedyMatching(remainingCandidates);
+    selectedMatches.push(...remainingMatches);
+
+    console.log(`薬局応募満足度優先マッチング完了: ${selectedMatches.length}件`);
+    return selectedMatches;
+  }
+
+  /**
+   * 薬局の需要を分析
+   */
+  private analyzePharmacyNeeds(postings: any[]): { [pharmacyId: string]: { count: number; priority: number } } {
+    const needs: { [pharmacyId: string]: { count: number; priority: number } } = {};
+    
+    for (const posting of postings) {
+      const pharmacyId = posting.pharmacy_id;
+      if (!needs[pharmacyId]) {
+        needs[pharmacyId] = { count: 0, priority: 0 };
+      }
+      needs[pharmacyId].count++;
+      
+      // 優先度の計算（緊急度、過去の実績など）
+      needs[pharmacyId].priority += this.calculatePostingPriority(posting);
+    }
+    
+    return needs;
+  }
+
+  /**
+   * 薬剤師のスコアを計算
+   */
+  private calculatePharmacistScores(requests: any[]): { [pharmacistId: string]: number } {
+    const scores: { [pharmacistId: string]: number } = {};
+    
+    for (const request of requests) {
+      const pharmacistId = request.pharmacist_id;
+      // 評価、経験、過去の実績などを考慮したスコア
+      scores[pharmacistId] = this.calculatePharmacistRating(request);
+    }
+    
+    return scores;
+  }
+
+  /**
+   * 薬局満足度スコアを計算
+   */
+  private calculatePharmacySatisfactionScore(
+    candidate: MatchCandidate,
+    pharmacistScores: { [pharmacistId: string]: number }
+  ): number {
+    const baseScore = candidate.compatibilityScore;
+    const pharmacistScore = pharmacistScores[candidate.pharmacist.id] || 0;
+    
+    // 薬剤師の評価を重視（70%）、適合度を重視（30%）
+    return baseScore * 0.3 + pharmacistScore * 0.7;
+  }
+
+  /**
+   * 従来の貪欲法マッチング
+   */
+  private executeGreedyMatching(candidates: MatchCandidate[]): MatchCandidate[] {
+    const selectedMatches: MatchCandidate[] = [];
+    const usedPharmacists = new Set<string>();
+    const usedPharmacies = new Set<string>();
+
+    // 適合度順にソート
+    const sortedCandidates = candidates.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+
+    for (const candidate of sortedCandidates) {
       if (
         !usedPharmacists.has(candidate.pharmacist.id) &&
         !usedPharmacies.has(candidate.pharmacy.id) &&
-        candidate.compatibilityScore > 0.3 // 最低スコア閾値
+        candidate.compatibilityScore > 0.3
       ) {
         selectedMatches.push(candidate);
         usedPharmacists.add(candidate.pharmacist.id);
@@ -662,6 +789,30 @@ export class AIMatchingEngine {
     }
 
     return selectedMatches;
+  }
+
+  /**
+   * 募集の優先度を計算
+   */
+  private calculatePostingPriority(posting: any): number {
+    let priority = 1;
+    
+    // 緊急度による優先度調整
+    if (posting.urgency === 'high') priority += 2;
+    else if (posting.urgency === 'medium') priority += 1;
+    
+    // 過去の実績による優先度調整
+    // 実装は簡略化
+    
+    return priority;
+  }
+
+  /**
+   * 薬剤師の評価を計算
+   */
+  private calculatePharmacistRating(request: any): number {
+    // 実際の実装では、評価、経験、過去の実績などを考慮
+    return Math.random() * 0.5 + 0.5; // 0.5-1.0の範囲
   }
 }
 

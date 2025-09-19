@@ -112,7 +112,118 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     return matches;
   };
 
-  // AIマッチングの実行
+  // 日付別のAIマッチング結果を保存する状態
+  const [aiMatchesByDate, setAiMatchesByDate] = useState<{ [date: string]: any[] }>({});
+
+  // 薬局の不足状況を分析する関数
+  const analyzePharmacyShortage = (date: string) => {
+    const dayRequests = requests.filter((r: any) => r.date === date);
+    const dayPostings = postings.filter((p: any) => p.date === date);
+    const dayMatches = aiMatchesByDate[date] || [];
+
+    // 薬局ごとの募集数とマッチ数を計算
+    const pharmacyNeeds: { [pharmacyId: string]: { 
+      name: string; 
+      required: number; 
+      matched: number; 
+      shortage: number; 
+      postings: any[] 
+    } } = {};
+
+    // 募集数を集計
+    dayPostings.forEach(posting => {
+      const pharmacyId = posting.pharmacy_id;
+      if (!pharmacyNeeds[pharmacyId]) {
+        pharmacyNeeds[pharmacyId] = {
+          name: posting.store_name || userProfiles[pharmacyId]?.name || 'Unknown',
+          required: 0,
+          matched: 0,
+          shortage: 0,
+          postings: []
+        };
+      }
+      pharmacyNeeds[pharmacyId].required++;
+      pharmacyNeeds[pharmacyId].postings.push(posting);
+    });
+
+    // マッチ数を集計
+    dayMatches.forEach(match => {
+      const pharmacyId = match.pharmacy.id;
+      if (pharmacyNeeds[pharmacyId]) {
+        pharmacyNeeds[pharmacyId].matched++;
+      }
+    });
+
+    // 不足数を計算
+    Object.values(pharmacyNeeds).forEach(pharmacy => {
+      pharmacy.shortage = Math.max(0, pharmacy.required - pharmacy.matched);
+    });
+
+    return pharmacyNeeds;
+  };
+
+  // 1ヶ月分のAIマッチングの実行
+  const executeMonthlyAIMatching = async () => {
+    if (!aiMatchingEngine) {
+      console.error('AI Matching Engine not initialized');
+      return;
+    }
+
+    setAiMatchingLoading(true);
+    try {
+      // 現在の月の全ての日付を取得
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      
+      const monthlyRequests = requests.filter((r: any) => {
+        const requestDate = new Date(r.date);
+        return requestDate.getMonth() === currentMonth && requestDate.getFullYear() === currentYear;
+      });
+      
+      const monthlyPostings = postings.filter((p: any) => {
+        const postingDate = new Date(p.date);
+        return postingDate.getMonth() === currentMonth && postingDate.getFullYear() === currentYear;
+      });
+
+      if (monthlyRequests.length === 0 && monthlyPostings.length === 0) {
+        alert('今月の希望シフトまたは募集シフトがありません。');
+        return;
+      }
+
+      console.log(`1ヶ月分のマッチング開始: 希望${monthlyRequests.length}件、募集${monthlyPostings.length}件`);
+
+      // 1ヶ月分のマッチングを実行
+      const monthlyMatches = await aiMatchingEngine.executeOptimalMatching(monthlyRequests, monthlyPostings, {
+        useAPI: true,
+        algorithm: 'hybrid',
+        priority: 'pharmacy_satisfaction' // 薬局の満足度を優先
+      });
+
+      // 日付別にマッチング結果を整理
+      const matchesByDate: { [date: string]: any[] } = {};
+      monthlyMatches.forEach(match => {
+        const date = match.timeSlot.date;
+        if (!matchesByDate[date]) {
+          matchesByDate[date] = [];
+        }
+        matchesByDate[date].push(match);
+      });
+
+      // グローバルなマッチング結果を保存
+      setAiMatches(monthlyMatches);
+      setAiMatchesByDate(matchesByDate);
+
+      console.log(`1ヶ月分のAIマッチング完了: ${monthlyMatches.length}件のマッチ`);
+      alert(`${monthlyMatches.length}件のマッチングが完了しました。各日付をクリックしてシフトを確定してください。`);
+    } catch (error) {
+      console.error('1ヶ月分のAIマッチングに失敗:', error);
+      alert('1ヶ月分のAIマッチングに失敗しました。');
+    } finally {
+      setAiMatchingLoading(false);
+    }
+  };
+
+  // 日別のAIマッチングの実行（既存の機能を保持）
   const executeAIMatching = async (date: string) => {
     if (!aiMatchingEngine) {
       console.error('AI Matching Engine not initialized');
@@ -2464,6 +2575,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       
+                      {/* AIマッチング結果のパッチ表示 */}
+                      {(() => {
+                        const dayMatches = aiMatchesByDate[dateStr] || [];
+                        if (dayMatches.length > 0) {
+                          return (
+                            <div className="text-[7px] sm:text-[8px] mt-1">
+                              <div className="text-purple-700 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
+                                <span className="sm:hidden">AI{dayMatches.length}</span>
+                                <span className="hidden sm:inline">AI {dayMatches.length}件</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+
                       {/* 確定は上のブロックで件数ラベルのみ表示 */}
                     </>
                   )}
@@ -2480,10 +2607,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             <p className="text-sm text-purple-100 mt-1">システム全体の状態管理と調整</p>
           </div>
           
-          {/* 日別確定ボタンの説明 */}
+          {/* 1ヶ月分マッチング実行ボタン */}
           <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow p-4 mb-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <Brain className="w-5 h-5 text-purple-600" />
+                <h3 className="font-semibold text-gray-800">1ヶ月分マッチング</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">
+                今月の全ての希望シフトと募集シフトを一括でAIマッチングします。
+              </p>
+              <button
+                onClick={executeMonthlyAIMatching}
+                disabled={aiMatchingLoading}
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+              >
+                {aiMatchingLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>1ヶ月分マッチング実行中...</span>
+                  </>
+                ) : (
+                  <>
+                    <Brain className="w-4 h-4" />
+                    <span>1ヶ月分マッチングを実行</span>
+                  </>
+                )}
+              </button>
+            </div>
             <div className="text-sm text-gray-600 mb-2">
-              <p>カレンダーの日付をクリックして選択すると、右側に「マッチングを実行」→「シフトを確定」のボタンが表示されます。</p>
+              <p>カレンダーの日付をクリックして選択すると、右側に「シフトを確定」ボタンが表示されます。</p>
             </div>
           </div>
 
@@ -2572,48 +2725,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
                   // 確定シフトがない日で、希望または募集がある場合のみボタンを表示
                   if (dayAssignedShifts.length === 0 && (dayRequests.length > 0 || dayPostings.length > 0)) {
+                    // 選択された日付のマッチング結果を取得
+                    const dayMatches = aiMatchesByDate[selectedDate] || [];
+                    
                     return (
                       <div className="p-4 border-b border-gray-200 space-y-3">
-                        {/* マッチング実行ボタン */}
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <Brain className="w-4 h-4 text-purple-600" />
-                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング</h4>
-                          </div>
-                          <p className="text-xs text-purple-700 mb-3">
-                            希望シフトと募集シフトをAIで最適にマッチングします
-                          </p>
-                          <button
-                            onClick={() => executeAIMatching(selectedDate)}
-                            disabled={aiMatchingLoading}
-                            className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
-                          >
-                            {aiMatchingLoading ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                <span>マッチング実行中...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Brain className="w-4 h-4" />
-                                <span>マッチングを実行</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-
-                        {/* AIマッチング結果表示 */}
-                        {aiMatches.length > 0 && (
+                        {/* マッチング結果表示 */}
+                        {dayMatches.length > 0 && (
                           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <Brain className="w-4 h-4 text-purple-600" />
                               <h4 className="text-sm font-semibold text-gray-800">マッチング結果</h4>
                               <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                                {aiMatches.length}件
+                                {dayMatches.length}件
                               </span>
                             </div>
                             <div className="space-y-2 max-h-32 overflow-y-auto">
-                              {aiMatches.slice(0, 2).map((match, index) => (
+                              {dayMatches.slice(0, 2).map((match, index) => (
                                 <div key={index} className="bg-white rounded border p-2 text-xs">
                                   <div className="flex justify-between items-start">
                                     <div>
@@ -2632,14 +2760,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   </div>
                                 </div>
                               ))}
-                              {aiMatches.length > 2 && (
+                              {dayMatches.length > 2 && (
                                 <div className="text-xs text-gray-500 text-center">
-                                  他 {aiMatches.length - 2} 件のマッチング結果
+                                  他 {dayMatches.length - 2} 件のマッチング結果
                                 </div>
                               )}
                             </div>
                           </div>
                         )}
+
+                        {/* 薬局の不足状況表示 */}
+                        {(() => {
+                          const pharmacyNeeds = analyzePharmacyShortage(selectedDate);
+                          const pharmaciesWithShortage = Object.values(pharmacyNeeds).filter(p => p.shortage > 0);
+                          
+                          if (pharmaciesWithShortage.length > 0) {
+                            return (
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <div className="w-4 h-4 text-red-600">⚠️</div>
+                                  <h4 className="text-sm font-semibold text-red-800">薬局の不足状況</h4>
+                                </div>
+                                <div className="space-y-1 max-h-24 overflow-y-auto">
+                                  {pharmaciesWithShortage.map((pharmacy, index) => (
+                                    <div key={index} className="bg-white rounded border p-2 text-xs">
+                                      <div className="flex justify-between items-center">
+                                        <span className="font-medium text-gray-800">{pharmacy.name}</span>
+                                        <span className="text-red-600 font-medium">
+                                          不足 {pharmacy.shortage}人
+                                        </span>
+                                      </div>
+                                      <div className="text-gray-500">
+                                        募集: {pharmacy.required}人 / マッチ: {pharmacy.matched}人
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
 
                         {/* シフト確定ボタン */}
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -2648,13 +2809,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <h4 className="text-sm font-semibold text-blue-800">シフト確定</h4>
                           </div>
                           <p className="text-xs text-blue-700 mb-3">
-                            マッチング結果を確定してシフトを保存します
+                            {dayMatches.length > 0 ? 'マッチング結果を確定してシフトを保存します' : '従来の方法でシフトを確定します'}
                           </p>
                           <button
                             onClick={() => {
-                              if (aiMatches.length > 0) {
+                              if (dayMatches.length > 0) {
                                 // AIマッチング結果がある場合はそれを使用
-                                const shifts = convertAIMatchesToShifts(aiMatches, selectedDate);
+                                const shifts = convertAIMatchesToShifts(dayMatches, selectedDate);
                                 handleConfirmShiftsForDate(selectedDate, shifts);
                               } else {
                                 // AIマッチング結果がない場合は従来の方法で確定
