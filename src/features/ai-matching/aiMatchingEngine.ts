@@ -372,9 +372,9 @@ export class AIMatchingEngine {
 
     if (!rs || !re || !ps || !pe) return false;
 
-    // オーバーラップ判定: 少しでも時間が重なればマッチ
-    // re > ps かつ rs < pe であれば時間帯が交差
-    return re > ps && rs < pe;
+    // 薬剤師が薬局の希望時間を完全に満たしているかチェック
+    // 薬剤師の開始時間 <= 薬局の開始時間 かつ 薬剤師の終了時間 >= 薬局の終了時間
+    return rs <= ps && re >= pe;
   }
 
   /**

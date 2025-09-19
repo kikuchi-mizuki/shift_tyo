@@ -311,6 +311,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           // 薬剤師が薬局の希望時間を完全に満たしているかチェック
           const isCompatible = rs <= ps && re >= pe;
           
+          // デバッグ: 時間比較の詳細
+          debugInfo += `    [DEBUG] 薬剤師: ${rs} <= ${ps} = ${rs <= ps}, ${re} >= ${pe} = ${re >= pe}\n`;
+          
           debugInfo += `  - 募集 ${posting.id}: 薬局ID ${posting.pharmacy_id}, 時間 ${ps}-${pe}, 適合: ${isCompatible ? 'YES' : 'NO'}\n`;
           
           return isCompatible;
