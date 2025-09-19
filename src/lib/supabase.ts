@@ -22,25 +22,6 @@ console.log('Using fallback values:', {
   keyFromEnv: !!import.meta.env.VITE_SUPABASE_ANON_KEY
 });
 
-// API keyの有効性をテスト
-if (supabaseAnonKey) {
-  console.log('Testing API key validity...');
-  fetch('https://wjgterfwurmvosawzbjs.supabase.co/rest/v1/shift_requests?select=id&limit=1', {
-    headers: {
-      'apikey': supabaseAnonKey,
-      'Authorization': `Bearer ${supabaseAnonKey}`
-    }
-  }).then(response => {
-    if (response.ok) {
-      console.log('API key is valid');
-    } else {
-      console.error('API key is invalid:', response.status, response.statusText);
-    }
-  }).catch(err => {
-    console.error('API key test error:', err);
-  });
-}
-
 console.log('===============================');
 
 // Supabaseクライアントの作成（フォールバック値を使用）
@@ -100,17 +81,6 @@ console.log('Supabase client created:', !!supabase);
 if (supabase) {
   console.log('Supabase client URL:', supabase.supabaseUrl);
   console.log('Supabase client key prefix:', supabase.supabaseKey?.substring(0, 20) + '...');
-  
-  // API keyが正しく設定されているかテスト
-  supabase.from('shift_requests').select('id').limit(1).then(({ data, error }) => {
-    if (error) {
-      console.error('Supabase API key test failed:', error);
-    } else {
-      console.log('Supabase API key test successful:', data);
-    }
-  }).catch(err => {
-    console.error('Supabase API key test error:', err);
-  });
 } else {
   console.error('Failed to create Supabase client!');
 }
