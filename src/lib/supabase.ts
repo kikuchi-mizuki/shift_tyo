@@ -18,18 +18,28 @@ console.log('Supabase config:', {
   actualKey: supabaseAnonKey?.substring(0, 20) + '...'
 });
 
-// Supabaseクライアントの作成（シンプル版）
-export const supabase = createClient(
-  supabaseUrl || 'https://your-project.supabase.co',
-  supabaseAnonKey || 'your-anon-key',
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false
-    }
+// Supabaseクライアントの作成（安全版）
+export const supabase = (() => {
+  if (!supabaseUrl || !supabaseAnonKey || 
+      supabaseUrl === 'your-supabase-url' || 
+      supabaseAnonKey === 'your-supabase-anon-key') {
+    console.warn('Supabase環境変数が設定されていません。デモモードで動作します。');
+    return null;
   }
-);
+  
+  try {
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false
+      }
+    });
+  } catch (error) {
+    console.error('Supabaseクライアントの作成に失敗しました:', error);
+    return null;
+  }
+})();
 
 console.log('Supabase client created:', !!supabase);
 
@@ -982,20 +992,41 @@ export const testConnection = {
 export const shiftRequests = {
   // シフト希望取得
   getRequests: async (userId: string, userType: string) => {
+    console.log('=== getRequests START ===');
+    console.log('userId:', userId, 'userType:', userType);
+    
     if (!supabase) {
+      console.error('Supabase not initialized');
       return { data: [], error: { message: 'Supabaseが設定されていません' } };
     }
 
     try {
       let query = supabase.from('shift_requests').select('*');
       
-      if (userType === 'pharmacist') {
+      if (userType === 'pharmacist' && userId) {
         query = query.eq('pharmacist_id', userId);
+        console.log('Filtering by pharmacist_id:', userId);
       }
       // pharmacy/adminは全ての希望を閲覧可能
       
+      console.log('Executing shift_requests query...');
       const { data, error } = await query;
-      return { data: data || [], error };
+      
+      console.log('Query result:', { dataCount: data?.length || 0, error });
+      
+      // テーブルが存在しない場合のエラーハンドリング
+      if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
+        console.warn('shift_requests table not found, falling back to demo mode');
+        return { data: [], error: { code: 'PGRST116', message: 'shift_requestsテーブルが存在しません' } };
+      }
+      
+      if (error) {
+        console.error('shift_requests query error:', error);
+        return { data: [], error };
+      }
+      
+      console.log('=== getRequests END ===');
+      return { data: data || [], error: null };
     } catch (error) {
       console.error('Get requests error:', error);
       return { data: [], error };
@@ -1097,22 +1128,26 @@ export const shiftPostings = {
     try {
       let query = supabase.from('shift_postings').select('*');
       
-      if (userType === 'store' || userType === 'pharmacy') {
+      if ((userType === 'store' || userType === 'pharmacy') && userId) {
         query = query.eq('pharmacy_id', userId);
         console.log('Filtering by pharmacy_id:', userId);
       }
       // pharmacist/adminは全ての募集を閲覧可能
       
-      console.log('Executing query...');
+      console.log('Executing shift_postings query...');
       const { data, error } = await query;
       
       console.log('Query result:', { dataCount: data?.length || 0, error });
-      console.log('Raw data:', data);
       
       // テーブルが存在しない場合のエラーハンドリング
       if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
         console.warn('shift_postings table not found, falling back to demo mode');
-        return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
+        return { data: [], error: { code: 'PGRST116', message: 'shift_postingsテーブルが存在しません' } };
+      }
+      
+      if (error) {
+        console.error('shift_postings query error:', error);
+        return { data: [], error };
       }
       
       console.log('=== getPostings END ===');
