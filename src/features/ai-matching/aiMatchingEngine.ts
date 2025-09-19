@@ -521,7 +521,7 @@ export class AIMatchingEngine {
         .from('user_profiles')
         .select('*')
         .eq('id', pharmacistId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         console.warn('Failed to fetch pharmacist profile:', error);
@@ -566,7 +566,7 @@ export class AIMatchingEngine {
         .from('user_profiles')
         .select('*')
         .eq('id', pharmacyId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         console.warn('Failed to fetch pharmacy profile:', error);

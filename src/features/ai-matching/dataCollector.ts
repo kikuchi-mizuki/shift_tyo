@@ -202,7 +202,7 @@ export class DataCollector {
         .from('user_profiles')
         .select('*')
         .eq('id', pharmacistId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return this.getDefaultPharmacistFeatures();
@@ -236,7 +236,7 @@ export class DataCollector {
         .from('user_profiles')
         .select('*')
         .eq('id', pharmacyId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return this.getDefaultPharmacyFeatures();
