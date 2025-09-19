@@ -233,8 +233,9 @@ export class AIMatchingEngine {
 
     if (!rs || !re || !ps || !pe) return false;
 
-    // 完全包含関係
-    return rs <= ps && re >= pe;
+    // 重複関係: 薬剤師の希望時間が薬局の募集時間と重複していればマッチ
+    // つまり、薬剤師が薬局の応募時間を満たしていればマッチ
+    return rs < pe && re > ps;
   }
 
   /**
