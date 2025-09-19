@@ -325,6 +325,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
       
       // デバッグ情報をモーダルで表示
+      console.log('DEBUG: debugInfo content:', debugInfo);
+      console.log('DEBUG: debugInfo length:', debugInfo.length);
       alert(debugInfo);
 
       // 日付別にマッチング結果を整理
