@@ -3297,7 +3297,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         if (aRating !== bRating) return bRating - aRating;
                       const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
                       return priorityOrder[b.priority] - priorityOrder[a.priority];
-                    });
+                    }) : [];
                     
                     // 各薬局の必要人数を管理
                     const pharmacyNeeds = dayPostings.map((p: any) => ({
