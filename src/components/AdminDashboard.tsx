@@ -268,29 +268,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('userProfiles:', userProfiles);
       console.log('ratings:', ratings);
       
-      // デバッグ情報をモーダルで表示
+      // 簡潔なデバッグ情報をモーダルで表示
       let debugInfo = `=== AIマッチング処理デバッグ ===\n`;
       debugInfo += `シフト希望数: ${monthlyRequests.length}件\n`;
-      debugInfo += `シフト募集数: ${monthlyPostings.length}件\n`;
-      debugInfo += `ユーザープロフィール数: ${Object.keys(userProfiles).length}件\n`;
-      debugInfo += `評価データ数: ${ratings.length}件\n\n`;
+      debugInfo += `シフト募集数: ${monthlyPostings.length}件\n\n`;
       
+      // サンプルデータを3件まで表示
       if (monthlyRequests.length > 0) {
-        debugInfo += `希望詳細:\n`;
-        monthlyRequests.forEach((req, i) => {
-          debugInfo += `${i+1}. 薬剤師ID: ${req.pharmacist_id}, 日付: ${req.date}, 時間: ${req.start_time}-${req.end_time}\n`;
+        debugInfo += `希望サンプル:\n`;
+        monthlyRequests.slice(0, 3).forEach((req, i) => {
+          debugInfo += `${i+1}. 日付: ${req.date}, 時間: ${req.start_time}-${req.end_time}\n`;
         });
         debugInfo += `\n`;
       }
       
       if (monthlyPostings.length > 0) {
-        debugInfo += `募集詳細:\n`;
-        monthlyPostings.forEach((post, i) => {
-          debugInfo += `${i+1}. 薬局ID: ${post.pharmacy_id}, 日付: ${post.date}, 時間: ${post.start_time}-${post.end_time}, 必要人数: ${post.required_staff}\n`;
+        debugInfo += `募集サンプル:\n`;
+        monthlyPostings.slice(0, 3).forEach((post, i) => {
+          debugInfo += `${i+1}. 日付: ${post.date}, 時間: ${post.start_time}-${post.end_time}\n`;
         });
         debugInfo += `\n`;
-      } else {
-        debugInfo += `募集詳細: データなし\n\n`;
       }
 
       // 時間適合性の詳細分析を追加
