@@ -1104,6 +1104,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('読み込まれたシフト希望数:', (r || []).length);
       console.log('シフト希望データ詳細:', r);
       
+      // 時間範囲がある希望の詳細確認
+      const requestsWithTime = (r || []).filter(req => req.start_time && req.end_time);
+      console.log('時間範囲がある希望数:', requestsWithTime.length);
+      console.log('時間範囲がある希望詳細:', requestsWithTime.map(req => ({
+        id: req.id,
+        pharmacist_id: req.pharmacist_id,
+        date: req.date,
+        time_slot: req.time_slot,
+        start_time: req.start_time,
+        end_time: req.end_time
+      })));
+      
       // 月別データの確認
       const currentMonth = currentDate.getMonth();
       const currentYear = currentDate.getFullYear();
@@ -1122,6 +1134,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('=== シフト募集データ読み込み完了 ===');
       console.log('読み込まれたシフト募集数:', (p || []).length);
       console.log('シフト募集データ詳細:', p);
+      
+      // 時間範囲がある募集の詳細確認
+      const postingsWithTime = (p || []).filter(post => post.start_time && post.end_time);
+      console.log('時間範囲がある募集数:', postingsWithTime.length);
+      console.log('時間範囲がある募集詳細:', postingsWithTime.map(post => ({
+        id: post.id,
+        pharmacy_id: post.pharmacy_id,
+        date: post.date,
+        time_slot: post.time_slot,
+        start_time: post.start_time,
+        end_time: post.end_time,
+        required_staff: post.required_staff
+      })));
       
       // 月別募集データの確認
       const monthlyPostings = Array.isArray(p) ? p.filter((post: any) => {
@@ -2098,8 +2123,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               pharmacist_id: request.pharmacist_id,
               pharmacy_id: pharmacyNeed.pharmacy_id,
               date: date,
-            start_time: pharmacyNeed.start_time,
-            end_time: pharmacyNeed.end_time,
+              time_slot: pharmacyNeed.time_slot, // time_slotを追加
+              start_time: pharmacyNeed.start_time,
+              end_time: pharmacyNeed.end_time,
               status: 'confirmed',
               store_name: pharmacyNeed.store_name || pharmacy?.name || '',
               memo: `マッチング: ${pharmacist?.name} → ${pharmacy?.name}`
