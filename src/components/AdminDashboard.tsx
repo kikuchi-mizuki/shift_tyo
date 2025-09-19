@@ -267,6 +267,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('monthlyPostings:', monthlyPostings);
       console.log('userProfiles:', userProfiles);
       console.log('ratings:', ratings);
+      
+      // デバッグ情報をモーダルで表示
+      let debugInfo = `=== AIマッチング処理デバッグ ===\n`;
+      debugInfo += `シフト希望数: ${monthlyRequests.length}件\n`;
+      debugInfo += `シフト募集数: ${monthlyPostings.length}件\n`;
+      debugInfo += `ユーザープロフィール数: ${Object.keys(userProfiles).length}件\n`;
+      debugInfo += `評価データ数: ${ratings.length}件\n\n`;
+      
+      if (monthlyRequests.length > 0) {
+        debugInfo += `希望詳細:\n`;
+        monthlyRequests.forEach((req, i) => {
+          debugInfo += `${i+1}. 薬剤師ID: ${req.pharmacist_id}, 日付: ${req.date}, 時間: ${req.start_time}-${req.end_time}\n`;
+        });
+        debugInfo += `\n`;
+      }
+      
+      if (monthlyPostings.length > 0) {
+        debugInfo += `募集詳細:\n`;
+        monthlyPostings.forEach((post, i) => {
+          debugInfo += `${i+1}. 薬局ID: ${post.pharmacy_id}, 日付: ${post.date}, 時間: ${post.start_time}-${post.end_time}, 必要人数: ${post.required_staff}\n`;
+        });
+        debugInfo += `\n`;
+      }
 
       // 1ヶ月分のマッチングを実行（重複防止付き）
       const monthlyMatches = await aiMatchingEngine.executeOptimalMatching(monthlyRequests, monthlyPostings, {
@@ -276,6 +299,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }, userProfiles, ratings);
       
       console.log('マッチング結果:', monthlyMatches);
+      
+      debugInfo += `=== マッチング結果 ===\n`;
+      debugInfo += `マッチング件数: ${monthlyMatches.length}件\n`;
+      
+      if (monthlyMatches.length > 0) {
+        debugInfo += `マッチング詳細:\n`;
+        monthlyMatches.forEach((match, i) => {
+          debugInfo += `${i+1}. 薬剤師ID: ${match.pharmacist?.id}, 薬局ID: ${match.pharmacy?.id}, 日付: ${match.timeSlot?.date}, 時間: ${match.timeSlot?.startTime}-${match.timeSlot?.endTime}\n`;
+        });
+      } else {
+        debugInfo += `マッチング結果がありません。\n`;
+        debugInfo += `考えられる原因:\n`;
+        debugInfo += `- 時間範囲の不適合\n`;
+        debugInfo += `- NGリストによるブロック\n`;
+        debugInfo += `- 既に確定済みのシフトがある\n`;
+      }
+      
+      // デバッグ情報をモーダルで表示
+      alert(debugInfo);
 
       // 日付別にマッチング結果を整理
       const matchesByDate: { [date: string]: any[] } = {};
