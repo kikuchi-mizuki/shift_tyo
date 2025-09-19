@@ -779,7 +779,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // 重複を除去
       const uniqueUndefinedUsers = Array.isArray(allUndefinedUsers) ? allUndefinedUsers.filter((user, index, self) => 
         index === self.findIndex(u => u.id === user.id)
-      );
+      ) : [];
       
       console.log('条件1の結果:', undefinedUsers1);
       console.log('条件2の結果:', undefinedUsers2);
