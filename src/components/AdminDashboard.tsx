@@ -264,9 +264,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       console.log(`1ヶ月分のマッチング開始: 希望${monthlyRequests.length}件、募集${monthlyPostings.length}件`);
 
-      // 1ヶ月分のマッチングを実行
+      // 1ヶ月分のマッチングを実行（重複防止付き）
       const monthlyMatches = await aiMatchingEngine.executeOptimalMatching(monthlyRequests, monthlyPostings, {
-        useAPI: true,
+        useAPI: false, // APIを使わずにローカルマッチングで重複防止を確実に
         algorithm: 'hybrid',
         priority: 'pharmacy_satisfaction' // 薬局の満足度を優先
       }, userProfiles, ratings);
@@ -2648,13 +2648,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         )}
 
-                        {/* マッチング後の薬局不足状況表示 */}
+
+                        {/* 薬局の不足状況表示（独立） */}
                         {(() => {
-                          // AIマッチング後の実際の不足状況を計算
                           const pharmacyNeeds = analyzePharmacyShortage(dayRequests, dayPostings);
-                          const currentDayMatches = dayMatches || [];
-                          const matchedPharmacists = currentDayMatches.map(match => match.pharmacist.id);
-                          const matchedPharmacies = currentDayMatches.map(match => match.pharmacy.id);
+                          const currentDayMatches = aiMatchesByDate[selectedDate] || [];
                           
                           // マッチング済みの薬剤師と薬局を除外して不足を計算
                           const pharmaciesWithShortage = pharmacyNeeds.filter(pharmacy => {
@@ -3372,23 +3370,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             {shortagePharmacies.map((pharmacy: any, index: number) => {
                               const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
-                              const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
+                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
                               const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
                               const timeLabel = pharmacy.start_time && pharmacy.end_time 
                                 ? `${pharmacy.start_time.slice(0,5)}-${pharmacy.end_time.slice(0,5)}`
                                 : '09:00-18:00';
-                              return (
+                                    return (
                                 <div key={index} className="bg-white rounded border px-2 py-1">
-                                  <div className="flex items-start justify-between">
-                                    <div className="text-xs">
+                                        <div className="flex items-start justify-between">
+                                          <div className="text-xs">
                                       <div className="font-medium text-gray-800">{pharmacyName}{storeLabel}</div>
                                       <div className="text-[11px] text-gray-600 mt-0.5">{timeLabel}</div>
-                                    </div>
+                                          </div>
                                     <span className="text-xs text-red-600 font-medium">不足 {pharmacy.shortage}人</span>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                           </div>
                         </div>
                       );
