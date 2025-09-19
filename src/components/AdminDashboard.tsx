@@ -800,7 +800,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('すべてのユーザープロフィール（最初の50件）:', allUsers);
       
       // 特に「薬剤師未設定」を含むデータを詳しく調査
-      const pharmacistUsers = allUsers?.filter(user => 
+      const pharmacistUsers = (allUsers || []).filter(user => 
         user.name && (
           user.name.includes('薬剤師') || 
           user.name.includes('未設定') ||
@@ -808,7 +808,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           user.name === '' ||
           user.name === null
         )
-      ) || [];
+      );
       
       console.log('薬剤師関連のユーザー:', pharmacistUsers);
       
@@ -1314,7 +1314,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const storeNgDataMap: {[pharmacyId: string]: any[]} = {};
           
           // 薬局ユーザーのみを対象に店舗毎NG薬剤師を取得
-          const pharmacyUsers = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacy');
+          const pharmacyUsers = Object.values(profilesMap || {}).filter((profile: any) => profile.user_type === 'pharmacy');
           for (const pharmacy of pharmacyUsers) {
             try {
               const { data: storeNgData, error: storeNgError } = await supabase
@@ -1338,7 +1338,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const pharmacistNgPharmaciesMap: {[pharmacistId: string]: any[]} = {};
           
           // 薬剤師ユーザーのみを対象にNG薬局情報を取得
-          const pharmacistUsers = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacist');
+          const pharmacistUsers = Object.values(profilesMap || {}).filter((profile: any) => profile.user_type === 'pharmacist');
           for (const pharmacist of pharmacistUsers) {
             try {
               const { data: ngPharmaciesData, error: ngPharmaciesError } = await supabase
@@ -1911,8 +1911,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     console.log(`時間範囲ベースのマッチング処理開始`);
     
     // 時間範囲がある希望のみを対象とする
-    const validRequests = dayRequests.filter(r => r.start_time && r.end_time);
-    const validPostings = dayPostings.filter(p => p.start_time && p.end_time);
+    const validRequests = (dayRequests || []).filter(r => r.start_time && r.end_time);
+    const validPostings = (dayPostings || []).filter(p => p.start_time && p.end_time);
     
     if (validRequests.length === 0 || validPostings.length === 0) {
       console.log(`時間範囲がある希望または募集がないためスキップ`);
@@ -2231,7 +2231,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
                   // 時間範囲ベースの計算
                   totalRequired = dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                  totalAvailable = dayRequests.filter((r: any) => r.start_time && r.end_time).length;
+                  totalAvailable = (dayRequests || []).filter((r: any) => r.start_time && r.end_time).length;
                   totalMatched = dayAssignedShifts.length;
                   
                   // 確定シフトがある場合の不足・余裕計算
@@ -2289,7 +2289,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
                 // 時間範囲ベースの計算
                 totalRequired = dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                totalAvailable = dayRequests.filter((r: any) => r.start_time && r.end_time).length;
+                totalAvailable = (dayRequests || []).filter((r: any) => r.start_time && r.end_time).length;
                 
                 // マッチング数を計算（薬剤師と薬局の組み合わせで計算）
                 let matchedCount = 0;
@@ -2655,8 +2655,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           const currentDayMatches = aiMatchesByDate[selectedDate] || [];
                           
                           // マッチング済みの薬剤師と薬局を除外して不足を計算
-                          const pharmaciesWithShortage = pharmacyNeeds.filter(pharmacy => {
-                            const matchedCount = currentDayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
+                          const pharmaciesWithShortage = (pharmacyNeeds || []).filter(pharmacy => {
+                            const matchedCount = (currentDayMatches || []).filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
                             const remainingShortage = Math.max(0, pharmacy.required_staff - matchedCount);
                             return remainingShortage > 0;
                           });
@@ -2670,7 +2670,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 </div>
                                 <div className="space-y-1 max-h-24 overflow-y-auto">
                                   {pharmaciesWithShortage.map((pharmacy, index) => {
-                                    const matchedCount = currentDayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
+                                    const matchedCount = (currentDayMatches || []).filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
                                     const remainingShortage = Math.max(0, pharmacy.required_staff - matchedCount);
                                     const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
                                     const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
@@ -2823,7 +2823,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     className="w-full text-xs border border-gray-300 rounded px-2 py-1"
                                   >
                                     {(() => {
-                                      const pharmacists = Object.entries(userProfiles)
+                                      const pharmacists = Object.entries(userProfiles || {})
                                         .filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacist');
                                       return pharmacists.map(([id, profile]: [string, any]) => (
                                         <option key={id} value={id}>
@@ -2843,7 +2843,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     className="w-full text-xs border border-gray-300 rounded px-2 py-1"
                                   >
                                     {(() => {
-                                      const pharmacies = Object.entries(userProfiles)
+                                      const pharmacies = Object.entries(userProfiles || {})
                                         .filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacy' || profile.user_type === 'store');
                                       return pharmacies.map(([id, profile]: [string, any]) => (
                                         <option key={id} value={id}>
@@ -2972,7 +2972,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               onChange={(e) => setNewPosting({ ...newPosting, pharmacy_id: e.target.value })}
                             >
                               <option value="">薬局を選択</option>
-                              {Object.entries(userProfiles)
+                              {Object.entries(userProfiles || {})
                                 .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy' || (profile as any).user_type === 'store')
                                 .map(([id, profile]: [string, any]) => (
                                   <option key={id} value={id}>{(profile as any).name || (profile as any).email}</option>
@@ -3129,7 +3129,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               onChange={(e) => setNewRequest({ ...newRequest, pharmacist_id: e.target.value })}
                             >
                               <option value="">薬剤師を選択</option>
-                              {Object.entries(userProfiles)
+                              {Object.entries(userProfiles || {})
                                 .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacist')
                                 .map(([id, profile]: [string, any]) => (
                                   <option key={id} value={id}>{(profile as any).name || (profile as any).email}</option>
@@ -3273,11 +3273,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     const matchingAnalysis = [{
                       timeSlot: 'time_range',
                       totalRequired: dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0),
-                      totalAvailable: dayRequests.filter((r: any) => r.start_time && r.end_time).length,
+                      totalAvailable: (dayRequests || []).filter((r: any) => r.start_time && r.end_time).length,
                       totalMatched: 0,
                       shortage: 0,
                       excess: 0,
-                      requests: dayRequests.filter((r: any) => r.start_time && r.end_time),
+                      requests: (dayRequests || []).filter((r: any) => r.start_time && r.end_time),
                       postings: dayPostings,
                       matchedPharmacists: [] as any[],
                       matchedPharmacies: [] as any[]
@@ -3289,7 +3289,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     const matchedPharmacies = [] as any[];
                     
                     // 薬剤師を評価順にソート
-                    const sortedRequests = dayRequests
+                    const sortedRequests = (dayRequests || [])
                       .filter((r: any) => r.start_time && r.end_time)
                       .sort((a: any, b: any) => {
                         const aRating = getPharmacistRating(a.pharmacist_id);
@@ -3552,7 +3552,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             {editingUserId === pharmacy.id ? (
                               <div className="text-xs">
                                 <div className="flex flex-wrap gap-2 mb-2">
-                                        {Object.entries(userProfiles)
+                                        {Object.entries(userProfiles || {})
                                           .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacist')
                                           .map(([id, profile]: [string, any]) => {
                                       const checked = userEditForm.ng_list.includes(id);
@@ -3713,7 +3713,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <div className="text-xs text-gray-600 mb-1">NG薬局・店舗:</div>
                             {editingUserId === pharmacist.id ? (
                               <div className="space-y-2">
-                                {Object.entries(userProfiles)
+                                {Object.entries(userProfiles || {})
                                   .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy')
                                   .map(([id, profile]: [string, any]) => {
                                     const pharmacyName = (profile as any).name || (profile as any).email || id;
