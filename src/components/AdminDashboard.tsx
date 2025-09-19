@@ -1490,9 +1490,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         return;
       }
 
-      // 指定日の希望シフトと募集シフトをマッチングして確定済みシフトを作成
-      const confirmedShifts: any[] = [];
-      
       // 指定日の希望シフトと募集シフトを取得
       const dayRequests = requests.filter((request: any) => request.date === date);
       const dayPostings = postings.filter((posting: any) => posting.date === date);
@@ -1505,63 +1502,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         // AIマッチングを実行
         console.log('AIマッチングを実行します');
         
-        try {
-          let aiMatches: any[] = [];
+        let aiMatches: any[] = [];
+        
+        if (aiMatchingEngine) {
+          // フルAIマッチングエンジンを使用
+          console.log('AIマッチングエンジンを使用します');
+          aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
+            useAPI: true,
+            algorithm: 'hybrid',
+            priority: 'pharmacy_satisfaction'
+          }, userProfiles, ratings);
+        } else {
+          // 簡易AIマッチングロジック
+          console.log('簡易AIマッチングを使用します');
+          aiMatches = await executeSimpleAIMatching(dayRequests, dayPostings);
+        }
+        
+        console.log(`AIマッチング結果: ${aiMatches.length}件のマッチが見つかりました`);
+        
+        if (aiMatches.length > 0) {
+          // AIマッチング結果を確定シフトに変換
+          const aiShifts = aiMatches.map(match => {
+            // 薬局名と店舗名を正しく取得
+            const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
+            const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
+            
+            return {
+              pharmacist_id: match.pharmacist.id,
+              pharmacy_id: match.pharmacy.id,
+              date: date,
+              start_time: match.timeSlot.start,
+              end_time: match.timeSlot.end,
+              status: 'confirmed',
+              store_name: storeName,
+              memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+            };
+          });
           
-          if (aiMatchingEngine) {
-            // フルAIマッチングエンジンを使用
-            console.log('AIマッチングエンジンを使用します');
-            aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
-              useAPI: true,
-              algorithm: 'hybrid',
-              priority: 'pharmacy_satisfaction'
-            }, userProfiles, ratings);
-          } else {
-            // 簡易AIマッチングロジック
-            console.log('簡易AIマッチングを使用します');
-            aiMatches = await executeSimpleAIMatching(dayRequests, dayPostings);
-          }
+          console.log('AIマッチングで生成されたシフト:', aiShifts);
           
-          console.log(`AIマッチング結果: ${aiMatches.length}件のマッチが見つかりました`);
+          // AIマッチング結果をデータベースに保存
+          const { error } = await supabase.from('assigned_shifts').insert(aiShifts);
+          if (error) throw error;
           
-          if (aiMatches.length > 0) {
-            // AIマッチング結果を確定シフトに変換
-            const aiShifts = aiMatches.map(match => {
-              // 薬局名と店舗名を正しく取得
-              const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
-              const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
-              
-              return {
-                pharmacist_id: match.pharmacist.id,
-                pharmacy_id: match.pharmacy.id,
-                date: date,
-                start_time: match.timeSlot.start,
-                end_time: match.timeSlot.end,
-                status: 'confirmed',
-                store_name: storeName,
-                memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
-              };
-            });
-            
-            console.log('AIマッチングで生成されたシフト:', aiShifts);
-            
-            // AIマッチング結果をデータベースに保存
-            const { error } = await supabase.from('assigned_shifts').insert(aiShifts);
-            if (error) throw error;
-            
-            console.log(`AIマッチング完了: ${aiShifts.length}件のシフトを確定しました`);
-            
-            // データを再読み込み
-            await loadAssignedShifts();
-            return;
-          } else {
-            console.log('AIマッチングでマッチが見つかりませんでした');
-            alert(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n時間帯やNGリストを確認してください。`);
-            return;
-          }
-        } catch (error) {
-          console.error('AIマッチングに失敗:', error);
-          alert('AIマッチングに失敗しました。時間帯やNGリストを確認してください。');
+          console.log(`AIマッチング完了: ${aiShifts.length}件のシフトを確定しました`);
+          
+          // データを再読み込み
+          await loadAssignedShifts();
+          return;
+        } else {
+          console.log('AIマッチングでマッチが見つかりませんでした');
+          alert(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n時間帯やNGリストを確認してください。`);
           return;
         }
       } else {
