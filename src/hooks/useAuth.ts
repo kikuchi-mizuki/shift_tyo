@@ -23,6 +23,13 @@ export const useAuth = () => {
       key: !!import.meta.env.VITE_SUPABASE_ANON_KEY
     });
 
+    // Supabaseクライアントの存在確認
+    if (!supabase) {
+      console.log('useAuth: Supabase client not available');
+      setLoading(false);
+      return;
+    }
+
     // シンプルな認証状態チェック
     const checkAuth = async () => {
       try {
@@ -102,6 +109,10 @@ export const useAuth = () => {
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
+      if (!supabase) {
+        return { data: null, error: { message: 'Supabaseが設定されていません' } };
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -124,6 +135,10 @@ export const useAuth = () => {
   const signUp = async (email: string, password: string, userData: any) => {
     setLoading(true);
     try {
+      if (!supabase) {
+        return { data: null, error: { message: 'Supabaseが設定されていません' } };
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,

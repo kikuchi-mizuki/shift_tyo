@@ -1,24 +1,27 @@
-// src/lib/api.ts – DISABLED: Edge Function calls causing 400 errors
-// This file is disabled to prevent 400 Bad Request errors from Edge Functions
-// All API calls now use direct Supabase client instead
+// src/lib/api.ts – call Edge Function with ANON KEY (Vite/React)
+const base = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
+const headers = {
+  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+};
 
-console.warn('api.ts is disabled - using direct Supabase client instead');
+async function get(path: string, params?: Record<string, string | number>) {
+  const qs = params
+    ? `?${new URLSearchParams(
+        Object.entries(params).map(([k, v]) => [k, String(v)])
+      )}`
+    : "";
+  const res = await fetch(`${base}/${path}${qs}`, { headers });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json() as Promise<{ data: any[]; count?: number }>;
+}
 
 export const api = {
-  getShiftPostings: () => {
-    console.warn('getShiftPostings is disabled - use direct Supabase client');
-    return Promise.resolve({ data: [], count: 0 });
-  },
-  getShiftRequests: () => {
-    console.warn('getShiftRequests is disabled - use direct Supabase client');
-    return Promise.resolve({ data: [], count: 0 });
-  },
-  getAssignedShifts: () => {
-    console.warn('getAssignedShifts is disabled - use direct Supabase client');
-    return Promise.resolve({ data: [], count: 0 });
-  },
-  getUserProfiles: () => {
-    console.warn('getUserProfiles is disabled - use direct Supabase client');
-    return Promise.resolve({ data: [], count: 0 });
-  },
+  getShiftPostings: (p?: { limit?: number; offset?: number }) =>
+    get("shift_postings", { limit: p?.limit ?? 50, offset: p?.offset ?? 0 }),
+  getShiftRequests: (p?: { limit?: number; offset?: number }) =>
+    get("shift_requests", { limit: p?.limit ?? 50, offset: p?.offset ?? 0 }),
+  getAssignedShifts: (p?: { limit?: number; offset?: number }) =>
+    get("assigned_shifts", { limit: p?.limit ?? 50, offset: p?.offset ?? 0 }),
+  getUserProfiles: (p?: { limit?: number; offset?: number }) =>
+    get("user_profiles", { limit: p?.limit ?? 50, offset: p?.offset ?? 0 }),
 };
