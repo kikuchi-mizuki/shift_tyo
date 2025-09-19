@@ -234,24 +234,30 @@ export class AIMatchingEngine {
     
     if (supabase && this.isInitialized) {
       try {
-        // 実際のシフト希望データを取得
+        // 実際のシフト希望データを取得（正しいカラム名を使用）
         const { data: shiftRequests, error: requestsError } = await supabase
           .from('shift_requests')
-          .select('*');
+          .select('id, pharmacist_id, date, time_slot, start_time, end_time, priority, status, memo');
         
         if (!requestsError && shiftRequests) {
           actualRequests = shiftRequests;
           console.log('Actual shift requests loaded:', actualRequests.length);
+          console.log('Sample request:', actualRequests[0]);
+        } else {
+          console.error('Error loading shift requests:', requestsError);
         }
         
-        // 実際のシフト募集データを取得
+        // 実際のシフト募集データを取得（正しいカラム名を使用）
         const { data: shiftPostings, error: postingsError } = await supabase
           .from('shift_postings')
-          .select('*');
+          .select('id, pharmacy_id, date, time_slot, start_time, end_time, required_people, status, notes');
         
         if (!postingsError && shiftPostings) {
           actualPostings = shiftPostings;
           console.log('Actual shift postings loaded:', actualPostings.length);
+          console.log('Sample posting:', actualPostings[0]);
+        } else {
+          console.error('Error loading shift postings:', postingsError);
         }
       } catch (error) {
         console.error('Error fetching actual shift data:', error);
@@ -261,8 +267,14 @@ export class AIMatchingEngine {
     // データが空の場合はフォールバックを使用
     if (!actualRequests || actualRequests.length === 0 || !actualPostings || actualPostings.length === 0) {
       console.warn('No actual shift data available, using fallback');
+      console.warn('actualRequests:', actualRequests?.length || 0);
+      console.warn('actualPostings:', actualPostings?.length || 0);
       return this.fallbackMatching(actualRequests || [], actualPostings || []);
     }
+    
+    console.log('=== 実際のデータでマッチング開始 ===');
+    console.log('Requests count:', actualRequests.length);
+    console.log('Postings count:', actualPostings.length);
 
     const candidates: MatchCandidate[] = [];
 
