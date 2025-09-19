@@ -136,6 +136,12 @@ export const executeAIMatching = async (request: AIMatchingRequest): Promise<AIM
  * ルールベースマッチング
  */
 const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promise<any[]> => {
+  console.log('=== executeRuleBasedMatching START ===');
+  console.log('Requests count:', requests.length);
+  console.log('Postings count:', postings.length);
+  console.log('Sample request:', requests[0]);
+  console.log('Sample posting:', postings[0]);
+  
   const matches: any[] = [];
   const usedPharmacists = new Set<string>();
   const usedPharmacies = new Set<string>();
@@ -149,10 +155,19 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promi
 
   for (const request of sortedRequests) {
     for (const posting of postings) {
+      const isCompatible = isBasicCompatible(request, posting);
+      console.log(`Checking compatibility:`, {
+        request_id: request.id,
+        posting_id: posting.id,
+        request_time: `${request.start_time}-${request.end_time}`,
+        posting_time: `${posting.start_time}-${posting.end_time}`,
+        isCompatible
+      });
+      
       if (
         !usedPharmacists.has(request.pharmacist_id) &&
         !usedPharmacies.has(posting.pharmacy_id) &&
-        isBasicCompatible(request, posting)
+        isCompatible
       ) {
         matches.push({
           pharmacist_id: request.pharmacist_id,
@@ -174,6 +189,8 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promi
     }
   }
 
+  console.log('=== executeRuleBasedMatching END ===');
+  console.log('Final matches count:', matches.length);
   return matches;
 };
 
@@ -265,8 +282,9 @@ const isBasicCompatible = (request: any, posting: any): boolean => {
 
   if (!rs || !re || !ps || !pe) return false;
 
-  // 完全包含関係
-  return rs <= ps && re >= pe;
+  // オーバーラップ判定: 少しでも時間が重なればマッチ
+  // re > ps かつ rs < pe であれば時間帯が交差
+  return re > ps && rs < pe;
 };
 
 /**
