@@ -2463,44 +2463,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (
                         <div className="relative group">
                           <div className="text-[7px] sm:text-[8px] space-y-0.5">
-                            {/* AIマッチング結果のパッチ表示（優先） */}
-                            {aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0 ? (
+                            {/* マッチ件数 */}
+                            {aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">マ{aiMatchesByDate[dateStr].length}</span>
                                 <span className="hidden sm:inline">マッチ {aiMatchesByDate[dateStr].length}</span>
                               </div>
-                            ) : (
-                              <>
-                                {/* 希望のみの日（募集が無い）を表示 */}
-                                {matchingStatus.type === 'requests_only' && (
-                                  <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
-                                    <span className="sm:hidden">希{matchingStatus.requestsCount}</span>
-                                    <span className="hidden sm:inline">希望 {matchingStatus.requestsCount}</span>
-                                  </div>
-                                )}
-                                {/* 募集のみの日（希望が無い）を表示 */}
-                                {matchingStatus.type === 'postings_only' && (
-                                  <div className="text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 inline-block">
-                                    <span className="sm:hidden">募{matchingStatus.postingsCount}</span>
-                                    <span className="hidden sm:inline">募集 {matchingStatus.postingsCount}</span>
-                                  </div>
-                                )}
-                              </>
                             )}
                             
-                            {/* 不足数 */}
+                            {/* 不足件数 */}
                             {matchingStatus.shortage > 0 && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">不{matchingStatus.shortage}</span>
                                 <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
-                              </div>
-                            )}
-                            
-                            {/* 余裕数 */}
-                            {typeof matchingStatus.excess === 'number' && matchingStatus.excess > 0 && (
-                              <div className="text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">余{matchingStatus.excess}</span>
-                                <span className="hidden sm:inline">余裕 {matchingStatus.excess}</span>
                               </div>
                             )}
                             
@@ -2730,10 +2705,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         )}
 
-                        {/* 薬局の不足状況表示 */}
+                        {/* マッチング後の薬局不足状況表示 */}
                         {(() => {
-                          const pharmacyNeeds = analyzePharmacyShortage(selectedDate);
-                          const pharmaciesWithShortage = Object.values(pharmacyNeeds).filter(p => p.shortage > 0);
+                          // AIマッチング後の実際の不足状況を計算
+                          const pharmacyNeeds = analyzePharmacyShortage(dayRequests, dayPostings);
+                          const matchedPharmacists = dayMatches.map(match => match.pharmacist.id);
+                          const matchedPharmacies = dayMatches.map(match => match.pharmacy.id);
+                          
+                          // マッチング済みの薬剤師と薬局を除外して不足を計算
+                          const pharmaciesWithShortage = pharmacyNeeds.filter(pharmacy => {
+                            const matchedCount = dayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
+                            const remainingShortage = Math.max(0, pharmacy.required_staff - matchedCount);
+                            return remainingShortage > 0;
+                          });
                           
                           if (pharmaciesWithShortage.length > 0) {
                             return (
@@ -2743,19 +2727,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   <h4 className="text-sm font-semibold text-red-800">薬局の不足状況</h4>
                                 </div>
                                 <div className="space-y-1 max-h-24 overflow-y-auto">
-                                  {pharmaciesWithShortage.map((pharmacy, index) => (
-                                    <div key={index} className="bg-white rounded border p-2 text-xs">
-                                      <div className="flex justify-between items-center">
-                                        <span className="font-medium text-gray-800">{pharmacy.name}</span>
-                                        <span className="text-red-600 font-medium">
-                                          不足 {pharmacy.shortage}人
-                                        </span>
+                                  {pharmaciesWithShortage.map((pharmacy, index) => {
+                                    const matchedCount = dayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
+                                    const remainingShortage = Math.max(0, pharmacy.required_staff - matchedCount);
+                                    const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
+                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
+                                    const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
+                                    
+                                    return (
+                                      <div key={index} className="bg-white rounded border p-2 text-xs">
+                                        <div className="flex justify-between items-center">
+                                          <span className="font-medium text-gray-800">{pharmacyName}{storeLabel}</span>
+                                          <span className="text-red-600 font-medium">
+                                            不足 {remainingShortage}人
+                                          </span>
+                                        </div>
+                                        <div className="text-gray-500">
+                                          必要: {pharmacy.required_staff}人 / マッチ: {matchedCount}人
+                                        </div>
                                       </div>
-                                      <div className="text-gray-500">
-                                        募集: {pharmacy.required}人 / マッチ: {pharmacy.matched}人
-                                      </div>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             );
