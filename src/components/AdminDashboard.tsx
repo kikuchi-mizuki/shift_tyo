@@ -343,26 +343,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       debugInfo += `実行後: マッチング結果 ${monthlyMatches.length}件\n`;
       console.log('マッチング結果:', monthlyMatches);
       
-      debugInfo += `=== マッチング結果 ===\n`;
+      // マッチング結果の詳細分析
+      debugInfo += `\n=== マッチング結果詳細 ===\n`;
       debugInfo += `マッチング件数: ${monthlyMatches.length}件\n`;
       
       if (monthlyMatches.length > 0) {
         debugInfo += `マッチング詳細:\n`;
         monthlyMatches.forEach((match, i) => {
-          debugInfo += `${i+1}. 薬剤師ID: ${match.pharmacist?.id}, 薬局ID: ${match.pharmacy?.id}, 日付: ${match.timeSlot?.date}, 時間: ${match.timeSlot?.startTime}-${match.timeSlot?.endTime}\n`;
+          debugInfo += `${i+1}. 薬剤師ID: ${match.pharmacist?.id}, 薬局ID: ${match.pharmacy?.id}\n`;
+          debugInfo += `   日付: ${match.timeSlot?.date}, 時間: ${match.timeSlot?.startTime}-${match.timeSlot?.endTime}\n`;
+          debugInfo += `   スコア: ${match.compatibilityScore}\n`;
         });
       } else {
-        debugInfo += `マッチング結果がありません。\n`;
-        debugInfo += `考えられる原因:\n`;
-        debugInfo += `- 時間範囲の不適合\n`;
-        debugInfo += `- NGリストによるブロック\n`;
-        debugInfo += `- 既に確定済みのシフトがある\n`;
-        debugInfo += `- AIマッチングエンジンの問題\n`;
-        debugInfo += `\n詳細分析:\n`;
-        debugInfo += `- 希望時間帯: ${monthlyRequests.map(r => r.start_time + '-' + r.end_time).join(', ')}\n`;
-        debugInfo += `- 募集時間帯: ${monthlyPostings.map(p => p.start_time + '-' + p.end_time).join(', ')}\n`;
-        debugInfo += `- 希望日付: ${[...new Set(monthlyRequests.map(r => r.date))].join(', ')}\n`;
-        debugInfo += `- 募集日付: ${[...new Set(monthlyPostings.map(p => p.date))].join(', ')}\n`;
+        debugInfo += `\n=== マッチング失敗の原因分析 ===\n`;
+        debugInfo += `1. 時間適合性: 適合あり ${compatibleCount}件, 適合なし ${incompatibleCount}件\n`;
+        debugInfo += `2. データ確認:\n`;
+        debugInfo += `   - 希望データ: ${monthlyRequests.length}件\n`;
+        debugInfo += `   - 募集データ: ${monthlyPostings.length}件\n`;
+        debugInfo += `   - ユーザープロフィール: ${Object.keys(userProfiles).length}件\n`;
+        debugInfo += `   - 評価データ: ${ratings.length}件\n`;
+        debugInfo += `3. 考えられる原因:\n`;
+        debugInfo += `   - AIマッチングエンジンの候補生成で0件\n`;
+        debugInfo += `   - NGリストによるブロック\n`;
+        debugInfo += `   - 既存の確定シフトとの重複\n`;
+        debugInfo += `   - その他のフィルタリング条件\n`;
       }
       
       // デバッグ情報をモーダルで表示
