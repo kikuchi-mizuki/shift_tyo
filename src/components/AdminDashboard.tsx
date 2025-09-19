@@ -331,12 +331,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       debugInfo += `\n適合性サマリー: 適合あり ${compatibleCount}件, 適合なし ${incompatibleCount}件\n`;
 
       // 1ヶ月分のマッチングを実行（重複防止付き）
+      debugInfo += `\n=== AIマッチングエンジン実行 ===\n`;
+      debugInfo += `実行前: 希望 ${monthlyRequests.length}件, 募集 ${monthlyPostings.length}件\n`;
+      
       const monthlyMatches = await aiMatchingEngine.executeOptimalMatching(monthlyRequests, monthlyPostings, {
         useAPI: false, // APIを使わずにローカルマッチングで重複防止を確実に
         algorithm: 'hybrid',
         priority: 'pharmacy_satisfaction' // 薬局の満足度を優先
       }, userProfiles, ratings);
       
+      debugInfo += `実行後: マッチング結果 ${monthlyMatches.length}件\n`;
       console.log('マッチング結果:', monthlyMatches);
       
       debugInfo += `=== マッチング結果 ===\n`;

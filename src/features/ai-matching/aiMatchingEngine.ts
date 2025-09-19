@@ -977,6 +977,15 @@ export class AIMatchingEngine {
     console.log(`生成された候補: ${candidates.length}件`);
     console.log('candidates:', candidates);
     
+    // デバッグ: 候補が生成されない理由を調査
+    if (candidates.length === 0) {
+      console.log('=== 候補が0件の原因調査 ===');
+      console.log('requests:', requests);
+      console.log('postings:', postings);
+      console.log('userProfiles:', userProfiles);
+      console.log('ratings:', ratings);
+    }
+    
     // 薬局の応募満足度を優先する最適化アルゴリズム
     const result = await this.executePharmacySatisfactionMatching(candidates, requests, postings, options?.priority);
     console.log('薬局満足度優先マッチング結果:', result);
