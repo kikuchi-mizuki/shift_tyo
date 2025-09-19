@@ -214,7 +214,7 @@ export class AIMatchingEngine {
   }
 
   /**
-   * マッチング候補の生成（従来のロジックを踏襲）
+   * マッチング候補の生成（実際のシフトデータを使用）
    */
   public async generateMatchCandidates(
     requests: any[],
@@ -228,16 +228,46 @@ export class AIMatchingEngine {
     console.log('userProfiles:', userProfiles);
     console.log('ratings:', ratings);
     
-    // Supabaseクライアントが無効化されている場合は常にフォールバックを使用
-    if (!supabase || !this.isInitialized) {
-      console.warn('Supabase unavailable or AI Matching Engine not initialized, using fallback');
-      return this.fallbackMatching(requests, postings);
+    // 実際のシフトデータを取得
+    let actualRequests = requests;
+    let actualPostings = postings;
+    
+    if (supabase && this.isInitialized) {
+      try {
+        // 実際のシフト希望データを取得
+        const { data: shiftRequests, error: requestsError } = await supabase
+          .from('shift_requests')
+          .select('*');
+        
+        if (!requestsError && shiftRequests) {
+          actualRequests = shiftRequests;
+          console.log('Actual shift requests loaded:', actualRequests.length);
+        }
+        
+        // 実際のシフト募集データを取得
+        const { data: shiftPostings, error: postingsError } = await supabase
+          .from('shift_postings')
+          .select('*');
+        
+        if (!postingsError && shiftPostings) {
+          actualPostings = shiftPostings;
+          console.log('Actual shift postings loaded:', actualPostings.length);
+        }
+      } catch (error) {
+        console.error('Error fetching actual shift data:', error);
+      }
+    }
+    
+    // データが空の場合はフォールバックを使用
+    if (!actualRequests || actualRequests.length === 0 || !actualPostings || actualPostings.length === 0) {
+      console.warn('No actual shift data available, using fallback');
+      return this.fallbackMatching(actualRequests || [], actualPostings || []);
     }
 
     const candidates: MatchCandidate[] = [];
 
-    // 薬剤師を評価順にソート（従来のロジック）
-    const sortedRequests = requests.sort((a: any, b: any) => {
+    // 薬剤師を評価順にソート（実際のデータを使用）
+    const sortedRequests = actualRequests.sort((a: any, b: any) => {
       const aRating = this.calculatePharmacistRating(a, ratings);
       const bRating = this.calculatePharmacistRating(b, ratings);
       
@@ -255,12 +285,12 @@ export class AIMatchingEngine {
 
     console.log('=== マッチング処理開始 ===');
     console.log('sortedRequests:', sortedRequests.length);
-    console.log('postings:', postings.length);
+    console.log('actualPostings:', actualPostings.length);
     
     for (const request of sortedRequests) {
       console.log(`薬剤師 ${request.pharmacist_id} の希望を処理中:`, request);
       
-      for (const posting of postings) {
+      for (const posting of actualPostings) {
         // 薬剤師-薬局-日付ペアの重複チェック（同じ日付での重複のみ防止）
         const pairKey = `${request.pharmacist_id}-${posting.pharmacy_id}-${request.date}`;
         if (processedPairs.has(pairKey)) {

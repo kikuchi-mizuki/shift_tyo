@@ -324,7 +324,7 @@ const calculateAIScore = async (request: any, posting: any): Promise<number> => 
  */
 const getPharmacistProfile = async (pharmacistId: string): Promise<any> => {
   try {
-    // テーブルが存在しない場合のエラーハンドリング
+    console.log('Fetching pharmacist profile for:', pharmacistId);
     const { data, error } = await supabase
       .from('pharmacist_profiles')
       .select('*')
@@ -332,23 +332,24 @@ const getPharmacistProfile = async (pharmacistId: string): Promise<any> => {
       .single();
 
     if (error) {
-      // テーブルが存在しない場合はデフォルト値を返す
-      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
-        console.warn('pharmacist_profiles table not found, using default profile');
-        return {
-          skills: [],
-          experience: 2,
-          average_satisfaction: 4.0
-        };
-      }
       console.error('Error fetching pharmacist profile:', error);
-      return null;
+      // データが見つからない場合はデフォルト値を返す
+      return {
+        skills: [],
+        experience: 2,
+        average_satisfaction: 4.0
+      };
     }
 
+    console.log('Pharmacist profile found:', data);
     return data;
   } catch (error) {
     console.error('Error in getPharmacistProfile:', error);
-    return null;
+    return {
+      skills: [],
+      experience: 2,
+      average_satisfaction: 4.0
+    };
   }
 };
 
@@ -357,7 +358,7 @@ const getPharmacistProfile = async (pharmacistId: string): Promise<any> => {
  */
 const getPharmacyProfile = async (pharmacyId: string): Promise<any> => {
   try {
-    // テーブルが存在しない場合のエラーハンドリング
+    console.log('Fetching pharmacy profile for:', pharmacyId);
     const { data, error } = await supabase
       .from('pharmacy_profiles')
       .select('*')
@@ -365,23 +366,24 @@ const getPharmacyProfile = async (pharmacyId: string): Promise<any> => {
       .single();
 
     if (error) {
-      // テーブルが存在しない場合はデフォルト値を返す
-      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
-        console.warn('pharmacy_profiles table not found, using default profile');
-        return {
-          required_skills: [],
-          experience_level: 'intermediate',
-          average_pharmacist_satisfaction: 4.0
-        };
-      }
       console.error('Error fetching pharmacy profile:', error);
-      return null;
+      // データが見つからない場合はデフォルト値を返す
+      return {
+        required_skills: [],
+        experience_level: 'intermediate',
+        average_pharmacist_satisfaction: 4.0
+      };
     }
 
+    console.log('Pharmacy profile found:', data);
     return data;
   } catch (error) {
     console.error('Error in getPharmacyProfile:', error);
-    return null;
+    return {
+      required_skills: [],
+      experience_level: 'intermediate',
+      average_pharmacist_satisfaction: 4.0
+    };
   }
 };
 
@@ -454,17 +456,15 @@ const getPharmacistRating = (pharmacistId: string): number => {
  */
 const saveMatchingHistory = async (history: any): Promise<void> => {
   try {
+    console.log('Saving matching history:', history);
     const { error } = await supabase
       .from('matching_history')
       .insert(history);
 
     if (error) {
-      // テーブルが存在しない場合は警告のみ
-      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
-        console.warn('matching_history table not found, skipping history save');
-        return;
-      }
       console.error('Error saving matching history:', error);
+    } else {
+      console.log('Matching history saved successfully');
     }
   } catch (error) {
     console.error('Error in saveMatchingHistory:', error);
@@ -540,6 +540,7 @@ export const getLearningData = async (limit: number = 1000): Promise<any[]> => {
  */
 export const getMatchingStatistics = async (dateRange?: { start: string; end: string }): Promise<any> => {
   try {
+    console.log('Fetching matching statistics with dateRange:', dateRange);
     let query = supabase
       .from('matching_history')
       .select('*')
@@ -554,18 +555,13 @@ export const getMatchingStatistics = async (dateRange?: { start: string; end: st
     const { data, error } = await query.limit(100);
 
     if (error) {
-      // テーブルが存在しない場合はデフォルト統計を返す
-      if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
-        console.warn('matching_history table not found, returning default statistics');
-        return {
-          totalMatches: 0,
-          averageSuccessRate: 0,
-          averageExecutionTime: 0,
-          algorithmPerformance: {}
-        };
-      }
       console.error('Error fetching matching statistics:', error);
-      return null;
+      return {
+        totalMatches: 0,
+        averageSuccessRate: 0,
+        averageExecutionTime: 0,
+        algorithmPerformance: {}
+      };
     }
 
     if (!data || data.length === 0) {
