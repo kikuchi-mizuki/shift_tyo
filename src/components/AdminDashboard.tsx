@@ -2469,21 +2469,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       
-                      {/* マッチング結果のパッチ表示 */}
-                      {(() => {
-                        const dayMatches = aiMatchesByDate[dateStr] || [];
-                        if (dayMatches.length > 0) {
-                          return (
-                            <div className="text-[7px] sm:text-[8px] mt-1">
-                              <div className="text-purple-700 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">マ{dayMatches.length}</span>
-                                <span className="hidden sm:inline">マッチ {dayMatches.length}件</span>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
                       
                       {/* 確定は上のブロックで件数ラベルのみ表示 */}
                     </>
@@ -2667,12 +2652,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         {(() => {
                           // AIマッチング後の実際の不足状況を計算
                           const pharmacyNeeds = analyzePharmacyShortage(dayRequests, dayPostings);
-                          const matchedPharmacists = dayMatches.map(match => match.pharmacist.id);
-                          const matchedPharmacies = dayMatches.map(match => match.pharmacy.id);
+                          const currentDayMatches = dayMatches || [];
+                          const matchedPharmacists = currentDayMatches.map(match => match.pharmacist.id);
+                          const matchedPharmacies = currentDayMatches.map(match => match.pharmacy.id);
                           
                           // マッチング済みの薬剤師と薬局を除外して不足を計算
                           const pharmaciesWithShortage = pharmacyNeeds.filter(pharmacy => {
-                            const matchedCount = dayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
+                            const matchedCount = currentDayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
                             const remainingShortage = Math.max(0, pharmacy.required_staff - matchedCount);
                             return remainingShortage > 0;
                           });
@@ -2686,7 +2672,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 </div>
                                 <div className="space-y-1 max-h-24 overflow-y-auto">
                                   {pharmaciesWithShortage.map((pharmacy, index) => {
-                                    const matchedCount = dayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
+                                    const matchedCount = currentDayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length;
                                     const remainingShortage = Math.max(0, pharmacy.required_staff - matchedCount);
                                     const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
                                     const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
