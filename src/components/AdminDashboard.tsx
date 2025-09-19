@@ -624,6 +624,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               return;
             }
           }
+
+          // 互換: user_profiles.ng_list も反映（画面で外した内容を旧カラムにも保存）
+          try {
+            await supabase
+              .from('user_profiles')
+              .update({ ng_list: ngList })
+              .eq('id', profile.id);
+          } catch (e) {
+            console.warn('Failed to update legacy ng_list on user_profiles for pharmacy', profile.id, e);
+          }
         }
       } else {
         // その他の場合は従来通りng_listを保存
