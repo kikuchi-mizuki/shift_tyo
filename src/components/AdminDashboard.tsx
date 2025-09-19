@@ -1082,11 +1082,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       console.log('=== シフト希望データ読み込み完了 ===');
       console.log('読み込まれたシフト希望数:', (r || []).length);
+      console.log('シフト希望データ詳細:', r);
+      
+      // 月別データの確認
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      const monthlyRequests = Array.isArray(r) ? r.filter((req: any) => {
+        const requestDate = new Date(req.date);
+        return requestDate.getMonth() === currentMonth && requestDate.getFullYear() === currentYear;
+      }) : [];
+      console.log(`今月(${currentYear}年${currentMonth + 1}月)の希望シフト数:`, monthlyRequests.length);
+      console.log('今月の希望シフト詳細:', monthlyRequests);
       console.log('シフト希望の薬剤師ID一覧:', (r || []).map(req => req.pharmacist_id));
       console.log('シフト希望詳細:', r);
       
       const { data: p } = await shiftPostings.getPostings('', 'admin' as any);
       setPostings(p || []);
+      
+      console.log('=== シフト募集データ読み込み完了 ===');
+      console.log('読み込まれたシフト募集数:', (p || []).length);
+      console.log('シフト募集データ詳細:', p);
+      
+      // 月別募集データの確認
+      const monthlyPostings = Array.isArray(p) ? p.filter((post: any) => {
+        const postingDate = new Date(post.date);
+        return postingDate.getMonth() === currentMonth && postingDate.getFullYear() === currentYear;
+      }) : [];
+      console.log(`今月(${currentYear}年${currentMonth + 1}月)の募集シフト数:`, monthlyPostings.length);
+      console.log('今月の募集シフト詳細:', monthlyPostings);
+      console.log('シフト募集の薬局ID一覧:', (p || []).map(post => post.pharmacy_id));
       
       console.log('=== 全データ読み込み完了 ===');
       console.log('ユーザープロフィール数:', Object.keys(userProfiles).length);
@@ -1314,6 +1338,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             setRatings(ratingsData);
             logToRailway('Loaded pharmacist ratings:', ratingsData.length);
           }
+          
+          console.log('=== 薬剤師評価データ読み込み完了 ===');
+          console.log('読み込まれた評価データ数:', (ratingsData || []).length);
+          console.log('評価データ詳細:', ratingsData);
           
           // 店舗毎のNG薬剤師データを取得
           logToRailway('Fetching store-specific NG pharmacists...');
