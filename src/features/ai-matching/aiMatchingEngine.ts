@@ -232,19 +232,35 @@ export class AIMatchingEngine {
 
     const processedPairs = new Set<string>(); // 薬剤師-薬局-日付ペアの重複防止
 
+    console.log('=== マッチング処理開始 ===');
+    console.log('sortedRequests:', sortedRequests.length);
+    console.log('postings:', postings.length);
+    
     for (const request of sortedRequests) {
+      console.log(`薬剤師 ${request.pharmacist_id} の希望を処理中:`, request);
+      
       for (const posting of postings) {
         // 薬剤師-薬局-日付ペアの重複チェック（同じ日付での重複のみ防止）
         const pairKey = `${request.pharmacist_id}-${posting.pharmacy_id}-${request.date}`;
-        if (processedPairs.has(pairKey)) continue;
+        if (processedPairs.has(pairKey)) {
+          console.log(`重複ペアをスキップ: ${pairKey}`);
+          continue;
+        }
+
+        console.log(`薬局 ${posting.pharmacy_id} との組み合わせをチェック:`, posting);
+        console.log(`日付一致: ${request.date === posting.date}`);
+        console.log(`時間互換性: ${this.isBasicCompatible(request, posting)}`);
+        console.log(`NG互換性: ${this.isNgCompatible(request, posting, userProfiles)}`);
 
         // 基本的なフィルタリング（時間範囲 + NGリスト + 日付一致）
         if (request.date === posting.date && 
             this.isBasicCompatible(request, posting) && 
             this.isNgCompatible(request, posting, userProfiles)) {
           
+          console.log(`マッチング候補を作成中...`);
           const candidate = await this.createMatchCandidate(request, posting, ratings);
           if (candidate) {
+            console.log(`マッチング成功:`, candidate);
             candidates.push(candidate);
             processedPairs.add(pairKey);
             break; // 同じ日付で薬剤師は1つの薬局にのみマッチ
@@ -252,6 +268,9 @@ export class AIMatchingEngine {
         }
       }
     }
+    
+    console.log('=== マッチング処理完了 ===');
+    console.log(`生成された候補数: ${candidates.length}`);
 
     // スコア順にソート
     return candidates.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
@@ -320,16 +339,29 @@ export class AIMatchingEngine {
    * NGリストの互換性チェック
    */
   private isNgCompatible(request: any, posting: any, userProfiles: any): boolean {
+    // userProfilesが取得できない場合は、NGリストチェックをスキップ
+    if (!userProfiles) {
+      console.log('userProfilesが取得できないため、NGリストチェックをスキップ');
+      return true;
+    }
+    
     const pharmacist = this.getProfileById(request.pharmacist_id, userProfiles);
     const pharmacy = this.getProfileById(posting.pharmacy_id, userProfiles);
     
-    if (!pharmacist || !pharmacy) return false;
+    // プロファイルが取得できない場合は、NGリストチェックをスキップ
+    if (!pharmacist || !pharmacy) {
+      console.log('プロファイルが取得できないため、NGリストチェックをスキップ');
+      return true;
+    }
 
     const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
     const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
 
     const blockedByPharmacist = pharmacistNg.includes(posting.pharmacy_id);
     const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+
+    console.log(`NGリストチェック: 薬剤師NG=${pharmacistNg}, 薬局NG=${pharmacyNg}`);
+    console.log(`ブロック状況: 薬剤師によるブロック=${blockedByPharmacist}, 薬局によるブロック=${blockedByPharmacy}`);
 
     return !blockedByPharmacist && !blockedByPharmacy;
   }
