@@ -58,7 +58,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     initializeAI();
   }, []);
 
-  // 簡易AIマッチング関数
+  // 簡易AIマッチング関数（従来のロジックを踏襲）
   const executeSimpleAIMatching = async (requests: any[], postings: any[]) => {
     console.log('簡易AIマッチング開始:', { requests: requests.length, postings: postings.length });
     
@@ -66,47 +66,113 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     const usedPharmacists = new Set<string>();
     const usedPharmacies = new Set<string>();
 
-    // 薬剤師を評価順にソート
-    const sortedRequests = requests.sort((a, b) => {
+    // ヘルパー関数
+    const getProfile = (id: string) => {
+      if (!userProfiles) return {} as any;
+      if (Array.isArray(userProfiles)) {
+        return (userProfiles as any[]).find((u: any) => u?.id === id) || ({} as any);
+      }
+      return (userProfiles as any)[id] || ({} as any);
+    };
+
+    // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
+    const sortedRequests = requests.sort((a: any, b: any) => {
       const aRating = getPharmacistRating(a.pharmacist_id);
       const bRating = getPharmacistRating(b.pharmacist_id);
-      return bRating - aRating;
+      
+      // 評価が異なる場合は評価の高い順
+      if (aRating !== bRating) {
+        return bRating - aRating;
+      }
+      
+      // 評価が同じ場合は優先度順
+      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+      return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
 
-    for (const request of sortedRequests) {
-      for (const posting of postings) {
-        if (
-          !usedPharmacists.has(request.pharmacist_id) &&
-          !usedPharmacies.has(posting.pharmacy_id) &&
-          isRangeCompatible(request, posting)
-        ) {
-          // 簡易スコア計算
-          const compatibilityScore = Math.random() * 0.4 + 0.6; // 0.6-1.0の範囲
+    let remainingRequired = postings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
+
+    // 各薬局の必要人数を管理
+    const pharmacyNeeds = postings.map((p: any) => ({
+      ...p,
+      remaining: Number(p.required_staff) || 0
+    }));
+
+    // 時間範囲ベースのマッチング（優先順位順に薬剤師をマッチング）
+    sortedRequests.forEach((request: any) => {
+      if (remainingRequired <= 0) return;
+
+      const pharmacist = getProfile(request.pharmacist_id);
+      const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+
+      // 利用可能な薬局を探す
+      for (const pharmacyNeed of pharmacyNeeds) {
+        if (pharmacyNeed.remaining <= 0) continue;
+
+        const pharmacy = getProfile(pharmacyNeed.pharmacy_id);
+        const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+
+        const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
+        const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+
+        // 時間範囲の互換性を考慮
+        if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
+          // マッチング成功のログ
+          console.log(`✅ AIマッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
+          
+          // 店舗名を取得
+          const getStoreNameFromPosting = (posting: any) => {
+            const direct = (posting.store_name || '').trim();
+            let fromMemo = '';
+            if (!direct && typeof posting.memo === 'string') {
+              const m = posting.memo.match(/\[store:([^\]]+)\]/);
+              if (m && m[1]) fromMemo = m[1];
+            }
+            return direct || fromMemo || '';
+          };
+          
+          const storeName = getStoreNameFromPosting(pharmacyNeed);
+          
+          // 適合度スコア計算（評価と優先度を考慮）
+          const ratingScore = getPharmacistRating(request.pharmacist_id) / 5; // 0-1に正規化
+          const priorityScore = request.priority === 'high' ? 1 : request.priority === 'medium' ? 0.7 : 0.5;
+          const compatibilityScore = (ratingScore * 0.7 + priorityScore * 0.3);
           
           matches.push({
             pharmacist: {
               id: request.pharmacist_id,
-              name: userProfiles[request.pharmacist_id]?.name || 'Unknown'
+              name: pharmacist?.name || 'Unknown'
             },
             pharmacy: {
-              id: posting.pharmacy_id,
-              name: posting.store_name || userProfiles[posting.pharmacy_id]?.name || 'Unknown'
+              id: pharmacyNeed.pharmacy_id,
+              name: storeName || pharmacy?.name || 'Unknown'
             },
             timeSlot: {
-              start: posting.start_time,
-              end: posting.end_time,
-              date: posting.date
+              start: pharmacyNeed.start_time,
+              end: pharmacyNeed.end_time,
+              date: pharmacyNeed.date
             },
             compatibilityScore,
-            reasons: ['簡易マッチング']
+            reasons: [`評価${getPharmacistRating(request.pharmacist_id)}`, `優先度${request.priority}`, '時間範囲適合']
           });
 
           usedPharmacists.add(request.pharmacist_id);
-          usedPharmacies.add(posting.pharmacy_id);
+          usedPharmacies.add(pharmacyNeed.pharmacy_id);
+          pharmacyNeed.remaining--;
+          remainingRequired--;
           break;
+        } else {
+          // マッチング失敗の理由をログ出力
+          if (blockedByPharmacist) {
+            console.log(`❌ AIマッチング失敗: 薬剤師NGリストに薬局が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+          } else if (blockedByPharmacy) {
+            console.log(`❌ AIマッチング失敗: 薬局NGリストに薬剤師が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+          } else if (!isRangeCompatible(request, pharmacyNeed)) {
+            console.log(`❌ AIマッチング失敗: 時間範囲不適合 (薬剤師:${request.start_time}-${request.end_time} vs 薬局:${pharmacyNeed.start_time}-${pharmacyNeed.end_time})`);
+          }
         }
       }
-    }
+    });
 
     console.log('簡易AIマッチング完了:', matches.length, '件のマッチ');
     return matches;
@@ -197,7 +263,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         useAPI: true,
         algorithm: 'hybrid',
         priority: 'pharmacy_satisfaction' // 薬局の満足度を優先
-      });
+      }, userProfiles, ratings);
 
       // 日付別にマッチング結果を整理
       const matchesByDate: { [date: string]: any[] } = {};
@@ -1436,245 +1502,69 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // 指定日のみを処理
       if (dayRequests.length > 0 || dayPostings.length > 0) {
         
-        // AIマッチングが有効な場合はAIマッチングを使用
-        if (useAIMatching) {
-          console.log('AIマッチングが有効です');
+        // AIマッチングを実行
+        console.log('AIマッチングを実行します');
+        
+        try {
+          let aiMatches: any[] = [];
           
           if (aiMatchingEngine) {
-            console.log('AIマッチングエンジンが利用可能です');
-            console.log('AIマッチングを使用してマッチングを実行します');
+            // フルAIマッチングエンジンを使用
+            console.log('AIマッチングエンジンを使用します');
+            aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
+              useAPI: true,
+              algorithm: 'hybrid',
+              priority: 'pharmacy_satisfaction'
+            }, userProfiles, ratings);
           } else {
-            console.log('AIマッチングエンジンが初期化されていません。簡易AIマッチングを使用します');
+            // 簡易AIマッチングロジック
+            console.log('簡易AIマッチングを使用します');
+            aiMatches = await executeSimpleAIMatching(dayRequests, dayPostings);
           }
           
-          try {
-            let aiMatches: any[] = [];
+          console.log(`AIマッチング結果: ${aiMatches.length}件のマッチが見つかりました`);
+          
+          if (aiMatches.length > 0) {
+            // AIマッチング結果を確定シフトに変換
+            const aiShifts = aiMatches.map(match => {
+              // 薬局名と店舗名を正しく取得
+              const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
+              const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
+              
+              return {
+                pharmacist_id: match.pharmacist.id,
+                pharmacy_id: match.pharmacy.id,
+                date: date,
+                start_time: match.timeSlot.start,
+                end_time: match.timeSlot.end,
+                status: 'confirmed',
+                store_name: storeName,
+                memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+              };
+            });
             
-            if (aiMatchingEngine) {
-              // フルAIマッチングエンジンを使用
-              aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
-                useAPI: true,
-                algorithm: 'hybrid',
-                priority: 'balance'
-              });
-            } else {
-              // 簡易AIマッチングロジック
-              console.log('簡易AIマッチングを実行します');
-              aiMatches = await executeSimpleAIMatching(dayRequests, dayPostings);
-            }
+            console.log('AIマッチングで生成されたシフト:', aiShifts);
             
-            console.log(`AIマッチング結果: ${aiMatches.length}件のマッチが見つかりました`);
+            // AIマッチング結果をデータベースに保存
+            const { error } = await supabase.from('assigned_shifts').insert(aiShifts);
+            if (error) throw error;
             
-            if (aiMatches.length > 0) {
-              // AIマッチング結果を確定シフトに変換
-              const aiShifts = aiMatches.map(match => {
-                // 薬局名と店舗名を正しく取得
-                const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
-                const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
-                
-                return {
-                  pharmacist_id: match.pharmacist.id,
-                  pharmacy_id: match.pharmacy.id,
-                  date: date,
-                  start_time: match.timeSlot.start,
-                  end_time: match.timeSlot.end,
-                  status: 'confirmed',
-                  store_name: storeName,
-                  memo: `マッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
-                };
-              });
-              
-              console.log('AIマッチングで生成されたシフト:', aiShifts);
-              
-              // AIマッチング結果をデータベースに保存
-              const { error } = await supabase.from('assigned_shifts').insert(aiShifts);
-              if (error) throw error;
-              
-              console.log(`AIマッチング完了: ${aiShifts.length}件のシフトを確定しました`);
-              
-              // データを再読み込み
-              await loadAssignedShifts();
-              return;
-            } else {
-              console.log('AIマッチングで有効なシフトが見つからなかったため、従来のマッチングにフォールバックします');
-            }
-          } catch (error) {
-            console.error('AIマッチングに失敗、フォールバックとして従来のマッチングを使用:', error);
+            console.log(`AIマッチング完了: ${aiShifts.length}件のシフトを確定しました`);
+            
+            // データを再読み込み
+            await loadAssignedShifts();
+            return;
+          } else {
+            console.log('AIマッチングでマッチが見つかりませんでした');
+            alert(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n時間帯やNGリストを確認してください。`);
+            return;
           }
-        } else {
-          console.log('AIマッチングが無効のため、従来のマッチングを使用します');
-        }
-        
-        // ヘルパー関数
-        const getProfile = (id: string) => {
-          if (!userProfiles) return {} as any;
-          if (Array.isArray(userProfiles)) {
-            return (userProfiles as any[]).find((u: any) => u?.id === id) || ({} as any);
-          }
-          return (userProfiles as any)[id] || ({} as any);
-        };
-        
-        // 時間範囲ベースのマッチング関数（start_time/end_timeで判定）
-        const isRangeCompatible = (request: any, posting: any) => {
-          const rs = request?.start_time;
-          const re = request?.end_time;
-          const ps = posting?.start_time;
-          const pe = posting?.end_time;
-          
-          // 両方に時間範囲がある場合は包含関係で判定
-          if (rs && re && ps && pe) {
-            // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
-            return rs <= ps && re >= pe;
-          }
-          
-          // 片方でも時間範囲がない場合はマッチしない
-          return false;
-        };
-
-        // この日付でマッチした薬剤師と薬局を追跡
-        const matchedPharmacists: any[] = [];
-        const matchedPharmacies: any[] = [];
-
-
-        // 時間範囲ベースのマッチング（start_time/end_timeで判定）
-        // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
-        const sortedRequests = dayRequests.sort((a: any, b: any) => {
-          const aRating = getPharmacistRating(a.pharmacist_id);
-          const bRating = getPharmacistRating(b.pharmacist_id);
-          
-          // 評価が異なる場合は評価の高い順
-          if (aRating !== bRating) {
-            return bRating - aRating;
-          }
-          
-          // 評価が同じ場合は優先度順
-          const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-          return priorityOrder[b.priority] - priorityOrder[a.priority];
-        });
-
-        let remainingRequired = dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-
-        // 各薬局の必要人数を管理
-        const pharmacyNeeds = dayPostings.map((p: any) => ({
-          ...p,
-          remaining: Number(p.required_staff) || 0
-        }));
-
-        // 時間範囲ベースのマッチング（優先順位順に薬剤師をマッチング）
-        sortedRequests.forEach((request: any) => {
-          if (remainingRequired <= 0) return;
-
-            const pharmacist = getProfile(request.pharmacist_id);
-            const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
-
-            // 利用可能な薬局を探す
-            for (const pharmacyNeed of pharmacyNeeds) {
-              if (pharmacyNeed.remaining <= 0) continue;
-
-              const pharmacy = getProfile(pharmacyNeed.pharmacy_id);
-              const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
-
-              const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
-              const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
-
-              // 時間範囲の互換性を考慮
-              if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
-                // マッチング成功のログ
-                console.log(`✅ 時間範囲マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
-                // 店舗名を取得（postingから）
-                const getStoreNameFromPosting = (posting: any) => {
-                  console.log('getStoreNameFromPosting called with posting:', posting);
-                  const direct = (posting.store_name || '').trim();
-                  let fromMemo = '';
-                  if (!direct && typeof posting.memo === 'string') {
-                    const m = posting.memo.match(/\[store:([^\]]+)\]/);
-                    if (m && m[1]) fromMemo = m[1];
-                  }
-                  const result = direct || fromMemo || '';
-                  console.log('getStoreNameFromPosting result:', {
-                    direct,
-                    fromMemo,
-                    final: result,
-                    posting_store_name: posting.store_name,
-                    posting_memo: posting.memo
-                  });
-                  return result;
-                };
-                
-                const storeName = getStoreNameFromPosting(pharmacyNeed);
-                console.log('Final storeName for shift:', storeName);
-                
-                const confirmedShift = {
-                  // IDはSupabaseが自動生成
-                  pharmacist_id: request.pharmacist_id,
-                  pharmacy_id: pharmacyNeed.pharmacy_id,
-                  date: date,
-                  start_time: pharmacyNeed.start_time,
-                  end_time: pharmacyNeed.end_time,
-                  status: 'confirmed',
-                  store_name: storeName,
-                  memo: pharmacyNeed.memo || ''
-                };
-                console.log('Creating confirmed shift:', confirmedShift);
-                console.log('Request pharmacist_id:', request.pharmacist_id);
-                console.log('Request object:', request);
-                confirmedShifts.push(confirmedShift);
-                
-                matchedPharmacists.push(request);
-                matchedPharmacies.push(pharmacyNeed);
-                pharmacyNeed.remaining--;
-                remainingRequired--;
-                break;
-              }
-            }
-          });
+        } catch (error) {
+          console.error('AIマッチングに失敗:', error);
+          alert('AIマッチングに失敗しました。時間帯やNGリストを確認してください。');
+          return;
         }
 
-      console.log('Final confirmed shifts:', confirmedShifts);
-
-      if (confirmedShifts.length === 0) {
-        console.log('マッチング結果:', {
-          dayRequests: dayRequests.length,
-          dayPostings: dayPostings.length,
-          confirmedShifts: confirmedShifts.length,
-          useAIMatching,
-          aiMatchingEngine: !!aiMatchingEngine
-        });
-        alert(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n希望シフトと募集シフトの日付・時間帯が一致するものを確認してください。`);
-        return;
-      }
-
-      // ユーザーIDの妥当性チェック
-      const invalidShifts = confirmedShifts.filter(shift => 
-        !shift.pharmacist_id || !shift.pharmacy_id || 
-        shift.pharmacist_id === 'test-pharmacist-id' || 
-        shift.pharmacy_id === 'test-pharmacy-id'
-      );
-      
-      if (invalidShifts.length > 0) {
-        console.error('Invalid shifts found:', invalidShifts);
-        alert('無効なユーザーIDが含まれています。シフトの確定に失敗しました。');
-        return;
-      }
-
-      // upsertを使用して重複を自動的に処理
-      console.log('Proceeding with upsert (automatic duplicate handling)...');
-      console.log('Shifts to upsert:', confirmedShifts);
-      
-      // Supabaseに確定済みシフトを保存（upsert使用）
-      console.log('Calling createConfirmedShifts with upsert:', confirmedShifts);
-      const { error } = await shifts.createConfirmedShifts(confirmedShifts);
-      
-      if (error) {
-        console.error('Error confirming shifts:', error);
-        alert(`シフトの確定に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
-        return;
-      }
-
-      setLastUpdated(new Date());
-      
-      // 指定日のデータのみを再読み込み（全データの再読み込みは避ける）
-      await loadAssignedShifts();
     } catch (error) {
       console.error('Error in handleConfirmShiftsForDate:', error);
       alert(`シフトの確定に失敗しました: ${(error as any).message || 'Unknown error'}`);

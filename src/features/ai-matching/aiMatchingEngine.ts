@@ -192,11 +192,13 @@ export class AIMatchingEngine {
   }
 
   /**
-   * マッチング候補の生成
+   * マッチング候補の生成（従来のロジックを踏襲）
    */
   public async generateMatchCandidates(
     requests: any[],
-    postings: any[]
+    postings: any[],
+    userProfiles?: any,
+    ratings?: any[]
   ): Promise<MatchCandidate[]> {
     if (!this.isInitialized) {
       console.warn('AI Matching Engine not initialized, using fallback');
@@ -205,13 +207,40 @@ export class AIMatchingEngine {
 
     const candidates: MatchCandidate[] = [];
 
-    for (const request of requests) {
+    // 薬剤師を評価順にソート（従来のロジック）
+    const sortedRequests = requests.sort((a: any, b: any) => {
+      const aRating = this.calculatePharmacistRating(a, ratings);
+      const bRating = this.calculatePharmacistRating(b, ratings);
+      
+      // 評価が異なる場合は評価の高い順
+      if (aRating !== bRating) {
+        return bRating - aRating;
+      }
+      
+      // 評価が同じ場合は優先度順
+      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+      return priorityOrder[b.priority] - priorityOrder[a.priority];
+    });
+
+    const usedPharmacists = new Set<string>();
+    const usedPharmacies = new Set<string>();
+
+    for (const request of sortedRequests) {
+      if (usedPharmacists.has(request.pharmacist_id)) continue;
+
       for (const posting of postings) {
-        // 基本的なフィルタリング
-        if (this.isBasicCompatible(request, posting)) {
+        if (usedPharmacies.has(posting.pharmacy_id)) continue;
+
+        // 基本的なフィルタリング（時間範囲 + NGリスト）
+        if (this.isBasicCompatible(request, posting) && 
+            this.isNgCompatible(request, posting, userProfiles)) {
+          
           const candidate = await this.createMatchCandidate(request, posting);
           if (candidate) {
             candidates.push(candidate);
+            usedPharmacists.add(request.pharmacist_id);
+            usedPharmacies.add(posting.pharmacy_id);
+            break; // 薬剤師は1つの薬局にのみマッチ
           }
         }
       }
@@ -222,7 +251,7 @@ export class AIMatchingEngine {
   }
 
   /**
-   * 基本的な互換性チェック
+   * 基本的な互換性チェック（従来のロジックを踏襲）
    */
   private isBasicCompatible(request: any, posting: any): boolean {
     // 時間範囲の互換性
@@ -236,6 +265,35 @@ export class AIMatchingEngine {
     // 重複関係: 薬剤師の希望時間が薬局の募集時間と重複していればマッチ
     // つまり、薬剤師が薬局の応募時間を満たしていればマッチ
     return rs < pe && re > ps;
+  }
+
+  /**
+   * NGリストの互換性チェック
+   */
+  private isNgCompatible(request: any, posting: any, userProfiles: any): boolean {
+    const pharmacist = this.getProfileById(request.pharmacist_id, userProfiles);
+    const pharmacy = this.getProfileById(posting.pharmacy_id, userProfiles);
+    
+    if (!pharmacist || !pharmacy) return false;
+
+    const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+    const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+
+    const blockedByPharmacist = pharmacistNg.includes(posting.pharmacy_id);
+    const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+
+    return !blockedByPharmacist && !blockedByPharmacy;
+  }
+
+  /**
+   * プロファイル取得のヘルパー関数
+   */
+  private getProfileById(id: string, userProfiles: any): any {
+    if (!userProfiles) return null;
+    if (Array.isArray(userProfiles)) {
+      return userProfiles.find((u: any) => u?.id === id);
+    }
+    return userProfiles[id];
   }
 
   /**
@@ -556,7 +614,7 @@ export class AIMatchingEngine {
   }
 
   /**
-   * 最適なマッチングの実行
+   * 最適なマッチングの実行（従来のロジックを踏襲）
    */
   public async executeOptimalMatching(
     requests: any[],
@@ -565,7 +623,9 @@ export class AIMatchingEngine {
       useAPI?: boolean;
       algorithm?: 'rule_based' | 'ai_based' | 'hybrid';
       priority?: 'satisfaction' | 'efficiency' | 'balance' | 'pharmacy_satisfaction';
-    }
+    },
+    userProfiles?: any,
+    ratings?: any[]
   ): Promise<MatchCandidate[]> {
     // APIを使用する場合はAPI経由でマッチングを実行
     if (options?.useAPI !== false) {
@@ -642,8 +702,8 @@ export class AIMatchingEngine {
       }
     }
 
-    // フォールバック: ローカルマッチング
-    const candidates = await this.generateMatchCandidates(requests, postings);
+    // フォールバック: ローカルマッチング（従来のロジック）
+    const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings);
     
     // 薬局の応募満足度を優先する最適化アルゴリズム
     return await this.executePharmacySatisfactionMatching(candidates, requests, postings, options?.priority);
@@ -809,11 +869,16 @@ export class AIMatchingEngine {
   }
 
   /**
-   * 薬剤師の評価を計算
+   * 薬剤師の評価を計算（従来のロジックを踏襲）
    */
-  private calculatePharmacistRating(request: any): number {
-    // 実際の実装では、評価、経験、過去の実績などを考慮
-    return Math.random() * 0.5 + 0.5; // 0.5-1.0の範囲
+  private calculatePharmacistRating(request: any, ratings?: any[]): number {
+    if (!ratings) return 0;
+    
+    const pharmacistRatings = ratings.filter(r => r.pharmacist_id === request.pharmacist_id);
+    if (pharmacistRatings.length === 0) return 0;
+    
+    const average = pharmacistRatings.reduce((sum, r) => sum + r.rating, 0) / pharmacistRatings.length;
+    return Math.round(average * 10) / 10; // 小数点第1位まで
   }
 }
 
