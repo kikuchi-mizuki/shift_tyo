@@ -185,38 +185,25 @@ export const userProfiles = {
     }
 
     try {
-      // 現在のセッションから認証トークンを取得
-      const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token || supabaseAnonKey;
+      // 直接Supabaseクライアントを使用（Edge Functionの代わり）
+      console.log('Direct Supabase query for user profile:', userId);
       
-      console.log('Edge Function request details:', {
-        apiUrl: `${supabaseUrl}/functions/v1/api/user_profiles`,
-        hasSession: !!session,
-        hasAuthToken: !!authToken,
-        tokenPrefix: authToken?.substring(0, 20) + '...'
-      });
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
       
-      // Edge Function経由でデータを取得
-      const apiUrl = `${supabaseUrl}/functions/v1/api/user_profiles`;
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
+      if (error) {
+        console.warn('Failed to fetch user profile:', error);
+        // テーブルが存在しない場合は空のデータを返す
+        if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+          return { data: null, error: null };
         }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { data: null, error: errorData.error || { message: 'API request failed' } };
+        return { data: null, error };
       }
       
-      const result = await response.json();
-      const data = result.data || [];
-      
-      // 指定されたユーザーIDのプロファイルを検索
-      const userProfile = data.find((profile: any) => profile.id === userId) || null;
-      
-      return { data: userProfile, error: null };
+      return { data, error: null };
     } catch (error) {
       console.error('Get profile error:', error);
       return { data: null, error };
@@ -545,48 +532,30 @@ export const shifts = {
     }
 
     try {
-      // 現在のセッションから認証トークンを取得
-      const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token || supabaseAnonKey;
+      // 直接Supabaseクライアントを使用（Edge Functionの代わり）
+      console.log('Direct Supabase query for assigned_shifts');
       
-      console.log('Edge Function request details (assigned_shifts):', {
-        apiUrl: `${supabaseUrl}/functions/v1/api/assigned_shifts`,
-        hasSession: !!session,
-        hasAuthToken: !!authToken,
-        tokenPrefix: authToken?.substring(0, 20) + '...'
-      });
+      let query = supabase.from('assigned_shifts').select('*');
       
-      // Edge Function経由でデータを取得
-      const apiUrl = `${supabaseUrl}/functions/v1/api/assigned_shifts`;
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { data: [], error: errorData.error || { message: 'API request failed' } };
-      }
-      
-      const result = await response.json();
-      let data = result.data || [];
-      
-      // ユーザータイプに応じてフィルタリング（クライアント側）
+      // ユーザータイプに応じてフィルタリング
       if (userId && userType) {
         if (userType === 'pharmacist') {
-          data = data.filter((shift: any) => shift.pharmacist_id === userId);
+          query = query.eq('pharmacist_id', userId);
         } else if (userType === 'store' || userType === 'pharmacy') {
-          data = data.filter((shift: any) => shift.pharmacy_id === userId);
+          query = query.eq('pharmacy_id', userId);
         }
         // adminの場合はフィルタリングなし
       }
       
-      // テーブルが存在しない場合のエラーハンドリング
-      if (result.error && (result.error.code === 'PGRST116' || result.error.code === 'PGRST205')) {
-        console.warn('assigned_shifts table not found, falling back to demo mode');
-        return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
+      const { data, error } = await query;
+      
+      if (error) {
+        console.warn('Failed to fetch assigned_shifts:', error);
+        // テーブルが存在しない場合は空のデータを返す
+        if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+          return { data: [], error: null };
+        }
+        return { data: [], error };
       }
       
       return { data: data || [], error: null };

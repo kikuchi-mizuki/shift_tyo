@@ -94,12 +94,21 @@ export class AIMatchingEngine {
    */
   private async initializeEngine() {
     try {
+      // Supabaseクライアントの存在確認
+      if (!supabase) {
+        console.warn('Supabase client not available, initializing in fallback mode');
+        this.isInitialized = true; // フォールバックモードでも初期化完了とする
+        return;
+      }
+
       // 既存のデータから学習データを生成
       await this.loadTrainingData();
       this.isInitialized = true;
       console.log('AI Matching Engine initialized successfully');
     } catch (error) {
       console.error('Failed to initialize AI Matching Engine:', error);
+      // エラーが発生してもフォールバックモードで動作させる
+      this.isInitialized = true;
     }
   }
 
@@ -116,22 +125,33 @@ export class AIMatchingEngine {
    * 確定シフトの取得
    */
   private async getConfirmedShifts() {
-    // Supabaseから確定シフトを取得
-    const { data, error } = await supabase
-      .from('assigned_shifts')
-      .select(`
-        *,
-        pharmacist:pharmacist_id(id, name, email),
-        pharmacy:pharmacy_id(id, name, email)
-      `)
-      .eq('status', 'confirmed');
-
-    if (error) {
-      console.error('Error fetching confirmed shifts:', error);
+    // Supabaseクライアントの存在確認
+    if (!supabase) {
+      console.warn('Supabase client not available, returning empty data');
       return [];
     }
 
-    return data || [];
+    try {
+      // Supabaseから確定シフトを取得
+      const { data, error } = await supabase
+        .from('assigned_shifts')
+        .select(`
+          *,
+          pharmacist:pharmacist_id(id, name, email),
+          pharmacy:pharmacy_id(id, name, email)
+        `)
+        .eq('status', 'confirmed');
+
+      if (error) {
+        console.error('Error fetching confirmed shifts:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Exception in getConfirmedShifts:', error);
+      return [];
+    }
   }
 
   /**
@@ -430,6 +450,11 @@ export class AIMatchingEngine {
    * 薬剤師プロファイルの取得
    */
   private async getPharmacistProfile(pharmacistId: string): Promise<PharmacistProfile | null> {
+    if (!supabase) {
+      console.warn('Supabase client not available, returning null profile');
+      return null;
+    }
+
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -437,7 +462,10 @@ export class AIMatchingEngine {
         .eq('id', pharmacistId)
         .single();
 
-      if (error || !data) return null;
+      if (error || !data) {
+        console.warn('Failed to fetch pharmacist profile:', error);
+        return null;
+      }
 
       return {
         id: data.id,
@@ -467,6 +495,11 @@ export class AIMatchingEngine {
    * 薬局プロファイルの取得
    */
   private async getPharmacyProfile(pharmacyId: string): Promise<PharmacyProfile | null> {
+    if (!supabase) {
+      console.warn('Supabase client not available, returning null profile');
+      return null;
+    }
+
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -474,7 +507,10 @@ export class AIMatchingEngine {
         .eq('id', pharmacyId)
         .single();
 
-      if (error || !data) return null;
+      if (error || !data) {
+        console.warn('Failed to fetch pharmacy profile:', error);
+        return null;
+      }
 
       return {
         id: data.id,
@@ -677,11 +713,32 @@ export class AIMatchingEngine {
    * フォールバックマッチング（AI未初期化時）
    */
   private fallbackMatching(requests: any[], postings: any[]): MatchCandidate[] {
+    console.log('=== フォールバックマッチング開始 ===');
+    console.log('requests:', requests.length);
+    console.log('postings:', postings.length);
+    
     const candidates: MatchCandidate[] = [];
+    const processedPairs = new Set<string>(); // 重複防止
 
     for (const request of requests) {
+      console.log(`薬剤師 ${request.pharmacist_id} の希望を処理中:`, request);
+      
       for (const posting of postings) {
-        if (this.isBasicCompatible(request, posting)) {
+        // 薬剤師-薬局-日付ペアの重複チェック
+        const pairKey = `${request.pharmacist_id}-${posting.pharmacy_id}-${request.date}`;
+        if (processedPairs.has(pairKey)) {
+          console.log(`重複ペアをスキップ: ${pairKey}`);
+          continue;
+        }
+
+        console.log(`薬局 ${posting.pharmacy_id} との組み合わせをチェック:`, posting);
+        console.log(`日付一致: ${request.date === posting.date}`);
+        console.log(`時間互換性: ${this.isBasicCompatible(request, posting)}`);
+
+        // 基本的なフィルタリング（時間範囲 + 日付一致）
+        if (request.date === posting.date && this.isBasicCompatible(request, posting)) {
+          console.log(`フォールバックマッチング成功: ${pairKey}`);
+          
           candidates.push({
             pharmacist: {
               id: request.pharmacist_id,
@@ -703,7 +760,7 @@ export class AIMatchingEngine {
             },
             pharmacy: {
               id: posting.pharmacy_id,
-              name: 'Unknown',
+              name: posting.store_name || 'Unknown',
               requirements: {
                 requiredSkills: [],
                 experienceLevel: 'intermediate',
@@ -727,14 +784,17 @@ export class AIMatchingEngine {
               urgency: 'medium',
               flexibility: 0
             },
-            compatibilityScore: 0.5, // デフォルトスコア
-            reasons: ['基本互換性']
+            compatibilityScore: 0.7, // フォールバックでも少し高いスコア
+            reasons: ['基本互換性（フォールバック）']
           });
+          
+          processedPairs.add(pairKey);
+          break; // 同じ日付で薬剤師は1つの薬局にのみマッチ
         }
       }
     }
 
-    console.log(`generateMatchCandidates完了: ${candidates.length}件の候補を生成`);
+    console.log(`フォールバックマッチング完了: ${candidates.length}件の候補を生成`);
     console.log('candidates:', candidates);
     return candidates;
   }
