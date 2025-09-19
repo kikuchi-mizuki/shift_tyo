@@ -808,7 +808,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           user.name === '' ||
           user.name === null
         )
-      );
+      ) : [];
       
       console.log('薬剤師関連のユーザー:', pharmacistUsers);
       
