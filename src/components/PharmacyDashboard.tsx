@@ -530,28 +530,12 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('Executing update query with data:', updateData);
       console.log('User ID for update:', user.id);
       
-      // Railwayログで確認できるようにサーバーサイドログを送信
-      try {
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api/log`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            action: 'log',
-            message: `[PHARMACY_PROFILE_UPDATE] User ${user.id} updating profile`,
-            data: {
-              userId: user.id,
-              storeNames: storeNames,
-              updateData: updateData
-            },
-            timestamp: new Date().toISOString()
-          })
-        });
-      } catch (logError) {
-        console.warn('Failed to send log to Railway:', logError);
-      }
+      // Railwayログは無効化（Edge Functionの400エラーを回避）
+      console.log('Profile update log (disabled):', {
+        userId: user.id,
+        storeNames: storeNames,
+        updateData: updateData
+      });
       
       // より明示的にstore_namesを送信
       console.log('About to send update with store_names:', storeNames);
@@ -567,28 +551,11 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         return;
       }
       
-      // Railwayログでも確認（認証エラーを回避）
-      try {
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            action: 'log',
-            message: `[STORE_NAMES_DEBUG] About to send update with store_names`,
-            data: {
-              storeNames: storeNames,
-              isArray: Array.isArray(storeNames),
-              jsonString: JSON.stringify(storeNames)
-            },
-            timestamp: new Date().toISOString()
-          })
-        });
-      } catch (logError) {
-        console.warn('Failed to send debug log to Railway:', logError);
-      }
+      // Railwayログは無効化（Edge Functionの400エラーを回避）
+      console.log('Store NG update log (disabled):', {
+        userId: user.id,
+        storeNgLists: storeNgLists
+      });
       
       // 強制的にコンソールに表示（フィルターを回避）
       console.error('=== STORE NAMES DEBUG ===');
@@ -616,31 +583,15 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('Update result data:', updateResult);
       console.log('Update result error:', error);
       
-      // 更新結果もRailwayログに送信
-      try {
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api/log`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            action: 'log',
-            message: `[PHARMACY_PROFILE_UPDATE_RESULT] User ${user.id} profile update completed`,
-            data: {
-              userId: user.id,
-              success: !error,
-              error: error,
-              result: updateResult,
-              storeNamesSent: storeNames,
-              updatePayload: updatePayload
-            },
-            timestamp: new Date().toISOString()
-          })
-        });
-      } catch (logError) {
-        console.warn('Failed to send result log to Railway:', logError);
-      }
+      // 更新結果ログは無効化（Edge Functionの400エラーを回避）
+      console.log('Profile update result log (disabled):', {
+        userId: user.id,
+        success: !error,
+        error: error,
+        result: updateResult,
+        storeNamesSent: storeNames,
+        updatePayload: updatePayload
+      });
       
       // 直接テスト用のクエリを実行
       if (!error && updateResult && updateResult.length > 0) {

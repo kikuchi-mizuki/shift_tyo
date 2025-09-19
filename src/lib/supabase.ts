@@ -571,40 +571,33 @@ export const shifts = {
     }
 
     try {
-      // Edge Function経由でデータを取得
-      const apiUrl = `${supabaseUrl}/functions/v1/api/assigned_shifts`;
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // 直接Supabaseクライアントを使用（Edge Functionの代わり）
+      console.log('Direct Supabase query for assigned_shifts by user');
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { data: [], error: errorData.error || { message: 'API request failed' } };
-      }
-      
-      const result = await response.json();
-      let data = result.data || [];
+      let query = supabase.from('assigned_shifts').select('*');
       
       // ユーザータイプに応じてフィルタリング
       if (userType === 'pharmacist') {
-        data = data.filter((shift: any) => shift.pharmacist_id === userId);
+        query = query.eq('pharmacist_id', userId);
       } else if (userType === 'store' || userType === 'pharmacy') {
-        data = data.filter((shift: any) => shift.pharmacy_id === userId);
+        query = query.eq('pharmacy_id', userId);
       }
       // adminの場合はフィルタリングなし
       
-      // テーブルが存在しない場合のエラーハンドリング
-      if (result.error && (result.error.code === 'PGRST116' || result.error.code === 'PGRST205')) {
-        console.warn('assigned_shifts table not found, falling back to demo mode');
-        return { data: [], error: { code: 'PGRST205', message: 'Table not found' } };
+      const { data, error } = await query;
+      
+      if (error) {
+        console.warn('Failed to fetch assigned_shifts by user:', error);
+        // テーブルが存在しない場合は空のデータを返す
+        if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+          return { data: [], error: null };
+        }
+        return { data: [], error };
       }
       
       return { data: data || [], error: null };
     } catch (error) {
-      console.error('Get shifts error:', error);
+      console.error('Get shifts by user error:', error);
       return { data: [], error: { code: 'PGRST205', message: 'Table not found' } };
     }
   },
@@ -676,30 +669,21 @@ export const shifts = {
     }
 
     try {
-      // Edge Function経由でデータを取得
-      const apiUrl = `${supabaseUrl}/functions/v1/api/assigned_shifts`;
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json'
+      // 直接Supabaseクライアントを使用（Edge Functionの代わり）
+      console.log('Direct Supabase query for confirmed shifts');
+      
+      const { data, error } = await supabase
+        .from('assigned_shifts')
+        .select('*')
+        .eq('status', 'confirmed');
+      
+      if (error) {
+        console.warn('Failed to fetch confirmed shifts:', error);
+        // テーブルが存在しない場合は空のデータを返す
+        if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
+          return { data: [], error: null };
         }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { data: [], error: errorData.error || { message: 'API request failed' } };
-      }
-      
-      const result = await response.json();
-      let data = result.data || [];
-      
-      // 確定済みシフトのみをフィルタリング（status = 'confirmed'）
-      data = data.filter((shift: any) => shift.status === 'confirmed');
-      
-      // テーブルが存在しない場合のエラーハンドリング
-      if (result.error && (result.error.code === 'PGRST116' || result.error.code === 'PGRST205')) {
-        console.warn('assigned_shifts table not found, falling back to demo mode');
-        return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
+        return { data: [], error };
       }
       
       return { data: data || [], error: null };
