@@ -2576,15 +2576,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       
-                      {/* AIマッチング結果のパッチ表示 */}
+                      {/* マッチング結果のパッチ表示 */}
                       {(() => {
                         const dayMatches = aiMatchesByDate[dateStr] || [];
                         if (dayMatches.length > 0) {
                           return (
                             <div className="text-[7px] sm:text-[8px] mt-1">
                               <div className="text-purple-700 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">AI{dayMatches.length}</span>
-                                <span className="hidden sm:inline">AI {dayMatches.length}件</span>
+                                <span className="sm:hidden">マ{dayMatches.length}</span>
+                                <span className="hidden sm:inline">マッチ {dayMatches.length}件</span>
                               </div>
                             </div>
                           );
@@ -2616,7 +2616,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 <h3 className="font-semibold text-gray-800">1ヶ月分マッチング</h3>
               </div>
               <p className="text-sm text-gray-600 mb-3">
-                今月の全ての希望シフトと募集シフトを一括でAIマッチングします。
+                今月の全ての希望シフトと募集シフトを一括でマッチングします。
               </p>
               <button
                 onClick={executeMonthlyAIMatching}
@@ -2626,7 +2626,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 {aiMatchingLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>1ヶ月分マッチング実行中...</span>
+                    <span>マッチング実行中...</span>
                   </>
                 ) : (
                   <>
@@ -2637,7 +2637,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               </button>
             </div>
             <div className="text-sm text-gray-600 mb-2">
-              <p>カレンダーの日付をクリックして選択すると、右側に「シフトを確定」ボタンが表示されます。</p>
+              <p>カレンダーの日付をクリックして選択すると、右側に「マッチング結果」と「シフトを確定」ボタンが表示されます。</p>
             </div>
           </div>
 
@@ -2751,6 +2751,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       </div>
                                       <div className="text-gray-600">
                                         {match.timeSlot.start} - {match.timeSlot.end}
+                                      </div>
+                                      {/* 薬局名と店舗名を表示 */}
+                                      <div className="text-gray-500 text-xs">
+                                        薬局: {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
+                                        {match.pharmacy.name && match.pharmacy.name !== 'Unknown' && ` / 店舗: ${match.pharmacy.name}`}
                                       </div>
                                     </div>
                                     <div className="text-right">
