@@ -777,7 +777,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       ];
       
       // 重複を除去
-      const uniqueUndefinedUsers = allUndefinedUsers.filter((user, index, self) => 
+      const uniqueUndefinedUsers = (allUndefinedUsers || []).filter((user, index, self) => 
         index === self.findIndex(u => u.id === user.id)
       );
       
@@ -868,7 +868,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.log('シフト希望とユーザー情報の結合結果:', requestsWithUserInfo);
         
         // 「薬剤師未設定」に関連するシフト希望を特定
-        const undefinedRequests = requestsWithUserInfo.filter(request => 
+        const undefinedRequests = (requestsWithUserInfo || []).filter(request => 
           request.user_name.includes('薬剤師未設定') ||
           request.user_name.includes('未設定') ||
           request.user_name === 'ユーザー未発見' ||
@@ -1364,7 +1364,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const shiftUserIds = Array.from(userIds);
           logToRailway('Shift user IDs:', shiftUserIds);
           
-          const foundProfiles = shiftUserIds.filter(id => profilesMap[id]);
+          const foundProfiles = (shiftUserIds || []).filter(id => profilesMap[id]);
           logToRailway('Found profiles for shift users:', foundProfiles);
           
           // 詳細なマッチング情報をログ出力
@@ -2743,13 +2743,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 <div className="p-4 space-y-4">
                   
                   {/* 確定シフト */}
-                  {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length > 0 && (
+                  {(assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length > 0 && (
                     <div className="bg-green-50 rounded-lg border border-green-200 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
                           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                           <h4 className="text-sm font-semibold text-green-800">
-                            確定シフト ({assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length}件)
+                            確定シフト ({(assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length}件)
                           </h4>
                         </div>
                         <button
@@ -2760,7 +2760,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </button>
                       </div>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
+                      {(assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
                         const pharmacistProfile = userProfiles[shift.pharmacist_id];
                         const pharmacyProfile = userProfiles[shift.pharmacy_id];
                         const isEditing = editingShift?.id === shift.id;
@@ -2949,7 +2949,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-orange-800">
-                          募集している薬局 ({postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').length}件)
+                          募集している薬局 ({(postings || []).filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').length}件)
                         </h4>
                       </div>
                       {/* 追加ボタン */}
@@ -3014,7 +3014,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').map((posting: any, index: number) => {
+                      {(postings || []).filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').map((posting: any, index: number) => {
                         const pharmacyProfile = userProfiles[posting.pharmacy_id];
                         const isEditing = editingPostingId === posting.id;
                         // 店舗名を取得（store_name または memo から）
@@ -3106,7 +3106,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-blue-800">
-                          応募している薬剤師 ({requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').length}件)
+                          応募している薬剤師 ({(requests || []).filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').length}件)
                         </h4>
                       </div>
                       {/* 追加ボタン */}
@@ -3254,8 +3254,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     
                     logToRailway('マッチング分析開始');
                     
-                    const dayRequests = requests.filter((r: any) => r.date === selectedDate);
-                    const dayPostings = postings.filter((p: any) => p.date === selectedDate);
+                    const dayRequests = (requests || []).filter((r: any) => r.date === selectedDate);
+                    const dayPostings = (postings || []).filter((p: any) => p.date === selectedDate);
                     
                     // デバッグ用ログ
                     console.log('=== マッチング分析デバッグ ===');
@@ -3396,7 +3396,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   
                   {/* 要相談セクション */}
                   {(() => {
-                    const dayConsultRequests = requests.filter((r: any) => r.date === selectedDate && r.time_slot === 'consult');
+                    const dayConsultRequests = (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot === 'consult');
                     if (dayConsultRequests.length === 0) return null;
                     
                     return (
@@ -3674,7 +3674,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <div className="flex items-center space-x-2">
                                 <h4 className="font-medium text-gray-800">{pharmacist.name || '名前未設定'}</h4>
                                 {(() => {
-                                  const pharmacistRatings = ratings.filter(r => r.pharmacist_id === pharmacist.id);
+                                  const pharmacistRatings = (ratings || []).filter(r => r.pharmacist_id === pharmacist.id);
                                   if (pharmacistRatings.length > 0) {
                                     const average = pharmacistRatings.reduce((sum, r) => sum + r.rating, 0) / pharmacistRatings.length;
                                     return (
