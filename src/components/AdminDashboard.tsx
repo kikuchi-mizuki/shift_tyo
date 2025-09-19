@@ -31,7 +31,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
   const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
   const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
-  const [useAIMatching, setUseAIMatching] = useState(false);
+  const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
   const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
 
   // AIマッチングエンジンの初期化
@@ -1242,6 +1242,45 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // 指定日のみを処理
       if (dayRequests.length > 0 || dayPostings.length > 0) {
         
+        // AIマッチングが有効な場合はAIマッチングを使用
+        if (useAIMatching && aiMatchingEngine) {
+          console.log('AIマッチングを使用してマッチングを実行します');
+          
+          try {
+            const aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
+              useAPI: true,
+              algorithm: 'hybrid',
+              priority: 'balance'
+            });
+            
+            if (aiMatches.length > 0) {
+              // AIマッチング結果を確定シフトに変換
+              const aiShifts = aiMatches.map(match => ({
+                pharmacist_id: match.pharmacist.id,
+                pharmacy_id: match.pharmacy.id,
+                date: date,
+                start_time: match.timeSlot.start,
+                end_time: match.timeSlot.end,
+                status: 'confirmed',
+                store_name: match.pharmacy.name,
+                memo: `AI Matching: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+              }));
+              
+              // AIマッチング結果をデータベースに保存
+              const { error } = await supabase.from('assigned_shifts').insert(aiShifts);
+              if (error) throw error;
+              
+              console.log(`AIマッチング完了: ${aiShifts.length}件のシフトを確定しました`);
+              
+              // データを再読み込み
+              await loadAssignedShifts();
+              return;
+            }
+          } catch (error) {
+            console.error('AIマッチングに失敗、フォールバックとして従来のマッチングを使用:', error);
+          }
+        }
+        
         // ヘルパー関数
         const getProfile = (id: string) => {
           if (!userProfiles) return {} as any;
@@ -1892,50 +1931,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   return (
     <div className="space-y-6">
       
-      {/* AIマッチングコントロール */}
-      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Brain className="w-6 h-6 text-purple-600" />
-            <div>
-              <h3 className="text-sm font-medium text-purple-800">AIマッチングシステム</h3>
-              <p className="text-xs text-purple-600">
-                {useAIMatching ? 'AIマッチングが有効です' : '従来のルールベースマッチングを使用中'}
-              </p>
+      {/* AIマッチングコントロール - 非表示 */}
+      {false && (
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Brain className="w-6 h-6 text-purple-600" />
+              <div>
+                <h3 className="text-sm font-medium text-purple-800">AIマッチングシステム</h3>
+                <p className="text-xs text-purple-600">
+                  {useAIMatching ? 'AIマッチングが有効です' : '従来のルールベースマッチングを使用中'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={useAIMatching}
+                  onChange={(e) => setUseAIMatching(e.target.checked)}
+                  className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                />
+                <span className="text-sm font-medium text-purple-700">AIマッチング</span>
+              </label>
+              {selectedDate && (
+                <button
+                  onClick={() => executeAIMatching(selectedDate)}
+                  disabled={aiMatchingLoading}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                >
+                  {aiMatchingLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>AI分析中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4" />
+                      <span>AIマッチング実行</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={useAIMatching}
-                onChange={(e) => setUseAIMatching(e.target.checked)}
-                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-              />
-              <span className="text-sm font-medium text-purple-700">AIマッチング</span>
-            </label>
-            {selectedDate && (
-              <button
-                onClick={() => executeAIMatching(selectedDate)}
-                disabled={aiMatchingLoading}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
-              >
-                {aiMatchingLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>AI分析中...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" />
-                    <span>AIマッチング実行</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
         </div>
-      </div>
+      )}
 
       <div className={`border rounded-lg p-4 ${systemStatus === 'confirmed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
         <div className="flex items-center justify-between">
@@ -1962,8 +2003,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* AIマッチング統計 */}
-      <AIMatchingStats className="mb-6" />
+      {/* AIマッチング統計 - 非表示 */}
+      {false && <AIMatchingStats className="mb-6" />}
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         {/* left calendar */}
@@ -2368,8 +2409,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const dayPostings = postings.filter((p: any) => p.date === selectedDate);
                   const dayAssignedShifts = assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed');
                   
-                  // AIマッチング結果の表示
-                  if (aiMatches.length > 0 && selectedDate) {
+                  // AIマッチング結果の表示 - 非表示
+                  if (false && aiMatches.length > 0 && selectedDate) {
                     return (
                       <div className="p-4 border-b border-gray-200">
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
