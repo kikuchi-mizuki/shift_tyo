@@ -250,12 +250,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const monthlyRequests = Array.isArray(requests) ? requests.filter((r: any) => {
         const requestDate = new Date(r.date);
         return requestDate.getMonth() === currentMonth && requestDate.getFullYear() === currentYear;
-      });
+      }) : [];
       
       const monthlyPostings = Array.isArray(postings) ? postings.filter((p: any) => {
         const postingDate = new Date(p.date);
         return postingDate.getMonth() === currentMonth && postingDate.getFullYear() === currentYear;
-      });
+      }) : [];
 
       if (monthlyRequests.length === 0 && monthlyPostings.length === 0) {
         alert('今月の希望シフトまたは募集シフトがありません。');
