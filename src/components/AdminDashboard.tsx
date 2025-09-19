@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-import { Calendar, AlertCircle, Star } from 'lucide-react';
+import { Calendar, AlertCircle, Star, Brain, Zap } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
+import AIMatchingEngine, { MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
+import DataCollector from '../features/ai-matching/dataCollector';
+import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 
 interface AdminDashboardProps {
   user: any;
@@ -23,6 +26,75 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     pharmacies: false,
     pharmacists: false
   });
+
+  // AI Matching関連の状態
+  const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
+  const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
+  const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
+  const [useAIMatching, setUseAIMatching] = useState(false);
+  const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
+
+  // AIマッチングエンジンの初期化
+  useEffect(() => {
+    const initializeAI = async () => {
+      try {
+        const engine = new AIMatchingEngine();
+        const collector = new DataCollector();
+        
+        setAiMatchingEngine(engine);
+        setDataCollector(collector);
+        
+        console.log('AI Matching Engine initialized');
+      } catch (error) {
+        console.error('Failed to initialize AI Matching Engine:', error);
+      }
+    };
+
+    initializeAI();
+  }, []);
+
+  // AIマッチングの実行
+  const executeAIMatching = async (date: string) => {
+    if (!aiMatchingEngine) {
+      console.error('AI Matching Engine not initialized');
+      return;
+    }
+
+    setAiMatchingLoading(true);
+    try {
+      const dayRequests = requests.filter(r => r.date === date);
+      const dayPostings = postings.filter(p => p.date === date);
+
+      console.log(`AI Matching for ${date}: ${dayRequests.length} requests, ${dayPostings.length} postings`);
+
+      const matches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
+        useAPI: true,
+        algorithm: 'hybrid',
+        priority: 'balance'
+      });
+      setAiMatches(matches);
+
+      console.log(`AI Matching completed: ${matches.length} matches found`);
+    } catch (error) {
+      console.error('AI Matching failed:', error);
+    } finally {
+      setAiMatchingLoading(false);
+    }
+  };
+
+  // AIマッチング結果を確定シフトに変換
+  const convertAIMatchesToShifts = (matches: MatchCandidate[], date: string) => {
+    return matches.map(match => ({
+      pharmacist_id: match.pharmacist.id,
+      pharmacy_id: match.pharmacy.id,
+      date: date,
+      start_time: match.timeSlot.start,
+      end_time: match.timeSlot.end,
+      status: 'confirmed',
+      store_name: match.pharmacy.name,
+      memo: `AI Matching: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+    }));
+  };
 
   // 薬剤師の評価を取得する関数
   const getPharmacistRating = (pharmacistId: string) => {
@@ -1132,7 +1204,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
-  const handleConfirmShiftsForDate = async (date: string) => {
+  const handleConfirmShiftsForDate = async (date: string, predefinedShifts?: any[]) => {
     try {
       console.log('handleConfirmShiftsForDate called for date:', date);
       console.log('Current requests:', requests);
@@ -1143,6 +1215,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('Admin auth user:', authUser);
       console.log('Admin user prop:', user);
       
+      // 事前定義されたシフトがある場合はそれを使用、そうでなければ通常のマッチング処理
+      if (predefinedShifts && predefinedShifts.length > 0) {
+        console.log('Predefined shifts provided:', predefinedShifts);
+        
+        // 事前定義されたシフトをデータベースに保存
+        const { error } = await supabase.from('assigned_shifts').insert(predefinedShifts);
+        if (error) throw error;
+        
+        console.log(`日付 ${date}: ${predefinedShifts.length}件の事前定義シフトを保存しました`);
+        
+        // データを再読み込み
+        await loadAssignedShifts();
+        return;
+      }
+
       // 指定日の希望シフトと募集シフトをマッチングして確定済みシフトを作成
       const confirmedShifts: any[] = [];
       
@@ -1164,46 +1251,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           return (userProfiles as any)[id] || ({} as any);
         };
         
-        // 柔軟な時間帯マッチング関数
-        const isTimeCompatible = (reqSlot: string, postSlot: string) => {
-          // 完全一致の場合は常にマッチ
-          if (reqSlot === postSlot) return true;
-          
-          // 薬剤師が終日希望の場合、薬局の募集に合わせてマッチ可能
-          if (reqSlot === 'full' || reqSlot === 'fullday') {
-            return postSlot === 'morning' || postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
-          }
-          
-          // 薬剤師が午前希望の場合
-          if (reqSlot === 'morning') {
-            return postSlot === 'morning' || postSlot === 'full' || postSlot === 'fullday';
-          }
-          
-          // 薬剤師が午後希望の場合
-          if (reqSlot === 'afternoon') {
-            return postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
-          }
-          
-          // 薬剤師が要相談の場合、どの時間帯でもマッチ可能
-          if (reqSlot === 'negotiable' || reqSlot === 'consult') {
-            return true;
-          }
-          
-          return false;
-        };
-
-        // 時刻範囲対応のマッチング関数（両者にstart_time/end_timeがあれば包含で判定）
-        const isRangeCompatible = (request: any, posting: any, postSlot: string) => {
+        // 時間範囲ベースのマッチング関数（start_time/end_timeで判定）
+        const isRangeCompatible = (request: any, posting: any) => {
           const rs = request?.start_time;
           const re = request?.end_time;
           const ps = posting?.start_time;
           const pe = posting?.end_time;
+          
+          // 両方に時間範囲がある場合は包含関係で判定
           if (rs && re && ps && pe) {
             // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
             return rs <= ps && re >= pe;
           }
-          // どちらか欠けていれば従来のスロット互換
-          return isTimeCompatible(request?.time_slot, postSlot);
+          
+          // 片方でも時間範囲がない場合はマッチしない
+          return false;
         };
 
         // この日付でマッチした薬剤師と薬局を追跡
@@ -1211,42 +1273,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const matchedPharmacies: any[] = [];
 
 
-        // 時間帯ごとにマッチング（完全一致を優先）
-        const timeSlots = ['morning', 'afternoon', 'full'];
-        
-        // まず完全一致のマッチングを実行
-        timeSlots.forEach((slot) => {
-          const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
-          const slotRequests = dayRequests.filter((r: any) => r.time_slot === slot || (slot === 'full' && r.time_slot === 'fullday'));
+        // 時間範囲ベースのマッチング（start_time/end_timeで判定）
+        // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
+        const sortedRequests = dayRequests.sort((a: any, b: any) => {
+          const aRating = getPharmacistRating(a.pharmacist_id);
+          const bRating = getPharmacistRating(b.pharmacist_id);
           
-          if (slotPostings.length === 0 || slotRequests.length === 0) return;
+          // 評価が異なる場合は評価の高い順
+          if (aRating !== bRating) {
+            return bRating - aRating;
+          }
           
-          // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
-          const sortedRequests = slotRequests.sort((a: any, b: any) => {
-            const aRating = getPharmacistRating(a.pharmacist_id);
-            const bRating = getPharmacistRating(b.pharmacist_id);
-            
-            // 評価が異なる場合は評価の高い順
-            if (aRating !== bRating) {
-              return bRating - aRating;
-            }
-            
-            // 評価が同じ場合は優先度順
-            const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-            return priorityOrder[b.priority] - priorityOrder[a.priority];
-          });
+          // 評価が同じ場合は優先度順
+          const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+          return priorityOrder[b.priority] - priorityOrder[a.priority];
+        });
 
-          let remainingRequired = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
+        let remainingRequired = dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
 
-          // 各薬局の必要人数を管理
-          const pharmacyNeeds = slotPostings.map((p: any) => ({
-            ...p,
-            remaining: Number(p.required_staff) || 0
-          }));
+        // 各薬局の必要人数を管理
+        const pharmacyNeeds = dayPostings.map((p: any) => ({
+          ...p,
+          remaining: Number(p.required_staff) || 0
+        }));
 
-          // 完全一致のマッチング（優先順位順に薬剤師をマッチング）
-          sortedRequests.forEach((request: any) => {
-            if (remainingRequired <= 0) return;
+        // 時間範囲ベースのマッチング（優先順位順に薬剤師をマッチング）
+        sortedRequests.forEach((request: any) => {
+          if (remainingRequired <= 0) return;
 
             const pharmacist = getProfile(request.pharmacist_id);
             const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
@@ -1261,14 +1314,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
               const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
 
-              // 時間帯/時間範囲の互換性を考慮
-              if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed, slot)) {
+              // 時間範囲の互換性を考慮
+              if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
                 // マッチング成功のログ
-                if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
-                  console.log(`🎯 確定用マッチング: 終日希望薬剤師(${pharmacist?.name}) → ${slot}募集薬局(${pharmacy?.name})`);
-                } else {
-                  console.log(`✅ 確定用マッチング: 薬剤師(${pharmacist?.name}) ${request.time_slot} → 薬局(${pharmacy?.name}) ${slot}`);
-                }
+                console.log(`✅ 時間範囲マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
                 // 店舗名を取得（postingから）
                 const getStoreNameFromPosting = (posting: any) => {
                   console.log('getStoreNameFromPosting called with posting:', posting);
@@ -1292,17 +1341,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 const storeName = getStoreNameFromPosting(pharmacyNeed);
                 console.log('Final storeName for shift:', storeName);
                 
-                // 薬局の募集時間帯に合わせて薬剤師の時間帯を調整
-                const adjustedTimeSlot = pharmacyNeed.time_slot;
-                
                 const confirmedShift = {
                   // IDはSupabaseが自動生成
                   pharmacist_id: request.pharmacist_id,
                   pharmacy_id: pharmacyNeed.pharmacy_id,
                   date: date,
-                  time_slot: adjustedTimeSlot, // 薬局の募集時間帯を使用
-                  start_time: pharmacyNeed.start_time || request.start_time || null,
-                  end_time: pharmacyNeed.end_time || request.end_time || null,
+                  start_time: pharmacyNeed.start_time,
+                  end_time: pharmacyNeed.end_time,
                   status: 'confirmed',
                   store_name: storeName,
                   memo: pharmacyNeed.memo || ''
@@ -1316,95 +1361,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 matchedPharmacies.push(pharmacyNeed);
                 pharmacyNeed.remaining--;
                 remainingRequired--;
-                break;
-              }
-            }
-          });
-        });
-        
-        // 完全一致のマッチング後に、柔軟なマッチングを実行
-        timeSlots.forEach((slot) => {
-          const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
-          
-          if (slotPostings.length === 0) return;
-          
-          // まだマッチしていない薬剤師を取得
-          const unmatchedRequests = dayRequests.filter((req: any) => 
-            !matchedPharmacists.some(matched => matched.id === req.id)
-          );
-          
-          if (unmatchedRequests.length === 0) return;
-          
-          // 薬剤師を優先順位でソート（高→中→低）
-          const sortedUnmatchedRequests = unmatchedRequests.sort((a: any, b: any) => {
-            const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-            return priorityOrder[b.priority] - priorityOrder[a.priority];
-          });
-
-          // 各薬局の必要人数を管理
-          const pharmacyNeeds = slotPostings.map((p: any) => ({
-            ...p,
-            remaining: Number(p.required_staff) || 0
-          }));
-
-          // 柔軟なマッチング（薬局の募集に合わせて薬剤師を調整）
-          sortedUnmatchedRequests.forEach((request: any) => {
-            const pharmacist = getProfile(request.pharmacist_id);
-            const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
-
-            // 利用可能な薬局を探す
-            for (const pharmacyNeed of pharmacyNeeds) {
-              if (pharmacyNeed.remaining <= 0) continue;
-
-              const pharmacy = getProfile(pharmacyNeed.pharmacy_id);
-              const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
-
-              const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
-              const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
-
-              // 柔軟な時間帯/時間範囲マッチングをチェック
-              if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed, slot)) {
-                // 柔軟なマッチング成功のログ
-                if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
-                  console.log(`🎯 確定用柔軟マッチング: 終日希望薬剤師(${pharmacist?.name}) → ${slot}募集薬局(${pharmacy?.name})`);
-                } else {
-                  console.log(`✅ 確定用柔軟マッチング: 薬剤師(${pharmacist?.name}) ${request.time_slot} → 薬局(${pharmacy?.name}) ${slot}`);
-                }
-                // 店舗名を取得（postingから）
-                const getStoreNameFromPosting = (posting: any) => {
-                  const direct = (posting.store_name || '').trim();
-                  let fromMemo = '';
-                  if (!direct && typeof posting.memo === 'string') {
-                    const m = posting.memo.match(/\[store:([^\]]+)\]/);
-                    if (m && m[1]) fromMemo = m[1];
-                  }
-                  return direct || fromMemo || '';
-                };
-                
-                const storeName = getStoreNameFromPosting(pharmacyNeed);
-                
-                // 薬局の募集時間帯に合わせて薬剤師の時間帯を調整
-                const adjustedTimeSlot = pharmacyNeed.time_slot;
-                
-                const confirmedShift = {
-                  // IDはSupabaseが自動生成
-                  pharmacist_id: request.pharmacist_id,
-                  pharmacy_id: pharmacyNeed.pharmacy_id,
-                  date: date,
-                  time_slot: adjustedTimeSlot, // 薬局の募集時間帯を使用
-                  start_time: pharmacyNeed.start_time || request.start_time || null,
-                  end_time: pharmacyNeed.end_time || request.end_time || null,
-                  status: 'confirmed',
-                  store_name: storeName,
-                  memo: pharmacyNeed.memo || ''
-                };
-                
-                console.log('Creating flexible matched shift:', confirmedShift);
-                confirmedShifts.push(confirmedShift);
-                
-                matchedPharmacists.push(request);
-                matchedPharmacies.push(pharmacyNeed);
-                pharmacyNeed.remaining--;
                 break;
               }
             }
@@ -1779,112 +1735,100 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const performMatchingForDate = async (date: string, dayRequests: any[], dayPostings: any[]) => {
     console.log(`=== 日付 ${date} のマッチング実行 ===`);
     
-    const timeSlots = ['morning', 'afternoon', 'full'];
     const matchedShifts: any[] = [];
     
-    for (const slot of timeSlots) {
-      console.log(`時間帯 ${slot} のマッチング処理開始`);
+    // 時間範囲ベースのマッチング処理
+    console.log(`時間範囲ベースのマッチング処理開始`);
+    
+    // 時間範囲がある希望のみを対象とする
+    const validRequests = dayRequests.filter(r => r.start_time && r.end_time);
+    const validPostings = dayPostings.filter(p => p.start_time && p.end_time);
+    
+    if (validRequests.length === 0 || validPostings.length === 0) {
+      console.log(`時間範囲がある希望または募集がないためスキップ`);
+      return;
+    }
+    
+    // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
+    const sortedRequests = validRequests.sort((a, b) => {
+      const aRating = getPharmacistRating(a.pharmacist_id);
+      const bRating = getPharmacistRating(b.pharmacist_id);
       
-      const slotPostings = dayPostings.filter(p => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
-      const slotRequests = dayRequests.filter(r => r.time_slot === slot || (slot === 'full' && r.time_slot === 'fullday'));
-      
-      if (slotPostings.length === 0 || slotRequests.length === 0) {
-        console.log(`時間帯 ${slot}: 募集または希望がないためスキップ`);
-        continue;
+      // 評価が異なる場合は評価の高い順
+      if (aRating !== bRating) {
+        return bRating - aRating;
       }
       
-      // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
-      const sortedRequests = slotRequests.sort((a, b) => {
-        const aRating = getPharmacistRating(a.pharmacist_id);
-        const bRating = getPharmacistRating(b.pharmacist_id);
+      // 評価が同じ場合は優先度順
+      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+      return priorityOrder[b.priority] - priorityOrder[a.priority];
+    });
+    
+    // 各薬局の必要人数を管理
+    const pharmacyNeeds = validPostings.map(p => ({
+      ...p,
+      remaining: Number(p.required_staff) || 0
+    }));
+    
+    // マッチング処理
+    for (const request of sortedRequests) {
+      for (const pharmacyNeed of pharmacyNeeds) {
+        if (pharmacyNeed.remaining <= 0) continue;
         
-        // 評価が異なる場合は評価の高い順
-        if (aRating !== bRating) {
-          return bRating - aRating;
-        }
+        // NGリストチェック
+        const pharmacist = userProfiles[request.pharmacist_id];
+        const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
         
-        // 評価が同じ場合は優先度順
-        const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
-      });
-      
-      // 各薬局の必要人数を管理
-      const pharmacyNeeds = slotPostings.map(p => ({
-        ...p,
-        remaining: Number(p.required_staff) || 0
-      }));
-      
-      // マッチング処理
-      for (const request of sortedRequests) {
-        for (const pharmacyNeed of pharmacyNeeds) {
-          if (pharmacyNeed.remaining <= 0) continue;
+        const pharmacistNg = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+        const pharmacyNg = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+        
+        const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
+        const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+        
+        // 時間範囲ベースのマッチング
+        const isRangeCompatible = (request: any, posting: any) => {
+          const rs = request?.start_time;
+          const re = request?.end_time;
+          const ps = posting?.start_time;
+          const pe = posting?.end_time;
           
-          // NGリストチェック
-          const pharmacist = userProfiles[request.pharmacist_id];
-          const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
+          // 両方に時間範囲がある場合は包含関係で判定
+          if (rs && re && ps && pe) {
+            // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
+            return rs <= ps && re >= pe;
+          }
           
-          const pharmacistNg = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
-          const pharmacyNg = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+          // 片方でも時間範囲がない場合はマッチしない
+          return false;
+        };
+        
+        if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
+          console.log(`✅ 時間範囲マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
           
-          const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
-          const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
-          
-          // 時間帯互換性チェック
-          const isTimeCompatible = (reqSlot: string, postSlot: string) => {
-            if (reqSlot === postSlot) return true;
-            if (reqSlot === 'full' || reqSlot === 'fullday') {
-              return postSlot === 'morning' || postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
-            }
-            if (reqSlot === 'morning') {
-              return postSlot === 'morning' || postSlot === 'full' || postSlot === 'fullday';
-            }
-            if (reqSlot === 'afternoon') {
-              return postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
-            }
-            return false;
-          };
-
-          // 時刻範囲対応のマッチング関数（両者にstart_time/end_timeがあれば包含で判定）
-          const isRangeCompatible = (request: any, posting: any, postSlot: string) => {
-            const rs = request?.start_time;
-            const re = request?.end_time;
-            const ps = posting?.start_time;
-            const pe = posting?.end_time;
-            if (rs && re && ps && pe) {
-              return rs <= ps && re >= pe;
-            }
-            return isTimeCompatible(request?.time_slot, postSlot);
+          // 確定シフトを作成
+          const confirmedShift = {
+            pharmacist_id: request.pharmacist_id,
+            pharmacy_id: pharmacyNeed.pharmacy_id,
+            date: date,
+            start_time: pharmacyNeed.start_time,
+            end_time: pharmacyNeed.end_time,
+            status: 'confirmed',
+            store_name: pharmacyNeed.store_name || pharmacy?.name || '',
+            memo: `マッチング: ${pharmacist?.name} → ${pharmacy?.name}`
           };
           
-          if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed, slot)) {
-            console.log(`✅ マッチング成功: 薬剤師(${pharmacist?.name}) ${request.time_slot} → 薬局(${pharmacy?.name}) ${slot}`);
-            
-            // 確定シフトを作成
-            const confirmedShift = {
-              pharmacist_id: request.pharmacist_id,
-              pharmacy_id: pharmacyNeed.pharmacy_id,
-              date: date,
-              time_slot: slot,
-              start_time: pharmacyNeed.start_time || request.start_time || null,
-              end_time: pharmacyNeed.end_time || request.end_time || null,
-              status: 'confirmed',
-              store_name: pharmacyNeed.store_name || pharmacy?.name || '',
-              memo: `マッチング: ${pharmacist?.name} → ${pharmacy?.name}`
-            };
-            
-            console.log('作成する確定シフト:', confirmedShift);
-            matchedShifts.push(confirmedShift);
-            pharmacyNeed.remaining--;
-            break;
-          } else {
-            // マッチング失敗の理由をログ出力
-            if (blockedByPharmacist) {
-              console.log(`❌ マッチング失敗: 薬剤師NGリストに薬局が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
-            } else if (blockedByPharmacy) {
-              console.log(`❌ マッチング失敗: 薬局NGリストに薬剤師が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
-            } else if (!isTimeCompatible(request.time_slot, slot)) {
-              console.log(`❌ マッチング失敗: 時間帯不適合 (薬剤師:${request.time_slot} vs 薬局:${slot})`);
-            }
+          console.log('作成する確定シフト:', confirmedShift);
+          matchedShifts.push(confirmedShift);
+          pharmacyNeed.remaining--;
+          break;
+        } else {
+          // マッチング失敗の理由をログ出力
+          if (blockedByPharmacist) {
+            console.log(`❌ マッチング失敗: 薬剤師NGリストに薬局が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+          } else if (blockedByPharmacy) {
+            console.log(`❌ マッチング失敗: 薬局NGリストに薬剤師が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+          } else if (!isRangeCompatible(request, pharmacyNeed)) {
+            console.log(`❌ マッチング失敗: 時間範囲不適合 (薬剤師:${request.start_time}-${request.end_time} vs 薬局:${pharmacyNeed.start_time}-${pharmacyNeed.end_time})`);
           }
         }
       }
@@ -1949,6 +1893,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   return (
     <div className="space-y-6">
       
+      {/* AIマッチングコントロール */}
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Brain className="w-6 h-6 text-purple-600" />
+            <div>
+              <h3 className="text-sm font-medium text-purple-800">AIマッチングシステム</h3>
+              <p className="text-xs text-purple-600">
+                {useAIMatching ? 'AIマッチングが有効です' : '従来のルールベースマッチングを使用中'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={useAIMatching}
+                onChange={(e) => setUseAIMatching(e.target.checked)}
+                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+              />
+              <span className="text-sm font-medium text-purple-700">AIマッチング</span>
+            </label>
+            {selectedDate && (
+              <button
+                onClick={() => executeAIMatching(selectedDate)}
+                disabled={aiMatchingLoading}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+              >
+                {aiMatchingLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>AI分析中...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    <span>AIマッチング実行</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className={`border rounded-lg p-4 ${systemStatus === 'confirmed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -1973,6 +1962,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           </button>
         </div>
       </div>
+
+      {/* AIマッチング統計 */}
+      <AIMatchingStats className="mb-6" />
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         {/* left calendar */}
@@ -2058,71 +2050,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   console.log('確定シフトが存在するため、確定状態を返します');
                   
                   // 確定シフトがある場合でも、不足や余裕の情報を計算
-               const timeSlots = ['morning','afternoon','full'];
                   let totalRequired = 0;
-               let totalAvailable = 0;
+                  let totalAvailable = 0;
                   let totalMatched = 0;
                   let totalShortage = 0;
                   let totalExcess = 0;
-               // 重複カウント防止用（同一リクエストがfullとmorningに跨る等）
-               const uniqueAvailableRequestIds = new Set<string>();
 
-                  timeSlots.forEach((slot) => {
-                    const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
-                    
-                    // 時間帯互換性を考慮して希望を取得
-                    const slotRequests = dayRequests.filter((r: any) => {
-                      const reqSlot = r.time_slot;
-                      const postSlot = slot;
-                      
-                      // 完全一致
-                      if (reqSlot === postSlot) return true;
-                      if (reqSlot === 'fullday' && postSlot === 'full') return true;
-                      if (reqSlot === 'full' && postSlot === 'fullday') return true;
-                      
-                      // 終日希望は午前・午後にマッチ可能
-                      if (reqSlot === 'full' || reqSlot === 'fullday') {
-                        return postSlot === 'morning' || postSlot === 'afternoon';
-                      }
-                      
-                      // 午前希望は終日にマッチ可能
-                      if (reqSlot === 'morning') {
-                        return postSlot === 'full' || postSlot === 'fullday';
-                      }
-                      
-                      // 午後希望は終日にマッチ可能
-                      if (reqSlot === 'afternoon') {
-                        return postSlot === 'full' || postSlot === 'fullday';
-                      }
-                      
-                      return false;
-                    });
-
-                    // カレンダー計算でも、募集がない時間帯で終日希望のみの場合は計算から除外
-                    if (slotPostings.length === 0 && slotRequests.every((r: any) => r.time_slot === 'full' || r.time_slot === 'fullday')) {
-                      console.log(`🚫 確定後カレンダー計算スキップ: ${slot}時間帯 - 募集なし、終日希望のみ`);
-                      return;
-                    }
-                    
-                    const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                    // 終日希望は余裕計算では午前/午後に重複計上しない
-                    const effectiveSlotRequests = slotRequests.filter((r: any) => {
-                      if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
-                        return false;
-                      }
-                      return true;
-                    });
-                    const availableSlot = effectiveSlotRequests.length;
-                    const matchedSlot = Math.min(requiredSlot, availableSlot);
-                    const shortageSlot = Math.max(requiredSlot - matchedSlot, 0);
-                    const excessSlot = Math.max(availableSlot - matchedSlot, 0);
-
-                    totalRequired += requiredSlot;
-                    totalAvailable += availableSlot;
-                    totalMatched += matchedSlot;
-                    totalShortage += shortageSlot;
-                    totalExcess += excessSlot;
-                  });
+                  // 時間範囲ベースの計算
+                  totalRequired = dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
+                  totalAvailable = dayRequests.filter((r: any) => r.start_time && r.end_time).length;
+                  totalMatched = dayAssignedShifts.length;
+                  
+                  // 確定シフトがある場合の不足・余裕計算
+                  // 不足 = 必要人数 - 確定シフト数
+                  totalShortage = Math.max(0, totalRequired - totalMatched);
+                  // 余裕 = 利用可能人数 - 確定シフト数
+                  totalExcess = Math.max(0, totalAvailable - totalMatched);
                   
                   console.log(`確定後計算: 総必要=${totalRequired}, 総利用可能=${totalAvailable}, 総マッチ=${totalMatched}, 総不足=${totalShortage}, 総余裕=${totalExcess}`);
                   
@@ -2147,198 +2090,83 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   }
                   return (userProfiles as any)[id] || ({} as any);
                 };
-                // 柔軟な時間帯マッチング関数（不足解消のため）
-                const isTimeCompatible = (reqSlot: string, postSlot: string) => {
-                  // 完全一致の場合は常にマッチ
-                  if (reqSlot === postSlot) return true;
+                // 時間範囲ベースのマッチング関数
+                const isRangeCompatible = (request: any, posting: any) => {
+                  const rs = request?.start_time;
+                  const re = request?.end_time;
+                  const ps = posting?.start_time;
+                  const pe = posting?.end_time;
                   
-                  // 薬剤師が終日希望の場合、薬局の募集に合わせてマッチ可能（不足解消のため）
-                  if (reqSlot === 'full' || reqSlot === 'fullday') {
-                    return postSlot === 'morning' || postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
+                  // 両方に時間範囲がある場合は包含関係で判定
+                  if (rs && re && ps && pe) {
+                    // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
+                    return rs <= ps && re >= pe;
                   }
                   
-                  // 薬剤師が午前希望の場合
-                  if (reqSlot === 'morning') {
-                    return postSlot === 'morning' || postSlot === 'full' || postSlot === 'fullday';
-                  }
-                  
-                  // 薬剤師が午後希望の場合
-                  if (reqSlot === 'afternoon') {
-                    return postSlot === 'afternoon' || postSlot === 'full' || postSlot === 'fullday';
-                  }
-                  
+                  // 片方でも時間範囲がない場合はマッチしない
                   return false;
                 };
 
-                const timeSlots = ['morning','afternoon','full'];
                 let totalRequired = 0;
                 let totalAvailable = 0;
                 let totalMatched = 0;
                 let totalShortage = 0;
                 let totalExcess = 0;
 
-                timeSlots.forEach((slot) => {
-                  const slotPostings = dayPostings.filter((p: any) => p.time_slot === slot || (slot === 'full' && p.time_slot === 'fullday'));
-                  
-                  // 時間帯互換性を考慮して希望を取得
-                  const slotRequests = dayRequests.filter((r: any) => {
-                    const reqSlot = r.time_slot;
-                    const postSlot = slot;
-                    
-                    // 完全一致
-                    if (reqSlot === postSlot) return true;
-                    if (reqSlot === 'fullday' && postSlot === 'full') return true;
-                    if (reqSlot === 'full' && postSlot === 'fullday') return true;
-                    
-                    // 終日希望は午前・午後にマッチ可能
-                    if (reqSlot === 'full' || reqSlot === 'fullday') {
-                      return postSlot === 'morning' || postSlot === 'afternoon';
-                    }
-                    
-                    // 午前希望は終日にマッチ可能
-                    if (reqSlot === 'morning') {
-                      return postSlot === 'full' || postSlot === 'fullday';
-                    }
-                    
-                    // 午後希望は終日にマッチ可能
-                    if (reqSlot === 'afternoon') {
-                      return postSlot === 'full' || postSlot === 'fullday';
-                    }
-                    
-                    return false;
-                  });
-
-                  // カレンダー計算でも、募集がない時間帯で終日希望のみの場合は計算から除外
-                  if (slotPostings.length === 0 && slotRequests.every((r: any) => r.time_slot === 'full' || r.time_slot === 'fullday')) {
-                    console.log(`🚫 カレンダー計算スキップ: ${slot}時間帯 - 募集なし、終日希望のみ`);
-                    return;
-                  }
-                  
-                  console.log(`✅ カレンダー計算: ${slot}時間帯 - 募集${slotPostings.length}件、応募${slotRequests.length}件`);
-                  console.log(`=== 時間帯 ${slot} のマッチング処理開始 ===`);
-                  console.log(`募集数: ${slotPostings.length}, 希望数: ${slotRequests.length}`);
-                  console.log(`募集詳細:`, slotPostings.map(p => ({ time_slot: p.time_slot, store_name: p.store_name })));
-                  console.log(`希望詳細:`, slotRequests.map(r => ({ time_slot: r.time_slot, pharmacist_id: r.pharmacist_id })));
-                  const requiredSlot = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                  // 終日希望は午前/午後に重複計上しない（表示の整合性）
-                 const slotRequestsFiltered = slotRequests.filter((r: any) => {
-                    if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
-                      return false;
-                    }
-                    return true;
-                 });
-                 // この時間帯でカウント対象のリクエストをユニーク登録
-                 slotRequestsFiltered.forEach((r: any) => {
-                   if (r && r.id) uniqueAvailableRequestIds.add(r.id);
-                 });
-                 const availableSlot = slotRequestsFiltered.length;
-
-                  // 右パネルと同じロジックでマッチングを行う（終日希望はマッチング対象に含める）
-                  const sortedRequests = slotRequests
-                    .sort((a: any, b: any) => {
-                    const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-                    return priorityOrder[b.priority] - priorityOrder[a.priority];
-                  });
-
-                  const matchedPharmacists: any[] = [];
-                  const matchedPharmacies: any[] = [];
-                  let remainingRequired = requiredSlot;
-
-                  // 各薬局の必要人数を管理
-                  const pharmacyNeeds = slotPostings.map((p: any) => ({
-                    pharmacy_id: p.pharmacy_id,
-                    required: Number(p.required_staff) || 0,
-                    remaining: Number(p.required_staff) || 0,
-                    store_name: p.store_name
-                  }));
-
-                  // 優先順位順にマッチング
-                  for (const request of sortedRequests) {
-                    if (remainingRequired <= 0) break;
-
-                    const pharmacist = getProfile(request.pharmacist_id);
-                    const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
-
-                    // 利用可能な薬局を探す
-                    for (const pharmacyNeed of pharmacyNeeds) {
-                      if (pharmacyNeed.remaining <= 0) continue;
-
-                      const pharmacy = getProfile(pharmacyNeed.pharmacy_id);
-                      const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
-
-                      const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
-                      const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
-
-                      if (!blockedByPharmacist && !blockedByPharmacy && isTimeCompatible(request.time_slot, slot)) {
-                        // 終日希望が午前・午後にマッチングされた場合の特別ログ
-                        if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (slot === 'morning' || slot === 'afternoon')) {
-                          console.log(`🎯 表示用マッチング: 終日希望薬剤師(${getProfile(request.pharmacist_id)?.name}) → ${slot}募集薬局(${getProfile(pharmacyNeed.pharmacy_id)?.name})`);
-                        } else {
-                          console.log(`✅ 表示用マッチング: 薬剤師(${getProfile(request.pharmacist_id)?.name}) ${request.time_slot} → 薬局(${getProfile(pharmacyNeed.pharmacy_id)?.name}) ${slot}`);
-                        }
-                        matchedPharmacists.push(request);
-                        matchedPharmacies.push(pharmacyNeed);
-                        pharmacyNeed.remaining--;
-                        remainingRequired--;
-                        break;
-                      } else {
-                        // マッチング失敗の理由をログ出力
-                        if (blockedByPharmacist) {
-                          console.log(`❌ 表示用マッチング失敗: 薬剤師NGリストに薬局が含まれています`);
-                        } else if (blockedByPharmacy) {
-                          console.log(`❌ 表示用マッチング失敗: 薬局NGリストに薬剤師が含まれています`);
-                        } else if (!isTimeCompatible(request.time_slot, slot)) {
-                          console.log(`❌ 表示用マッチング失敗: 時間帯不適合 (薬剤師:${request.time_slot} vs 薬局:${slot})`);
-                        }
-                      }
-                    }
-                  }
-
-                  const matchedSlot = matchedPharmacists.length;
-                  const shortageSlot = Math.max(requiredSlot - matchedSlot, 0);
-                  const excessSlot = Math.max(availableSlot - matchedSlot, 0);
-
-                  // デバッグ用ログ
-                  console.log(`=== マッチング処理詳細 (${slot}) ===`);
-                  console.log(`時間帯 ${slot}: 必要=${requiredSlot}, 利用可能(重複除外)=${availableSlot}, マッチ=${matchedSlot}, 不足=${shortageSlot}, 余裕=${excessSlot}`);
-                  console.log(`薬局のニーズ:`, pharmacyNeeds);
-                  console.log(`薬剤師の希望:`, sortedRequests);
-                  console.log(`マッチング結果:`, { 
-                    matchedPharmacists: matchedPharmacists.map(p => ({ 
-                      id: p.id, 
-                      name: getProfile(p.pharmacist_id)?.name,
-                      time_slot: p.time_slot,
-                      pharmacist_id: p.pharmacist_id
-                    })),
-                    matchedPharmacies: matchedPharmacies.map(p => ({ 
-                      id: p.id, 
-                      name: getProfile(p.pharmacy_id)?.name,
-                      time_slot: slot,
-                      pharmacy_id: p.pharmacy_id
-                    }))
-                  });
-                  console.log(`=== マッチング処理詳細終了 ===`);
-
-                  totalRequired += requiredSlot;
-                  totalAvailable += availableSlot;
-                  totalMatched += matchedSlot;
-                  totalShortage += shortageSlot;
-                  totalExcess += excessSlot;
+                // 時間範囲ベースの計算
+                totalRequired = dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
+                totalAvailable = dayRequests.filter((r: any) => r.start_time && r.end_time).length;
+                
+                // マッチング数を計算（薬剤師と薬局の組み合わせで計算）
+                let matchedCount = 0;
+                const matchedPharmacists = new Set<string>();
+                
+                // 薬剤師を評価順にソート
+                const sortedRequests = dayRequests.sort((a: any, b: any) => {
+                  const aRating = getPharmacistRating(a.pharmacist_id);
+                  const bRating = getPharmacistRating(b.pharmacist_id);
+                  if (aRating !== bRating) return bRating - aRating;
+                  const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+                  return priorityOrder[b.priority] - priorityOrder[a.priority];
                 });
+
+                // 各薬局の必要人数を管理
+                const pharmacyNeeds = dayPostings.map((p: any) => ({
+                  ...p,
+                  remaining: Number(p.required_staff) || 0
+                }));
+
+                sortedRequests.forEach((request: any) => {
+                  const pharmacist = getProfile(request.pharmacist_id);
+                  const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+                  
+                  // 利用可能な薬局を探す
+                  for (const pharmacyNeed of pharmacyNeeds) {
+                    if (pharmacyNeed.remaining <= 0) continue;
+                    
+                    const pharmacy = getProfile(pharmacyNeed.pharmacy_id);
+                    const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+                    
+                    const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
+                    const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+                    
+                    if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
+                      matchedCount++;
+                      matchedPharmacists.add(request.pharmacist_id);
+                      pharmacyNeed.remaining--;
+                      break;
+                    }
+                  }
+                });
+                
+                totalMatched = matchedCount;
+                totalShortage = Math.max(0, totalRequired - totalMatched);
+                totalExcess = Math.max(0, totalAvailable - totalMatched);
 
                 // デバッグ用ログ（データがある日付のみ）
                 if (dayRequests.length > 0 || dayPostings.length > 0) {
                   console.log(`日付 ${dateStr}: 総必要=${totalRequired}, 総利用可能=${totalAvailable}, 総マッチ=${totalMatched}, 総不足=${totalShortage}`);
                   console.log(`カレンダー計算: 不足=${totalShortage}, 余裕=${totalExcess}`);
-                  console.log(`カレンダー表示用データ:`, {
-                    totalRequired,
-                    totalAvailable,
-                    totalMatched,
-                    totalShortage,
-                    totalExcess,
-                    dayRequests: dayRequests.map(r => ({ time_slot: r.time_slot, pharmacist_id: r.pharmacist_id })),
-                    dayPostings: dayPostings.map(p => ({ time_slot: p.time_slot, pharmacy_id: p.pharmacy_id, required_staff: p.required_staff }))
-                  });
                 }
 
                 // カレンダーのマッチ数が0になってしまうケースを右パネルに合わせて補正
@@ -2350,7 +2178,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 let result;
                 if (totalRequired === 0) {
                   if (uniqueAvailableCount > 0) {
-                    result = { type: 'requests_only', count: uniqueAvailableCount, requestsCount: uniqueAvailableCount } as any;
+                    result = { type: 'requests_only', count: uniqueAvailableCount, requestsCount: totalAvailable } as any;
                   } else if (dayPostings.length > 0) {
                     // 薬局の募集のみの場合
                     result = { type: 'postings_only', count: dayPostings.length, postingsCount: dayPostings.length } as any;
@@ -2368,7 +2196,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   }
                 } else {
                   // 必要>0かつ応募>0なら、右パネルと同じ計算に合わせて表示
-                  result = { type: 'summary', count: Math.max(effectiveMatched, 0), shortage: totalShortage, excess: totalExcess, requestsCount: uniqueAvailableCount } as any;
+                  result = { type: 'summary', count: Math.max(effectiveMatched, 0), shortage: totalShortage, excess: totalExcess, requestsCount: totalAvailable } as any;
                   if (dayRequests.length > 0 || dayPostings.length > 0) {
                     console.log('結果: summary', result);
                   }
@@ -2541,6 +2369,60 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const dayPostings = postings.filter((p: any) => p.date === selectedDate);
                   const dayAssignedShifts = assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed');
                   
+                  // AIマッチング結果の表示
+                  if (aiMatches.length > 0 && selectedDate) {
+                    return (
+                      <div className="p-4 border-b border-gray-200">
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Brain className="w-4 h-4 text-purple-600" />
+                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果</h4>
+                          </div>
+                          <div className="space-y-2">
+                            {aiMatches.slice(0, 3).map((match, index) => (
+                              <div key={index} className="bg-white rounded border p-2 text-xs">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="font-medium text-gray-800">
+                                      {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
+                                    </div>
+                                    <div className="text-gray-600">
+                                      {match.timeSlot.start} - {match.timeSlot.end}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-purple-600 font-medium">
+                                      {Math.round(match.compatibilityScore * 100)}%
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {match.reasons.slice(0, 2).join(', ')}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            {aiMatches.length > 3 && (
+                              <div className="text-xs text-gray-500 text-center">
+                                他 {aiMatches.length - 3} 件のマッチング結果
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const shifts = convertAIMatchesToShifts(aiMatches, selectedDate);
+                            // AIマッチング結果を確定シフトとして保存
+                            handleConfirmShiftsForDate(selectedDate, shifts);
+                          }}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                        >
+                          <Brain className="w-4 h-4" />
+                          <span>AIマッチング結果を確定する</span>
+                        </button>
+                      </div>
+                    );
+                  }
+
                   // 確定シフトがない日で、希望または募集がある場合のみボタンを表示
                   if (dayAssignedShifts.length === 0 && (dayRequests.length > 0 || dayPostings.length > 0)) {
                     return (
@@ -3098,173 +2980,90 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     logToRailway('その日の希望:', dayRequests);
                     logToRailway('その日の募集:', dayPostings);
                     
-                    // 時間帯ごとにマッチング状況を分析
-                    const timeSlots = ['morning', 'afternoon', 'full'];
-                    const matchingAnalysis = timeSlots.map(timeSlot => {
-                      // 時間帯互換性を考慮したリクエストのフィルタリング
-                      const slotRequests = dayRequests.filter((r: any) => {
-                        const reqSlot = r.time_slot;
-                        const postSlot = timeSlot;
-                        
-                        // 完全一致
-                        if (reqSlot === postSlot) return true;
-                        if (reqSlot === 'fullday' && postSlot === 'full') return true;
-                        if (reqSlot === 'full' && postSlot === 'fullday') return true;
-                        
-                        // 終日希望は午前・午後にマッチ可能
-                        if (reqSlot === 'full' || reqSlot === 'fullday') {
-                          return postSlot === 'morning' || postSlot === 'afternoon';
-                        }
-                        
-                        // 午前希望は終日にマッチ可能
-                        if (reqSlot === 'morning') {
-                          return postSlot === 'full' || postSlot === 'fullday';
-                        }
-                        
-                        // 午後希望は終日にマッチ可能
-                        if (reqSlot === 'afternoon') {
-                          return postSlot === 'full' || postSlot === 'fullday';
-                        }
-                        
-                        return false;
-                      });
-                      
-                      const slotPostings = dayPostings.filter((p: any) => p.time_slot === timeSlot || (timeSlot === 'full' && p.time_slot === 'fullday'));
-                      
-                      // 右側パネルでは、実際にマッチングが発生する可能性がある時間帯のみを表示
-                      // 募集がない時間帯で、終日希望の薬剤師のみの場合は表示しない
-                      if (slotRequests.length === 0 && slotPostings.length === 0) return null;
-                      if (slotPostings.length === 0 && slotRequests.every((r: any) => r.time_slot === 'full' || r.time_slot === 'fullday')) {
-                        console.log(`🚫 右パネル表示スキップ: ${timeSlot}時間帯 - 募集なし、終日希望のみ`);
-                        return null;
-                      }
-                      
-                      console.log(`✅ 右パネル表示: ${timeSlot}時間帯 - 募集${slotPostings.length}件、応募${slotRequests.length}件`);
-                      
-                      // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
-                      const sortedRequests = slotRequests.sort((a: any, b: any) => {
+                    // 時間範囲ベースのマッチング状況を分析
+                    const matchingAnalysis = [{
+                      timeSlot: 'time_range',
+                      totalRequired: dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0),
+                      totalAvailable: dayRequests.filter((r: any) => r.start_time && r.end_time).length,
+                      totalMatched: 0,
+                      shortage: 0,
+                      excess: 0,
+                      requests: dayRequests.filter((r: any) => r.start_time && r.end_time),
+                      postings: dayPostings,
+                      matchedPharmacists: [] as any[],
+                      matchedPharmacies: [] as any[]
+                    }];
+                    
+                    // マッチング数を計算
+                    let matchedCount = 0;
+                    const matchedPharmacists = [] as any[];
+                    const matchedPharmacies = [] as any[];
+                    
+                    // 薬剤師を評価順にソート
+                    const sortedRequests = dayRequests
+                      .filter((r: any) => r.start_time && r.end_time)
+                      .sort((a: any, b: any) => {
                         const aRating = getPharmacistRating(a.pharmacist_id);
                         const bRating = getPharmacistRating(b.pharmacist_id);
-                        
-                        // 評価が異なる場合は評価の高い順
-                        if (aRating !== bRating) {
-                          return bRating - aRating;
-                        }
-                        
-                        // 評価が同じ場合は優先度順
+                        if (aRating !== bRating) return bRating - aRating;
                         const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
                         return priorityOrder[b.priority] - priorityOrder[a.priority];
                       });
+                    
+                    // 各薬局の必要人数を管理
+                    const pharmacyNeeds = dayPostings.map((p: any) => ({
+                      ...p,
+                      remaining: Number(p.required_staff) || 0
+                    }));
+                    
+                    // 優先順位順に薬剤師をマッチング
+                    sortedRequests.forEach((request: any) => {
+                      const pharmacist = userProfiles[request.pharmacist_id];
+                      const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
                       
-                      const totalRequired = slotPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                      // カレンダーと同じロジック：終日希望は午前/午後に重複計上しない
-                      const slotRequestsFiltered = sortedRequests.filter((r: any) => {
-                        if ((r.time_slot === 'full' || r.time_slot === 'fullday') && (timeSlot === 'morning' || timeSlot === 'afternoon')) {
-                          return false;
+                      // 利用可能な薬局を探す
+                      for (const pharmacyNeed of pharmacyNeeds) {
+                        if (pharmacyNeed.remaining <= 0) continue;
+                        
+                        const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
+                        const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+                        
+                        const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
+                        const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+                        
+                        // 時間範囲互換性をチェック
+                        const rs = request?.start_time;
+                        const re = request?.end_time;
+                        const ps = pharmacyNeed?.start_time;
+                        const pe = pharmacyNeed?.end_time;
+                        
+                        // 両方に時間範囲がある場合は包含関係で判定
+                        let isCompatible = false;
+                        if (rs && re && ps && pe) {
+                          // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
+                          isCompatible = rs <= ps && re >= pe;
                         }
-                        return true;
-                      });
-                      const totalAvailable = slotRequestsFiltered.length;
-                      
-                      // マッチングシミュレーション（優先順位順）
-                      const matchedPharmacists: any[] = [];
-                      const matchedPharmacies: any[] = [];
-                      let remainingRequired = totalRequired;
-                      
-                      // 各薬局の必要人数を管理
-                      const pharmacyNeeds = slotPostings.map((p: any) => ({
-                        ...p,
-                        remaining: Number(p.required_staff) || 0
-                      }));
-                      
-                      // 優先順位順に薬剤師をマッチング（NGリストと時間帯互換性を考慮）
-                      // フィルタリングされたリクエストを使用（カレンダーと同じロジック）
-                      slotRequestsFiltered.forEach((request: any) => {
-                        if (remainingRequired > 0) {
-                          // 薬剤師のNGリストを取得
-                          const pharmacistProfile = userProfiles[request.pharmacist_id];
-                          const pharmacistNg: string[] = Array.isArray(pharmacistProfile?.ng_list) ? pharmacistProfile.ng_list : [];
+                        
+                        if (!blockedByPharmacist && !blockedByPharmacy && isCompatible) {
+                          // 右側パネル用のマッチングログ
+                          console.log(`✅ 右パネル時間範囲マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
                           
-                          // まだ人員が必要で、NGリストに含まれていない薬局を探す
-                          const availablePharmacy = pharmacyNeeds.find((p: any) => {
-                            if (p.remaining <= 0 || pharmacistNg.includes(p.pharmacy_id)) {
-                              return false;
-                            }
-                            
-                            // 時間帯互換性をチェック
-                            const reqSlot = request.time_slot;
-                            const postSlot = timeSlot;
-                            
-                            // 完全一致
-                            if (reqSlot === postSlot) return true;
-                            if (reqSlot === 'fullday' && postSlot === 'full') return true;
-                            if (reqSlot === 'full' && postSlot === 'fullday') return true;
-                            
-                            // 終日希望は午前・午後にマッチ可能
-                            if (reqSlot === 'full' || reqSlot === 'fullday') {
-                              return postSlot === 'morning' || postSlot === 'afternoon';
-                            }
-                            
-                            // 午前希望は終日にマッチ可能
-                            if (reqSlot === 'morning') {
-                              return postSlot === 'full' || postSlot === 'fullday';
-                            }
-                            
-                            // 午後希望は終日にマッチ可能
-                            if (reqSlot === 'afternoon') {
-                              return postSlot === 'full' || postSlot === 'fullday';
-                            }
-                            
-                            return false;
-                          });
-                          
-                          if (availablePharmacy) {
-                            // 薬局のNGリストも確認
-                            const pharmacyProfile = userProfiles[availablePharmacy.pharmacy_id];
-                            const pharmacyNg: string[] = Array.isArray(pharmacyProfile?.ng_list) ? pharmacyProfile.ng_list : [];
-                            
-                            if (!pharmacyNg.includes(request.pharmacist_id)) {
-                              // 右側パネル用のマッチングログ
-                              if ((request.time_slot === 'full' || request.time_slot === 'fullday') && (timeSlot === 'morning' || timeSlot === 'afternoon')) {
-                                console.log(`🎯 右パネルマッチング: 終日希望薬剤師(${pharmacistProfile?.name}) → ${timeSlot}募集薬局(${pharmacyProfile?.name})`);
-                              } else {
-                                console.log(`✅ 右パネルマッチング: 薬剤師(${pharmacistProfile?.name}) ${request.time_slot} → 薬局(${pharmacyProfile?.name}) ${timeSlot}`);
-                              }
-                              
-                              matchedPharmacists.push(request);
-                              matchedPharmacies.push(availablePharmacy);
-                              availablePharmacy.remaining--;
-                              remainingRequired--;
-                            }
-                          }
+                          matchedCount++;
+                          matchedPharmacists.push(request);
+                          matchedPharmacies.push(pharmacyNeed);
+                          pharmacyNeed.remaining--;
+                          break;
                         }
-                      });
-                      
-                      // 不足の薬局一覧（remaining > 0）
-                      const shortagePharmacies = pharmacyNeeds
-                        .filter((p: any) => p.remaining > 0)
-                        .map((p: any) => ({ pharmacy_id: p.pharmacy_id, remaining: p.remaining, store_name: p.store_name }));
-
-                      // 余裕の計算：利用可能な薬剤師数 - マッチした薬剤師数
-                      const excessPharmacists = totalAvailable - matchedPharmacists.length;
-
-                      return {
-                        timeSlot,
-                        requests: sortedRequests,
-                        postings: slotPostings,
-                        totalRequired,
-                        totalAvailable,
-                        totalMatched: matchedPharmacists.length,
-                        matchedPharmacists,
-                        matchedPharmacies,
-                        remainingRequired,
-                        shortagePharmacies,
-                        excessPharmacists,
-                        isMatching: totalAvailable > 0 && totalRequired > 0,
-                        isShortage: totalAvailable < totalRequired,
-                        hasExcess: excessPharmacists > 0
-                      };
-                    }).filter(Boolean);
+                      }
+                    });
+                    
+                    // 結果を更新
+                    matchingAnalysis[0].totalMatched = matchedCount;
+                    matchingAnalysis[0].shortage = Math.max(0, matchingAnalysis[0].totalRequired - matchedCount);
+                    matchingAnalysis[0].excess = Math.max(0, matchingAnalysis[0].totalAvailable - matchedCount);
+                    matchingAnalysis[0].excessPharmacists = Math.max(0, matchingAnalysis[0].totalAvailable - matchedCount);
+                    matchingAnalysis[0].matchedPharmacists = matchedPharmacists;
+                    matchingAnalysis[0].matchedPharmacies = matchedPharmacies;
                     
                     // デバッグ用ログ
                     console.log('マッチング分析結果:', matchingAnalysis);
