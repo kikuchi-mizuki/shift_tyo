@@ -98,7 +98,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               date: posting.date
             },
             compatibilityScore,
-            reasons: ['簡易AIマッチング']
+            reasons: ['簡易マッチング']
           });
 
           usedPharmacists.add(request.pharmacist_id);
@@ -254,16 +254,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // AIマッチング結果を確定シフトに変換
   const convertAIMatchesToShifts = (matches: MatchCandidate[], date: string) => {
-    return matches.map(match => ({
-      pharmacist_id: match.pharmacist.id,
-      pharmacy_id: match.pharmacy.id,
-      date: date,
-      start_time: match.timeSlot.start,
-      end_time: match.timeSlot.end,
-      status: 'confirmed',
-      store_name: match.pharmacy.name,
-      memo: `AI Matching: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
-    }));
+    return matches.map(match => {
+      // 薬局名と店舗名を正しく取得
+      const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
+      const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
+      
+      return {
+        pharmacist_id: match.pharmacist.id,
+        pharmacy_id: match.pharmacy.id,
+        date: date,
+        start_time: match.timeSlot.start,
+        end_time: match.timeSlot.end,
+        status: 'confirmed',
+        store_name: storeName,
+        memo: `マッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+      };
+    });
   };
 
   // 時間範囲互換性チェック関数
@@ -1461,16 +1467,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             
             if (aiMatches.length > 0) {
               // AIマッチング結果を確定シフトに変換
-              const aiShifts = aiMatches.map(match => ({
-                pharmacist_id: match.pharmacist.id,
-                pharmacy_id: match.pharmacy.id,
-                date: date,
-                start_time: match.timeSlot.start,
-                end_time: match.timeSlot.end,
-                status: 'confirmed',
-                store_name: match.pharmacy.name,
-                memo: `AI Matching: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
-              }));
+              const aiShifts = aiMatches.map(match => {
+                // 薬局名と店舗名を正しく取得
+                const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
+                const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
+                
+                return {
+                  pharmacist_id: match.pharmacist.id,
+                  pharmacy_id: match.pharmacy.id,
+                  date: date,
+                  start_time: match.timeSlot.start,
+                  end_time: match.timeSlot.end,
+                  status: 'confirmed',
+                  store_name: storeName,
+                  memo: `マッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+                };
+              });
               
               console.log('AIマッチングで生成されたシフト:', aiShifts);
               
@@ -2049,10 +2061,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const ps = posting?.start_time;
           const pe = posting?.end_time;
           
-          // 両方に時間範囲がある場合は包含関係で判定
+          // 両方に時間範囲がある場合は重複関係で判定
           if (rs && re && ps && pe) {
-            // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
-            return rs <= ps && re >= pe;
+            // 重複判定: 薬剤師の希望時間が薬局の募集時間と重複していればマッチ
+            // つまり、薬剤師が薬局の応募時間を満たしていればマッチ
+            return rs < pe && re > ps;
           }
           
           // 片方でも時間範囲がない場合はマッチしない
@@ -2356,10 +2369,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const ps = posting?.start_time;
                   const pe = posting?.end_time;
                   
-                  // 両方に時間範囲がある場合は包含関係で判定
+                  // 両方に時間範囲がある場合は重複関係で判定
                   if (rs && re && ps && pe) {
-                    // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
-                    return rs <= ps && re >= pe;
+                    // 重複判定: 薬剤師の希望時間が薬局の募集時間と重複していればマッチ
+                    // つまり、薬剤師が薬局の応募時間を満たしていればマッチ
+                    return rs < pe && re > ps;
                   }
                   
                   // 片方でも時間範囲がない場合はマッチしない
