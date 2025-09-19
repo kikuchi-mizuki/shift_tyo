@@ -1407,6 +1407,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           
           setStoreNgPharmacists(storeNgDataMap);
           logToRailway('Store NG pharmacists data:', storeNgDataMap);
+
+          // 自動検証: DBの全件と画面用マップ件数の差異をチェック
+          try {
+            const { data: allStoreNgRows, error: loadAllStoreNgErr } = await supabase
+              .from('store_ng_pharmacists')
+              .select('*');
+            if (!loadAllStoreNgErr && Array.isArray(allStoreNgRows)) {
+              const dbCountByPharmacy: {[id: string]: number} = {};
+              for (const row of allStoreNgRows) {
+                const pid = (row as any).pharmacy_id;
+                dbCountByPharmacy[pid] = (dbCountByPharmacy[pid] || 0) + 1;
+              }
+
+              const uiCountByPharmacy: {[id: string]: number} = {};
+              Object.keys(storeNgDataMap).forEach(pid => {
+                uiCountByPharmacy[pid] = (storeNgDataMap[pid] || []).length;
+              });
+
+              const mismatches: Array<{pharmacy_id: string; db: number; ui: number}> = [];
+              const allPharmacyIds = new Set<string>([
+                ...Object.keys(dbCountByPharmacy),
+                ...Object.keys(uiCountByPharmacy)
+              ]);
+              allPharmacyIds.forEach(pid => {
+                const db = dbCountByPharmacy[pid] || 0;
+                const ui = uiCountByPharmacy[pid] || 0;
+                if (db !== ui) mismatches.push({ pharmacy_id: pid, db, ui });
+              });
+
+              if (mismatches.length > 0) {
+                console.warn('[NG Auto-Verify] store_ng_pharmacists mismatch detected', mismatches);
+                logToRailway('[NG Auto-Verify] mismatch', mismatches);
+              } else {
+                console.log('[NG Auto-Verify] store_ng_pharmacists counts match UI');
+              }
+              // windowへ配置してユーザーが即参照できるようにする
+              (window as any).storeNgPharmacistsMap = storeNgDataMap;
+              (window as any).storeNgPharmacistsDbCounts = dbCountByPharmacy;
+            }
+          } catch (verifyErr) {
+            console.warn('Failed to auto-verify NG pharmacists:', verifyErr);
+          }
           
           // 薬剤師のNG薬局情報を読み込み
           logToRailway('Loading pharmacist NG pharmacies...');
