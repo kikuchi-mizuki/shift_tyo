@@ -299,6 +299,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }, userProfiles, ratings);
       
       console.log('マッチング結果:', monthlyMatches);
+      console.log('DEBUG: executeMonthlyAIMatching reached debug modal alert point.');
+      alert('DEBUG: AI Matching Debug Modal Test');
       
       debugInfo += `=== マッチング結果 ===\n`;
       debugInfo += `マッチング件数: ${monthlyMatches.length}件\n`;
