@@ -1001,7 +1001,10 @@ export const shiftRequests = {
     }
 
     try {
+      console.log('=== Supabaseクエリ構築開始 ===');
+      console.log('テーブル名: shift_requests');
       let query = supabase.from('shift_requests').select('*');
+      console.log('基本クエリ構築完了');
       
       if (userType === 'pharmacist' && userId) {
         query = query.eq('pharmacist_id', userId);
@@ -1009,8 +1012,10 @@ export const shiftRequests = {
       }
       // pharmacy/adminは全ての希望を閲覧可能
       
-      console.log('Executing shift_requests query...');
+      console.log('=== Supabaseクエリ実行開始 ===');
+      console.log('実行するクエリ:', query);
       const { data, error } = await query;
+      console.log('=== Supabaseクエリ実行完了 ===');
       
       console.log('Query result:', { dataCount: data?.length || 0, error });
       
