@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // 環境変数の取得（Railway環境変数が設定されていない場合のフォールバック）
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wjgterfwurmvosawzbjs.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_nCoPvmldzPho7y_8AwLhXQ_IcLfvRFN';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZ3RlcmZ3dXJtdm9zYXd6YmpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzQ4MDAsImV4cCI6MjA1MDU1MDgwMH0.bDs2CtZ9dJ0eN0vRUPA7CtR6VqYeYW1m747_IUYJxGE';
 
 // 本番環境かどうかの判定
 export const isProduction = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key');
@@ -40,6 +40,12 @@ export const supabase = (() => {
         hasUrl: !!supabaseUrl,
         hasKey: !!supabaseAnonKey
       });
+      return null;
+    }
+    
+    // API keyの形式検証
+    if (!supabaseAnonKey.startsWith('eyJ') && !supabaseAnonKey.startsWith('sb_')) {
+      console.error('Invalid API key format:', supabaseAnonKey.substring(0, 20) + '...');
       return null;
     }
     
