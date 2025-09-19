@@ -202,6 +202,12 @@ export class AIMatchingEngine {
     userProfiles?: any,
     ratings?: any[]
   ): Promise<MatchCandidate[]> {
+    console.log('=== generateMatchCandidates START ===');
+    console.log('requests:', requests);
+    console.log('postings:', postings);
+    console.log('userProfiles:', userProfiles);
+    console.log('ratings:', ratings);
+    
     if (!this.isInitialized) {
       console.warn('AI Matching Engine not initialized, using fallback');
       return this.fallbackMatching(requests, postings);
@@ -703,6 +709,8 @@ export class AIMatchingEngine {
       }
     }
 
+    console.log(`generateMatchCandidates完了: ${candidates.length}件の候補を生成`);
+    console.log('candidates:', candidates);
     return candidates;
   }
 
@@ -720,6 +728,12 @@ export class AIMatchingEngine {
     userProfiles?: any,
     ratings?: any[]
   ): Promise<MatchCandidate[]> {
+    console.log('=== executeOptimalMatching START ===');
+    console.log('requests:', requests);
+    console.log('postings:', postings);
+    console.log('options:', options);
+    console.log('userProfiles:', userProfiles);
+    console.log('ratings:', ratings);
     // APIを使用する場合はAPI経由でマッチングを実行
     if (options?.useAPI !== false) {
       try {
@@ -796,10 +810,18 @@ export class AIMatchingEngine {
     }
 
     // フォールバック: ローカルマッチング（従来のロジック）
+    console.log('フォールバック: ローカルマッチングを実行');
+    console.log('requests length:', requests.length);
+    console.log('postings length:', postings.length);
+    
     const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings);
+    console.log(`生成された候補: ${candidates.length}件`);
+    console.log('candidates:', candidates);
     
     // 薬局の応募満足度を優先する最適化アルゴリズム
-    return await this.executePharmacySatisfactionMatching(candidates, requests, postings, options?.priority);
+    const result = await this.executePharmacySatisfactionMatching(candidates, requests, postings, options?.priority);
+    console.log('薬局満足度優先マッチング結果:', result);
+    return result;
   }
 
   /**

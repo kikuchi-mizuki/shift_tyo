@@ -263,6 +263,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
 
       console.log(`1ヶ月分のマッチング開始: 希望${monthlyRequests.length}件、募集${monthlyPostings.length}件`);
+      console.log('monthlyRequests:', monthlyRequests);
+      console.log('monthlyPostings:', monthlyPostings);
+      console.log('userProfiles:', userProfiles);
+      console.log('ratings:', ratings);
 
       // 1ヶ月分のマッチングを実行（重複防止付き）
       const monthlyMatches = await aiMatchingEngine.executeOptimalMatching(monthlyRequests, monthlyPostings, {
@@ -270,6 +274,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         algorithm: 'hybrid',
         priority: 'pharmacy_satisfaction' // 薬局の満足度を優先
       }, userProfiles, ratings);
+      
+      console.log('マッチング結果:', monthlyMatches);
 
       // 日付別にマッチング結果を整理
       const matchesByDate: { [date: string]: any[] } = {};
