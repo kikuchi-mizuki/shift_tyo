@@ -2008,6 +2008,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const dayAssigned = Array.isArray(assigned) ? assigned.filter(a => a.date === date && a.status === 'confirmed') : [];
         
         console.log(`日付 ${date}: 希望${dayRequests.length}件, 募集${dayPostings.length}件, 確定${dayAssigned.length}件`);
+        console.log(`日付 ${date} の希望詳細:`, dayRequests.map(r => ({
+          id: r.id,
+          pharmacist_id: r.pharmacist_id,
+          time_slot: r.time_slot,
+          start_time: r.start_time,
+          end_time: r.end_time
+        })));
+        console.log(`日付 ${date} の募集詳細:`, dayPostings.map(p => ({
+          id: p.id,
+          pharmacy_id: p.pharmacy_id,
+          time_slot: p.time_slot,
+          start_time: p.start_time,
+          end_time: p.end_time,
+          required_staff: p.required_staff
+        })));
         
         if (dayRequests.length === 0 || dayPostings.length === 0) {
           console.log(`日付 ${date}: 希望または募集がないためスキップ`);
@@ -2055,6 +2070,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     // 時間範囲がある希望のみを対象とする
     const validRequests = Array.isArray(dayRequests) ? dayRequests.filter(r => r.start_time && r.end_time) : [];
     const validPostings = Array.isArray(dayPostings) ? dayPostings.filter(p => p.start_time && p.end_time) : [];
+    
+    console.log(`時間範囲がある希望: ${validRequests.length}件`);
+    console.log(`時間範囲がある募集: ${validPostings.length}件`);
+    console.log(`時間範囲がある希望詳細:`, validRequests.map(r => ({
+      id: r.id,
+      pharmacist_id: r.pharmacist_id,
+      start_time: r.start_time,
+      end_time: r.end_time
+    })));
+    console.log(`時間範囲がある募集詳細:`, validPostings.map(p => ({
+      id: p.id,
+      pharmacy_id: p.pharmacy_id,
+      start_time: p.start_time,
+      end_time: p.end_time,
+      required_staff: p.required_staff
+    })));
     
     if (validRequests.length === 0 || validPostings.length === 0) {
       console.log(`時間範囲がある希望または募集がないためスキップ`);
