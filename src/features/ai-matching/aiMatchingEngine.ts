@@ -235,7 +235,7 @@ export class AIMatchingEngine {
         if (this.isBasicCompatible(request, posting) && 
             this.isNgCompatible(request, posting, userProfiles)) {
           
-          const candidate = await this.createMatchCandidate(request, posting);
+          const candidate = await this.createMatchCandidate(request, posting, ratings);
           if (candidate) {
             candidates.push(candidate);
             usedPharmacists.add(request.pharmacist_id);
@@ -251,7 +251,7 @@ export class AIMatchingEngine {
   }
 
   /**
-   * 基本的な互換性チェック（従来のロジックを踏襲）
+   * 基本的な互換性チェック（従来のロジックを踏襲 + 改善）
    */
   private isBasicCompatible(request: any, posting: any): boolean {
     // 時間範囲の互換性
@@ -265,6 +265,48 @@ export class AIMatchingEngine {
     // 重複関係: 薬剤師の希望時間が薬局の募集時間と重複していればマッチ
     // つまり、薬剤師が薬局の応募時間を満たしていればマッチ
     return rs < pe && re > ps;
+  }
+
+  /**
+   * 薬局-薬剤師ペアの成功率を計算
+   */
+  private calculatePairSuccessRate(pharmacistId: string, pharmacyId: string, ratings?: any[]): number {
+    if (!ratings) return 0.5; // デフォルト値
+    
+    const pairRatings = ratings.filter(r => 
+      r.pharmacist_id === pharmacistId && r.pharmacy_id === pharmacyId
+    );
+    
+    if (pairRatings.length === 0) return 0.5; // デフォルト値
+
+    // 成功率の計算（評価3以上を成功とする）
+    const successfulRatings = pairRatings.filter(r => r.rating >= 3).length;
+    const successRate = successfulRatings / pairRatings.length;
+    
+    return successRate;
+  }
+
+  /**
+   * 時間帯別の成功率を計算
+   */
+  private calculateTimeSlotSuccessRate(timeSlot: string, ratings?: any[]): number {
+    if (!ratings) return 0.5; // デフォルト値
+    
+    // 時間帯の分類
+    const hour = new Date(`2000-01-01T${timeSlot}`).getHours();
+    let timeSlotCategory = '';
+    
+    if (hour >= 6 && hour < 12) timeSlotCategory = 'morning';
+    else if (hour >= 12 && hour < 18) timeSlotCategory = 'afternoon';
+    else if (hour >= 18 && hour < 22) timeSlotCategory = 'evening';
+    else timeSlotCategory = 'night';
+    
+    // 該当時間帯の評価を取得（実際の実装では時間帯情報が必要）
+    // 現在は簡易的に全体の平均を返す
+    const averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
+    const successRate = averageRating / 5; // 5段階評価を0-1に正規化
+    
+    return Math.max(0.3, Math.min(0.9, successRate)); // 0.3-0.9の範囲に制限
   }
 
   /**
@@ -297,11 +339,12 @@ export class AIMatchingEngine {
   }
 
   /**
-   * マッチング候補の作成
+   * マッチング候補の作成（既存評価データを活用）
    */
   private async createMatchCandidate(
     request: any,
-    posting: any
+    posting: any,
+    ratings?: any[]
   ): Promise<MatchCandidate | null> {
     try {
       const pharmacist = await this.getPharmacistProfile(request.pharmacist_id);
@@ -320,7 +363,8 @@ export class AIMatchingEngine {
       const compatibilityScore = await this.calculateCompatibilityScore(
         pharmacist,
         pharmacy,
-        timeSlot
+        timeSlot,
+        ratings
       );
 
       const reasons = this.generateCompatibilityReasons(
@@ -449,34 +493,40 @@ export class AIMatchingEngine {
   }
 
   /**
-   * 互換性スコアの計算
+   * 互換性スコアの計算（既存評価データを活用した改善版）
    */
   private async calculateCompatibilityScore(
     pharmacist: PharmacistProfile,
     pharmacy: PharmacyProfile,
-    timeSlot: TimeSlot
+    timeSlot: TimeSlot,
+    ratings?: any[]
   ): Promise<number> {
     let score = 0;
 
-    // スキルマッチング (30%)
+    // 既存評価データからの成功率 (40%) - 最も重要
+    const pairSuccessRate = this.calculatePairSuccessRate(pharmacist.id, pharmacy.id, ratings);
+    score += pairSuccessRate * 0.4;
+
+    // 薬剤師の評価スコア (25%)
+    const pharmacistRating = ratings ? this.calculatePharmacistRating({ pharmacist_id: pharmacist.id }, ratings) : 0;
+    const normalizedPharmacistRating = pharmacistRating / 5; // 5段階評価を0-1に正規化
+    score += normalizedPharmacistRating * 0.25;
+
+    // 時間帯別成功率 (15%)
+    const timeSlotSuccessRate = this.calculateTimeSlotSuccessRate(timeSlot.start, ratings);
+    score += timeSlotSuccessRate * 0.15;
+
+    // スキルマッチング (10%)
     const skillScore = this.calculateSkillMatch(pharmacist.skills, pharmacy.requirements.requiredSkills);
-    score += skillScore * 0.3;
+    score += skillScore * 0.1;
 
-    // 経験レベルマッチング (20%)
+    // 経験レベルマッチング (5%)
     const experienceScore = this.calculateExperienceMatch(pharmacist.experience, pharmacy.requirements.experienceLevel);
-    score += experienceScore * 0.2;
+    score += experienceScore * 0.05;
 
-    // 時間柔軟性 (20%)
+    // 時間柔軟性 (5%)
     const flexibilityScore = Math.min(timeSlot.flexibility / 60, 1); // 最大1時間の柔軟性
-    score += flexibilityScore * 0.2;
-
-    // 過去の実績 (15%)
-    const performanceScore = (pharmacist.pastPerformance.averageSatisfaction + pharmacy.pastPerformance.averagePharmacistSatisfaction) / 2;
-    score += performanceScore * 0.15;
-
-    // 緊急度対応 (15%)
-    const urgencyScore = timeSlot.urgency === 'high' ? 1 : timeSlot.urgency === 'medium' ? 0.7 : 0.5;
-    score += urgencyScore * 0.15;
+    score += flexibilityScore * 0.05;
 
     return Math.min(score, 1); // 最大1.0
   }
@@ -869,7 +919,7 @@ export class AIMatchingEngine {
   }
 
   /**
-   * 薬剤師の評価を計算（従来のロジックを踏襲）
+   * 薬剤師の評価を計算（従来のロジックを踏襲 + 改善）
    */
   private calculatePharmacistRating(request: any, ratings?: any[]): number {
     if (!ratings) return 0;
@@ -877,8 +927,28 @@ export class AIMatchingEngine {
     const pharmacistRatings = ratings.filter(r => r.pharmacist_id === request.pharmacist_id);
     if (pharmacistRatings.length === 0) return 0;
     
+    // 基本的な平均評価
     const average = pharmacistRatings.reduce((sum, r) => sum + r.rating, 0) / pharmacistRatings.length;
-    return Math.round(average * 10) / 10; // 小数点第1位まで
+    
+    // 評価の信頼性を考慮（評価数が多いほど信頼性が高い）
+    const confidenceFactor = Math.min(pharmacistRatings.length / 10, 1); // 最大1.0
+    
+    // 最近の評価により重みを付ける（新しい評価ほど重要）
+    const recentRatings = pharmacistRatings
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5); // 最新5件
+    
+    const recentAverage = recentRatings.length > 0 
+      ? recentRatings.reduce((sum, r) => sum + r.rating, 0) / recentRatings.length
+      : average;
+    
+    // 重み付き平均（最近の評価70%、全体平均30%）
+    const weightedAverage = recentAverage * 0.7 + average * 0.3;
+    
+    // 信頼性を考慮した最終スコア
+    const finalScore = weightedAverage * confidenceFactor + 2.5 * (1 - confidenceFactor);
+    
+    return Math.round(finalScore * 10) / 10; // 小数点第1位まで
   }
 }
 
