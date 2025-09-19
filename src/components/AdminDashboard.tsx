@@ -2463,26 +2463,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (
                         <div className="relative group">
                           <div className="text-[7px] sm:text-[8px] space-y-0.5">
-                            {/* AIマッチング結果のパッチ表示 */}
-                            {aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0 && (
+                            {/* AIマッチング結果のパッチ表示（優先） */}
+                            {aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0 ? (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">マ{aiMatchesByDate[dateStr].length}</span>
                                 <span className="hidden sm:inline">マッチ {aiMatchesByDate[dateStr].length}</span>
                               </div>
-                            )}
-                            {/* 希望のみの日（募集が無い）を表示 */}
-                            {matchingStatus.type === 'requests_only' && (
-                              <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">希{matchingStatus.requestsCount}</span>
-                                <span className="hidden sm:inline">希望 {matchingStatus.requestsCount}</span>
-                              </div>
-                            )}
-                            {/* 募集のみの日（希望が無い）を表示 */}
-                            {matchingStatus.type === 'postings_only' && (
-                              <div className="text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">募{matchingStatus.postingsCount}</span>
-                                <span className="hidden sm:inline">募集 {matchingStatus.postingsCount}</span>
-                              </div>
+                            ) : (
+                              <>
+                                {/* 希望のみの日（募集が無い）を表示 */}
+                                {matchingStatus.type === 'requests_only' && (
+                                  <div className="text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 inline-block">
+                                    <span className="sm:hidden">希{matchingStatus.requestsCount}</span>
+                                    <span className="hidden sm:inline">希望 {matchingStatus.requestsCount}</span>
+                                  </div>
+                                )}
+                                {/* 募集のみの日（希望が無い）を表示 */}
+                                {matchingStatus.type === 'postings_only' && (
+                                  <div className="text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 inline-block">
+                                    <span className="sm:hidden">募{matchingStatus.postingsCount}</span>
+                                    <span className="hidden sm:inline">募集 {matchingStatus.postingsCount}</span>
+                                  </div>
+                                )}
+                              </>
                             )}
                             
                             {/* 不足数 */}

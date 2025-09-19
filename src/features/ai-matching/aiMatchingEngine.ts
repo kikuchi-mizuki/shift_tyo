@@ -226,12 +226,17 @@ export class AIMatchingEngine {
 
     const usedPharmacists = new Set<string>();
     const usedPharmacies = new Set<string>();
+    const processedPairs = new Set<string>(); // 薬剤師-薬局ペアの重複防止
 
     for (const request of sortedRequests) {
       if (usedPharmacists.has(request.pharmacist_id)) continue;
 
       for (const posting of postings) {
         if (usedPharmacies.has(posting.pharmacy_id)) continue;
+
+        // 薬剤師-薬局ペアの重複チェック
+        const pairKey = `${request.pharmacist_id}-${posting.pharmacy_id}`;
+        if (processedPairs.has(pairKey)) continue;
 
         // 基本的なフィルタリング（時間範囲 + NGリスト）
         if (this.isBasicCompatible(request, posting) && 
@@ -242,6 +247,7 @@ export class AIMatchingEngine {
             candidates.push(candidate);
             usedPharmacists.add(request.pharmacist_id);
             usedPharmacies.add(posting.pharmacy_id);
+            processedPairs.add(pairKey);
             break; // 薬剤師は1つの薬局にのみマッチ
           }
         }
