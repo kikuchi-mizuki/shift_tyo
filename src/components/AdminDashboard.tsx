@@ -2079,11 +2079,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             const ps = posting?.start_time;
             const pe = posting?.end_time;
           
-          // 両方に時間範囲がある場合は重複関係で判定
+          // 両方に時間範囲がある場合は完全包含関係で判定
             if (rs && re && ps && pe) {
-            // 重複判定: 薬剤師の希望時間が薬局の募集時間と重複していればマッチ
-            // つまり、薬剤師が薬局の応募時間を満たしていればマッチ
-            return rs < pe && re > ps;
+            // 薬剤師が薬局の希望時間を完全に満たしているかチェック
+            // 薬剤師の開始時間 <= 薬局の開始時間 かつ 薬剤師の終了時間 >= 薬局の終了時間
+            return rs <= ps && re >= pe;
             }
           
           // 片方でも時間範囲がない場合はマッチしない
