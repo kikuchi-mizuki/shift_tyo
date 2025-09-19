@@ -1359,6 +1359,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               if (!storeNgError && storeNgData) {
                 storeNgDataMap[(pharmacy as any).id] = storeNgData;
               }
+              // user_profiles.ng_list も反映（旧仕様互換）
+              const rawNg = (pharmacy as any).ng_list;
+              if (rawNg) {
+                try {
+                  const parsed: string[] = Array.isArray(rawNg) ? rawNg : JSON.parse(rawNg);
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    const legacyEntries = parsed.map(pid => ({
+                      pharmacy_id: (pharmacy as any).id,
+                      pharmacist_id: pid,
+                      store_name: null,
+                      _source: 'user_profiles.ng_list'
+                    }));
+                    storeNgDataMap[(pharmacy as any).id] = [
+                      ...(storeNgDataMap[(pharmacy as any).id] || []),
+                      ...legacyEntries
+                    ];
+                  }
+                } catch (e) {
+                  console.warn('Failed to parse user_profiles.ng_list for pharmacy', (pharmacy as any).id, e);
+                }
+              }
             } catch (error) {
               logToRailway(`Error fetching store NG pharmacists for ${(pharmacy as any).id}:`, error);
             }
