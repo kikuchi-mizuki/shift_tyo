@@ -12,10 +12,15 @@ console.log('=== SUPABASE CONFIG DEBUG ===');
 console.log('Environment variables:');
 console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
 console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY);
+console.log('All env vars:', import.meta.env);
 console.log('Final config:');
 console.log('supabaseUrl:', supabaseUrl);
 console.log('supabaseAnonKey:', supabaseAnonKey?.substring(0, 20) + '...');
 console.log('isProduction:', isProduction);
+console.log('Using fallback values:', {
+  urlFromEnv: !!import.meta.env.VITE_SUPABASE_URL,
+  keyFromEnv: !!import.meta.env.VITE_SUPABASE_ANON_KEY
+});
 console.log('===============================');
 
 // Supabaseクライアントの作成（フォールバック値を使用）
@@ -24,18 +29,37 @@ export const supabase = (() => {
   try {
     console.log('Creating Supabase client with:', {
       url: supabaseUrl,
-      keyPrefix: supabaseAnonKey?.substring(0, 20) + '...'
+      keyPrefix: supabaseAnonKey?.substring(0, 20) + '...',
+      urlLength: supabaseUrl?.length,
+      keyLength: supabaseAnonKey?.length
     });
     
-    return createClient(supabaseUrl, supabaseAnonKey, {
+    // URLとAPI keyの基本検証
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase URL or API key:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseAnonKey
+      });
+      return null;
+    }
+    
+    const client = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false
       }
     });
+    
+    console.log('Supabase client created successfully');
+    return client;
   } catch (error) {
     console.error('Supabaseクライアントの作成に失敗しました:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
     return null;
   }
 })();
