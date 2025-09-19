@@ -2741,8 +2741,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 {dayMatches.length}件
                               </span>
                             </div>
-                            <div className="space-y-2 max-h-32 overflow-y-auto">
-                              {dayMatches.slice(0, 2).map((match, index) => (
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {dayMatches.map((match, index) => (
                                 <div key={index} className="bg-white rounded border p-2 text-xs">
                                   <div className="flex justify-between items-start">
                                     <div>
@@ -2766,11 +2766,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   </div>
                                 </div>
                               ))}
-                              {dayMatches.length > 2 && (
-                                <div className="text-xs text-gray-500 text-center">
-                                  他 {dayMatches.length - 2} 件のマッチング結果
-                                </div>
-                              )}
                             </div>
                           </div>
                         )}
