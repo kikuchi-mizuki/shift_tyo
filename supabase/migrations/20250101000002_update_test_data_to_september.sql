@@ -1,15 +1,9 @@
--- Insert test data for shift_requests and shift_postings
--- This will help test the matching functionality
+-- Update test data to September 2025
+-- Delete old test data from January 2025
+DELETE FROM shift_requests WHERE date >= '2025-01-01' AND date < '2025-02-01';
+DELETE FROM shift_postings WHERE date >= '2025-01-01' AND date < '2025-02-01';
 
--- First, ensure we have some user_profiles to reference
-INSERT INTO user_profiles (id, name, user_type, email) VALUES
-('550e8400-e29b-41d4-a716-446655440001', 'テスト薬剤師1', 'pharmacist', 'pharmacist1@test.com'),
-('550e8400-e29b-41d4-a716-446655440002', 'テスト薬剤師2', 'pharmacist', 'pharmacist2@test.com'),
-('550e8400-e29b-41d4-a716-446655440003', 'テスト薬局1', 'pharmacy', 'pharmacy1@test.com'),
-('550e8400-e29b-41d4-a716-446655440004', 'テスト薬局2', 'pharmacy', 'pharmacy2@test.com')
-ON CONFLICT (id) DO NOTHING;
-
--- Insert test shift requests (2025年9月のデータ)
+-- Insert new test data for September 2025
 INSERT INTO shift_requests (pharmacist_id, date, time_slot, priority, start_time, end_time, status) VALUES
 ('550e8400-e29b-41d4-a716-446655440001', '2025-09-15', 'morning', 'high', '09:00:00', '13:00:00', 'pending'),
 ('550e8400-e29b-41d4-a716-446655440001', '2025-09-16', 'afternoon', 'medium', '13:00:00', '18:00:00', 'pending'),
@@ -17,7 +11,6 @@ INSERT INTO shift_requests (pharmacist_id, date, time_slot, priority, start_time
 ('550e8400-e29b-41d4-a716-446655440002', '2025-09-17', 'afternoon', 'low', '13:00:00', '18:00:00', 'pending')
 ON CONFLICT DO NOTHING;
 
--- Insert test shift postings (2025年9月のデータ)
 INSERT INTO shift_postings (pharmacy_id, date, time_slot, required_staff, start_time, end_time, status) VALUES
 ('550e8400-e29b-41d4-a716-446655440003', '2025-09-15', 'morning', 2, '09:00:00', '13:00:00', 'recruiting'),
 ('550e8400-e29b-41d4-a716-446655440003', '2025-09-16', 'afternoon', 1, '13:00:00', '18:00:00', 'recruiting'),
