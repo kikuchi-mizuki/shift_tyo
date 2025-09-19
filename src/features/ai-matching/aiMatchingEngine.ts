@@ -245,6 +245,12 @@ export class AIMatchingEngine {
           console.log('Sample request:', actualRequests[0]);
         } else {
           console.error('Error loading shift requests:', requestsError);
+          console.error('Error details:', {
+            code: requestsError?.code,
+            message: requestsError?.message,
+            details: requestsError?.details,
+            hint: requestsError?.hint
+          });
         }
         
         // 実際のシフト募集データを取得（正しいカラム名を使用）
@@ -258,6 +264,12 @@ export class AIMatchingEngine {
           console.log('Sample posting:', actualPostings[0]);
         } else {
           console.error('Error loading shift postings:', postingsError);
+          console.error('Error details:', {
+            code: postingsError?.code,
+            message: postingsError?.message,
+            details: postingsError?.details,
+            hint: postingsError?.hint
+          });
         }
       } catch (error) {
         console.error('Error fetching actual shift data:', error);

@@ -8,15 +8,15 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishabl
 export const isProduction = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key');
 
 // 環境変数の確認
-console.log('Supabase config:', {
-  url: supabaseUrl ? 'SET' : 'NOT SET',
-  key: supabaseAnonKey ? 'SET' : 'NOT SET',
-  urlValue: supabaseUrl?.substring(0, 20) + '...',
-  keyValue: supabaseAnonKey?.substring(0, 10) + '...',
-  isProduction: !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key'),
-  actualUrl: supabaseUrl,
-  actualKey: supabaseAnonKey?.substring(0, 20) + '...'
-});
+console.log('=== SUPABASE CONFIG DEBUG ===');
+console.log('Environment variables:');
+console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY);
+console.log('Final config:');
+console.log('supabaseUrl:', supabaseUrl);
+console.log('supabaseAnonKey:', supabaseAnonKey?.substring(0, 20) + '...');
+console.log('isProduction:', isProduction);
+console.log('===============================');
 
 // Supabaseクライアントの作成（フォールバック値を使用）
 export const supabase = (() => {
@@ -41,6 +41,12 @@ export const supabase = (() => {
 })();
 
 console.log('Supabase client created:', !!supabase);
+if (supabase) {
+  console.log('Supabase client URL:', supabase.supabaseUrl);
+  console.log('Supabase client key prefix:', supabase.supabaseKey?.substring(0, 20) + '...');
+} else {
+  console.error('Failed to create Supabase client!');
+}
 
 // 認証関連のヘルパー関数
 export const auth = {
