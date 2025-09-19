@@ -184,8 +184,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // 薬局の不足状況を分析する関数
   const analyzePharmacyShortage = (date: string) => {
-    const dayRequests = requests.filter((r: any) => r.date === date);
-    const dayPostings = postings.filter((p: any) => p.date === date);
+    const dayRequests = (requests || []).filter((r: any) => r.date === date);
+    const dayPostings = (postings || []).filter((p: any) => p.date === date);
     const dayMatches = aiMatchesByDate[date] || [];
 
     // 薬局ごとの募集数とマッチ数を計算
@@ -247,12 +247,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const currentMonth = currentDate.getMonth();
       const currentYear = currentDate.getFullYear();
       
-      const monthlyRequests = requests.filter((r: any) => {
+      const monthlyRequests = (requests || []).filter((r: any) => {
         const requestDate = new Date(r.date);
         return requestDate.getMonth() === currentMonth && requestDate.getFullYear() === currentYear;
       });
       
-      const monthlyPostings = postings.filter((p: any) => {
+      const monthlyPostings = (postings || []).filter((p: any) => {
         const postingDate = new Date(p.date);
         return postingDate.getMonth() === currentMonth && postingDate.getFullYear() === currentYear;
       });
@@ -308,8 +308,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
     setAiMatchingLoading(true);
     try {
-      const dayRequests = requests.filter(r => r.date === date);
-      const dayPostings = postings.filter(p => p.date === date);
+      const dayRequests = (requests || []).filter(r => r.date === date);
+      const dayPostings = (postings || []).filter(p => p.date === date);
 
       console.log(`AI Matching for ${date}: ${dayRequests.length} requests, ${dayPostings.length} postings`);
 
@@ -368,7 +368,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // 薬剤師の評価を取得する関数
   const getPharmacistRating = (pharmacistId: string) => {
-    const pharmacistRatings = ratings.filter(r => r.pharmacist_id === pharmacistId);
+    const pharmacistRatings = (ratings || []).filter(r => r.pharmacist_id === pharmacistId);
     if (pharmacistRatings.length === 0) return 0;
     
     const average = pharmacistRatings.reduce((sum, r) => sum + r.rating, 0) / pharmacistRatings.length;
@@ -1504,8 +1504,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
 
       // 指定日の希望シフトと募集シフトを取得
-      const dayRequests = requests.filter((request: any) => request.date === date);
-      const dayPostings = postings.filter((posting: any) => posting.date === date);
+      const dayRequests = (requests || []).filter((request: any) => request.date === date);
+      const dayPostings = (postings || []).filter((posting: any) => posting.date === date);
       
       console.log(`Processing date ${date}:`, { dayRequests, dayPostings });
       
@@ -1861,9 +1861,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.log(`=== 日付 ${date} のマッチング処理 ===`);
         
         // その日の希望と募集を取得
-        const dayRequests = requests.filter(r => r.date === date && r.time_slot !== 'consult');
-        const dayPostings = postings.filter(p => p.date === date && p.time_slot !== 'consult');
-        const dayAssigned = assigned.filter(a => a.date === date && a.status === 'confirmed');
+        const dayRequests = (requests || []).filter(r => r.date === date && r.time_slot !== 'consult');
+        const dayPostings = (postings || []).filter(p => p.date === date && p.time_slot !== 'consult');
+        const dayAssigned = (assigned || []).filter(a => a.date === date && a.status === 'confirmed');
         
         console.log(`日付 ${date}: 希望${dayRequests.length}件, 募集${dayPostings.length}件, 確定${dayAssigned.length}件`);
         
@@ -2177,17 +2177,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const month = currentDate.getMonth() + 1;
               const dateStr = `${year}-${month.toString().padStart(2, '0')}-${d?.toString().padStart(2, '0')}`;
               
-              // その日の確定シフトを取得
-              const dayAssignedShifts = assigned.filter((s: any) => s.date === dateStr && s.status === 'confirmed');
+              // その日の確定シフトを取得（安全な配列チェック）
+              const dayAssignedShifts = (assigned || []).filter((s: any) => s.date === dateStr && s.status === 'confirmed');
               
               // デバッグ用：確定シフトの詳細をログ出力
               if (dayAssignedShifts.length > 0) {
                 console.log(`日付 ${dateStr} の確定シフト:`, dayAssignedShifts);
               }
               
-              // その日の希望と募集を取得（要相談を除外）
-              const dayRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult');
-              const dayPostings = postings.filter((p: any) => p.date === dateStr && p.time_slot !== 'consult');
+              // その日の希望と募集を取得（要相談を除外、安全な配列チェック）
+              const dayRequests = (requests || []).filter((r: any) => r.date === dateStr && r.time_slot !== 'consult');
+              const dayPostings = (postings || []).filter((p: any) => p.date === dateStr && p.time_slot !== 'consult');
               
               // データがある日付のみログを出力（デバッグ用）
               if (dayRequests.length > 0 || dayPostings.length > 0) {
@@ -2200,8 +2200,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 console.log('募集の時間帯:', dayPostings.map(p => p.time_slot));
                 console.log('データフィルタリングが実行されました - コンソールを確認してください');
               }
-              // 要相談のリクエストを取得
-              const dayConsultRequests = requests.filter((r: any) => r.date === dateStr && r.time_slot === 'consult');
+              // 要相談のリクエストを取得（安全な配列チェック）
+              const dayConsultRequests = (requests || []).filter((r: any) => r.date === dateStr && r.time_slot === 'consult');
               
               
               // マッチング状況を計算
@@ -2546,9 +2546,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 
                 {/* 日別確定ボタン */}
                 {(() => {
-                  const dayRequests = requests.filter((r: any) => r.date === selectedDate);
-                  const dayPostings = postings.filter((p: any) => p.date === selectedDate);
-                  const dayAssignedShifts = assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed');
+                  const dayRequests = (requests || []).filter((r: any) => r.date === selectedDate);
+                  const dayPostings = (postings || []).filter((p: any) => p.date === selectedDate);
+                  const dayAssignedShifts = (assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed');
                   
                   // AIマッチング結果の表示
                   if (aiMatches.length > 0 && selectedDate) {
@@ -3160,7 +3160,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').map((request: any, index: number) => {
+                      {(requests || []).filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').map((request: any, index: number) => {
                         const pharmacistProfile = userProfiles[request.pharmacist_id];
                         
                         // デバッグログ：薬剤師プロフィールの取得状況を確認
