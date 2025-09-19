@@ -230,31 +230,24 @@ export class AIMatchingEngine {
       return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
 
-    const usedPharmacists = new Set<string>();
-    const usedPharmacies = new Set<string>();
-    const processedPairs = new Set<string>(); // 薬剤師-薬局ペアの重複防止
+    const processedPairs = new Set<string>(); // 薬剤師-薬局-日付ペアの重複防止
 
     for (const request of sortedRequests) {
-      if (usedPharmacists.has(request.pharmacist_id)) continue;
-
       for (const posting of postings) {
-        if (usedPharmacies.has(posting.pharmacy_id)) continue;
-
-        // 薬剤師-薬局ペアの重複チェック
-        const pairKey = `${request.pharmacist_id}-${posting.pharmacy_id}`;
+        // 薬剤師-薬局-日付ペアの重複チェック（同じ日付での重複のみ防止）
+        const pairKey = `${request.pharmacist_id}-${posting.pharmacy_id}-${request.date}`;
         if (processedPairs.has(pairKey)) continue;
 
-        // 基本的なフィルタリング（時間範囲 + NGリスト）
-        if (this.isBasicCompatible(request, posting) && 
+        // 基本的なフィルタリング（時間範囲 + NGリスト + 日付一致）
+        if (request.date === posting.date && 
+            this.isBasicCompatible(request, posting) && 
             this.isNgCompatible(request, posting, userProfiles)) {
           
           const candidate = await this.createMatchCandidate(request, posting, ratings);
           if (candidate) {
             candidates.push(candidate);
-            usedPharmacists.add(request.pharmacist_id);
-            usedPharmacies.add(posting.pharmacy_id);
             processedPairs.add(pairKey);
-            break; // 薬剤師は1つの薬局にのみマッチ
+            break; // 同じ日付で薬剤師は1つの薬局にのみマッチ
           }
         }
       }
