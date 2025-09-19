@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // 環境変数の取得（Railway環境変数が設定されていない場合のフォールバック）
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wjgterfwurmvosawzbjs.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZ3RlcmZ3dXJtdm9zYXd6YmpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzQ4MDAsImV4cCI6MjA1MDU1MDgwMH0.sb_publishable_nCoPvmldzPho7y_8AwLhXQ_IcLfvRFN';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_nCoPvmldzPho7y_8AwLhXQ_IcLfvRFN';
 
 // 本番環境かどうかの判定
 export const isProduction = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key');
