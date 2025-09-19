@@ -2629,8 +2629,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const dayPostings = postings.filter((p: any) => p.date === selectedDate);
                   const dayAssignedShifts = assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed');
                   
-                  // AIマッチング結果の表示 - 非表示
-                  if (false && aiMatches.length > 0 && selectedDate) {
+                  // AIマッチング結果の表示
+                  if (aiMatches.length > 0 && selectedDate) {
                     return (
                       <div className="p-4 border-b border-gray-200">
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
@@ -2647,7 +2647,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
                                     </div>
                                     <div className="text-gray-600">
-                                      薬局: {userProfiles[match.pharmacy.id]?.name || 'Unknown'} / 店舗: {match.pharmacy.name || '店舗名なし'}
+                                      店舗: {match.pharmacy.name || '店舗名なし'}
                                     </div>
                                     <div className="text-gray-600">
                                       {match.timeSlot.start} - {match.timeSlot.end}
@@ -3435,12 +3435,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
                               const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
                               const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
-                              const timeLabel = (() => {
-                                const s = (pharmacy.start_time || '').toString();
-                                const e = (pharmacy.end_time || '').toString();
-                                if (s && e) return `${s.slice(0,5)}-${e.slice(0,5)}`;
-                                return '09:00-18:00';
-                              })();
+                              const timeLabel = pharmacy.start_time && pharmacy.end_time 
+                                ? `${pharmacy.start_time.slice(0,5)}-${pharmacy.end_time.slice(0,5)}`
+                                : '09:00-18:00';
                               return (
                                 <div key={index} className="bg-white rounded border px-2 py-1">
                                   <div className="flex items-start justify-between">
