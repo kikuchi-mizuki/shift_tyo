@@ -262,10 +262,15 @@ export class AIMatchingEngine {
         // 実際のシフト募集データを取得（正しいカラム名を使用）
         const { data: shiftPostings, error: postingsError } = await supabase
           .from('shift_postings')
-          .select('id, pharmacy_id, date, time_slot, start_time, end_time, required_people, status, notes');
+          .select('id, pharmacy_id, date, time_slot, start_time, end_time, required_staff, status, memo, store_name');
         
         if (!postingsError && shiftPostings) {
-          actualPostings = shiftPostings;
+          // スキーマ差異（required_people/notes）を吸収
+          actualPostings = (shiftPostings as any[]).map((p: any) => ({
+            ...p,
+            required_people: p.required_people ?? p.required_staff ?? 1,
+            notes: p.notes ?? p.memo ?? null
+          }));
           console.log('Actual shift postings loaded:', actualPostings.length);
           console.log('Sample posting:', actualPostings[0]);
         } else {
