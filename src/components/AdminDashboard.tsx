@@ -1366,7 +1366,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             }
           });
         }
-      }
 
       console.log('Final confirmed shifts:', confirmedShifts);
 
