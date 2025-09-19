@@ -80,10 +80,12 @@ export interface AIPrediction {
  */
 export class AIMatchingEngine {
   private model: any; // 将来的に機械学習モデルを格納
+  private mlModel: MLModel; // 機械学習モデル
   private trainingData: any[] = [];
   private isInitialized = false;
 
   constructor() {
+    this.mlModel = new MLModel();
     this.initializeEngine();
   }
 
@@ -493,7 +495,7 @@ export class AIMatchingEngine {
   }
 
   /**
-   * 互換性スコアの計算（既存評価データを活用した改善版）
+   * 互換性スコアの計算（機械学習モデル + 既存評価データを活用した改善版）
    */
   private async calculateCompatibilityScore(
     pharmacist: PharmacistProfile,
@@ -501,34 +503,69 @@ export class AIMatchingEngine {
     timeSlot: TimeSlot,
     ratings?: any[]
   ): Promise<number> {
-    let score = 0;
+    try {
+      // 機械学習モデルからの予測を取得
+      const mlPrediction = await this.mlModel.predict(
+        pharmacist.id,
+        pharmacy.id,
+        timeSlot.start,
+        timeSlot.date
+      );
 
-    // 既存評価データからの成功率 (40%) - 最も重要
-    const pairSuccessRate = this.calculatePairSuccessRate(pharmacist.id, pharmacy.id, ratings);
-    score += pairSuccessRate * 0.4;
+      // 機械学習の予測スコア (50%)
+      let score = mlPrediction.successProbability * 0.5;
 
-    // 薬剤師の評価スコア (25%)
-    const pharmacistRating = ratings ? this.calculatePharmacistRating({ pharmacist_id: pharmacist.id }, ratings) : 0;
-    const normalizedPharmacistRating = pharmacistRating / 5; // 5段階評価を0-1に正規化
-    score += normalizedPharmacistRating * 0.25;
+      // 既存評価データからの成功率 (30%)
+      const pairSuccessRate = this.calculatePairSuccessRate(pharmacist.id, pharmacy.id, ratings);
+      score += pairSuccessRate * 0.3;
 
-    // 時間帯別成功率 (15%)
-    const timeSlotSuccessRate = this.calculateTimeSlotSuccessRate(timeSlot.start, ratings);
-    score += timeSlotSuccessRate * 0.15;
+      // 薬剤師の評価スコア (15%)
+      const pharmacistRating = ratings ? this.calculatePharmacistRating({ pharmacist_id: pharmacist.id }, ratings) : 0;
+      const normalizedPharmacistRating = pharmacistRating / 5; // 5段階評価を0-1に正規化
+      score += normalizedPharmacistRating * 0.15;
 
-    // スキルマッチング (10%)
-    const skillScore = this.calculateSkillMatch(pharmacist.skills, pharmacy.requirements.requiredSkills);
-    score += skillScore * 0.1;
+      // 時間帯別成功率 (5%)
+      const timeSlotSuccessRate = this.calculateTimeSlotSuccessRate(timeSlot.start, ratings);
+      score += timeSlotSuccessRate * 0.05;
 
-    // 経験レベルマッチング (5%)
-    const experienceScore = this.calculateExperienceMatch(pharmacist.experience, pharmacy.requirements.experienceLevel);
-    score += experienceScore * 0.05;
+      // 機械学習の信頼度で重み付け調整
+      const confidenceWeight = mlPrediction.confidence;
+      const finalScore = score * confidenceWeight + score * (1 - confidenceWeight) * 0.8;
 
-    // 時間柔軟性 (5%)
-    const flexibilityScore = Math.min(timeSlot.flexibility / 60, 1); // 最大1時間の柔軟性
-    score += flexibilityScore * 0.05;
+      return Math.min(finalScore, 1); // 最大1.0
+    } catch (error) {
+      console.error('Error in ML-based compatibility calculation, falling back to rule-based:', error);
+      
+      // フォールバック: 従来のルールベース計算
+      let score = 0;
 
-    return Math.min(score, 1); // 最大1.0
+      // 既存評価データからの成功率 (40%)
+      const pairSuccessRate = this.calculatePairSuccessRate(pharmacist.id, pharmacy.id, ratings);
+      score += pairSuccessRate * 0.4;
+
+      // 薬剤師の評価スコア (25%)
+      const pharmacistRating = ratings ? this.calculatePharmacistRating({ pharmacist_id: pharmacist.id }, ratings) : 0;
+      const normalizedPharmacistRating = pharmacistRating / 5;
+      score += normalizedPharmacistRating * 0.25;
+
+      // 時間帯別成功率 (15%)
+      const timeSlotSuccessRate = this.calculateTimeSlotSuccessRate(timeSlot.start, ratings);
+      score += timeSlotSuccessRate * 0.15;
+
+      // スキルマッチング (10%)
+      const skillScore = this.calculateSkillMatch(pharmacist.skills, pharmacy.requirements.requiredSkills);
+      score += skillScore * 0.1;
+
+      // 経験レベルマッチング (5%)
+      const experienceScore = this.calculateExperienceMatch(pharmacist.experience, pharmacy.requirements.experienceLevel);
+      score += experienceScore * 0.05;
+
+      // 時間柔軟性 (5%)
+      const flexibilityScore = Math.min(timeSlot.flexibility / 60, 1);
+      score += flexibilityScore * 0.05;
+
+      return Math.min(score, 1);
+    }
   }
 
   /**
@@ -950,10 +987,31 @@ export class AIMatchingEngine {
     
     return Math.round(finalScore * 10) / 10; // 小数点第1位まで
   }
+
+  /**
+   * 機械学習モデルの再学習
+   */
+  public async retrainModel(): Promise<void> {
+    try {
+      console.log('Retraining ML model...');
+      await this.mlModel.retrain();
+      console.log('ML model retraining completed');
+    } catch (error) {
+      console.error('Error retraining ML model:', error);
+    }
+  }
+
+  /**
+   * 機械学習モデルの状態取得
+   */
+  public getMLModelStatus(): { isTrained: boolean; trainingDataCount: number } {
+    return this.mlModel.getModelStatus();
+  }
 }
 
 // Supabaseクライアントのインポート（実際の実装では適切なパスから）
 import { supabase } from '../../lib/supabase';
 import { executeAIMatching as executeAIMatchingAPI, AIMatchingRequest } from './api';
+import MLModel from './mlModel';
 
 export default AIMatchingEngine;

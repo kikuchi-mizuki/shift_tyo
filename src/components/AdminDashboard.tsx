@@ -58,6 +58,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     initializeAI();
   }, []);
 
+  // 機械学習モデルの再学習機能
+  const handleRetrainModel = async () => {
+    if (!aiMatchingEngine) {
+      alert('AIマッチングエンジンが初期化されていません');
+      return;
+    }
+
+    try {
+      setAiMatchingLoading(true);
+      console.log('🔄 Starting ML model retraining...');
+      
+      await aiMatchingEngine.retrainModel();
+      
+      const status = aiMatchingEngine.getMLModelStatus();
+      console.log('✅ ML model retraining completed:', status);
+      
+      alert(`機械学習モデルの再学習が完了しました。\n学習データ数: ${status.trainingDataCount}件\nモデル状態: ${status.isTrained ? '学習済み' : '未学習'}`);
+    } catch (error) {
+      console.error('❌ ML model retraining failed:', error);
+      alert('機械学習モデルの再学習に失敗しました');
+    } finally {
+      setAiMatchingLoading(false);
+    }
+  };
+
   // 簡易AIマッチング関数（従来のロジックを踏襲）
   const executeSimpleAIMatching = async (requests: any[], postings: any[]) => {
     console.log('簡易AIマッチング開始:', { requests: requests.length, postings: postings.length });
@@ -2517,23 +2542,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               <p className="text-sm text-gray-600 mb-3">
                 今月の全ての希望シフトと募集シフトを一括でマッチングします。
               </p>
-              <button
-                onClick={executeMonthlyAIMatching}
-                disabled={aiMatchingLoading}
-                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
-              >
-                {aiMatchingLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>マッチング実行中...</span>
-                  </>
-                ) : (
-                  <>
-                    <Brain className="w-4 h-4" />
-                    <span>1ヶ月分マッチングを実行</span>
-                  </>
-                )}
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={executeMonthlyAIMatching}
+                  disabled={aiMatchingLoading}
+                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                >
+                  {aiMatchingLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>マッチング実行中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="w-4 h-4" />
+                      <span>1ヶ月分マッチングを実行</span>
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  onClick={handleRetrainModel}
+                  disabled={aiMatchingLoading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                >
+                  {aiMatchingLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>再学習中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="w-4 h-4" />
+                      <span>機械学習モデル再学習</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
             <div className="text-sm text-gray-600 mb-2">
               <p>カレンダーの日付をクリックして選択すると、右側に「マッチング結果」と「シフトを確定」ボタンが表示されます。</p>
