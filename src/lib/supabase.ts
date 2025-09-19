@@ -21,6 +21,26 @@ console.log('Using fallback values:', {
   urlFromEnv: !!import.meta.env.VITE_SUPABASE_URL,
   keyFromEnv: !!import.meta.env.VITE_SUPABASE_ANON_KEY
 });
+
+// API keyの有効性をテスト
+if (supabaseAnonKey) {
+  console.log('Testing API key validity...');
+  fetch('https://wjgterfwurmvosawzbjs.supabase.co/rest/v1/shift_requests?select=id&limit=1', {
+    headers: {
+      'apikey': supabaseAnonKey,
+      'Authorization': `Bearer ${supabaseAnonKey}`
+    }
+  }).then(response => {
+    if (response.ok) {
+      console.log('API key is valid');
+    } else {
+      console.error('API key is invalid:', response.status, response.statusText);
+    }
+  }).catch(err => {
+    console.error('API key test error:', err);
+  });
+}
+
 console.log('===============================');
 
 // Supabaseクライアントの作成（フォールバック値を使用）
