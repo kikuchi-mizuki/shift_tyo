@@ -289,6 +289,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           debugInfo += `${i+1}. 薬局ID: ${post.pharmacy_id}, 日付: ${post.date}, 時間: ${post.start_time}-${post.end_time}, 必要人数: ${post.required_staff}\n`;
         });
         debugInfo += `\n`;
+      } else {
+        debugInfo += `募集詳細: データなし\n\n`;
       }
 
       // 1ヶ月分のマッチングを実行（重複防止付き）
@@ -299,8 +301,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }, userProfiles, ratings);
       
       console.log('マッチング結果:', monthlyMatches);
-      console.log('DEBUG: executeMonthlyAIMatching reached debug modal alert point.');
-      alert('DEBUG: AI Matching Debug Modal Test');
       
       debugInfo += `=== マッチング結果 ===\n`;
       debugInfo += `マッチング件数: ${monthlyMatches.length}件\n`;
@@ -316,6 +316,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         debugInfo += `- 時間範囲の不適合\n`;
         debugInfo += `- NGリストによるブロック\n`;
         debugInfo += `- 既に確定済みのシフトがある\n`;
+        debugInfo += `- AIマッチングエンジンの問題\n`;
+        debugInfo += `\n詳細分析:\n`;
+        debugInfo += `- 希望時間帯: ${monthlyRequests.map(r => r.start_time + '-' + r.end_time).join(', ')}\n`;
+        debugInfo += `- 募集時間帯: ${monthlyPostings.map(p => p.start_time + '-' + p.end_time).join(', ')}\n`;
+        debugInfo += `- 希望日付: ${[...new Set(monthlyRequests.map(r => r.date))].join(', ')}\n`;
+        debugInfo += `- 募集日付: ${[...new Set(monthlyPostings.map(p => p.date))].join(', ')}\n`;
       }
       
       // デバッグ情報をモーダルで表示
