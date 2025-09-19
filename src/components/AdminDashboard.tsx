@@ -1995,12 +1995,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         assignedDetails: assigned
       });
       
+      // デバッグ情報をモーダルで表示
+      let debugInfo = `=== マッチング処理デバッグ ===\n`;
+      debugInfo += `シフト希望数: ${requests.length}件\n`;
+      debugInfo += `シフト募集数: ${postings.length}件\n`;
+      debugInfo += `確定済みシフト数: ${assigned.length}件\n\n`;
+      
       // 日付ごとにマッチング処理を実行
       const dates = [...new Set([...requests.map(r => r.date), ...postings.map(p => p.date)])];
       console.log('マッチング対象日付:', dates);
+      debugInfo += `マッチング対象日付: ${dates.join(', ')}\n\n`;
+      
+      let totalMatches = 0;
+      let processedDates = 0;
       
       for (const date of dates) {
         console.log(`=== 日付 ${date} のマッチング処理 ===`);
+        processedDates++;
+        debugInfo += `--- 日付 ${date} ---\n`;
         
         // その日の希望と募集を取得
         const dayRequests = Array.isArray(requests) ? requests.filter(r => r.date === date && r.time_slot !== 'consult') : [];
@@ -2008,38 +2020,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const dayAssigned = Array.isArray(assigned) ? assigned.filter(a => a.date === date && a.status === 'confirmed') : [];
         
         console.log(`日付 ${date}: 希望${dayRequests.length}件, 募集${dayPostings.length}件, 確定${dayAssigned.length}件`);
-        console.log(`日付 ${date} の希望詳細:`, dayRequests.map(r => ({
-          id: r.id,
-          pharmacist_id: r.pharmacist_id,
-          time_slot: r.time_slot,
-          start_time: r.start_time,
-          end_time: r.end_time
-        })));
-        console.log(`日付 ${date} の募集詳細:`, dayPostings.map(p => ({
-          id: p.id,
-          pharmacy_id: p.pharmacy_id,
-          time_slot: p.time_slot,
-          start_time: p.start_time,
-          end_time: p.end_time,
-          required_staff: p.required_staff
-        })));
+        debugInfo += `希望: ${dayRequests.length}件, 募集: ${dayPostings.length}件, 確定: ${dayAssigned.length}件\n`;
         
         if (dayRequests.length === 0 || dayPostings.length === 0) {
           console.log(`日付 ${date}: 希望または募集がないためスキップ`);
+          debugInfo += `→ 希望または募集がないためスキップ\n`;
           continue;
         }
         
         // 既に確定済みの場合はスキップ
         if (dayAssigned.length > 0) {
           console.log(`日付 ${date}: 既に確定済みのためスキップ`);
+          debugInfo += `→ 既に確定済みのためスキップ\n`;
           continue;
         }
         
         // マッチング処理を実行
-        await performMatchingForDate(date, dayRequests, dayPostings);
+        const dateMatches = await performMatchingForDate(date, dayRequests, dayPostings);
+        totalMatches += dateMatches;
+        debugInfo += `→ マッチング結果: ${dateMatches}件\n`;
       }
       
       console.log('=== 実際のマッチング処理完了 ===');
+      debugInfo += `\n=== 処理結果 ===\n`;
+      debugInfo += `処理対象日付数: ${processedDates}日\n`;
+      debugInfo += `総マッチング件数: ${totalMatches}件\n`;
       
       // データを再読み込み
       await loadAll();
@@ -2052,6 +2057,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         assigned: assigned.length 
       });
       
+      // デバッグ情報をモーダルで表示
+      alert(debugInfo);
+      
     } catch (error) {
       console.error('マッチング実行エラー:', error);
       throw error;
@@ -2059,7 +2067,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   };
 
   // 特定の日付のマッチング処理を実行
-  const performMatchingForDate = async (date: string, dayRequests: any[], dayPostings: any[]) => {
+  const performMatchingForDate = async (date: string, dayRequests: any[], dayPostings: any[]): Promise<number> => {
     console.log(`=== 日付 ${date} のマッチング実行 ===`);
     
     const matchedShifts: any[] = [];
@@ -2089,7 +2097,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     
     if (validRequests.length === 0 || validPostings.length === 0) {
       console.log(`時間範囲がある希望または募集がないためスキップ`);
-      return;
+      return 0;
       }
       
       // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
@@ -2205,6 +2213,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     } else {
       console.log(`日付 ${date}: マッチング結果なし`);
     }
+    
+    return matchedShifts.length;
   };
 
   // マッチング処理を手動で実行する関数
