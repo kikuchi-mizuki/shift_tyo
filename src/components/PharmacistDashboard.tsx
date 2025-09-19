@@ -6,7 +6,7 @@ interface PharmacistDashboardProps {
   user: any;
 }
 
-export const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
+const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [tempSelectedDate, setTempSelectedDate] = useState('');

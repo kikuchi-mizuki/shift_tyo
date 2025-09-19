@@ -7,7 +7,7 @@ interface AdminDashboardProps {
   user: any;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
   const [assigned, setAssigned] = useState<any[]>([]);
