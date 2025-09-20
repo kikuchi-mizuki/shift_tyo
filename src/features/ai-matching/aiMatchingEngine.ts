@@ -2,45 +2,45 @@ import { supabase } from '../../lib/supabase';
 
 export interface MatchCandidate {
   pharmacist: {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
     email: string;
-    rating: number;
-    preferences: {
-      preferredPharmacyTypes: string[];
+  rating: number;
+  preferences: {
+    preferredPharmacyTypes: string[];
       maxCommuteTime: number;
-      preferredTimeSlots: string[];
-    };
-    pastPerformance: {
-      totalShifts: number;
-      averageSatisfaction: number;
-      completionRate: number;
-      noShowRate: number;
-    };
+    preferredTimeSlots: string[];
+  };
+  pastPerformance: {
+    totalShifts: number;
+    averageSatisfaction: number;
+    completionRate: number;
+    noShowRate: number;
+  };
   };
   pharmacy: {
-    id: string;
-    name: string;
-    requirements: {
-      requiredSkills: string[];
+  id: string;
+  name: string;
+  requirements: {
+    requiredSkills: string[];
       experienceLevel: string;
-      specialNeeds: string[];
-    };
-    environment: {
+    specialNeeds: string[];
+  };
+  environment: {
       type: string;
       size: string;
-      specialties: string[];
-    };
-    pastPerformance: {
-      averagePharmacistSatisfaction: number;
-      retentionRate: number;
-      workEnvironment: number;
-    };
+    specialties: string[];
+  };
+  pastPerformance: {
+    averagePharmacistSatisfaction: number;
+    retentionRate: number;
+    workEnvironment: number;
+  };
   };
   timeSlot: {
-    start: string;
-    end: string;
-    date: string;
+  start: string;
+  end: string;
+  date: string;
     urgency: string;
     flexibility: number;
   };
@@ -58,7 +58,7 @@ export class AIMatchingEngine {
   private async initialize() {
     try {
       if (supabase) {
-        this.isInitialized = true;
+      this.isInitialized = true;
         console.log('AI Matching Engine initialized');
       }
     } catch (error) {
@@ -87,7 +87,7 @@ export class AIMatchingEngine {
     
     // シンプルなマッチングロジック
     const candidates: MatchCandidate[] = [];
-    
+
     try {
       debugInfo += `=== シンプルマッチング処理開始 ===\n`;
       
@@ -119,9 +119,9 @@ export class AIMatchingEngine {
           // 既に使用済みの薬剤師はスキップ
           if (usedPharmacists.has(request.pharmacist_id)) {
             debugInfo += `薬剤師 ${request.pharmacist_id} は既に使用済み - スキップ\n`;
-            continue;
-          }
-          
+          continue;
+        }
+
           debugInfo += `\n薬剤師 ${request.pharmacist_id} の希望を処理中:\n`;
           debugInfo += `  日付: ${request.date}, 時間: ${request.start_time}-${request.end_time}\n`;
           debugInfo += `  薬剤師名: ${this.getPharmacistName(request, userProfiles)}\n`;
@@ -165,49 +165,49 @@ export class AIMatchingEngine {
               
               // シンプルな候補を作成
               const candidate: MatchCandidate = {
-              pharmacist: {
-                id: request.pharmacist_id,
+            pharmacist: {
+              id: request.pharmacist_id,
                 name: this.getPharmacistName(request, userProfiles),
                 email: '',
-                rating: 0,
-                preferences: {
-                  preferredPharmacyTypes: [],
-                  maxCommuteTime: 60,
-                  preferredTimeSlots: []
-                },
-                pastPerformance: {
-                  totalShifts: 0,
-                  averageSatisfaction: 0,
-                  completionRate: 1.0,
-                  noShowRate: 0
-                }
+              rating: 0,
+              preferences: {
+                preferredPharmacyTypes: [],
+                maxCommuteTime: 60,
+                preferredTimeSlots: []
               },
-              pharmacy: {
-                id: posting.pharmacy_id,
+              pastPerformance: {
+                totalShifts: 0,
+                averageSatisfaction: 0,
+                completionRate: 1.0,
+                noShowRate: 0
+              }
+            },
+            pharmacy: {
+              id: posting.pharmacy_id,
                 name: this.getPharmacyName(posting, userProfiles),
-                requirements: {
-                  requiredSkills: [],
-                  experienceLevel: 'intermediate',
-                  specialNeeds: []
-                },
-                environment: {
-                  type: 'community',
-                  size: 'medium',
-                  specialties: []
-                },
-                pastPerformance: {
-                  averagePharmacistSatisfaction: 0,
-                  retentionRate: 1.0,
-                  workEnvironment: 0
-                }
+              requirements: {
+                requiredSkills: [],
+                experienceLevel: 'intermediate',
+                specialNeeds: []
               },
-              timeSlot: {
+              environment: {
+                type: 'community',
+                size: 'medium',
+                specialties: []
+              },
+              pastPerformance: {
+                averagePharmacistSatisfaction: 0,
+                retentionRate: 1.0,
+                workEnvironment: 0
+              }
+            },
+            timeSlot: {
                 start: request.start_time,
                 end: request.end_time,
                 date: request.date,
-                urgency: 'medium',
-                flexibility: 0
-              },
+              urgency: 'medium',
+              flexibility: 0
+            },
               compatibilityScore: 0.8,
               reasons: ['シンプルマッチング']
             };
@@ -418,13 +418,13 @@ export class AIMatchingEngine {
     try {
       // ローカルマッチングを実行
       debugInfo += `=== ローカルマッチング実行 ===\n`;
-      
-      const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings);
-      console.log(`生成された候補: ${candidates.length}件`);
-      
-      // 薬局の応募満足度を優先する最適化アルゴリズム
+    
+    const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings);
+    console.log(`生成された候補: ${candidates.length}件`);
+    
+    // 薬局の応募満足度を優先する最適化アルゴリズム
       const result = await this.executePharmacySatisfactionMatching(candidates, requests, postings, options?.priority, ratings);
-      console.log('薬局満足度優先マッチング結果:', result);
+    console.log('薬局満足度優先マッチング結果:', result);
       
       debugInfo += `\n=== 最終結果 ===\n`;
       debugInfo += `最終マッチング件数: ${result.length}件\n`;
@@ -432,7 +432,7 @@ export class AIMatchingEngine {
       // デバッグ情報をアラートで表示
       alert(debugInfo);
       
-      return result;
+    return result;
       
     } catch (error) {
       debugInfo += `\n=== エラー発生 ===\n`;
@@ -493,7 +493,7 @@ export class AIMatchingEngine {
       iteration++;
       console.log(`\n=== 反復処理 ${iteration} 回目 ===`);
 
-      for (const [pharmacyId, need] of sortedPharmacies) {
+    for (const [pharmacyId, need] of sortedPharmacies) {
         const currentUsage = pharmacyUsageCount.get(pharmacyId) || 0;
         
         console.log(`薬局 ${pharmacyId} の処理: 現在使用 ${currentUsage}/${need.count}`);
@@ -521,8 +521,8 @@ export class AIMatchingEngine {
         const bestCandidate = availableCandidates.reduce((best, current) => {
           const currentScore = pharmacistScores[current.pharmacist.id] || 0;
           const bestScore = pharmacistScores[best.pharmacist.id] || 0;
-          return currentScore > bestScore ? current : best;
-        });
+        return currentScore > bestScore ? current : best;
+      });
 
         console.log(`薬局 ${pharmacyId} に薬剤師 ${bestCandidate.pharmacist.id} をマッチング`);
         selectedMatches.push(bestCandidate);

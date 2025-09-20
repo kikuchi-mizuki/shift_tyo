@@ -2753,8 +2753,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const postingStart = timeToMinutes(ps);
                   const postingEnd = timeToMinutes(pe);
 
-                  // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-                  return requestStart <= postingStart && requestEnd >= postingEnd;
+                  // 薬剤師と薬局の時間が重複しているかチェック（より柔軟な条件）
+                  return requestStart < postingEnd && requestEnd > postingStart;
                 };
 
                 let totalRequired = 0;
