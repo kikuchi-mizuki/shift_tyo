@@ -3550,13 +3550,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             </select>
                             <select
                               className="text-xs border rounded px-2 py-1"
-                              value={newPosting.time_slot}
-                              onChange={(e) => setNewPosting({ ...newPosting, time_slot: e.target.value })}
+                              value={newPosting.store_name}
+                              onChange={(e) => setNewPosting({ ...newPosting, store_name: e.target.value })}
                             >
-                              <option value="morning">午前</option>
-                              <option value="afternoon">午後</option>
-                              <option value="full">終日</option>
+                              <option value="">店舗名を選択</option>
+                              <option value="本店">本店</option>
+                              <option value="支店A">支店A</option>
+                              <option value="支店B">支店B</option>
+                              <option value="その他">その他</option>
                             </select>
+                            <input
+                              className="text-xs border rounded px-2 py-1"
+                              type="time"
+                              value={newPosting.start_time}
+                              onChange={(e) => setNewPosting({ ...newPosting, start_time: e.target.value })}
+                              placeholder="開始時間"
+                            />
+                            <input
+                              className="text-xs border rounded px-2 py-1"
+                              type="time"
+                              value={newPosting.end_time}
+                              onChange={(e) => setNewPosting({ ...newPosting, end_time: e.target.value })}
+                              placeholder="終了時間"
+                            />
                             <input
                               className="text-xs border rounded px-2 py-1"
                               type="number"
@@ -3565,14 +3581,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               onChange={(e) => setNewPosting({ ...newPosting, required_staff: e.target.value })}
                               placeholder="必要人数"
                             />
-                                <input
-                                  className="text-xs border rounded px-2 py-1"
-                              value={newPosting.store_name}
-                              onChange={(e) => setNewPosting({ ...newPosting, store_name: e.target.value })}
-                              placeholder="店舗名（任意）"
-                            />
                             <input
-                              className="col-span-2 text-xs border rounded px-2 py-1"
+                              className="text-xs border rounded px-2 py-1"
                               value={newPosting.memo}
                               onChange={(e) => setNewPosting({ ...newPosting, memo: e.target.value })}
                               placeholder="メモ（任意）"
@@ -3707,15 +3717,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             </select>
                             <select
                               className="text-xs border rounded px-2 py-1"
-                              value={newRequest.time_slot}
-                              onChange={(e) => setNewRequest({ ...newRequest, time_slot: e.target.value })}
-                            >
-                              <option value="morning">午前</option>
-                              <option value="afternoon">午後</option>
-                              <option value="full">終日</option>
-                            </select>
-                            <select
-                              className="text-xs border rounded px-2 py-1"
                               value={newRequest.priority}
                               onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
                             >
@@ -3723,6 +3724,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <option value="medium">中</option>
                               <option value="low">低</option>
                             </select>
+                            <input
+                              className="text-xs border rounded px-2 py-1"
+                              type="time"
+                              value={newRequest.start_time}
+                              onChange={(e) => setNewRequest({ ...newRequest, start_time: e.target.value })}
+                              placeholder="開始時間"
+                            />
+                            <input
+                              className="text-xs border rounded px-2 py-1"
+                              type="time"
+                              value={newRequest.end_time}
+                              onChange={(e) => setNewRequest({ ...newRequest, end_time: e.target.value })}
+                              placeholder="終了時間"
+                            />
                           </div>
                           <div className="mt-2">
                             <button onClick={handleAddRequest} className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded">追加</button>
