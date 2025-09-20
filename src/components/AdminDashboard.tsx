@@ -1860,16 +1860,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
       
       // データ読み込み完了後に自動マッチングを実行
-      console.log('=== 自動マッチング開始 ===');
-      console.log('データ読み込み完了後の自動マッチングを実行します');
-      console.log('現在のデータ:', { 
-        requests: requests.length, 
-        postings: postings.length, 
-        assigned: assigned.length,
-        userProfiles: Object.keys(userProfiles).length
-      });
+      if (aiMatchingEngine && requests.length > 0 && postings.length > 0) {
+        console.log('Auto-executing monthly AI matching...');
+        setTimeout(async () => {
+          try {
+            await executeMonthlyAIMatching();
+            console.log('Auto monthly AI matching completed');
+          } catch (error) {
+            console.error('Auto monthly AI matching failed:', error);
+          }
+        }, 1000); // 1秒後に実行
+      }
       
-      // 自動マッチングは意図しない再確定を避けるため停止（必要時に手動実行）
     }
   };
 
