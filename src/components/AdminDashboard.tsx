@@ -202,8 +202,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     try {
       const shifts: any[] = [];
       
+      console.log('手動マッチング全体確認:', {
+        manualMatches,
+        manualMatchesKeys: Object.keys(manualMatches),
+        manualMatchesValues: Object.values(manualMatches)
+      });
+      
       Object.entries(manualMatches).forEach(([pharmacyId, pharmacistIds]) => {
-        pharmacistIds.forEach(pharmacistId => {
+        console.log('薬局別マッチング確認:', {
+          pharmacyId,
+          pharmacistIds,
+          pharmacistIdsType: typeof pharmacistIds,
+          pharmacistIdsLength: pharmacistIds?.length
+        });
+        
+        pharmacistIds.forEach((pharmacistId, index) => {
+          console.log(`薬剤師${index + 1}確認:`, {
+            pharmacistId,
+            pharmacistIdType: typeof pharmacistId,
+            pharmacistIdLength: pharmacistId?.length,
+            isUndefined: pharmacistId === undefined,
+            isNull: pharmacistId === null,
+            isEmpty: pharmacistId === ''
+          });
+          
           if (pharmacistId && pharmacistId !== '') { // 空の選択をスキップ
             // UUIDの形式を確認
             console.log('手動マッチング確認:', {
@@ -3229,9 +3251,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                               {dayShortageAnalysis.map((pharmacy, index) => {
                                 // データベースから薬剤師を取得（user_profilesから薬剤師タイプのみ）
-                                const availablePharmacists = Object.values(userProfiles).filter((profile: any) => 
-                                  profile.user_type === 'pharmacist'
-                                );
+                                console.log('薬剤師選択時のuserProfiles確認:', {
+                                  userProfiles,
+                                  userProfilesType: typeof userProfiles,
+                                  userProfilesKeys: Object.keys(userProfiles || {}),
+                                  userProfilesLength: Object.keys(userProfiles || {}).length
+                                });
+                                
+                                const availablePharmacists = Object.values(userProfiles || {}).filter((profile: any) => {
+                                  console.log('薬剤師プロフィール確認:', {
+                                    profile,
+                                    user_type: profile?.user_type,
+                                    id: profile?.id,
+                                    name: profile?.name
+                                  });
+                                  return profile?.user_type === 'pharmacist';
+                                });
+                                
+                                console.log('利用可能な薬剤師:', {
+                                  availablePharmacists,
+                                  count: availablePharmacists.length
+                                });
                                 
                                 return (
                                   <div key={index} className="bg-white rounded border p-2 text-xs">
