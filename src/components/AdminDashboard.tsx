@@ -3041,9 +3041,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   
                   // AIマッチング結果の表示（選択された日付のマッチング結果のみ）
                   const dayMatches = aiMatchesByDate[selectedDate] || [];
+                  
+                  // 日毎の不足薬局分析
+                  const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
+                  
                   if (dayMatches.length > 0 && selectedDate) {
                     return (
                       <div className="p-4 border-b border-gray-200">
+                        {/* AIマッチング結果 */}
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
                           <div className="flex items-center space-x-2 mb-2">
                             <Brain className="w-4 h-4 text-purple-600" />
@@ -3077,6 +3082,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             ))}
                           </div>
                         </div>
+                        
+                        {/* 不足薬局一覧 */}
+                        {dayShortageAnalysis.length > 0 && (
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <AlertCircle className="w-4 h-4 text-red-600" />
+                              <h4 className="text-sm font-semibold text-red-800">不足薬局 {dayShortageAnalysis.length}薬局</h4>
+                            </div>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {dayShortageAnalysis.map((pharmacy, index) => (
+                                <div key={index} className="bg-white rounded border p-2 text-xs">
+                                  <div className="font-medium text-gray-800">
+                                    {pharmacy.name}（{pharmacy.store_name || '店舗名なし'}）
+                                  </div>
+                                  <div className="text-gray-600">
+                                    必要人数: {pharmacy.required}人
+                                  </div>
+                                  <div className="text-gray-600">
+                                    マッチ人数: {pharmacy.matched}人
+                                  </div>
+                                  <div className="text-red-600 font-medium">
+                                    不足人数: {pharmacy.shortage}人
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
                         <button
                           onClick={() => {
                             const shifts = convertAIMatchesToShifts(dayMatches, selectedDate);
