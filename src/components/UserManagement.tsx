@@ -144,6 +144,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">名前</label>
                 <input
+                  id="user-name"
+                  name="user-name"
                   type="text"
                   value={formData.name || ''}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -155,6 +157,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス</label>
                 <input
+                  id="user-email"
+                  name="user-email"
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}

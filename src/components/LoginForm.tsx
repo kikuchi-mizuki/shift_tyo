@@ -199,6 +199,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                 メールアドレス
               </label>
               <input
+                id="login-email"
+                name="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -214,6 +216,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                   名前・企業名
                 </label>
                 <input
+                  id="register-name"
+                  name="register-name"
                   type="text"
                   value={registrationData.name}
                   onChange={(e) => setRegistrationData({...registrationData, name: e.target.value})}

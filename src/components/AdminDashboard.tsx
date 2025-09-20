@@ -4041,6 +4041,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               )}
                             </select>
                             <input
+                              id="new-posting-start-time"
+                              name="new-posting-start-time"
                               className="text-xs border rounded px-2 py-1"
                               type="time"
                               value={newPosting.start_time}
@@ -4048,6 +4050,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               placeholder="開始時間"
                             />
                             <input
+                              id="new-posting-end-time"
+                              name="new-posting-end-time"
                               className="text-xs border rounded px-2 py-1"
                               type="time"
                               value={newPosting.end_time}
@@ -4055,6 +4059,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               placeholder="終了時間"
                             />
                             <input
+                              id="new-posting-required-staff"
+                              name="new-posting-required-staff"
                               className="text-xs border rounded px-2 py-1"
                               type="number"
                               min={1}
@@ -4063,6 +4069,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               placeholder="必要人数"
                             />
                             <input
+                              id="new-posting-memo"
+                              name="new-posting-memo"
                               className="text-xs border rounded px-2 py-1"
                               value={newPosting.memo}
                               onChange={(e) => setNewPosting({ ...newPosting, memo: e.target.value })}

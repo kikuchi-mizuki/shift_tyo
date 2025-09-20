@@ -346,6 +346,8 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
                 メールアドレス
               </label>
               <input
+                id="multi-login-email"
+                name="multi-login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -362,6 +364,8 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
                 パスワード
               </label>
               <input
+                id="multi-login-password"
+                name="multi-login-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
