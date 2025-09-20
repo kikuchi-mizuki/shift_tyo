@@ -4644,7 +4644,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                   checked={checked}
                                                   onChange={(e) => {
                                                     const next = new Set<string>(userEditForm.ng_list);
-                                              if (e.target.checked) next.add(id); else next.delete(id);
+                                                    
+                                                    if (e.target.checked) {
+                                                      // 薬局全体をチェックした場合、その薬局の全店舗もチェック
+                                                      next.add(id);
+                                                      const pharmacyProfile = userProfiles[id];
+                                                      const storeNames = pharmacyProfile?.store_names || [];
+                                                      const displayStoreNames = storeNames.length > 0 ? storeNames : ['本店'];
+                                                      displayStoreNames.forEach((storeName: string) => {
+                                                        const storeKey = `${id}_${storeName}`;
+                                                        next.add(storeKey);
+                                                      });
+                                                    } else {
+                                                      // 薬局全体のチェックを外した場合、その薬局の全店舗も外す
+                                                      next.delete(id);
+                                                      const pharmacyProfile = userProfiles[id];
+                                                      const storeNames = pharmacyProfile?.store_names || [];
+                                                      const displayStoreNames = storeNames.length > 0 ? storeNames : ['本店'];
+                                                      displayStoreNames.forEach((storeName: string) => {
+                                                        const storeKey = `${id}_${storeName}`;
+                                                        next.delete(storeKey);
+                                                      });
+                                                    }
+                                                    
                                                     setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
                                                   }}
                                                 />
@@ -4851,8 +4873,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                 const isPharmacySelectedForStore = userEditForm.ng_list.includes(id);
                                                 const isStoreSelected = userEditForm.ng_list.includes(storeKey);
                                                 
-                                                // 薬局全体が選択されている場合は全店舗にチェック、そうでなければ個別チェック
-                                                const storeChecked = isPharmacySelectedForStore || isStoreSelected;
+                                                // 個別店舗の選択状態のみを表示（薬局全体の選択とは独立）
+                                                const storeChecked = isStoreSelected;
                                                 
                                                 return (
                                                   <label key={storeKey} className="inline-flex items-center gap-1 text-xs cursor-pointer">
