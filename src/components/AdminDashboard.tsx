@@ -545,19 +545,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('DEBUG: debugInfo length:', debugInfo.length);
       alert(debugInfo);
 
-      // 日付別にマッチング結果を整理
-      const matchesByDate: { [date: string]: any[] } = {};
-      monthlyMatches.forEach(match => {
-        const date = match.timeSlot.date;
-        if (!matchesByDate[date]) {
-          matchesByDate[date] = [];
-        }
-        matchesByDate[date].push(match);
-      });
-
       // グローバルなマッチング結果を保存
       setAiMatches(monthlyMatches);
-      setAiMatchesByDate(matchesByDate);
 
       console.log(`1ヶ月分のAIマッチング完了: ${monthlyMatches.length}件のマッチ`);
       
