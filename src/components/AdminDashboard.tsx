@@ -123,7 +123,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           
           // 店舗名を取得
           const getStoreNameFromPosting = (posting: any) => {
-            const direct = (posting.store_name || '').trim();
+            const direct = (posting.store_name || posting.pharmacy_name || '').trim();
             let fromMemo = '';
             if (!direct && typeof posting.memo === 'string') {
               const m = posting.memo.match(/\[store:([^\]]+)\]/);
@@ -202,7 +202,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const pharmacyId = posting.pharmacy_id;
       if (!pharmacyNeeds[pharmacyId]) {
         pharmacyNeeds[pharmacyId] = {
-          name: posting.store_name || userProfiles[pharmacyId]?.name || 'Unknown',
+          name: posting.store_name || posting.pharmacy_name || userProfiles[pharmacyId]?.name || `薬局${pharmacyId.slice(-4)}`,
           required: 0,
           matched: 0,
           shortage: 0,

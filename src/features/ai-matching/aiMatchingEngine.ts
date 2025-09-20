@@ -98,6 +98,7 @@ export class AIMatchingEngine {
         for (const posting of postings) {
           debugInfo += `  薬局 ${posting.pharmacy_id} との組み合わせをチェック:\n`;
           debugInfo += `    日付: ${posting.date}, 時間: ${posting.start_time}-${posting.end_time}\n`;
+          debugInfo += `    薬局名: ${posting.store_name || posting.pharmacy_name || '未設定'}\n`;
           
           // 基本的な条件チェック
           const dateMatch = request.date === posting.date;
@@ -130,7 +131,7 @@ export class AIMatchingEngine {
               },
               pharmacy: {
                 id: posting.pharmacy_id,
-                name: posting.store_name || '薬局',
+                name: posting.store_name || posting.pharmacy_name || `薬局${posting.pharmacy_id.slice(-4)}`,
                 requirements: {
                   requiredSkills: [],
                   experienceLevel: 'intermediate',
