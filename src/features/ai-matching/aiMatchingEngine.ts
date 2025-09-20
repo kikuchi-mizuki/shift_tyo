@@ -425,20 +425,22 @@ export class AIMatchingEngine {
     // 薬局の応募満足度を最大化するマッチング
     const selectedMatches: MatchCandidate[] = [];
     const usedPharmacists = new Set<string>();
-    const usedPharmacies = new Set<string>();
+    const pharmacyUsageCount = new Map<string, number>();
 
     // 薬局の需要が高い順にソート
     const sortedPharmacies = Object.entries(pharmacyNeeds)
       .sort(([, a], [, b]) => b.priority - a.priority);
 
     for (const [pharmacyId, need] of sortedPharmacies) {
-      if (usedPharmacies.has(pharmacyId)) continue;
+      const currentUsage = pharmacyUsageCount.get(pharmacyId) || 0;
+      
+      // 薬局の募集人数をチェック
+      if (currentUsage >= need.count) continue;
 
       // この薬局に適合する薬剤師候補を取得
       const availableCandidates = candidates.filter(candidate => 
         candidate.pharmacy.id === pharmacyId &&
-        !usedPharmacists.has(candidate.pharmacist.id) &&
-        !usedPharmacies.has(candidate.pharmacy.id)
+        !usedPharmacists.has(candidate.pharmacist.id)
       );
 
       if (availableCandidates.length === 0) continue;
@@ -452,7 +454,7 @@ export class AIMatchingEngine {
 
       selectedMatches.push(bestCandidate);
       usedPharmacists.add(bestCandidate.pharmacist.id);
-      usedPharmacies.add(bestCandidate.pharmacy.id);
+      pharmacyUsageCount.set(pharmacyId, currentUsage + 1);
     }
 
     console.log(`薬局満足度優先マッチング完了: ${selectedMatches.length}件`);
@@ -470,10 +472,13 @@ export class AIMatchingEngine {
       if (!needs[pharmacyId]) {
         needs[pharmacyId] = { priority: 0, count: 0 };
       }
-      needs[pharmacyId].count++;
-      needs[pharmacyId].priority += posting.required_staff || 1;
+      // required_staffフィールドを使用（デフォルトは1）
+      const requiredStaff = posting.required_staff || 1;
+      needs[pharmacyId].count += requiredStaff;
+      needs[pharmacyId].priority += requiredStaff;
     });
     
+    console.log('薬局需要分析:', needs);
     return needs;
   }
 

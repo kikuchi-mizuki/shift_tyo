@@ -398,11 +398,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           
           if (!rs || !re || !ps || !pe) return false;
           
+          // 時間を数値に変換して比較
+          const timeToMinutes = (timeStr: string) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+          };
+
+          const requestStart = timeToMinutes(rs);
+          const requestEnd = timeToMinutes(re);
+          const postingStart = timeToMinutes(ps);
+          const postingEnd = timeToMinutes(pe);
+
           // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-          const isCompatible = rs <= ps && re >= pe;
+          const isCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
           
           // デバッグ: 時間比較の詳細
-          debugInfo += `    [DEBUG] 薬剤師: ${rs} <= ${ps} = ${rs <= ps}, ${re} >= ${pe} = ${re >= pe}\n`;
+          debugInfo += `    [DEBUG] 薬剤師: ${rs}(${requestStart}分) <= ${ps}(${postingStart}分) = ${requestStart <= postingStart}, ${re}(${requestEnd}分) >= ${pe}(${postingEnd}分) = ${requestEnd >= postingEnd}\n`;
           
           debugInfo += `  - 募集 ${posting.id}: 薬局ID ${posting.pharmacy_id}, 時間 ${ps}-${pe}, 適合: ${isCompatible ? 'YES' : 'NO'}\n`;
           
