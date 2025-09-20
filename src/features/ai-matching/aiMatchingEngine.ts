@@ -461,10 +461,19 @@ export class AIMatchingEngine {
    */
   private getProfileById(id: string, userProfiles: any): any {
     if (!userProfiles) return null;
+    
+    // デバッグ: userProfilesの構造を確認
+    console.log(`getProfileById: id=${id}, userProfiles type=${typeof userProfiles}, isArray=${Array.isArray(userProfiles)}`);
+    console.log('userProfiles keys:', Object.keys(userProfiles || {}));
+    
     if (Array.isArray(userProfiles)) {
       return userProfiles.find((u: any) => u?.id === id);
     }
-    return userProfiles[id];
+    
+    // オブジェクトの場合、直接IDでアクセス
+    const profile = userProfiles[id];
+    console.log(`Profile for ${id}:`, profile);
+    return profile;
   }
 
   /**
