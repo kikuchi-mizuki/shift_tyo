@@ -225,8 +225,11 @@ export class AIMatchingEngine {
     // デバッグ: 利用可能なキーを確認
     console.log('=== 薬局名取得デバッグ ===');
     console.log('posting.pharmacy_id:', pharmacyId);
+    console.log('posting object:', posting);
     console.log('userProfiles keys:', userProfiles ? Object.keys(userProfiles) : 'なし');
     console.log('userProfiles[pharmacyId]:', userProfiles?.[pharmacyId]);
+    console.log('userProfiles type:', typeof userProfiles);
+    console.log('userProfiles length:', userProfiles ? Object.keys(userProfiles).length : 0);
     
     // 全userProfilesの内容を確認
     if (userProfiles) {
@@ -234,6 +237,10 @@ export class AIMatchingEngine {
       Object.keys(userProfiles).forEach(key => {
         console.log(`  ${key}: ${userProfiles[key]?.name || '名前なし'}`);
       });
+      
+      // 薬局IDとの一致を確認
+      const matchingKeys = Object.keys(userProfiles).filter(key => key === pharmacyId);
+      console.log('pharmacyIdと一致するキー:', matchingKeys);
     }
     
     // 1. 薬局名を取得（user_profilesテーブルから）
