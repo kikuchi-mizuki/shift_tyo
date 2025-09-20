@@ -102,6 +102,11 @@ export class AIMatchingEngine {
           debugInfo += `    日付: ${posting.date}, 時間: ${posting.start_time}-${posting.end_time}\n`;
           debugInfo += `    薬局名: ${this.getPharmacyName(posting, userProfiles)}\n`;
           debugInfo += `    取得元: ${this.getPharmacyNameSource(posting, userProfiles)}\n`;
+          debugInfo += `    利用可能なフィールド:\n`;
+          debugInfo += `      - posting.pharmacy_id: "${posting.pharmacy_id}"\n`;
+          debugInfo += `      - posting.store_name: "${posting.store_name || 'なし'}"\n`;
+          debugInfo += `      - userProfiles[${posting.pharmacy_id}]: "${userProfiles?.[posting.pharmacy_id]?.name || 'なし'}"\n`;
+          debugInfo += `      - userProfiles存在: ${userProfiles ? 'あり' : 'なし'}\n`;
           
           // 基本的な条件チェック
           const dateMatch = request.date === posting.date;
@@ -210,21 +215,37 @@ export class AIMatchingEngine {
   }
 
   /**
-   * 薬局名を取得（user_profilesテーブルから優先）
+   * 薬局名を取得（店舗名と薬局名の組み合わせ）
    */
   private getPharmacyName(posting: any, userProfiles?: any): string {
     const pharmacyId = posting.pharmacy_id;
+    let pharmacyName = '';
+    let storeName = '';
     
-    // AdminDashboardと同じロジック: user_profilesテーブルから取得
+    // 1. 薬局名を取得（user_profilesテーブルから）
     if (userProfiles && userProfiles[pharmacyId]) {
-      const name = userProfiles[pharmacyId]?.name;
-      if (name && name.trim()) {
-        return name.trim();
+      const profile = userProfiles[pharmacyId];
+      if (profile.name && profile.name.trim()) {
+        pharmacyName = profile.name.trim();
       }
     }
     
-    // フォールバック
-    return 'Unknown';
+    // 2. 店舗名を取得（shift_postingsテーブルのstore_nameから）
+    if (posting.store_name && posting.store_name.trim()) {
+      storeName = posting.store_name.trim();
+    }
+    
+    // 3. 組み合わせて表示
+    if (pharmacyName && storeName) {
+      return `${pharmacyName}(${storeName})`;
+    } else if (pharmacyName) {
+      return pharmacyName;
+    } else if (storeName) {
+      return storeName;
+    }
+    
+    // 4. フォールバック
+    return `薬局${pharmacyId.slice(-4)}`;
   }
 
   /**
@@ -245,12 +266,23 @@ export class AIMatchingEngine {
    */
   private getPharmacyNameSource(posting: any, userProfiles?: any): string {
     const pharmacyId = posting.pharmacy_id;
+    let sources = [];
     
+    // 薬局名の取得元をチェック
     if (userProfiles && userProfiles[pharmacyId]?.name) {
-      return 'user_profilesテーブル';
+      sources.push('薬局名(user_profiles)');
     }
     
-    return 'フォールバック（Unknown）';
+    // 店舗名の取得元をチェック
+    if (posting.store_name && posting.store_name.trim()) {
+      sources.push('店舗名(store_name)');
+    }
+    
+    if (sources.length > 0) {
+      return sources.join(' + ');
+    }
+    
+    return 'フォールバック（ID末尾4桁）';
   }
 
   /**
@@ -442,4 +474,5 @@ export class AIMatchingEngine {
 
     return selectedMatches;
   }
+}
 }
