@@ -275,6 +275,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     // 薬局ごとの募集数とマッチ数を計算
     const pharmacyNeeds: { [pharmacyId: string]: { 
       name: string; 
+      store_name: string;
       required: number; 
       matched: number; 
       shortage: number; 
@@ -286,7 +287,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const pharmacyId = posting.pharmacy_id;
       if (!pharmacyNeeds[pharmacyId]) {
         pharmacyNeeds[pharmacyId] = {
-          name: posting.store_name || posting.pharmacy_name || userProfiles[pharmacyId]?.name || `薬局${pharmacyId.slice(-4)}`,
+          name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId.slice(-4)}`,
+          store_name: posting.store_name || '店舗名なし',
           required: 0,
           matched: 0,
           shortage: 0,
