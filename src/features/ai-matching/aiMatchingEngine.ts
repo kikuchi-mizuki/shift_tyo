@@ -973,7 +973,7 @@ export class AIMatchingEngine {
     console.log('userProfiles:', userProfiles);
     console.log('ratings:', ratings);
     // APIを使用する場合はAPI経由でマッチングを実行
-    if (options?.useAPI !== false) {
+    if (options?.useAPI === true) {
       try {
         const apiRequest: AIMatchingRequest = {
           date: requests[0]?.date || postings[0]?.date || new Date().toISOString().split('T')[0],
@@ -1051,6 +1051,11 @@ export class AIMatchingEngine {
     console.log('フォールバック: ローカルマッチングを実行');
     console.log('requests length:', requests.length);
     console.log('postings length:', postings.length);
+    
+    // デバッグ情報にフォールバック実行を追加
+    debugInfo += `\n=== フォールバック: ローカルマッチング実行 ===\n`;
+    debugInfo += `希望データ: ${requests.length}件\n`;
+    debugInfo += `募集データ: ${postings.length}件\n\n`;
     
     const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings);
     console.log(`生成された候補: ${candidates.length}件`);
