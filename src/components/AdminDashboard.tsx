@@ -1177,16 +1177,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const storeNames = profile.store_names || ['本店'];
           
           for (const ngId of ngList) {
-            for (const storeName of storeNames) {
-              const entryKey = `${profile.id}_${storeName}_${ngId}`;
+            if (ngId.includes('_')) {
+              // 店舗指定の場合 (pharmacyId_storeName)
+              const [pharmacyId, storeName] = ngId.split('_');
+              const entryKey = `${profile.id}_${storeName}_${pharmacyId}`;
               
               if (!seenEntries.has(entryKey)) {
                 seenEntries.add(entryKey);
                 ngEntries.push({
                   pharmacy_id: profile.id,
                   store_name: storeName,
-                  pharmacist_id: ngId
+                  pharmacist_id: pharmacyId
                 });
+              }
+            } else {
+              // 薬剤師全体の場合 - 全店舗でNG
+              for (const storeName of storeNames) {
+                const entryKey = `${profile.id}_${storeName}_${ngId}`;
+                
+                if (!seenEntries.has(entryKey)) {
+                  seenEntries.add(entryKey);
+                  ngEntries.push({
+                    pharmacy_id: profile.id,
+                    store_name: storeName,
+                    pharmacist_id: ngId
+                  });
+                }
               }
             }
           }
