@@ -329,6 +329,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       });
       
       debugInfo += `\n適合性サマリー: 適合あり ${compatibleCount}件, 適合なし ${incompatibleCount}件\n`;
+      
+      // 薬局名取得のデバッグ情報を追加
+      debugInfo += `\n=== 薬局名取得デバッグ ===\n`;
+      debugInfo += `userProfiles件数: ${Object.keys(userProfiles || {}).length}\n`;
+      debugInfo += `userProfiles利用可能キー: ${Object.keys(userProfiles || {}).join(', ')}\n\n`;
+      
+      // サンプル募集の薬局名取得状況を確認
+      if (monthlyPostings.length > 0) {
+        debugInfo += `募集サンプルの薬局名取得状況:\n`;
+        monthlyPostings.slice(0, 3).forEach((posting, i) => {
+          const pharmacyId = posting.pharmacy_id;
+          const userProfile = userProfiles?.[pharmacyId];
+          const storeName = posting.store_name;
+          
+          debugInfo += `${i+1}. 薬局ID: ${pharmacyId}\n`;
+          debugInfo += `   - store_name: "${storeName || 'なし'}"\n`;
+          debugInfo += `   - userProfiles[${pharmacyId}]: ${userProfile ? `"${userProfile.name || '名前なし'}"` : 'なし'}\n`;
+          debugInfo += `   - 最終表示名: ${storeName || userProfile?.name || `薬局${pharmacyId.slice(-4)}`}\n\n`;
+        });
+      }
 
       // 1ヶ月分のマッチングを実行（重複防止付き）
       debugInfo += `\n=== AIマッチングエンジン実行 ===\n`;
