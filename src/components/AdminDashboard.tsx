@@ -616,15 +616,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     const ps = posting?.start_time;
     const pe = posting?.end_time;
     
-    // 両方に時間範囲がある場合は重複関係で判定
-    if (rs && re && ps && pe) {
-      // 重複判定: 薬剤師の希望時間が薬局の募集時間と重複していればマッチ
-      // つまり、薬剤師が薬局の応募時間を満たしていればマッチ
-      return rs < pe && re > ps;
-    }
-    
-    // 片方でも時間範囲がない場合はマッチしない
-    return false;
+    if (!rs || !re || !ps || !pe) return false;
+
+    // 時間を数値に変換（HH:MM:SS形式を分に変換）
+    const timeToMinutes = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const requestStart = timeToMinutes(rs);
+    const requestEnd = timeToMinutes(re);
+    const postingStart = timeToMinutes(ps);
+    const postingEnd = timeToMinutes(pe);
+
+    console.log('AdminDashboard時間適合性チェック:', {
+      request: { start: rs, end: re, startMin: requestStart, endMin: requestEnd },
+      posting: { start: ps, end: pe, startMin: postingStart, endMin: postingEnd },
+      condition: `${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd}`,
+      result: requestStart <= postingStart && requestEnd >= postingEnd
+    });
+
+    // 薬剤師が薬局の希望時間を完全に満たしているかチェック
+    return requestStart <= postingStart && requestEnd >= postingEnd;
   };
 
   // 薬剤師の評価を取得する関数
@@ -2399,15 +2412,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             const ps = posting?.start_time;
             const pe = posting?.end_time;
           
-          // 両方に時間範囲がある場合は完全包含関係で判定
-            if (rs && re && ps && pe) {
-            // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-            // 薬剤師の開始時間 <= 薬局の開始時間 かつ 薬剤師の終了時間 >= 薬局の終了時間
-            return rs <= ps && re >= pe;
-            }
-          
-          // 片方でも時間範囲がない場合はマッチしない
-          return false;
+          if (!rs || !re || !ps || !pe) return false;
+
+          // 時間を数値に変換（HH:MM:SS形式を分に変換）
+          const timeToMinutes = (timeStr: string) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+          };
+
+          const requestStart = timeToMinutes(rs);
+          const requestEnd = timeToMinutes(re);
+          const postingStart = timeToMinutes(ps);
+          const postingEnd = timeToMinutes(pe);
+
+          // 薬剤師が薬局の希望時間を完全に満たしているかチェック
+          return requestStart <= postingStart && requestEnd >= postingEnd;
           };
           
         if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
@@ -2710,15 +2729,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const ps = posting?.start_time;
                   const pe = posting?.end_time;
                   
-                  // 両方に時間範囲がある場合は重複関係で判定
-                  if (rs && re && ps && pe) {
-                    // 重複判定: 薬剤師の希望時間が薬局の募集時間と重複していればマッチ
-                    // つまり、薬剤師が薬局の応募時間を満たしていればマッチ
-                    return rs < pe && re > ps;
-                  }
-                  
-                  // 片方でも時間範囲がない場合はマッチしない
-                  return false;
+                  if (!rs || !re || !ps || !pe) return false;
+
+                  // 時間を数値に変換（HH:MM:SS形式を分に変換）
+                  const timeToMinutes = (timeStr: string) => {
+                    const [hours, minutes] = timeStr.split(':').map(Number);
+                    return hours * 60 + minutes;
+                  };
+
+                  const requestStart = timeToMinutes(rs);
+                  const requestEnd = timeToMinutes(re);
+                  const postingStart = timeToMinutes(ps);
+                  const postingEnd = timeToMinutes(pe);
+
+                  // 薬剤師が薬局の希望時間を完全に満たしているかチェック
+                  return requestStart <= postingStart && requestEnd >= postingEnd;
                 };
 
                 let totalRequired = 0;

@@ -323,8 +323,26 @@ export class AIMatchingEngine {
 
     if (!rs || !re || !ps || !pe) return false;
 
+    // 時間を数値に変換（HH:MM:SS形式を分に変換）
+    const timeToMinutes = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const requestStart = timeToMinutes(rs);
+    const requestEnd = timeToMinutes(re);
+    const postingStart = timeToMinutes(ps);
+    const postingEnd = timeToMinutes(pe);
+
+    console.log('時間適合性チェック:', {
+      request: { start: rs, end: re, startMin: requestStart, endMin: requestEnd },
+      posting: { start: ps, end: pe, startMin: postingStart, endMin: postingEnd },
+      condition: `${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd}`,
+      result: requestStart <= postingStart && requestEnd >= postingEnd
+    });
+
     // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-    return rs <= ps && re >= pe;
+    return requestStart <= postingStart && requestEnd >= postingEnd;
   }
 
   /**
