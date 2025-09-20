@@ -208,6 +208,22 @@ export const auth = {
     }
   },
 
+  // セッションリフレッシュ
+  refreshSession: async () => {
+    if (!supabase) {
+      return { data: { session: null }, error: null };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      console.log('Session refresh result:', { hasSession: !!data.session, error });
+      return { data, error };
+    } catch (error) {
+      console.error('Session refresh error:', error);
+      return { data: { session: null }, error };
+    }
+  },
+
   // 認証状態の監視
   onAuthStateChange: (callback: (event: string, session: any) => void) => {
     if (!supabase) {

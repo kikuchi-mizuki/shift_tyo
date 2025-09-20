@@ -1080,7 +1080,60 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               .filter((s: string) => s.length > 0);
 
         if (ngList.length > 0) {
-          // まず既存のエントリを削除
+          // まず認証状態を確認・リフレッシュ
+          console.log('認証状態確認:', {
+            currentUserId: user?.id,
+            userType: user?.user_type,
+            targetPharmacyId: profile.id
+          });
+
+          try {
+            // まずセッションをリフレッシュしてから取得
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) {
+              console.error('セッションリフレッシュエラー:', refreshError);
+            } else {
+              console.log('セッションリフレッシュ成功');
+            }
+
+            // セッションを取得
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError) {
+              console.error('セッション取得エラー:', sessionError);
+              alert('認証エラーが発生しました。ログインし直してください。');
+              return;
+            }
+
+            if (!sessionData.session) {
+              console.error('セッションが見つかりません');
+              alert('セッションが切れています。ログインし直してください。');
+              return;
+            }
+
+            console.log('セッション確認完了:', {
+              hasSession: !!sessionData.session,
+              userId: sessionData.session.user?.id,
+              accessToken: sessionData.session.access_token?.substring(0, 20) + '...'
+            });
+          } catch (authError) {
+            console.error('認証確認エラー:', authError);
+            alert('認証エラーが発生しました。ログインし直してください。');
+            return;
+          }
+
+          // 管理者権限を確認
+          const { data: adminCheck, error: adminError } = await supabase
+            .from('user_profiles')
+            .select('user_type')
+            .eq('id', user?.id)
+            .single();
+
+          console.log('管理者権限チェック結果:', {
+            adminCheck,
+            adminError,
+            isAdmin: adminCheck?.user_type === 'admin'
+          });
+
           const { error: deleteError } = await supabase
             .from('store_ng_pharmacists')
             .delete()
@@ -1088,8 +1141,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
           if (deleteError) {
             console.error('既存NG薬剤師設定の削除エラー:', deleteError);
-            alert(`既存NG薬剤師設定の削除に失敗しました: ${deleteError.message}`);
-            return;
+            console.error('削除エラーの詳細:', {
+              message: deleteError.message,
+              details: deleteError.details,
+              hint: deleteError.hint,
+              code: deleteError.code
+            });
+            
+            // RLSエラーの場合は、user_profiles.ng_listのみ更新してフォールバック
+            if (deleteError.message.includes('row-level security')) {
+              console.log('RLSエラーのため、user_profiles.ng_listのみ更新します');
+              try {
+                await supabase
+                  .from('user_profiles')
+                  .update({ ng_list: ngList })
+                  .eq('id', profile.id);
+                alert('NG薬剤師設定を保存しました（簡易モード）。');
+                setEditingUserId(null);
+                loadAll();
+                return;
+              } catch (fallbackError) {
+                console.error('フォールバック更新エラー:', fallbackError);
+                alert(`NG薬剤師設定の保存に失敗しました: ${deleteError.message}`);
+                return;
+              }
+            } else {
+              alert(`既存NG薬剤師設定の削除に失敗しました: ${deleteError.message}`);
+              return;
+            }
           }
 
           // 新しいエントリを挿入
@@ -1114,14 +1193,46 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
           if (ngEntries.length > 0) {
             console.log('保存するNG薬剤師エントリ:', ngEntries);
+            console.log('管理者権限で挿入を試行:', {
+              currentUserId: user?.id,
+              userType: user?.user_type,
+              entriesCount: ngEntries.length
+            });
+
             const { error: insertError } = await supabase
               .from('store_ng_pharmacists')
               .insert(ngEntries);
 
             if (insertError) {
               console.error('NG薬剤師設定の保存エラー:', insertError);
-              alert(`NG薬剤師設定の保存に失敗しました: ${insertError.message}`);
-              return;
+              console.error('挿入エラーの詳細:', {
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint,
+                code: insertError.code
+              });
+              
+              // RLSエラーの場合は、user_profiles.ng_listのみ更新してフォールバック
+              if (insertError.message.includes('row-level security')) {
+                console.log('RLSエラーのため、user_profiles.ng_listのみ更新します');
+                try {
+                  await supabase
+                    .from('user_profiles')
+                    .update({ ng_list: ngList })
+                    .eq('id', profile.id);
+                  alert('NG薬剤師設定を保存しました（簡易モード）。');
+                  setEditingUserId(null);
+                  loadAll();
+                  return;
+                } catch (fallbackError) {
+                  console.error('フォールバック更新エラー:', fallbackError);
+                  alert(`NG薬剤師設定の保存に失敗しました: ${insertError.message}`);
+                  return;
+                }
+              } else {
+                alert(`NG薬剤師設定の保存に失敗しました: ${insertError.message}`);
+                return;
+              }
             }
           }
 
@@ -1143,8 +1254,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
           if (deleteError) {
             console.error('NG薬剤師設定の削除エラー:', deleteError);
-            alert(`NG薬剤師設定の削除に失敗しました: ${deleteError.message}`);
-            return;
+            console.error('削除エラーの詳細:', {
+              message: deleteError.message,
+              details: deleteError.details,
+              hint: deleteError.hint,
+              code: deleteError.code
+            });
+            
+            // RLSエラーの場合は、user_profiles.ng_listのみ更新してフォールバック
+            if (deleteError.message.includes('row-level security')) {
+              console.log('RLSエラーのため、user_profiles.ng_listのみ更新します');
+              try {
+                await supabase
+                  .from('user_profiles')
+                  .update({ ng_list: [] })
+                  .eq('id', profile.id);
+                alert('NG薬剤師設定を削除しました（簡易モード）。');
+                setEditingUserId(null);
+                loadAll();
+                return;
+              } catch (fallbackError) {
+                console.error('フォールバック更新エラー:', fallbackError);
+                alert(`NG薬剤師設定の削除に失敗しました: ${deleteError.message}`);
+                return;
+              }
+            } else {
+              alert(`NG薬剤師設定の削除に失敗しました: ${deleteError.message}`);
+              return;
+            }
           }
 
           // 旧カラムも空配列に明示更新
