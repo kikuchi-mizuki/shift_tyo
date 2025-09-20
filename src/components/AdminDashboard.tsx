@@ -323,7 +323,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           postings: []
         };
       }
-      pharmacyNeeds[pharmacyId].required++;
+      // required_staffフィールドを使用（デフォルトは1）
+      const requiredStaff = posting.required_staff || 1;
+      pharmacyNeeds[pharmacyId].required += requiredStaff;
       pharmacyNeeds[pharmacyId].postings.push(posting);
     });
 
@@ -340,7 +342,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       pharmacy.shortage = Math.max(0, pharmacy.required - pharmacy.matched);
     });
 
-    return pharmacyNeeds;
+    // 不足がある薬局のみを配列で返す
+    const shortagePharmacies = Object.values(pharmacyNeeds).filter(pharmacy => pharmacy.shortage > 0);
+    
+    console.log('analyzePharmacyShortage デバッグ:', {
+      date,
+      dayRequests: dayRequests.length,
+      dayPostings: dayPostings.length,
+      dayMatches: dayMatches.length,
+      pharmacyNeeds: Object.keys(pharmacyNeeds).length,
+      shortagePharmacies: shortagePharmacies.length
+    });
+    
+    return shortagePharmacies;
   };
 
   // 1ヶ月分のAIマッチングの実行
@@ -3045,6 +3059,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   // 日毎の不足薬局分析
                   const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
                   
+                  // デバッグ情報をコンソールに出力
+                  console.log('=== 日毎表示デバッグ ===');
+                  console.log('selectedDate:', selectedDate);
+                  console.log('dayMatches.length:', dayMatches.length);
+                  console.log('dayShortageAnalysis.length:', dayShortageAnalysis.length);
+                  console.log('dayShortageAnalysis:', dayShortageAnalysis);
+                  
                   if (dayMatches.length > 0 && selectedDate) {
                     return (
                       <div className="p-4 border-b border-gray-200">
@@ -3122,6 +3143,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <Brain className="w-4 h-4" />
                           <span>AIマッチング結果を確定する</span>
                         </button>
+                      </div>
+                    );
+                  }
+                  
+                  // AIマッチング結果がない場合でも、不足薬局がある場合は表示
+                  if (dayShortageAnalysis.length > 0 && selectedDate) {
+                    return (
+                      <div className="p-4 border-b border-gray-200">
+                        {/* 不足薬局一覧 */}
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <AlertCircle className="w-4 h-4 text-red-600" />
+                            <h4 className="text-sm font-semibold text-red-800">不足薬局 {dayShortageAnalysis.length}薬局</h4>
+                          </div>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {dayShortageAnalysis.map((pharmacy, index) => (
+                              <div key={index} className="bg-white rounded border p-2 text-xs">
+                                <div className="font-medium text-gray-800">
+                                  {pharmacy.name}（{pharmacy.store_name || '店舗名なし'}）
+                                </div>
+                                <div className="text-gray-600">
+                                  必要人数: {pharmacy.required}人
+                                </div>
+                                <div className="text-gray-600">
+                                  マッチ人数: {pharmacy.matched}人
+                                </div>
+                                <div className="text-red-600 font-medium">
+                                  不足人数: {pharmacy.shortage}人
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     );
                   }
