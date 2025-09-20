@@ -202,13 +202,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     try {
       const shifts: any[] = [];
       
+      // 手動マッチングの状態を確認
+      if (!manualMatches || Object.keys(manualMatches).length === 0) {
+        alert('マッチングする薬剤師が選択されていません。');
+        return;
+      }
+      
       console.log('手動マッチング全体確認:', {
         manualMatches,
         manualMatchesKeys: Object.keys(manualMatches),
         manualMatchesValues: Object.values(manualMatches)
       });
       
-      Object.entries(manualMatches).forEach(([pharmacyId, pharmacistIds]) => {
+      // 各薬局のマッチングを処理
+      for (const [pharmacyId, pharmacistIds] of Object.entries(manualMatches)) {
         console.log('薬局別マッチング確認:', {
           pharmacyId,
           pharmacistIds,
@@ -216,7 +223,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           pharmacistIdsLength: pharmacistIds?.length
         });
         
-        pharmacistIds.forEach((pharmacistId, index) => {
+        // 薬剤師IDが配列でない場合はスキップ
+        if (!Array.isArray(pharmacistIds)) {
+          console.error('薬剤師IDが配列ではありません:', pharmacistIds);
+          continue;
+        }
+        
+        // 各薬剤師を処理
+        for (let index = 0; index < pharmacistIds.length; index++) {
+          const pharmacistId = pharmacistIds[index];
+          
           console.log(`薬剤師${index + 1}確認:`, {
             pharmacistId,
             pharmacistIdType: typeof pharmacistId,
@@ -226,40 +242,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             isEmpty: pharmacistId === ''
           });
           
-          if (pharmacistId && pharmacistId !== '') { // 空の選択をスキップ
-            // UUIDの形式を確認
-            console.log('手動マッチング確認:', {
-              pharmacistId,
-              pharmacyId,
-              pharmacistIdType: typeof pharmacistId,
-              pharmacyIdType: typeof pharmacyId,
-              pharmacistIdLength: pharmacistId?.length,
-              pharmacyIdLength: pharmacyId?.length
-            });
-            
-            // UUIDの形式チェック
-            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-            if (!uuidRegex.test(pharmacistId)) {
-              console.error('Invalid pharmacist ID format:', pharmacistId);
-              return;
-            }
-            if (!uuidRegex.test(pharmacyId)) {
-              console.error('Invalid pharmacy ID format:', pharmacyId);
-              return;
-            }
-            
-            shifts.push({
-              pharmacist_id: pharmacistId,
-              pharmacy_id: pharmacyId,
-              date: date,
-              start_time: '09:00', // デフォルト時間
-              end_time: '18:00',   // デフォルト時間
-              status: 'confirmed',
-              time_slot: 'negotiable'
-            });
+          // 空の選択をスキップ
+          if (!pharmacistId || pharmacistId === '') {
+            console.log(`薬剤師${index + 1}は空の選択のためスキップ`);
+            continue;
           }
-        });
-      });
+          
+          // UUIDの形式チェック
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(pharmacistId)) {
+            console.error('Invalid pharmacist ID format:', pharmacistId);
+            alert(`薬剤師IDの形式が正しくありません: ${pharmacistId}`);
+            return;
+          }
+          if (!uuidRegex.test(pharmacyId)) {
+            console.error('Invalid pharmacy ID format:', pharmacyId);
+            alert(`薬局IDの形式が正しくありません: ${pharmacyId}`);
+            return;
+          }
+          
+          // シフトデータを作成
+          const shiftData = {
+            pharmacist_id: pharmacistId,
+            pharmacy_id: pharmacyId,
+            date: date,
+            start_time: '09:00', // デフォルト時間
+            end_time: '18:00',   // デフォルト時間
+            status: 'confirmed',
+            time_slot: 'negotiable'
+          };
+          
+          console.log('シフトデータ作成:', shiftData);
+          shifts.push(shiftData);
+        }
+      }
       
       if (shifts.length > 0) {
         console.log('手動マッチング確定データ:', shifts);
@@ -272,6 +288,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         await handleConfirmShiftsForDate(date, shifts);
         setManualMatches({});
         console.log('手動マッチングが確定されました:', shifts);
+        
+        // 成功メッセージ
+        alert(`${shifts.length}件のシフトを確定しました。`);
         
         // データベース挿入後の確認
         setTimeout(async () => {
@@ -297,6 +316,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         }, 1000);
       } else {
         console.log('手動マッチングするデータがありません');
+        alert('マッチングするデータがありません。薬剤師を選択してください。');
       }
     } catch (error) {
       console.error('手動マッチングの確定に失敗:', error);
@@ -3301,6 +3321,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                 {index + 1}人目:
                                               </span>
                                               <select
+                                                id={`pharmacist-select-${pharmacy.id}-${index}`}
+                                                name={`pharmacist-select-${pharmacy.id}-${index}`}
                                                 value={manualMatches[pharmacy.id]?.[index] || ''}
                                                 onChange={(e) => {
                                                   const newMatches = [...(manualMatches[pharmacy.id] || [])];
@@ -3912,6 +3934,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         <div className="mb-3 bg-white border rounded p-2">
                           <div className="grid grid-cols-2 gap-2">
                             <select
+                              id="new-request-pharmacist"
+                              name="new-request-pharmacist"
                               className="text-xs border rounded px-2 py-1"
                               value={newRequest.pharmacist_id}
                               onChange={(e) => setNewRequest({ ...newRequest, pharmacist_id: e.target.value })}
@@ -3924,6 +3948,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 ))}
                             </select>
                             <select
+                              id="new-request-priority"
+                              name="new-request-priority"
                               className="text-xs border rounded px-2 py-1"
                               value={newRequest.priority}
                               onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
