@@ -583,13 +583,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       resultMessage += `右側のパネルで詳細なマッチング状況を確認できます。`;
       
-      alert(resultMessage);
+      console.log('1ヶ月分マッチング結果:', resultMessage);
       
       // 1ヶ月分マッチング実行後は、aiMatchesをクリアして日付選択時のみ表示
       setAiMatches([]);
     } catch (error) {
       console.error('1ヶ月分のAIマッチングに失敗:', error);
-      alert('1ヶ月分のAIマッチングに失敗しました。');
+      console.error('1ヶ月分のAIマッチングに失敗しました。');
     } finally {
       setAiMatchingLoading(false);
     }
@@ -2015,12 +2015,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           return;
                 } else {
           console.log('AIマッチングでマッチが見つかりませんでした');
-          alert(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n時間帯やNGリストを確認してください。`);
+          console.log(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n時間帯やNGリストを確認してください。`);
         return;
       }
       } else {
         console.log('希望シフトまたは募集シフトがありません');
-        alert(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n希望シフトと募集シフトの日付・時間帯が一致するものを確認してください。`);
+        console.log(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n希望シフトと募集シフトの日付・時間帯が一致するものを確認してください。`);
         return;
       }
     } catch (error) {
@@ -2538,10 +2538,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       await executeMatching();
       
       console.log('=== 手動マッチング実行完了 ===');
-      alert('マッチング処理を実行しました。データを再読み込みしました。');
+      console.log('マッチング処理を実行しました。データを再読み込みしました。');
     } catch (error) {
       console.error('マッチング実行エラー:', error);
-      alert(`マッチング実行に失敗しました: ${(error as any).message || '不明なエラー'}`);
+      console.error(`マッチング実行に失敗しました: ${(error as any).message || '不明なエラー'}`);
     }
   };
 
