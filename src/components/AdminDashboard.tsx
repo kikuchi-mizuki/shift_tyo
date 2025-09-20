@@ -2994,7 +2994,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (
                         <div className="relative group">
                           <div className="text-[7px] sm:text-[8px] space-y-0.5">
-                            {/* マッチ件数 */}
+                            {/* マッチ件数（マッチング実行後のみ表示） */}
                             {aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">マ{aiMatchesByDate[dateStr].length}</span>
@@ -3002,8 +3002,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             )}
                             
-                            {/* 不足件数 */}
-                            {matchingStatus.shortage > 0 && (
+                            {/* 不足件数（マッチング実行後のみ表示） */}
+                            {matchingStatus.shortage > 0 && (aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0) && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">不{matchingStatus.shortage}</span>
                                 <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
