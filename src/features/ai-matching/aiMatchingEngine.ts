@@ -222,12 +222,29 @@ export class AIMatchingEngine {
     let pharmacyName = '';
     let storeName = '';
     
+    // デバッグ: 利用可能なキーを確認
+    console.log('=== 薬局名取得デバッグ ===');
+    console.log('posting.pharmacy_id:', pharmacyId);
+    console.log('userProfiles keys:', userProfiles ? Object.keys(userProfiles) : 'なし');
+    console.log('userProfiles[pharmacyId]:', userProfiles?.[pharmacyId]);
+    
+    // 全userProfilesの内容を確認
+    if (userProfiles) {
+      console.log('全userProfiles内容:');
+      Object.keys(userProfiles).forEach(key => {
+        console.log(`  ${key}: ${userProfiles[key]?.name || '名前なし'}`);
+      });
+    }
+    
     // 1. 薬局名を取得（user_profilesテーブルから）
     if (userProfiles && userProfiles[pharmacyId]) {
       const profile = userProfiles[pharmacyId];
       if (profile.name && profile.name.trim()) {
         pharmacyName = profile.name.trim();
+        console.log('薬局名取得成功:', pharmacyName);
       }
+    } else {
+      console.log('薬局名取得失敗: userProfiles[pharmacyId]が存在しません');
     }
     
     // 2. 店舗名を取得（shift_postingsテーブルのstore_nameから）
