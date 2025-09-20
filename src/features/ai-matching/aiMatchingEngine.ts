@@ -259,13 +259,11 @@ export class AIMatchingEngine {
       storeName = posting.store_name.trim();
     }
     
-    // 3. 組み合わせて表示
-    if (pharmacyName && storeName) {
-      return `${pharmacyName}(${storeName})`;
+    // 3. 店舗名のみを返す（薬局名と店舗名が同じ場合は店舗名のみ）
+    if (storeName) {
+      return storeName;
     } else if (pharmacyName) {
       return pharmacyName;
-    } else if (storeName) {
-      return storeName;
     }
     
     // 4. フォールバック - userProfilesにデータがない場合の対処
