@@ -181,6 +181,50 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // 日付別のAIマッチング結果を保存する状態
   const [aiMatchesByDate, setAiMatchesByDate] = useState<{ [date: string]: any[] }>({});
+  
+  // 不足薬局の手動マッチング用の状態
+  const [manualMatches, setManualMatches] = useState<{ [pharmacyId: string]: string[] }>({});
+  
+  // 手動マッチング用の薬剤師選択ハンドラー
+  const handlePharmacistSelection = (pharmacyId: string, pharmacistId: string, isSelected: boolean) => {
+    setManualMatches(prev => {
+      const current = prev[pharmacyId] || [];
+      if (isSelected) {
+        return { ...prev, [pharmacyId]: [...current, pharmacistId] };
+      } else {
+        return { ...prev, [pharmacyId]: current.filter(id => id !== pharmacistId) };
+      }
+    });
+  };
+  
+  // 手動マッチングの確定
+  const confirmManualMatches = async (date: string) => {
+    try {
+      const shifts: any[] = [];
+      
+      Object.entries(manualMatches).forEach(([pharmacyId, pharmacistIds]) => {
+        pharmacistIds.forEach(pharmacistId => {
+          shifts.push({
+            pharmacist_id: pharmacistId,
+            pharmacy_id: pharmacyId,
+            date: date,
+            start_time: '09:00', // デフォルト時間
+            end_time: '18:00',   // デフォルト時間
+            status: 'confirmed',
+            time_slot: 'negotiable'
+          });
+        });
+      });
+      
+      if (shifts.length > 0) {
+        await handleConfirmShiftsForDate(date, shifts);
+        setManualMatches({});
+        console.log('手動マッチングが確定されました:', shifts);
+      }
+    } catch (error) {
+      console.error('手動マッチングの確定に失敗:', error);
+    }
+  };
 
   // 月間の不足薬局を分析する関数
   const analyzeMonthlyShortage = (matchesByDate: { [date: string]: any[] }) => {
@@ -206,7 +250,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       // 薬局ごとの募集数とマッチ数を計算
       const pharmacyNeeds: { [pharmacyId: string]: { 
+        id: string;
         name: string; 
+        store_name: string;
         required: number; 
         matched: number; 
         shortage: number; 
@@ -218,7 +264,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const pharmacyId = posting.pharmacy_id;
         if (!pharmacyNeeds[pharmacyId]) {
           pharmacyNeeds[pharmacyId] = {
-            name: posting.store_name || userProfiles[pharmacyId]?.name || `薬局${pharmacyId.slice(-4)}`,
+            id: pharmacyId,
+            name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId.slice(-4)}`,
+            store_name: posting.store_name || '店舗名なし',
             required: 0,
             matched: 0,
             shortage: 0,
@@ -3108,23 +3156,69 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <h4 className="text-sm font-semibold text-red-800">不足薬局 {dayShortageAnalysis.length}薬局</h4>
                             </div>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
-                              {dayShortageAnalysis.map((pharmacy, index) => (
-                                <div key={index} className="bg-white rounded border p-2 text-xs">
-                                  <div className="font-medium text-gray-800">
-                                    {pharmacy.name}（{pharmacy.store_name || '店舗名なし'}）
+                              {dayShortageAnalysis.map((pharmacy, index) => {
+                                // 利用可能な薬剤師を取得
+                                const availablePharmacists = Array.isArray(requests) ? 
+                                  requests.filter((r: any) => r.date === selectedDate) : [];
+                                
+                                return (
+                                  <div key={index} className="bg-white rounded border p-2 text-xs">
+                                    <div className="font-medium text-gray-800">
+                                      {pharmacy.name}（{pharmacy.store_name || '店舗名なし'}）
+                                    </div>
+                                    <div className="text-gray-600">
+                                      必要人数: {pharmacy.required}人
+                                    </div>
+                                    <div className="text-gray-600">
+                                      マッチ人数: {pharmacy.matched}人
+                                    </div>
+                                    <div className="text-red-600 font-medium">
+                                      不足人数: {pharmacy.shortage}人
+                                    </div>
+                                    
+                                    {/* 手動マッチング用のプルダウン */}
+                                    {pharmacy.shortage > 0 && (
+                                      <div className="mt-2">
+                                        <div className="text-xs text-gray-600 mb-1">
+                                          不足分の薬剤師を選択してください:
+                                        </div>
+                                        <div className="space-y-1">
+                                          {availablePharmacists.slice(0, pharmacy.shortage).map((pharmacist, pharmacistIndex) => (
+                                            <label key={pharmacistIndex} className="flex items-center space-x-2">
+                                              <input
+                                                type="checkbox"
+                                                checked={manualMatches[pharmacy.id]?.includes(pharmacist.pharmacist_id) || false}
+                                                onChange={(e) => handlePharmacistSelection(
+                                                  pharmacy.id, 
+                                                  pharmacist.pharmacist_id, 
+                                                  e.target.checked
+                                                )}
+                                                className="w-3 h-3 text-blue-600"
+                                              />
+                                              <span className="text-xs">
+                                                {userProfiles[pharmacist.pharmacist_id]?.name || `薬剤師${pharmacist.pharmacist_id.slice(-4)}`}
+                                              </span>
+                                            </label>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="text-gray-600">
-                                    必要人数: {pharmacy.required}人
-                                  </div>
-                                  <div className="text-gray-600">
-                                    マッチ人数: {pharmacy.matched}人
-                                  </div>
-                                  <div className="text-red-600 font-medium">
-                                    不足人数: {pharmacy.shortage}人
-                                  </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
+                            
+                            {/* 手動マッチング確定ボタン */}
+                            {Object.keys(manualMatches).length > 0 && (
+                              <div className="mt-3 pt-2 border-t border-red-200">
+                                <button
+                                  onClick={() => confirmManualMatches(selectedDate)}
+                                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-xs font-medium"
+                                >
+                                  選択した薬剤師をマッチング確定
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                         
@@ -3154,23 +3248,69 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <h4 className="text-sm font-semibold text-red-800">不足薬局 {dayShortageAnalysis.length}薬局</h4>
                           </div>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
-                            {dayShortageAnalysis.map((pharmacy, index) => (
-                              <div key={index} className="bg-white rounded border p-2 text-xs">
-                                <div className="font-medium text-gray-800">
-                                  {pharmacy.name}（{pharmacy.store_name || '店舗名なし'}）
+                            {dayShortageAnalysis.map((pharmacy, index) => {
+                              // 利用可能な薬剤師を取得
+                              const availablePharmacists = Array.isArray(requests) ? 
+                                requests.filter((r: any) => r.date === selectedDate) : [];
+                              
+                              return (
+                                <div key={index} className="bg-white rounded border p-2 text-xs">
+                                  <div className="font-medium text-gray-800">
+                                    {pharmacy.name}（{pharmacy.store_name || '店舗名なし'}）
+                                  </div>
+                                  <div className="text-gray-600">
+                                    必要人数: {pharmacy.required}人
+                                  </div>
+                                  <div className="text-gray-600">
+                                    マッチ人数: {pharmacy.matched}人
+                                  </div>
+                                  <div className="text-red-600 font-medium">
+                                    不足人数: {pharmacy.shortage}人
+                                  </div>
+                                  
+                                  {/* 手動マッチング用のプルダウン */}
+                                  {pharmacy.shortage > 0 && (
+                                    <div className="mt-2">
+                                      <div className="text-xs text-gray-600 mb-1">
+                                        不足分の薬剤師を選択してください:
+                                      </div>
+                                      <div className="space-y-1">
+                                        {availablePharmacists.slice(0, pharmacy.shortage).map((pharmacist, pharmacistIndex) => (
+                                          <label key={pharmacistIndex} className="flex items-center space-x-2">
+                                            <input
+                                              type="checkbox"
+                                              checked={manualMatches[pharmacy.id]?.includes(pharmacist.pharmacist_id) || false}
+                                              onChange={(e) => handlePharmacistSelection(
+                                                pharmacy.id, 
+                                                pharmacist.pharmacist_id, 
+                                                e.target.checked
+                                              )}
+                                              className="w-3 h-3 text-blue-600"
+                                            />
+                                            <span className="text-xs">
+                                              {userProfiles[pharmacist.pharmacist_id]?.name || `薬剤師${pharmacist.pharmacist_id.slice(-4)}`}
+                                            </span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="text-gray-600">
-                                  必要人数: {pharmacy.required}人
-                                </div>
-                                <div className="text-gray-600">
-                                  マッチ人数: {pharmacy.matched}人
-                                </div>
-                                <div className="text-red-600 font-medium">
-                                  不足人数: {pharmacy.shortage}人
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
+                          
+                          {/* 手動マッチング確定ボタン */}
+                          {Object.keys(manualMatches).length > 0 && (
+                            <div className="mt-3 pt-2 border-t border-red-200">
+                              <button
+                                onClick={() => confirmManualMatches(selectedDate)}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-xs font-medium"
+                              >
+                                選択した薬剤師をマッチング確定
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
