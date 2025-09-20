@@ -1,5 +1,52 @@
 import { supabase } from '../../lib/supabase';
-import { MatchCandidate } from '../types';
+
+export interface MatchCandidate {
+  pharmacist: {
+    id: string;
+    name: string;
+    email: string;
+    rating: number;
+    preferences: {
+      preferredPharmacyTypes: string[];
+      maxCommuteTime: number;
+      preferredTimeSlots: string[];
+    };
+    pastPerformance: {
+      totalShifts: number;
+      averageSatisfaction: number;
+      completionRate: number;
+      noShowRate: number;
+    };
+  };
+  pharmacy: {
+    id: string;
+    name: string;
+    requirements: {
+      requiredSkills: string[];
+      experienceLevel: string;
+      specialNeeds: string[];
+    };
+    environment: {
+      type: string;
+      size: string;
+      specialties: string[];
+    };
+    pastPerformance: {
+      averagePharmacistSatisfaction: number;
+      retentionRate: number;
+      workEnvironment: number;
+    };
+  };
+  timeSlot: {
+    start: string;
+    end: string;
+    date: string;
+    urgency: string;
+    flexibility: number;
+  };
+  compatibilityScore: number;
+  reasons: string[];
+}
 
 export class AIMatchingEngine {
   private isInitialized = false;

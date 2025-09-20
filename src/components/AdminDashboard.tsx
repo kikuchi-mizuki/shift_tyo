@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Calendar, AlertCircle, Star, Brain, Zap } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
-import AIMatchingEngine, { MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
+import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
 import DataCollector from '../features/ai-matching/dataCollector';
 import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 
