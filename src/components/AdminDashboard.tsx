@@ -334,13 +334,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       debugInfo += `\n=== AIマッチングエンジン実行 ===\n`;
       debugInfo += `実行前: 希望 ${monthlyRequests.length}件, 募集 ${monthlyPostings.length}件\n`;
       
-      const monthlyMatches = await aiMatchingEngine.executeOptimalMatching(monthlyRequests, monthlyPostings, {
-        useAPI: false, // APIを使わずにローカルマッチングで重複防止を確実に
-        algorithm: 'hybrid',
-        priority: 'pharmacy_satisfaction' // 薬局の満足度を優先
-      }, userProfiles, ratings);
+      let monthlyMatches = [];
+      try {
+        monthlyMatches = await aiMatchingEngine.executeOptimalMatching(monthlyRequests, monthlyPostings, {
+          useAPI: false, // APIを使わずにローカルマッチングで重複防止を確実に
+          algorithm: 'hybrid',
+          priority: 'pharmacy_satisfaction' // 薬局の満足度を優先
+        }, userProfiles, ratings);
+        
+        debugInfo += `実行成功: マッチング結果 ${monthlyMatches.length}件\n`;
+      } catch (error) {
+        debugInfo += `\n=== エラー発生 ===\n`;
+        debugInfo += `エラーメッセージ: ${error.message}\n`;
+        debugInfo += `エラースタック: ${error.stack}\n`;
+        debugInfo += `エラー詳細: ${JSON.stringify(error, null, 2)}\n`;
+        
+        console.error('AIマッチングエンジン実行エラー:', error);
+        alert(`AIマッチングエラー: ${error.message}`);
+        return;
+      }
       
-      debugInfo += `実行後: マッチング結果 ${monthlyMatches.length}件\n`;
       console.log('マッチング結果:', monthlyMatches);
       
       // マッチング結果の詳細分析
