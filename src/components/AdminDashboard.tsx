@@ -241,9 +241,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       if (shifts.length > 0) {
         console.log('手動マッチング確定データ:', shifts);
+        console.log('データベース挿入前の確認:', {
+          shiftsCount: shifts.length,
+          firstShift: shifts[0],
+          allShifts: shifts
+        });
+        
         await handleConfirmShiftsForDate(date, shifts);
         setManualMatches({});
         console.log('手動マッチングが確定されました:', shifts);
+        
+        // データベース挿入後の確認
+        setTimeout(async () => {
+          try {
+            const { data: insertedData, error: checkError } = await supabase
+              .from('assigned_shifts')
+              .select('*')
+              .eq('date', date)
+              .order('created_at', { ascending: false })
+              .limit(10);
+            
+            if (checkError) {
+              console.error('データベース確認エラー:', checkError);
+            } else {
+              console.log('データベース挿入確認:', {
+                insertedCount: insertedData?.length || 0,
+                insertedData: insertedData
+              });
+            }
+          } catch (error) {
+            console.error('データベース確認エラー:', error);
+          }
+        }, 1000);
       } else {
         console.log('手動マッチングするデータがありません');
       }
@@ -2015,8 +2044,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.log('Predefined shifts provided:', predefinedShifts);
         
         // 事前定義されたシフトをデータベースに保存
-        const { error } = await supabase.from('assigned_shifts').insert(predefinedShifts);
-        if (error) throw error;
+        console.log('データベース挿入実行:', {
+          table: 'assigned_shifts',
+          data: predefinedShifts,
+          dataCount: predefinedShifts.length
+        });
+        
+        const { data: insertResult, error } = await supabase.from('assigned_shifts').insert(predefinedShifts).select();
+        
+        if (error) {
+          console.error('データベース挿入エラー:', error);
+          throw error;
+        }
+        
+        console.log('データベース挿入成功:', {
+          insertResult,
+          insertedCount: insertResult?.length || 0
+        });
         
         console.log(`日付 ${date}: ${predefinedShifts.length}件の事前定義シフトを保存しました`);
         
