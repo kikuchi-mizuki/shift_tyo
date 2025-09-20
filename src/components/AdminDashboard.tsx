@@ -451,31 +451,68 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         });
       }
 
-      // 1ヶ月分のマッチングを実行（重複防止付き）
-      debugInfo += `\n=== AIマッチングエンジン実行 ===\n`;
-      debugInfo += `実行前: 希望 ${monthlyRequests.length}件, 募集 ${monthlyPostings.length}件\n`;
+      // 日付別のマッチングを実行
+      debugInfo += `\n=== 日付別AIマッチングエンジン実行 ===\n`;
       
-      let monthlyMatches = [];
-      try {
-        monthlyMatches = await aiMatchingEngine.executeOptimalMatching(monthlyRequests, monthlyPostings, {
-          useAPI: false, // APIを使わずにローカルマッチングで重複防止を確実に
-          algorithm: 'hybrid',
-          priority: 'pharmacy_satisfaction' // 薬局の満足度を優先
-        }, userProfiles, ratings);
+      // 日付別のマッチング結果を保存
+      const matchesByDate: { [date: string]: any[] } = {};
+      
+      // 現在の月の全ての日付を取得
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const allDates = Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1;
+        return `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      });
+      
+      debugInfo += `処理対象日付: ${allDates.length}日\n`;
+      
+      for (const date of allDates) {
+        debugInfo += `\n--- 日付 ${date} のマッチング ---\n`;
         
-        debugInfo += `実行成功: マッチング結果 ${monthlyMatches.length}件\n`;
-      } catch (error) {
-        debugInfo += `\n=== エラー発生 ===\n`;
-        debugInfo += `エラーメッセージ: ${error.message}\n`;
-        debugInfo += `エラースタック: ${error.stack}\n`;
-        debugInfo += `エラー詳細: ${JSON.stringify(error, null, 2)}\n`;
+        // その日の希望と募集を取得
+        const dayRequests = monthlyRequests.filter((r: any) => r.date === date);
+        const dayPostings = monthlyPostings.filter((p: any) => p.date === date);
         
-        console.error('AIマッチングエンジン実行エラー:', error);
-        alert(`AIマッチングエラー: ${error.message}`);
-        return;
+        debugInfo += `希望: ${dayRequests.length}件, 募集: ${dayPostings.length}件\n`;
+        
+        if (dayRequests.length === 0 || dayPostings.length === 0) {
+          debugInfo += `データ不足のためスキップ\n`;
+          matchesByDate[date] = [];
+          continue;
+        }
+        
+        try {
+          const dayMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
+            useAPI: false,
+            algorithm: 'hybrid',
+            priority: 'pharmacy_satisfaction'
+          }, userProfiles, ratings);
+          
+          matchesByDate[date] = dayMatches;
+          debugInfo += `マッチング成功: ${dayMatches.length}件\n`;
+          
+          // マッチング詳細を表示
+          dayMatches.forEach((match, i) => {
+            debugInfo += `  ${i+1}. 薬剤師: ${match.pharmacist?.name}, 薬局: ${match.pharmacy?.name}\n`;
+          });
+          
+        } catch (error) {
+          debugInfo += `エラー: ${error.message}\n`;
+          matchesByDate[date] = [];
+        }
       }
       
+      // 全マッチング結果を統合
+      const monthlyMatches = Object.values(matchesByDate).flat();
+      debugInfo += `\n=== 統合結果 ===\n`;
+      debugInfo += `総マッチング件数: ${monthlyMatches.length}件\n`;
+      
+      // 日付別のマッチング結果を保存
+      setAiMatchesByDate(matchesByDate);
+      setAiMatches(monthlyMatches);
+      
       console.log('マッチング結果:', monthlyMatches);
+      console.log('日付別マッチング結果:', matchesByDate);
       
       // マッチング結果の詳細分析
       debugInfo += `\n=== マッチング結果詳細 ===\n`;
@@ -2753,8 +2790,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const postingStart = timeToMinutes(ps);
                   const postingEnd = timeToMinutes(pe);
 
-                  // 薬剤師と薬局の時間が重複しているかチェック（より柔軟な条件）
-                  return requestStart < postingEnd && requestEnd > postingStart;
+                  // 薬剤師が薬局の希望時間を完全に満たしているかチェック
+                  return requestStart <= postingStart && requestEnd >= postingEnd;
                 };
 
                 let totalRequired = 0;
