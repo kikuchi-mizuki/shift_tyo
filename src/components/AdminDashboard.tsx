@@ -540,10 +540,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         debugInfo += `   - その他のフィルタリング条件\n`;
       }
       
-      // デバッグ情報をモーダルで表示
+      // デバッグ情報をコンソールに出力
       console.log('DEBUG: debugInfo content:', debugInfo);
       console.log('DEBUG: debugInfo length:', debugInfo.length);
-      alert(debugInfo);
 
       // グローバルなマッチング結果を保存
       setAiMatches(monthlyMatches);

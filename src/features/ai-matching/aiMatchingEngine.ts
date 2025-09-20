@@ -209,7 +209,7 @@ export class AIMatchingEngine {
               flexibility: 0
             },
               compatibilityScore: 0.8,
-              reasons: ['シンプルマッチング']
+              reasons: ['時間適合性マッチング']
             };
             
               candidates.push(candidate);
@@ -233,8 +233,8 @@ export class AIMatchingEngine {
       console.error('generateMatchCandidates エラー:', error);
     }
     
-    // デバッグ情報をアラートで表示
-    alert(debugInfo);
+    // デバッグ情報をコンソールに出力
+    console.log(debugInfo);
     
     console.log(`シンプルマッチング完了: ${candidates.length}件の候補を生成`);
     console.log('candidates:', candidates);
