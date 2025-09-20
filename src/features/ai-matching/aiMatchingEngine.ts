@@ -209,7 +209,7 @@ export class AIMatchingEngine {
               flexibility: 0
             },
               compatibilityScore: 0.8,
-              reasons: ['時間適合性マッチング']
+              reasons: ['マッチング']
             };
             
               candidates.push(candidate);
