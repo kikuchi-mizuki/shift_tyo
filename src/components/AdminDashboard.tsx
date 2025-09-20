@@ -3159,9 +3159,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             </div>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                               {dayShortageAnalysis.map((pharmacy, index) => {
-                                // 利用可能な薬剤師を取得
-                                const availablePharmacists = Array.isArray(requests) ? 
-                                  requests.filter((r: any) => r.date === selectedDate) : [];
+                                // データベースから薬剤師を取得（user_profilesから薬剤師タイプのみ）
+                                const availablePharmacists = Object.values(userProfiles).filter((profile: any) => 
+                                  profile.user_type === 'pharmacist'
+                                );
                                 
                                 return (
                                   <div key={index} className="bg-white rounded border p-2 text-xs">
@@ -3206,10 +3207,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                 {availablePharmacists.map((pharmacist, pharmacistIndex) => (
                                                   <option 
                                                     key={pharmacistIndex} 
-                                                    value={pharmacist.pharmacist_id}
-                                                    disabled={manualMatches[pharmacy.id]?.includes(pharmacist.pharmacist_id) && manualMatches[pharmacy.id]?.[index] !== pharmacist.pharmacist_id}
+                                                    value={pharmacist.id}
+                                                    disabled={manualMatches[pharmacy.id]?.includes(pharmacist.id) && manualMatches[pharmacy.id]?.[index] !== pharmacist.id}
                                                   >
-                                                    {userProfiles[pharmacist.pharmacist_id]?.name || `薬剤師${pharmacist.pharmacist_id.slice(-4)}`}
+                                                    {pharmacist.name || `薬剤師${pharmacist.id.slice(-4)}`}
                                                   </option>
                                                 ))}
                                               </select>
