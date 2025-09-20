@@ -119,8 +119,8 @@ CREATE TRIGGER update_match_outcomes_updated_at BEFORE UPDATE ON match_outcomes 
 CREATE TRIGGER update_pharmacist_profiles_updated_at BEFORE UPDATE ON pharmacist_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_pharmacy_profiles_updated_at BEFORE UPDATE ON pharmacy_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- サンプルデータの挿入（既存のuser_profilesから）
-INSERT INTO pharmacist_profiles (user_id, skills, experience_years, rating, preferred_pharmacy_types, max_commute_time, preferred_time_slots, total_shifts, average_satisfaction, completion_rate, no_show_rate)
+-- DISABLED: サンプルデータの挿入（既存のuser_profilesから）
+-- INSERT INTO pharmacist_profiles (user_id, skills, experience_years, rating, preferred_pharmacy_types, max_commute_time, preferred_time_slots, total_shifts, average_satisfaction, completion_rate, no_show_rate)
 SELECT 
   id,
   ARRAY['調剤', '服薬指導'] as skills,
@@ -137,7 +137,7 @@ FROM user_profiles
 WHERE user_type = 'pharmacist'
 ON CONFLICT (user_id) DO NOTHING;
 
-INSERT INTO pharmacy_profiles (user_id, pharmacy_type, pharmacy_size, specialties, required_skills, experience_level, special_needs, average_pharmacist_satisfaction, retention_rate, work_environment)
+-- INSERT INTO pharmacy_profiles (user_id, pharmacy_type, pharmacy_size, specialties, required_skills, experience_level, special_needs, average_pharmacist_satisfaction, retention_rate, work_environment)
 SELECT 
   id,
   CASE 
@@ -165,8 +165,8 @@ FROM user_profiles
 WHERE user_type = 'pharmacy'
 ON CONFLICT (user_id) DO NOTHING;
 
--- 既存の確定シフトからマッチング結果を生成
-INSERT INTO match_outcomes (pharmacist_id, pharmacy_id, date, start_time, end_time, success, satisfaction_score, efficiency_score, feedback, completion_time, no_show, early_leave)
+-- DISABLED: 既存の確定シフトからマッチング結果を生成
+-- INSERT INTO match_outcomes (pharmacist_id, pharmacy_id, date, start_time, end_time, success, satisfaction_score, efficiency_score, feedback, completion_time, no_show, early_leave)
 SELECT 
   pharmacist_id,
   pharmacy_id,
@@ -184,8 +184,8 @@ FROM assigned_shifts
 WHERE status = 'confirmed'
 ON CONFLICT DO NOTHING;
 
--- 学習データの生成
-INSERT INTO learning_data (input_data, output_data, metadata)
+-- DISABLED: 学習データの生成
+-- INSERT INTO learning_data (input_data, output_data, metadata)
 SELECT 
   jsonb_build_object(
     'pharmacist_id', pharmacist_id,
@@ -215,8 +215,8 @@ SELECT
 FROM match_outcomes
 WHERE success = true;
 
--- マッチング履歴の生成
-INSERT INTO matching_history (date, matching_type, total_requests, total_postings, matched_count, success_rate, average_compatibility_score, execution_time_ms, metadata)
+-- DISABLED: マッチング履歴の生成
+-- INSERT INTO matching_history (date, matching_type, total_requests, total_postings, matched_count, success_rate, average_compatibility_score, execution_time_ms, metadata)
 SELECT 
   date,
   'rule_based' as matching_type,
