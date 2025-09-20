@@ -197,14 +197,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     });
   };
   
-  // 手動マッチングの確定
-  const confirmManualMatches = async (date: string) => {
+  // 不足薬剤師の希望シフトとして保存
+  const saveManualShiftRequests = async (date: string) => {
     try {
-      const shifts: any[] = [];
+      const shiftRequests: any[] = [];
       
       // 手動マッチングの状態を確認
       if (!manualMatches || Object.keys(manualMatches).length === 0) {
-        alert('マッチングする薬剤師が選択されていません。');
+        alert('希望シフトとして保存する薬剤師が選択されていません。');
         return;
       }
       
@@ -272,42 +272,64 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             return;
           }
           
-          // シフトデータを作成
-          const shiftData = {
+          // 薬局の応募時間を取得
+          const pharmacyPosting = postings.find((p: any) => p.pharmacy_id === pharmacyId && p.date === date);
+          const startTime = pharmacyPosting?.start_time || '09:00:00';
+          const endTime = pharmacyPosting?.end_time || '18:00:00';
+          
+          // 希望シフトデータを作成
+          const shiftRequestData = {
             pharmacist_id: pharmacistId,
-            pharmacy_id: pharmacyId,
             date: date,
-            start_time: '09:00', // デフォルト時間
-            end_time: '18:00',   // デフォルト時間
-            status: 'confirmed',
-            time_slot: 'negotiable'
+            time_slot: 'custom',
+            start_time: startTime,
+            end_time: endTime,
+            priority: 'high', // 手動選択なので高優先度
+            memo: `手動選択: 薬局${pharmacyId.slice(-4)}の応募時間に合わせて希望`,
+            status: 'pending'
           };
           
-          console.log('シフトデータ作成:', shiftData);
-          shifts.push(shiftData);
+          console.log('希望シフトデータ作成:', shiftRequestData);
+          shiftRequests.push(shiftRequestData);
         }
       }
       
-      if (shifts.length > 0) {
-        console.log('手動マッチング確定データ:', shifts);
+      if (shiftRequests.length > 0) {
+        console.log('希望シフト保存データ:', shiftRequests);
         console.log('データベース挿入前の確認:', {
-          shiftsCount: shifts.length,
-          firstShift: shifts[0],
-          allShifts: shifts
+          shiftRequestsCount: shiftRequests.length,
+          firstRequest: shiftRequests[0],
+          allRequests: shiftRequests
         });
         
-        await handleConfirmShiftsForDate(date, shifts);
+        // shift_requestsテーブルに保存
+        const { data: insertResult, error } = await supabase
+          .from('shift_requests')
+          .insert(shiftRequests)
+          .select();
+        
+        if (error) {
+          console.error('希望シフトの保存に失敗:', error);
+          alert(`希望シフトの保存に失敗しました: ${error.message}`);
+          return;
+        }
+        
+        console.log('希望シフト保存成功:', insertResult);
         setManualMatches({});
-        console.log('手動マッチングが確定されました:', shifts);
         
         // 成功メッセージ
-        alert(`${shifts.length}件のシフトを確定しました。`);
+        alert(`${shiftRequests.length}件の希望シフトを保存しました。AIマッチングを実行します。`);
+        
+        // AIマッチングを再実行
+        console.log('AIマッチングを再実行中...');
+        await executeMonthlyAIMatching();
+        console.log('AIマッチング再実行完了');
         
         // データベース挿入後の確認
         setTimeout(async () => {
           try {
             const { data: insertedData, error: checkError } = await supabase
-              .from('assigned_shifts')
+              .from('shift_requests')
               .select('*')
               .eq('date', date)
               .order('created_at', { ascending: false })
@@ -316,7 +338,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             if (checkError) {
               console.error('データベース確認エラー:', checkError);
             } else {
-              console.log('データベース挿入確認:', {
+              console.log('希望シフト保存確認:', {
                 insertedCount: insertedData?.length || 0,
                 insertedData: insertedData
               });
@@ -326,12 +348,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           }
         }, 1000);
       } else {
-        console.log('手動マッチングするデータがありません');
-        alert('マッチングするデータがありません。薬剤師を選択してください。');
+        console.log('希望シフトとして保存するデータがありません');
+        alert('希望シフトとして保存するデータがありません。薬剤師を選択してください。');
       }
     } catch (error) {
-      console.error('手動マッチングの確定に失敗:', error);
-      alert(`手動マッチングの確定に失敗しました: ${(error as any).message || 'Unknown error'}`);
+      console.error('希望シフトの保存に失敗:', error);
+      alert(`希望シフトの保存に失敗しました: ${(error as any).message || 'Unknown error'}`);
     }
   };
 
@@ -3325,7 +3347,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     {pharmacy.shortage > 0 && (
                                       <div className="mt-2">
                                         <div className="text-xs text-gray-600 mb-1">
-                                          不足分の薬剤師を選択してください:
+                                          不足分の薬剤師を希望シフトとして選択してください:
                                         </div>
                                         <div className="space-y-1">
                                           {Array.from({ length: pharmacy.shortage }, (_, index) => (
@@ -3378,16 +3400,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             </div>
                             
                             {/* 手動マッチング確定ボタン */}
-                            {Object.values(manualMatches).some(matches => matches.some(id => id && id !== '')) && (
-                              <div className="mt-3 pt-2 border-t border-red-200">
-                                <button
-                                  onClick={() => confirmManualMatches(selectedDate)}
-                                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-xs font-medium"
-                                >
-                                  選択した薬剤師をマッチング確定
-                                </button>
-                              </div>
-                            )}
+        {Object.values(manualMatches).some(matches => matches.some(id => id && id !== '')) && (
+          <div className="mt-3 pt-2 border-t border-red-200">
+            <button
+              onClick={() => saveManualShiftRequests(selectedDate)}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-xs font-medium"
+            >
+              選択した薬剤師を希望シフトとして保存
+            </button>
+          </div>
+        )}
                           </div>
                         )}
                         
