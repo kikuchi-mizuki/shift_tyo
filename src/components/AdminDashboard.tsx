@@ -189,8 +189,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     
     console.log('analyzeMonthlyShortage開始:', { matchesByDate, requests: requests?.length, postings: postings?.length });
     
+    // matchesByDateが空の場合は、全postingsから分析
+    const datesToAnalyze = Object.keys(matchesByDate).length > 0 ? Object.keys(matchesByDate) : 
+      Array.from(new Set(postings?.map(p => p.date) || []));
+    
+    console.log('分析対象日付:', datesToAnalyze);
+    
     // 各日付の不足状況を分析
-    Object.keys(matchesByDate).forEach(date => {
+    datesToAnalyze.forEach(date => {
       console.log(`日付 ${date} の分析開始`);
       const dayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
       const dayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
@@ -205,7 +211,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         postings: any[] 
       } } = {};
       
-      // 募集数を集計
+      // 募集数を集計（required_staffを使用）
       dayPostings.forEach(posting => {
         const pharmacyId = posting.pharmacy_id;
         if (!pharmacyNeeds[pharmacyId]) {
@@ -217,8 +223,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             postings: []
           };
         }
-        pharmacyNeeds[pharmacyId].required++;
+        // required_staffフィールドを使用（デフォルトは1）
+        const requiredStaff = posting.required_staff || 1;
+        pharmacyNeeds[pharmacyId].required += requiredStaff;
         pharmacyNeeds[pharmacyId].postings.push(posting);
+        console.log(`薬局 ${pharmacyId}: 募集${requiredStaff}人追加, 合計${pharmacyNeeds[pharmacyId].required}人`);
       });
       
       // マッチ数を集計
@@ -226,6 +235,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const pharmacyId = match.pharmacy.id;
         if (pharmacyNeeds[pharmacyId]) {
           pharmacyNeeds[pharmacyId].matched++;
+          console.log(`薬局 ${pharmacyId}: マッチ1人追加, 合計${pharmacyNeeds[pharmacyId].matched}人`);
         }
       });
       
