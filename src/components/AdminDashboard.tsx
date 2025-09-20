@@ -187,8 +187,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     const shortagePharmacies: any[] = [];
     let totalShortage = 0;
     
+    console.log('analyzeMonthlyShortage開始:', { matchesByDate, requests: requests?.length, postings: postings?.length });
+    
     // 各日付の不足状況を分析
     Object.keys(matchesByDate).forEach(date => {
+      console.log(`日付 ${date} の分析開始`);
       const dayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
       const dayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
       const dayMatches = matchesByDate[date] || [];
@@ -229,6 +232,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // 不足数を計算
       Object.values(pharmacyNeeds).forEach(pharmacy => {
         pharmacy.shortage = Math.max(0, pharmacy.required - pharmacy.matched);
+        console.log(`薬局 ${pharmacy.name}: 必要${pharmacy.required}人, マッチ${pharmacy.matched}人, 不足${pharmacy.shortage}人`);
         if (pharmacy.shortage > 0) {
           totalShortage += pharmacy.shortage;
           shortagePharmacies.push({
@@ -238,6 +242,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             start_time: pharmacy.postings[0]?.start_time || '',
             end_time: pharmacy.postings[0]?.end_time || ''
           });
+          console.log(`不足薬局追加: ${pharmacy.name}, 不足${pharmacy.shortage}人`);
         }
       });
     });
@@ -494,7 +499,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const datesWithMatches = Object.keys(matchesByDate).length;
       
       // 不足薬局の分析
+      console.log('不足薬局分析開始:', { matchesByDate, requests: requests?.length, postings: postings?.length });
       const shortageAnalysis = analyzeMonthlyShortage(matchesByDate);
+      console.log('不足薬局分析結果:', shortageAnalysis);
       
       // 詳細な結果表示
       let resultMessage = `1ヶ月分のマッチングが完了しました。\n\n`;
