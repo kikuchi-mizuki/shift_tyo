@@ -423,7 +423,7 @@ export class AIMatchingEngine {
       console.log(`生成された候補: ${candidates.length}件`);
       
       // 薬局の応募満足度を優先する最適化アルゴリズム
-      const result = await this.executePharmacySatisfactionMatching(candidates, requests, postings, options?.priority);
+      const result = await this.executePharmacySatisfactionMatching(candidates, requests, postings, options?.priority, ratings);
       console.log('薬局満足度優先マッチング結果:', result);
       
       debugInfo += `\n=== 最終結果 ===\n`;
@@ -453,7 +453,8 @@ export class AIMatchingEngine {
     candidates: MatchCandidate[],
     requests: any[],
     postings: any[],
-    priority?: string
+    priority?: string,
+    ratings?: any[]
   ): Promise<MatchCandidate[]> {
     if (priority !== 'pharmacy_satisfaction') {
       // 従来の貪欲法アルゴリズム
@@ -468,7 +469,7 @@ export class AIMatchingEngine {
     console.log('薬局需要分析結果:', pharmacyNeeds);
     
     // 薬剤師の評価と優先度を考慮
-    const pharmacistScores = this.calculatePharmacistScores(requests);
+    const pharmacistScores = this.calculatePharmacistScores(requests, ratings);
     console.log('薬剤師スコア:', pharmacistScores);
     
     // 薬局の応募満足度を最大化するマッチング
@@ -564,7 +565,7 @@ export class AIMatchingEngine {
   /**
    * 薬剤師のスコア計算
    */
-  private calculatePharmacistScores(requests: any[]): { [pharmacistId: string]: number } {
+  private calculatePharmacistScores(requests: any[], ratings?: any[]): { [pharmacistId: string]: number } {
     const scores: { [pharmacistId: string]: number } = {};
     
     requests.forEach(request => {
@@ -573,11 +574,24 @@ export class AIMatchingEngine {
         scores[pharmacistId] = 0;
       }
       
-      // 優先度に基づくスコア
+      // 1. 優先度に基づくスコア
       const priorityScore = request.priority === 'high' ? 3 : request.priority === 'medium' ? 2 : 1;
       scores[pharmacistId] += priorityScore;
+      
+      // 2. 評価データに基づくスコア
+      if (ratings && ratings.length > 0) {
+        const pharmacistRatings = ratings.filter(r => r.pharmacist_id === pharmacistId);
+        if (pharmacistRatings.length > 0) {
+          const averageRating = pharmacistRatings.reduce((sum, r) => sum + (r.rating || 0), 0) / pharmacistRatings.length;
+          scores[pharmacistId] += averageRating * 2; // 評価を2倍の重みで追加
+        }
+      }
+      
+      // 3. 過去の実績に基づくスコア（将来実装）
+      // 4. 専門性に基づくスコア（将来実装）
     });
     
+    console.log('薬剤師スコア計算結果:', scores);
     return scores;
   }
 
