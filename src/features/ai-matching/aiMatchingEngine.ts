@@ -91,35 +91,80 @@ export class AIMatchingEngine {
     try {
       debugInfo += `=== シンプルマッチング処理開始 ===\n`;
       
-      for (const request of requests) {
-        debugInfo += `\n薬剤師 ${request.pharmacist_id} の希望を処理中:\n`;
-        debugInfo += `  日付: ${request.date}, 時間: ${request.start_time}-${request.end_time}\n`;
-        debugInfo += `  薬剤師名: ${this.getPharmacistName(request, userProfiles)}\n`;
-        debugInfo += `  薬剤師名取得元: ${this.getPharmacistNameSource(request, userProfiles)}\n`;
-        
-        for (const posting of postings) {
-          debugInfo += `  薬局 ${posting.pharmacy_id} との組み合わせをチェック:\n`;
-          debugInfo += `    日付: ${posting.date}, 時間: ${posting.start_time}-${posting.end_time}\n`;
-          debugInfo += `    薬局名: ${this.getPharmacyName(posting, userProfiles)}\n`;
-          debugInfo += `    取得元: ${this.getPharmacyNameSource(posting, userProfiles)}\n`;
-          debugInfo += `    利用可能なフィールド:\n`;
-          debugInfo += `      - posting.pharmacy_id: "${posting.pharmacy_id}"\n`;
-          debugInfo += `      - posting.store_name: "${posting.store_name || 'なし'}"\n`;
-          debugInfo += `      - userProfiles[${posting.pharmacy_id}]: "${userProfiles?.[posting.pharmacy_id]?.name || 'なし'}"\n`;
-          debugInfo += `      - userProfiles存在: ${userProfiles ? 'あり' : 'なし'}\n`;
+      // 重複防止のためのセット
+      const usedPharmacists = new Set<string>();
+      const pharmacyUsageCount = new Map<string, number>();
+      
+      // 薬局の募集人数を事前計算
+      const pharmacyNeeds = new Map<string, number>();
+      postings.forEach(posting => {
+        const pharmacyId = posting.pharmacy_id;
+        const requiredStaff = posting.required_staff || 1;
+        pharmacyNeeds.set(pharmacyId, (pharmacyNeeds.get(pharmacyId) || 0) + requiredStaff);
+      });
+      
+      debugInfo += `薬局募集人数: ${JSON.stringify(Object.fromEntries(pharmacyNeeds))}\n\n`;
+      
+      // すべての薬剤師がマッチングされるまで繰り返し処理
+      let hasProgress = true;
+      let iteration = 0;
+      const maxIterations = 10; // 無限ループ防止
+
+      while (hasProgress && iteration < maxIterations) {
+        hasProgress = false;
+        iteration++;
+        debugInfo += `\n=== 候補生成反復処理 ${iteration} 回目 ===\n`;
+
+        for (const request of requests) {
+          // 既に使用済みの薬剤師はスキップ
+          if (usedPharmacists.has(request.pharmacist_id)) {
+            debugInfo += `薬剤師 ${request.pharmacist_id} は既に使用済み - スキップ\n`;
+            continue;
+          }
           
-          // 基本的な条件チェック
-          const dateMatch = request.date === posting.date;
-          const timeCompatible = this.isBasicCompatible(request, posting);
+          debugInfo += `\n薬剤師 ${request.pharmacist_id} の希望を処理中:\n`;
+          debugInfo += `  日付: ${request.date}, 時間: ${request.start_time}-${request.end_time}\n`;
+          debugInfo += `  薬剤師名: ${this.getPharmacistName(request, userProfiles)}\n`;
+          debugInfo += `  薬剤師名取得元: ${this.getPharmacistNameSource(request, userProfiles)}\n`;
           
-          debugInfo += `    日付一致: ${dateMatch}\n`;
-          debugInfo += `    時間適合: ${timeCompatible}\n`;
-          
-          if (dateMatch && timeCompatible) {
-            debugInfo += `    → マッチング候補を作成\n`;
+          for (const posting of postings) {
+            const pharmacyId = posting.pharmacy_id;
+            const currentUsage = pharmacyUsageCount.get(pharmacyId) || 0;
+            const maxUsage = pharmacyNeeds.get(pharmacyId) || 0;
             
-            // シンプルな候補を作成
-            const candidate: MatchCandidate = {
+            // 薬局の募集人数をチェック
+            if (currentUsage >= maxUsage) {
+              debugInfo += `  薬局 ${pharmacyId} は募集人数に達している (${currentUsage}/${maxUsage}) - スキップ\n`;
+              continue;
+            }
+            
+            debugInfo += `  薬局 ${posting.pharmacy_id} との組み合わせをチェック:\n`;
+            debugInfo += `    日付: ${posting.date}, 時間: ${posting.start_time}-${posting.end_time}\n`;
+            debugInfo += `    薬局名: ${this.getPharmacyName(posting, userProfiles)}\n`;
+            debugInfo += `    取得元: ${this.getPharmacyNameSource(posting, userProfiles)}\n`;
+            debugInfo += `    利用可能なフィールド:\n`;
+            debugInfo += `      - posting.pharmacy_id: "${posting.pharmacy_id}"\n`;
+            debugInfo += `      - posting.store_name: "${posting.store_name || 'なし'}"\n`;
+            debugInfo += `      - userProfiles[${posting.pharmacy_id}]: "${userProfiles?.[posting.pharmacy_id]?.name || 'なし'}"\n`;
+            debugInfo += `      - userProfiles存在: ${userProfiles ? 'あり' : 'なし'}\n`;
+            
+            // 基本的な条件チェック
+            const dateMatch = request.date === posting.date;
+            const timeCompatible = this.isBasicCompatible(request, posting);
+            
+            debugInfo += `    日付一致: ${dateMatch}\n`;
+            debugInfo += `    時間適合: ${timeCompatible}\n`;
+            
+            if (dateMatch && timeCompatible) {
+              debugInfo += `    → マッチング候補を作成\n`;
+              
+              // 重複防止の更新
+              usedPharmacists.add(request.pharmacist_id);
+              pharmacyUsageCount.set(pharmacyId, currentUsage + 1);
+              hasProgress = true; // 進捗があった
+              
+              // シンプルな候補を作成
+              const candidate: MatchCandidate = {
               pharmacist: {
                 id: request.pharmacist_id,
                 name: this.getPharmacistName(request, userProfiles),
@@ -167,11 +212,12 @@ export class AIMatchingEngine {
               reasons: ['シンプルマッチング']
             };
             
-            candidates.push(candidate);
-            debugInfo += `    → 候補追加完了\n`;
-            break; // 同じ日付で薬剤師は1つの薬局にのみマッチ
-          } else {
-            debugInfo += `    → 条件不一致のためスキップ\n`;
+              candidates.push(candidate);
+              debugInfo += `    → 候補追加完了\n`;
+              break; // マッチしたら次の薬剤師へ
+            } else {
+              debugInfo += `    → 条件不一致のためスキップ\n`;
+            }
           }
         }
       }
@@ -415,12 +461,15 @@ export class AIMatchingEngine {
     }
 
     console.log('薬局の応募満足度を優先したマッチングを実行');
+    console.log('入力候補数:', candidates.length);
 
     // 薬局ごとの募集状況を分析
     const pharmacyNeeds = this.analyzePharmacyNeeds(postings);
+    console.log('薬局需要分析結果:', pharmacyNeeds);
     
     // 薬剤師の評価と優先度を考慮
     const pharmacistScores = this.calculatePharmacistScores(requests);
+    console.log('薬剤師スコア:', pharmacistScores);
     
     // 薬局の応募満足度を最大化するマッチング
     const selectedMatches: MatchCandidate[] = [];
@@ -431,31 +480,61 @@ export class AIMatchingEngine {
     const sortedPharmacies = Object.entries(pharmacyNeeds)
       .sort(([, a], [, b]) => b.priority - a.priority);
 
-    for (const [pharmacyId, need] of sortedPharmacies) {
-      const currentUsage = pharmacyUsageCount.get(pharmacyId) || 0;
-      
-      // 薬局の募集人数をチェック
-      if (currentUsage >= need.count) continue;
+    console.log('薬局処理順序:', sortedPharmacies.map(([id, need]) => `${id}: ${need.count}人`));
 
-      // この薬局に適合する薬剤師候補を取得
-      const availableCandidates = candidates.filter(candidate => 
-        candidate.pharmacy.id === pharmacyId &&
-        !usedPharmacists.has(candidate.pharmacist.id)
-      );
+    // すべての薬局が満杯になるまで繰り返し処理
+    let hasProgress = true;
+    let iteration = 0;
+    const maxIterations = 10; // 無限ループ防止
 
-      if (availableCandidates.length === 0) continue;
+    while (hasProgress && iteration < maxIterations) {
+      hasProgress = false;
+      iteration++;
+      console.log(`\n=== 反復処理 ${iteration} 回目 ===`);
 
-      // 最も評価の高い薬剤師を選択
-      const bestCandidate = availableCandidates.reduce((best, current) => {
-        const currentScore = pharmacistScores[current.pharmacist.id] || 0;
-        const bestScore = pharmacistScores[best.pharmacist.id] || 0;
-        return currentScore > bestScore ? current : best;
-      });
+      for (const [pharmacyId, need] of sortedPharmacies) {
+        const currentUsage = pharmacyUsageCount.get(pharmacyId) || 0;
+        
+        console.log(`薬局 ${pharmacyId} の処理: 現在使用 ${currentUsage}/${need.count}`);
+        
+        // 薬局の募集人数をチェック
+        if (currentUsage >= need.count) {
+          console.log(`薬局 ${pharmacyId} は募集人数に達している - スキップ`);
+          continue;
+        }
 
-      selectedMatches.push(bestCandidate);
-      usedPharmacists.add(bestCandidate.pharmacist.id);
-      pharmacyUsageCount.set(pharmacyId, currentUsage + 1);
+        // この薬局に適合する薬剤師候補を取得
+        const availableCandidates = candidates.filter(candidate => 
+          candidate.pharmacy.id === pharmacyId &&
+          !usedPharmacists.has(candidate.pharmacist.id)
+        );
+
+        console.log(`薬局 ${pharmacyId} の利用可能候補: ${availableCandidates.length}件`);
+
+        if (availableCandidates.length === 0) {
+          console.log(`薬局 ${pharmacyId} に利用可能な候補なし - スキップ`);
+          continue;
+        }
+
+        // 最も評価の高い薬剤師を選択
+        const bestCandidate = availableCandidates.reduce((best, current) => {
+          const currentScore = pharmacistScores[current.pharmacist.id] || 0;
+          const bestScore = pharmacistScores[best.pharmacist.id] || 0;
+          return currentScore > bestScore ? current : best;
+        });
+
+        console.log(`薬局 ${pharmacyId} に薬剤師 ${bestCandidate.pharmacist.id} をマッチング`);
+        selectedMatches.push(bestCandidate);
+        usedPharmacists.add(bestCandidate.pharmacist.id);
+        pharmacyUsageCount.set(pharmacyId, currentUsage + 1);
+        hasProgress = true; // 進捗があった
+      }
     }
+
+    console.log(`\n=== 最終結果 ===`);
+    console.log(`処理完了: ${selectedMatches.length}件のマッチング`);
+    console.log(`薬局使用状況:`, Object.fromEntries(pharmacyUsageCount));
+    console.log(`薬局需要状況:`, pharmacyNeeds);
 
     console.log(`薬局満足度優先マッチング完了: ${selectedMatches.length}件`);
     return selectedMatches;
