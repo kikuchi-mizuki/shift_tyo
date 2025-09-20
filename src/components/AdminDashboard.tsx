@@ -204,15 +204,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       Object.entries(manualMatches).forEach(([pharmacyId, pharmacistIds]) => {
         pharmacistIds.forEach(pharmacistId => {
-          shifts.push({
-            pharmacist_id: pharmacistId,
-            pharmacy_id: pharmacyId,
-            date: date,
-            start_time: '09:00', // デフォルト時間
-            end_time: '18:00',   // デフォルト時間
-            status: 'confirmed',
-            time_slot: 'negotiable'
-          });
+          if (pharmacistId && pharmacistId !== '') { // 空の選択をスキップ
+            shifts.push({
+              pharmacist_id: pharmacistId,
+              pharmacy_id: pharmacyId,
+              date: date,
+              start_time: '09:00', // デフォルト時間
+              end_time: '18:00',   // デフォルト時間
+              status: 'confirmed',
+              time_slot: 'negotiable'
+            });
+          }
         });
       });
       
@@ -3183,22 +3185,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                           不足分の薬剤師を選択してください:
                                         </div>
                                         <div className="space-y-1">
-                                          {availablePharmacists.slice(0, pharmacy.shortage).map((pharmacist, pharmacistIndex) => (
-                                            <label key={pharmacistIndex} className="flex items-center space-x-2">
-                                              <input
-                                                type="checkbox"
-                                                checked={manualMatches[pharmacy.id]?.includes(pharmacist.pharmacist_id) || false}
-                                                onChange={(e) => handlePharmacistSelection(
-                                                  pharmacy.id, 
-                                                  pharmacist.pharmacist_id, 
-                                                  e.target.checked
-                                                )}
-                                                className="w-3 h-3 text-blue-600"
-                                              />
-                                              <span className="text-xs">
-                                                {userProfiles[pharmacist.pharmacist_id]?.name || `薬剤師${pharmacist.pharmacist_id.slice(-4)}`}
+                                          {Array.from({ length: pharmacy.shortage }, (_, index) => (
+                                            <div key={index} className="flex items-center space-x-2">
+                                              <span className="text-xs text-gray-500 w-8">
+                                                {index + 1}人目:
                                               </span>
-                                            </label>
+                                              <select
+                                                value={manualMatches[pharmacy.id]?.[index] || ''}
+                                                onChange={(e) => {
+                                                  const newMatches = [...(manualMatches[pharmacy.id] || [])];
+                                                  newMatches[index] = e.target.value;
+                                                  setManualMatches(prev => ({
+                                                    ...prev,
+                                                    [pharmacy.id]: newMatches
+                                                  }));
+                                                }}
+                                                className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+                                              >
+                                                <option value="">薬剤師を選択してください</option>
+                                                {availablePharmacists.map((pharmacist, pharmacistIndex) => (
+                                                  <option 
+                                                    key={pharmacistIndex} 
+                                                    value={pharmacist.pharmacist_id}
+                                                    disabled={manualMatches[pharmacy.id]?.includes(pharmacist.pharmacist_id) && manualMatches[pharmacy.id]?.[index] !== pharmacist.pharmacist_id}
+                                                  >
+                                                    {userProfiles[pharmacist.pharmacist_id]?.name || `薬剤師${pharmacist.pharmacist_id.slice(-4)}`}
+                                                  </option>
+                                                ))}
+                                              </select>
+                                            </div>
                                           ))}
                                         </div>
                                       </div>
@@ -3209,7 +3224,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             </div>
                             
                             {/* 手動マッチング確定ボタン */}
-                            {Object.keys(manualMatches).length > 0 && (
+                            {Object.values(manualMatches).some(matches => matches.some(id => id && id !== '')) && (
                               <div className="mt-3 pt-2 border-t border-red-200">
                                 <button
                                   onClick={() => confirmManualMatches(selectedDate)}
@@ -3275,22 +3290,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                         不足分の薬剤師を選択してください:
                                       </div>
                                       <div className="space-y-1">
-                                        {availablePharmacists.slice(0, pharmacy.shortage).map((pharmacist, pharmacistIndex) => (
-                                          <label key={pharmacistIndex} className="flex items-center space-x-2">
-                                            <input
-                                              type="checkbox"
-                                              checked={manualMatches[pharmacy.id]?.includes(pharmacist.pharmacist_id) || false}
-                                              onChange={(e) => handlePharmacistSelection(
-                                                pharmacy.id, 
-                                                pharmacist.pharmacist_id, 
-                                                e.target.checked
-                                              )}
-                                              className="w-3 h-3 text-blue-600"
-                                            />
-                                            <span className="text-xs">
-                                              {userProfiles[pharmacist.pharmacist_id]?.name || `薬剤師${pharmacist.pharmacist_id.slice(-4)}`}
+                                        {Array.from({ length: pharmacy.shortage }, (_, index) => (
+                                          <div key={index} className="flex items-center space-x-2">
+                                            <span className="text-xs text-gray-500 w-8">
+                                              {index + 1}人目:
                                             </span>
-                                          </label>
+                                            <select
+                                              value={manualMatches[pharmacy.id]?.[index] || ''}
+                                              onChange={(e) => {
+                                                const newMatches = [...(manualMatches[pharmacy.id] || [])];
+                                                newMatches[index] = e.target.value;
+                                                setManualMatches(prev => ({
+                                                  ...prev,
+                                                  [pharmacy.id]: newMatches
+                                                }));
+                                              }}
+                                              className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+                                            >
+                                              <option value="">薬剤師を選択してください</option>
+                                              {availablePharmacists.map((pharmacist, pharmacistIndex) => (
+                                                <option 
+                                                  key={pharmacistIndex} 
+                                                  value={pharmacist.pharmacist_id}
+                                                  disabled={manualMatches[pharmacy.id]?.includes(pharmacist.pharmacist_id) && manualMatches[pharmacy.id]?.[index] !== pharmacist.pharmacist_id}
+                                                >
+                                                  {userProfiles[pharmacist.pharmacist_id]?.name || `薬剤師${pharmacist.pharmacist_id.slice(-4)}`}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
                                         ))}
                                       </div>
                                     </div>
@@ -3301,7 +3329,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                           
                           {/* 手動マッチング確定ボタン */}
-                          {Object.keys(manualMatches).length > 0 && (
+                          {Object.values(manualMatches).some(matches => matches.some(id => id && id !== '')) && (
                             <div className="mt-3 pt-2 border-t border-red-200">
                               <button
                                 onClick={() => confirmManualMatches(selectedDate)}
