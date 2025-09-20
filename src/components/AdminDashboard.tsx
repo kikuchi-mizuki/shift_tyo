@@ -195,14 +195,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     
     console.log('分析対象日付:', datesToAnalyze);
     
-    // デバッグ情報をモーダルで表示
-    let analysisDebug = `=== 不足薬局分析デバッグ ===\n`;
-    analysisDebug += `matchesByDate日数: ${Object.keys(matchesByDate).length}\n`;
-    analysisDebug += `分析対象日付: ${datesToAnalyze.length}日\n`;
-    analysisDebug += `リクエスト数: ${requests?.length || 0}件\n`;
-    analysisDebug += `ポスティング数: ${postings?.length || 0}件\n\n`;
-    
-    analysisDebug += `=== 日付別分析 ===\n`;
     
     // 各日付の不足状況を分析
     datesToAnalyze.forEach(date => {
@@ -211,10 +203,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const dayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
       const dayMatches = matchesByDate[date] || [];
       
-      analysisDebug += `\n日付: ${date}\n`;
-      analysisDebug += `  リクエスト: ${dayRequests.length}件\n`;
-      analysisDebug += `  ポスティング: ${dayPostings.length}件\n`;
-      analysisDebug += `  マッチ: ${dayMatches.length}件\n`;
       
       // 薬局ごとの募集数とマッチ数を計算
       const pharmacyNeeds: { [pharmacyId: string]: { 
@@ -271,24 +259,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       });
     });
     
-    // 最終結果をデバッグ情報に追加
-    analysisDebug += `\n=== 最終結果 ===\n`;
-    analysisDebug += `不足総数: ${totalShortage}人\n`;
-    analysisDebug += `不足薬局数: ${shortagePharmacies.length}薬局\n`;
-    
-    if (shortagePharmacies.length > 0) {
-      analysisDebug += `\n=== 不足薬局詳細 ===\n`;
-      shortagePharmacies.forEach((pharmacy, index) => {
-        analysisDebug += `${index + 1}. ${pharmacy.name}（${pharmacy.store_name || '店舗名なし'}）\n`;
-        analysisDebug += `   日付: ${pharmacy.date}\n`;
-        analysisDebug += `   必要人数: ${pharmacy.required}人\n`;
-        analysisDebug += `   マッチ人数: ${pharmacy.matched}人\n`;
-        analysisDebug += `   不足人数: ${pharmacy.shortage}人\n\n`;
-      });
-    }
-    
-    // デバッグ情報をモーダルで表示
-    alert(analysisDebug);
     
     return {
       totalShortage,
@@ -345,14 +315,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     // 不足がある薬局のみを配列で返す
     const shortagePharmacies = Object.values(pharmacyNeeds).filter(pharmacy => pharmacy.shortage > 0);
     
-    console.log('analyzePharmacyShortage デバッグ:', {
-      date,
-      dayRequests: dayRequests.length,
-      dayPostings: dayPostings.length,
-      dayMatches: dayMatches.length,
-      pharmacyNeeds: Object.keys(pharmacyNeeds).length,
-      shortagePharmacies: shortagePharmacies.length
-    });
     
     return shortagePharmacies;
   };
@@ -560,31 +522,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const shortageAnalysis = analyzeMonthlyShortage(matchesByDate);
       console.log('不足薬局分析結果:', shortageAnalysis);
       
-      // デバッグ情報をモーダルで表示
-      let debugMessage = `=== 不足薬局分析デバッグ ===\n`;
-      debugMessage += `分析対象日付: ${Object.keys(matchesByDate).length}日\n`;
-      debugMessage += `リクエスト数: ${requests?.length || 0}件\n`;
-      debugMessage += `ポスティング数: ${postings?.length || 0}件\n`;
-      debugMessage += `マッチング結果: ${totalMatches}件\n\n`;
-      
-      debugMessage += `=== 不足薬局分析結果 ===\n`;
-      debugMessage += `不足総数: ${shortageAnalysis.totalShortage}人\n`;
-      debugMessage += `不足薬局数: ${shortageAnalysis.shortagePharmacies.length}薬局\n\n`;
-      
-      if (shortageAnalysis.shortagePharmacies.length > 0) {
-        debugMessage += `=== 不足薬局詳細 ===\n`;
-        shortageAnalysis.shortagePharmacies.forEach((pharmacy, index) => {
-          debugMessage += `${index + 1}. ${pharmacy.name}（${pharmacy.store_name || '店舗名なし'}）\n`;
-          debugMessage += `   日付: ${pharmacy.date}\n`;
-          debugMessage += `   必要人数: ${pharmacy.required}人\n`;
-          debugMessage += `   マッチ人数: ${pharmacy.matched}人\n`;
-          debugMessage += `   不足人数: ${pharmacy.shortage}人\n\n`;
-        });
-      } else {
-        debugMessage += `不足薬局: なし\n`;
-      }
-      
-      alert(debugMessage);
       
       // 詳細な結果表示
       let resultMessage = `1ヶ月分のマッチングが完了しました。\n\n`;
@@ -3059,12 +2996,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   // 日毎の不足薬局分析
                   const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
                   
-                  // デバッグ情報をコンソールに出力
-                  console.log('=== 日毎表示デバッグ ===');
-                  console.log('selectedDate:', selectedDate);
-                  console.log('dayMatches.length:', dayMatches.length);
-                  console.log('dayShortageAnalysis.length:', dayShortageAnalysis.length);
-                  console.log('dayShortageAnalysis:', dayShortageAnalysis);
                   
                   if (dayMatches.length > 0 && selectedDate) {
                     return (
