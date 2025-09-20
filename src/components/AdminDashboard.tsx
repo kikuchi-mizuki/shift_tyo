@@ -2362,8 +2362,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         assigned: assigned.length 
       });
       
-      // デバッグ情報をモーダルで表示
-      alert(debugInfo);
+      // デバッグ情報をコンソールに出力
+      console.log('マッチング処理デバッグ:', debugInfo);
       
     } catch (error) {
       console.error('マッチング実行エラー:', error);

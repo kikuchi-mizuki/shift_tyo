@@ -429,8 +429,8 @@ export class AIMatchingEngine {
       debugInfo += `\n=== 最終結果 ===\n`;
       debugInfo += `最終マッチング件数: ${result.length}件\n`;
       
-      // デバッグ情報をアラートで表示
-      alert(debugInfo);
+      // デバッグ情報をコンソールに出力
+      console.log('AIマッチングエンジンデバッグ:', debugInfo);
       
     return result;
       
@@ -440,7 +440,7 @@ export class AIMatchingEngine {
       debugInfo += `エラースタック: ${error.stack}\n`;
       
       console.error('executeOptimalMatching エラー:', error);
-      alert(debugInfo);
+      console.log('AIマッチングエンジンエラーデバッグ:', debugInfo);
       
       return [];
     }
