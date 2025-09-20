@@ -1080,6 +1080,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               .filter((s: string) => s.length > 0);
 
         if (ngList.length > 0) {
+          // まず既存のエントリを削除
+          const { error: deleteError } = await supabase
+            .from('store_ng_pharmacists')
+            .delete()
+            .eq('pharmacy_id', profile.id);
+
+          if (deleteError) {
+            console.error('既存NG薬剤師設定の削除エラー:', deleteError);
+            alert(`既存NG薬剤師設定の削除に失敗しました: ${deleteError.message}`);
+            return;
+          }
+
+          // 新しいエントリを挿入
           const ngEntries = [];
           const seenEntries = new Set<string>();
           const storeNames = profile.store_names || ['本店'];
@@ -1122,7 +1135,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             console.warn('Failed to update legacy ng_list on user_profiles for pharmacy', profile.id, e);
           }
         } else {
-          // 全て外した場合も、旧カラムを空配列に明示更新
+          // 全て外した場合は、store_ng_pharmacistsからも削除
+          const { error: deleteError } = await supabase
+            .from('store_ng_pharmacists')
+            .delete()
+            .eq('pharmacy_id', profile.id);
+
+          if (deleteError) {
+            console.error('NG薬剤師設定の削除エラー:', deleteError);
+            alert(`NG薬剤師設定の削除に失敗しました: ${deleteError.message}`);
+            return;
+          }
+
+          // 旧カラムも空配列に明示更新
           try {
             await supabase
               .from('user_profiles')
