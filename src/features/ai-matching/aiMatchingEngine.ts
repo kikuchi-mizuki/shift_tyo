@@ -230,6 +230,20 @@ export class AIMatchingEngine {
     debugInfo += `ユーザープロフィール: ${Object.keys(userProfiles || {}).length}件\n`;
     debugInfo += `評価データ: ${(ratings || []).length}件\n\n`;
     
+    // userProfilesの構造を詳細分析
+    debugInfo += `=== userProfiles構造分析 ===\n`;
+    debugInfo += `userProfiles type: ${typeof userProfiles}\n`;
+    debugInfo += `userProfiles isArray: ${Array.isArray(userProfiles)}\n`;
+    debugInfo += `userProfiles keys: ${Object.keys(userProfiles || {}).join(', ')}\n`;
+    
+    if (userProfiles && typeof userProfiles === 'object') {
+      Object.keys(userProfiles).forEach(key => {
+        const profile = userProfiles[key];
+        debugInfo += `  ${key}: ${profile?.id || 'no-id'}, type: ${typeof profile}\n`;
+      });
+    }
+    debugInfo += `\n`;
+    
     // 実際のシフトデータを取得
     let actualRequests = requests;
     let actualPostings = postings;
@@ -326,6 +340,11 @@ export class AIMatchingEngine {
     console.log('sortedRequests:', sortedRequests.length);
     console.log('actualPostings:', actualPostings.length);
     
+    // マッチング処理の詳細をデバッグ情報に追加
+    debugInfo += `=== マッチング処理詳細 ===\n`;
+    debugInfo += `ソート済み希望: ${sortedRequests.length}件\n`;
+    debugInfo += `実際の募集: ${actualPostings.length}件\n\n`;
+    
     for (const request of sortedRequests) {
       console.log(`薬剤師 ${request.pharmacist_id} の希望を処理中:`, request);
       
@@ -342,10 +361,18 @@ export class AIMatchingEngine {
         console.log(`時間互換性: ${this.isBasicCompatible(request, posting)}`);
         console.log(`NG互換性: ${this.isNgCompatible(request, posting, userProfiles)}`);
 
+        // デバッグ情報に組み合わせチェック結果を追加
+        const dateMatch = request.date === posting.date;
+        const timeCompatible = this.isBasicCompatible(request, posting);
+        const ngCompatible = this.isNgCompatible(request, posting, userProfiles);
+        
+        debugInfo += `薬剤師 ${request.pharmacist_id} × 薬局 ${posting.pharmacy_id}:\n`;
+        debugInfo += `  日付一致: ${dateMatch} (${request.date} === ${posting.date})\n`;
+        debugInfo += `  時間適合: ${timeCompatible}\n`;
+        debugInfo += `  NG適合: ${ngCompatible}\n`;
+
         // 基本的なフィルタリング（時間範囲 + NGリスト + 日付一致）
-        if (request.date === posting.date && 
-            this.isBasicCompatible(request, posting) && 
-            this.isNgCompatible(request, posting, userProfiles)) {
+        if (dateMatch && timeCompatible && ngCompatible) {
           
           console.log(`マッチング候補を作成中...`);
           const candidate = await this.createMatchCandidate(request, posting, ratings);
