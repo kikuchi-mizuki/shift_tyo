@@ -220,8 +220,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           pharmacyId,
           pharmacistIds,
           pharmacistIdsType: typeof pharmacistIds,
-          pharmacistIdsLength: pharmacistIds?.length
+          pharmacistIdsLength: pharmacistIds?.length,
+          pharmacyIdType: typeof pharmacyId,
+          pharmacyIdLength: pharmacyId?.length,
+          isPharmacyIdUndefined: pharmacyId === undefined,
+          isPharmacyIdNull: pharmacyId === null,
+          isPharmacyIdEmpty: pharmacyId === ''
         });
+        
+        // 薬局IDが無効な場合はスキップ
+        if (!pharmacyId || pharmacyId === undefined || pharmacyId === null || pharmacyId === '') {
+          console.error('薬局IDが無効です:', pharmacyId);
+          continue;
+        }
         
         // 薬剤師IDが配列でない場合はスキップ
         if (!Array.isArray(pharmacistIds)) {
@@ -420,6 +431,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
     // 薬局ごとの募集数とマッチ数を計算
     const pharmacyNeeds: { [pharmacyId: string]: { 
+      id: string;
       name: string; 
       store_name: string;
       required: number; 
@@ -433,6 +445,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const pharmacyId = posting.pharmacy_id;
       if (!pharmacyNeeds[pharmacyId]) {
         pharmacyNeeds[pharmacyId] = {
+          id: pharmacyId,
           name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId.slice(-4)}`,
           store_name: posting.store_name || '店舗名なし',
           required: 0,
