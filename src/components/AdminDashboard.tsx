@@ -182,6 +182,72 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // 日付別のAIマッチング結果を保存する状態
   const [aiMatchesByDate, setAiMatchesByDate] = useState<{ [date: string]: any[] }>({});
 
+  // 月間の不足薬局を分析する関数
+  const analyzeMonthlyShortage = (matchesByDate: { [date: string]: any[] }) => {
+    const shortagePharmacies: any[] = [];
+    let totalShortage = 0;
+    
+    // 各日付の不足状況を分析
+    Object.keys(matchesByDate).forEach(date => {
+      const dayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
+      const dayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
+      const dayMatches = matchesByDate[date] || [];
+      
+      // 薬局ごとの募集数とマッチ数を計算
+      const pharmacyNeeds: { [pharmacyId: string]: { 
+        name: string; 
+        required: number; 
+        matched: number; 
+        shortage: number; 
+        postings: any[] 
+      } } = {};
+      
+      // 募集数を集計
+      dayPostings.forEach(posting => {
+        const pharmacyId = posting.pharmacy_id;
+        if (!pharmacyNeeds[pharmacyId]) {
+          pharmacyNeeds[pharmacyId] = {
+            name: posting.store_name || userProfiles[pharmacyId]?.name || `薬局${pharmacyId.slice(-4)}`,
+            required: 0,
+            matched: 0,
+            shortage: 0,
+            postings: []
+          };
+        }
+        pharmacyNeeds[pharmacyId].required++;
+        pharmacyNeeds[pharmacyId].postings.push(posting);
+      });
+      
+      // マッチ数を集計
+      dayMatches.forEach(match => {
+        const pharmacyId = match.pharmacy.id;
+        if (pharmacyNeeds[pharmacyId]) {
+          pharmacyNeeds[pharmacyId].matched++;
+        }
+      });
+      
+      // 不足数を計算
+      Object.values(pharmacyNeeds).forEach(pharmacy => {
+        pharmacy.shortage = Math.max(0, pharmacy.required - pharmacy.matched);
+        if (pharmacy.shortage > 0) {
+          totalShortage += pharmacy.shortage;
+          shortagePharmacies.push({
+            ...pharmacy,
+            date: date,
+            store_name: pharmacy.postings[0]?.store_name || '',
+            start_time: pharmacy.postings[0]?.start_time || '',
+            end_time: pharmacy.postings[0]?.end_time || ''
+          });
+        }
+      });
+    });
+    
+    return {
+      totalShortage,
+      shortagePharmacies
+    };
+  };
+
   // 薬局の不足状況を分析する関数
   const analyzePharmacyShortage = (date: string) => {
     const dayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
@@ -423,10 +489,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       console.log(`1ヶ月分のAIマッチング完了: ${monthlyMatches.length}件のマッチ`);
       
-      // マッチング結果のサマリーを表示
+      // 詳細な結果分析
       const totalMatches = monthlyMatches.length;
       const datesWithMatches = Object.keys(matchesByDate).length;
-      alert(`1ヶ月分のマッチングが完了しました。\n\nマッチング件数: ${totalMatches}件\nマッチング日数: ${datesWithMatches}日\n\n右側のパネルでマッチング状況を確認できます。`);
+      
+      // 不足薬局の分析
+      const shortageAnalysis = analyzeMonthlyShortage(matchesByDate);
+      
+      // 詳細な結果表示
+      let resultMessage = `1ヶ月分のマッチングが完了しました。\n\n`;
+      resultMessage += `=== マッチング結果 ===\n`;
+      resultMessage += `マッチング件数: ${totalMatches}件\n`;
+      resultMessage += `マッチング日数: ${datesWithMatches}日\n\n`;
+      
+      if (shortageAnalysis.totalShortage > 0) {
+        resultMessage += `=== 不足薬局一覧 ===\n`;
+        resultMessage += `不足総数: ${shortageAnalysis.totalShortage}人\n`;
+        resultMessage += `不足薬局数: ${shortageAnalysis.shortagePharmacies.length}薬局\n\n`;
+        
+        shortageAnalysis.shortagePharmacies.forEach((pharmacy, index) => {
+          resultMessage += `${index + 1}. ${pharmacy.name}（${pharmacy.store_name || '店舗名なし'}）\n`;
+          resultMessage += `   日付: ${pharmacy.date}\n`;
+          resultMessage += `   時間: ${pharmacy.start_time || '09:00'}-${pharmacy.end_time || '18:00'}\n`;
+          resultMessage += `   不足人数: ${pharmacy.shortage}人\n\n`;
+        });
+      } else {
+        resultMessage += `=== 不足薬局 ===\n`;
+        resultMessage += `不足薬局: なし（全ての薬局でマッチング完了）\n\n`;
+      }
+      
+      resultMessage += `右側のパネルで詳細なマッチング状況を確認できます。`;
+      
+      alert(resultMessage);
       
       // 1ヶ月分マッチング実行後は、aiMatchesをクリアして日付選択時のみ表示
       setAiMatches([]);
@@ -478,6 +572,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         pharmacist_id: match.pharmacist.id,
         pharmacy_id: match.pharmacy.id,
         date: date,
+        time_slot: 'negotiable', // デフォルト値（使用しないが制約のため必要）
         start_time: match.timeSlot.start,
         end_time: match.timeSlot.end,
         status: 'confirmed',
@@ -1819,6 +1914,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               pharmacist_id: match.pharmacist.id,
               pharmacy_id: match.pharmacy.id,
               date: date,
+              time_slot: 'negotiable', // デフォルト値（使用しないが制約のため必要）
               start_time: match.timeSlot.start,
               end_time: match.timeSlot.end,
               status: 'confirmed',
