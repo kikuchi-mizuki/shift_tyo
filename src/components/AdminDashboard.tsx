@@ -4860,18 +4860,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                       type="checkbox"
                                                       className="accent-orange-600"
                                                       checked={storeChecked}
-                                                      disabled={isPharmacySelectedForStore}
+                                                      disabled={false}
                                                       onChange={(e) => {
-                                                        // 薬局全体が選択されている場合は何もしない
-                                                        if (isPharmacySelectedForStore) {
-                                                          return;
-                                                        }
-                                                        
                                                         const next = new Set<string>(userEditForm.ng_list);
                                                         
                                                         if (e.target.checked) {
                                                           // チェックを入れる場合
                                                           next.add(storeKey);
+                                                          // 薬局全体が選択されている場合は削除
+                                                          next.delete(id);
                                                         } else {
                                                           // チェックを外す場合
                                                           next.delete(storeKey);
