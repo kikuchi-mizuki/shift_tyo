@@ -268,7 +268,12 @@ export class AIMatchingEngine {
       return storeName;
     }
     
-    // 4. フォールバック
+    // 4. フォールバック - userProfilesにデータがない場合の対処
+    console.log('薬局名取得失敗 - フォールバック実行');
+    console.log('pharmacyId:', pharmacyId);
+    console.log('userProfiles存在:', !!userProfiles);
+    console.log('userProfiles keys:', userProfiles ? Object.keys(userProfiles) : []);
+    
     return `薬局${pharmacyId.slice(-4)}`;
   }
 

@@ -2987,7 +2987,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     const matchedCount = Array.isArray(currentDayMatches) ? currentDayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length : 0;
                                     const remainingShortage = Math.max(0, pharmacy.required_staff - matchedCount);
                                     const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
-                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
+                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.pharmacy_id.slice(-4)}`;
                                     const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
                                     
                                     return (
@@ -3188,7 +3188,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 <div className="flex-1 pr-2">
                                   <div className="text-xs text-gray-800 leading-snug break-words">
                                     <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}</div>
-                                    <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || '薬局名未設定'}</div>
+                                    <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || `薬局${shift.pharmacy_id.slice(-4)}`}</div>
                                     <div>店舗: {getStoreName(shift)}</div>
                                     
                                     {/* 評価情報表示 */}
@@ -3684,7 +3684,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             {shortagePharmacies.map((pharmacy: any, index: number) => {
                               const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
-                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || '名前未設定';
+                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.pharmacy_id.slice(-4)}`;
                               const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
                               const timeLabel = pharmacy.start_time && pharmacy.end_time 
                                 ? `${pharmacy.start_time.slice(0,5)}-${pharmacy.end_time.slice(0,5)}`
