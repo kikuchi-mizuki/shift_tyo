@@ -2258,6 +2258,60 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     loadAll();
   };
 
+  // 薬局の募集データ削除
+  const deletePosting = async (postingId: string) => {
+    if (!confirm('この募集を削除しますか？')) {
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('shift_postings')
+        .delete()
+        .eq('id', postingId);
+      
+      if (error) {
+        console.error('募集の削除に失敗:', error);
+        alert(`募集の削除に失敗しました: ${error.message}`);
+        return;
+      }
+      
+      console.log('募集を削除しました:', postingId);
+      alert('募集を削除しました。');
+      loadAll(); // データを再読み込み
+    } catch (error) {
+      console.error('募集の削除に失敗:', error);
+      alert(`募集の削除に失敗しました: ${(error as any).message || 'Unknown error'}`);
+    }
+  };
+
+  // 薬剤師の応募データ削除
+  const deleteRequest = async (requestId: string) => {
+    if (!confirm('この応募を削除しますか？')) {
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('shift_requests')
+        .delete()
+        .eq('id', requestId);
+      
+      if (error) {
+        console.error('応募の削除に失敗:', error);
+        alert(`応募の削除に失敗しました: ${error.message}`);
+        return;
+      }
+      
+      console.log('応募を削除しました:', requestId);
+      alert('応募を削除しました。');
+      loadAll(); // データを再読み込み
+    } catch (error) {
+      console.error('応募の削除に失敗:', error);
+      alert(`応募の削除に失敗しました: ${(error as any).message || 'Unknown error'}`);
+    }
+  };
+
   // 希望 追加
   const handleAddRequest = async () => {
     if (!selectedDate) {
@@ -3929,8 +3983,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       return '要相談';
                                     })()}
                                   </div>
-                                  <div className="mt-1">
+                                  <div className="mt-1 space-x-1">
                                     <button onClick={() => beginEditPosting(posting)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
+                                    <button onClick={() => deletePosting(posting.id)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">削除</button>
                                   </div>
                                 </div>
                                 <div className="text-xs text-gray-500 whitespace-nowrap">
@@ -4074,8 +4129,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       return '要相談';
                                     })()}
                                   </div>
-                                  <div className="mt-1">
+                                  <div className="mt-1 space-x-1">
                                     <button onClick={() => beginEditRequest(request)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
+                                    <button onClick={() => deleteRequest(request.id)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">削除</button>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-2 whitespace-nowrap">
