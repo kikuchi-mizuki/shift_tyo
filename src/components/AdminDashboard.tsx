@@ -3539,7 +3539,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <select
                               className="text-xs border rounded px-2 py-1"
                               value={newPosting.pharmacy_id}
-                              onChange={(e) => setNewPosting({ ...newPosting, pharmacy_id: e.target.value })}
+                              onChange={(e) => setNewPosting({ ...newPosting, pharmacy_id: e.target.value, store_name: '' })}
                             >
                               <option value="">薬局を選択</option>
                               {Object.entries(userProfiles || {})
@@ -3554,10 +3554,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               onChange={(e) => setNewPosting({ ...newPosting, store_name: e.target.value })}
                             >
                               <option value="">店舗名を選択</option>
-                              <option value="本店">本店</option>
-                              <option value="支店A">支店A</option>
-                              <option value="支店B">支店B</option>
-                              <option value="その他">その他</option>
+                              {newPosting.pharmacy_id && userProfiles[newPosting.pharmacy_id]?.store_names ? (
+                                userProfiles[newPosting.pharmacy_id].store_names.map((storeName: string, index: number) => (
+                                  <option key={index} value={storeName}>{storeName}</option>
+                                ))
+                              ) : (
+                                <>
+                                  <option value="本店">本店</option>
+                                  <option value="支店A">支店A</option>
+                                  <option value="支店B">支店B</option>
+                                  <option value="その他">その他</option>
+                                </>
+                              )}
                             </select>
                             <input
                               className="text-xs border rounded px-2 py-1"
