@@ -224,6 +224,12 @@ export class AIMatchingEngine {
     console.log('userProfiles:', userProfiles);
     console.log('ratings:', ratings);
     
+    // デバッグ情報を収集
+    let debugInfo = `=== generateMatchCandidates デバッグ ===\n`;
+    debugInfo += `入力データ: 希望 ${requests.length}件, 募集 ${postings.length}件\n`;
+    debugInfo += `ユーザープロフィール: ${Object.keys(userProfiles || {}).length}件\n`;
+    debugInfo += `評価データ: ${(ratings || []).length}件\n\n`;
+    
     // 実際のシフトデータを取得
     let actualRequests = requests;
     let actualPostings = postings;
@@ -870,6 +876,43 @@ export class AIMatchingEngine {
 
     console.log(`フォールバックマッチング完了: ${candidates.length}件の候補を生成`);
     console.log('candidates:', candidates);
+    
+    // デバッグ情報を完成
+    debugInfo += `\n=== マッチング処理結果 ===\n`;
+    debugInfo += `生成された候補: ${candidates.length}件\n`;
+    
+    if (candidates.length === 0) {
+      debugInfo += `\n候補が0件の原因分析:\n`;
+      debugInfo += `1. 時間適合性チェック:\n`;
+      let timeCompatibleCount = 0;
+      for (const request of actualRequests) {
+        for (const posting of actualPostings) {
+          if (request.date === posting.date && this.isBasicCompatible(request, posting)) {
+            timeCompatibleCount++;
+            debugInfo += `   - 薬剤師 ${request.pharmacist_id} × 薬局 ${posting.pharmacy_id}: 時間適合\n`;
+          }
+        }
+      }
+      debugInfo += `   時間適合ペア: ${timeCompatibleCount}件\n`;
+      
+      debugInfo += `2. NGリストチェック:\n`;
+      let ngBlockedCount = 0;
+      for (const request of actualRequests) {
+        for (const posting of actualPostings) {
+          if (request.date === posting.date && this.isBasicCompatible(request, posting)) {
+            if (!this.isNgCompatible(request, posting, userProfiles)) {
+              ngBlockedCount++;
+              debugInfo += `   - 薬剤師 ${request.pharmacist_id} × 薬局 ${posting.pharmacy_id}: NGリストでブロック\n`;
+            }
+          }
+        }
+      }
+      debugInfo += `   NGリストでブロック: ${ngBlockedCount}件\n`;
+    }
+    
+    // デバッグ情報をアラートで表示
+    alert(debugInfo);
+    
     return candidates;
   }
 
