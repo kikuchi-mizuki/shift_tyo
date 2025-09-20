@@ -427,6 +427,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const totalMatches = monthlyMatches.length;
       const datesWithMatches = Object.keys(matchesByDate).length;
       alert(`1ヶ月分のマッチングが完了しました。\n\nマッチング件数: ${totalMatches}件\nマッチング日数: ${datesWithMatches}日\n\n右側のパネルでマッチング状況を確認できます。`);
+      
+      // 1ヶ月分マッチング実行後は、aiMatchesをクリアして日付選択時のみ表示
+      setAiMatches([]);
     } catch (error) {
       console.error('1ヶ月分のAIマッチングに失敗:', error);
       alert('1ヶ月分のAIマッチングに失敗しました。');
@@ -2864,17 +2867,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const dayPostings = (postings || []).filter((p: any) => p.date === selectedDate);
                   const dayAssignedShifts = (assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed');
                   
-                  // AIマッチング結果の表示
-                  if (aiMatches.length > 0 && selectedDate) {
+                  // AIマッチング結果の表示（選択された日付のマッチング結果のみ）
+                  const dayMatches = aiMatchesByDate[selectedDate] || [];
+                  if (dayMatches.length > 0 && selectedDate) {
                     return (
                       <div className="p-4 border-b border-gray-200">
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
                           <div className="flex items-center space-x-2 mb-2">
                             <Brain className="w-4 h-4 text-purple-600" />
-                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {aiMatches.length}件</h4>
+                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {dayMatches.length}件</h4>
                           </div>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
-                            {aiMatches.map((match, index) => (
+                            {dayMatches.map((match, index) => (
                               <div key={index} className="bg-white rounded border p-2 text-xs">
                                 <div className="flex justify-between items-start">
                                   <div>
@@ -2903,7 +2907,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                         <button
                           onClick={() => {
-                            const shifts = convertAIMatchesToShifts(aiMatches, selectedDate);
+                            const shifts = convertAIMatchesToShifts(dayMatches, selectedDate);
                             // AIマッチング結果を確定シフトとして保存
                             handleConfirmShiftsForDate(selectedDate, shifts);
                           }}
