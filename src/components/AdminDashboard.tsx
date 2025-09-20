@@ -205,6 +205,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       Object.entries(manualMatches).forEach(([pharmacyId, pharmacistIds]) => {
         pharmacistIds.forEach(pharmacistId => {
           if (pharmacistId && pharmacistId !== '') { // 空の選択をスキップ
+            // UUIDの形式を確認
+            console.log('手動マッチング確認:', {
+              pharmacistId,
+              pharmacyId,
+              pharmacistIdType: typeof pharmacistId,
+              pharmacyIdType: typeof pharmacyId,
+              pharmacistIdLength: pharmacistId?.length,
+              pharmacyIdLength: pharmacyId?.length
+            });
+            
+            // UUIDの形式チェック
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(pharmacistId)) {
+              console.error('Invalid pharmacist ID format:', pharmacistId);
+              return;
+            }
+            if (!uuidRegex.test(pharmacyId)) {
+              console.error('Invalid pharmacy ID format:', pharmacyId);
+              return;
+            }
+            
             shifts.push({
               pharmacist_id: pharmacistId,
               pharmacy_id: pharmacyId,
@@ -219,12 +240,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       });
       
       if (shifts.length > 0) {
+        console.log('手動マッチング確定データ:', shifts);
         await handleConfirmShiftsForDate(date, shifts);
         setManualMatches({});
         console.log('手動マッチングが確定されました:', shifts);
+      } else {
+        console.log('手動マッチングするデータがありません');
       }
     } catch (error) {
       console.error('手動マッチングの確定に失敗:', error);
+      alert(`手動マッチングの確定に失敗しました: ${(error as any).message || 'Unknown error'}`);
     }
   };
 
@@ -3204,15 +3229,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                 className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
                                               >
                                                 <option value="">薬剤師を選択してください</option>
-                                                {availablePharmacists.map((pharmacist, pharmacistIndex) => (
-                                                  <option 
-                                                    key={pharmacistIndex} 
-                                                    value={pharmacist.id}
-                                                    disabled={manualMatches[pharmacy.id]?.includes(pharmacist.id) && manualMatches[pharmacy.id]?.[index] !== pharmacist.id}
-                                                  >
-                                                    {pharmacist.name || `薬剤師${pharmacist.id.slice(-4)}`}
-                                                  </option>
-                                                ))}
+                                                {availablePharmacists.map((pharmacist, pharmacistIndex) => {
+                                                  console.log('薬剤師選択オプション:', {
+                                                    pharmacist,
+                                                    id: pharmacist.id,
+                                                    name: pharmacist.name,
+                                                    idType: typeof pharmacist.id
+                                                  });
+                                                  
+                                                  return (
+                                                    <option 
+                                                      key={pharmacistIndex} 
+                                                      value={pharmacist.id}
+                                                      disabled={manualMatches[pharmacy.id]?.includes(pharmacist.id) && manualMatches[pharmacy.id]?.[index] !== pharmacist.id}
+                                                    >
+                                                      {pharmacist.name || `薬剤師${pharmacist.id.slice(-4)}`}
+                                                    </option>
+                                                  );
+                                                })}
                                               </select>
                                             </div>
                                           ))}
