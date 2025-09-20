@@ -94,6 +94,8 @@ export class AIMatchingEngine {
       for (const request of requests) {
         debugInfo += `\n薬剤師 ${request.pharmacist_id} の希望を処理中:\n`;
         debugInfo += `  日付: ${request.date}, 時間: ${request.start_time}-${request.end_time}\n`;
+        debugInfo += `  薬剤師名: ${this.getPharmacistName(request, userProfiles)}\n`;
+        debugInfo += `  薬剤師名取得元: ${this.getPharmacistNameSource(request, userProfiles)}\n`;
         
         for (const posting of postings) {
           debugInfo += `  薬局 ${posting.pharmacy_id} との組み合わせをチェック:\n`;
@@ -115,7 +117,7 @@ export class AIMatchingEngine {
             const candidate: MatchCandidate = {
               pharmacist: {
                 id: request.pharmacist_id,
-                name: '薬剤師',
+                name: this.getPharmacistName(request, userProfiles),
                 email: '',
                 rating: 0,
                 preferences: {
@@ -190,30 +192,52 @@ export class AIMatchingEngine {
   }
 
   /**
+   * 薬剤師名を取得（user_profilesテーブルから優先）
+   */
+  private getPharmacistName(request: any, userProfiles?: any): string {
+    const pharmacistId = request.pharmacist_id;
+    
+    // AdminDashboardと同じロジック: user_profilesテーブルから取得
+    if (userProfiles && userProfiles[pharmacistId]) {
+      const name = userProfiles[pharmacistId]?.name;
+      if (name && name.trim()) {
+        return name.trim();
+      }
+    }
+    
+    // フォールバック
+    return 'Unknown';
+  }
+
+  /**
    * 薬局名を取得（user_profilesテーブルから優先）
    */
   private getPharmacyName(posting: any, userProfiles?: any): string {
     const pharmacyId = posting.pharmacy_id;
     
-    // 1. user_profilesテーブルから薬局名を取得
+    // AdminDashboardと同じロジック: user_profilesテーブルから取得
     if (userProfiles && userProfiles[pharmacyId]) {
-      const profile = userProfiles[pharmacyId];
-      if (profile.name && profile.name.trim()) {
-        return profile.name.trim();
+      const name = userProfiles[pharmacyId]?.name;
+      if (name && name.trim()) {
+        return name.trim();
       }
     }
     
-    // 2. postingオブジェクトから薬局名を取得
-    if (posting.store_name && posting.store_name.trim()) {
-      return posting.store_name.trim();
+    // フォールバック
+    return 'Unknown';
+  }
+
+  /**
+   * 薬剤師名の取得元を取得（デバッグ用）
+   */
+  private getPharmacistNameSource(request: any, userProfiles?: any): string {
+    const pharmacistId = request.pharmacist_id;
+    
+    if (userProfiles && userProfiles[pharmacistId]?.name) {
+      return 'user_profilesテーブル';
     }
     
-    if (posting.pharmacy_name && posting.pharmacy_name.trim()) {
-      return posting.pharmacy_name.trim();
-    }
-    
-    // 3. フォールバック
-    return `薬局${pharmacyId.slice(-4)}`;
+    return 'フォールバック（Unknown）';
   }
 
   /**
@@ -222,25 +246,11 @@ export class AIMatchingEngine {
   private getPharmacyNameSource(posting: any, userProfiles?: any): string {
     const pharmacyId = posting.pharmacy_id;
     
-    // 1. user_profilesテーブルから薬局名を取得
-    if (userProfiles && userProfiles[pharmacyId]) {
-      const profile = userProfiles[pharmacyId];
-      if (profile.name && profile.name.trim()) {
-        return 'user_profilesテーブル';
-      }
+    if (userProfiles && userProfiles[pharmacyId]?.name) {
+      return 'user_profilesテーブル';
     }
     
-    // 2. postingオブジェクトから薬局名を取得
-    if (posting.store_name && posting.store_name.trim()) {
-      return 'posting.store_name';
-    }
-    
-    if (posting.pharmacy_name && posting.pharmacy_name.trim()) {
-      return 'posting.pharmacy_name';
-    }
-    
-    // 3. フォールバック
-    return 'フォールバック（ID末尾4桁）';
+    return 'フォールバック（Unknown）';
   }
 
   /**
