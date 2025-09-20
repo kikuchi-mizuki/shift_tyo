@@ -474,29 +474,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
       const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
       
-      // time_slotを時間範囲から判定
-      const startTime = match.timeSlot.start;
-      const endTime = match.timeSlot.end;
-      let timeSlot = 'negotiable'; // デフォルト
-      
-      if (startTime && endTime) {
-        const startHour = parseInt(startTime.split(':')[0]);
-        const endHour = parseInt(endTime.split(':')[0]);
-        
-        if (startHour >= 6 && endHour <= 12) {
-          timeSlot = 'morning';
-        } else if (startHour >= 12 && endHour <= 18) {
-          timeSlot = 'afternoon';
-        } else if (startHour >= 6 && endHour <= 18) {
-          timeSlot = 'fullday';
-        }
-      }
-      
       return { 
         pharmacist_id: match.pharmacist.id,
         pharmacy_id: match.pharmacy.id,
         date: date,
-        time_slot: timeSlot,
         start_time: match.timeSlot.start,
         end_time: match.timeSlot.end,
         status: 'confirmed',
@@ -1834,29 +1815,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
             const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
             
-            // time_slotを時間範囲から判定
-            const startTime = match.timeSlot.start;
-            const endTime = match.timeSlot.end;
-            let timeSlot = 'negotiable'; // デフォルト
-            
-            if (startTime && endTime) {
-              const startHour = parseInt(startTime.split(':')[0]);
-              const endHour = parseInt(endTime.split(':')[0]);
-              
-              if (startHour >= 6 && endHour <= 12) {
-                timeSlot = 'morning';
-              } else if (startHour >= 12 && endHour <= 18) {
-                timeSlot = 'afternoon';
-              } else if (startHour >= 6 && endHour <= 18) {
-                timeSlot = 'fullday';
-              }
-            }
-            
             return {
               pharmacist_id: match.pharmacist.id,
               pharmacy_id: match.pharmacy.id,
               date: date,
-              time_slot: timeSlot,
               start_time: match.timeSlot.start,
               end_time: match.timeSlot.end,
               status: 'confirmed',
