@@ -1452,6 +1452,14 @@ export const pharmacistRatings = {
       console.log('Supabase URL:', supabase.supabaseUrl);
       console.log('Supabase Key (first 10 chars):', supabase.supabaseKey?.substring(0, 10));
       
+      // Check if table exists by trying a simple select
+      console.log('Testing table access...');
+      const { data: testData, error: testError } = await supabase
+        .from('pharmacist_ratings')
+        .select('id')
+        .limit(1);
+      console.log('Table access test:', { testData, testError });
+      
       const { data, error } = await supabase
         .from('pharmacist_ratings')
         .upsert(ratingData, {
