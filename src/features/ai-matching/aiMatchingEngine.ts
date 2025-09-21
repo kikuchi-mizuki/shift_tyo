@@ -208,8 +208,8 @@ export class AIMatchingEngine {
               }
             },
             timeSlot: {
-                start: request.start_time,
-                end: request.end_time,
+                start: posting.start_time, // 薬局の募集時間を使用
+                end: posting.end_time, // 薬局の募集時間を使用
                 date: request.date,
               urgency: 'medium',
               flexibility: 0

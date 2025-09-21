@@ -2381,8 +2381,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               pharmacy_id: match.pharmacy.id,
               date: date,
               time_slot: 'negotiable', // デフォルト値（使用しないが制約のため必要）
-              start_time: match.timeSlot.start,
-              end_time: match.timeSlot.end,
+              start_time: match.posting.start_time, // 薬局の募集時間を使用
+              end_time: match.posting.end_time, // 薬局の募集時間を使用
               status: 'confirmed',
               store_name: storeName,
               memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
