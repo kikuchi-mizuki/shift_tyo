@@ -305,6 +305,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         });
         
         // shift_requestsテーブルに保存
+        if (!supabase) {
+          console.error('Supabase client is not available');
+          return;
+        }
+        
         const { data: insertResult, error } = await supabase
           .from('shift_requests')
           .insert(shiftRequests)
@@ -691,7 +696,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           });
           
         } catch (error) {
-          debugInfo += `エラー: ${error.message}\n`;
+          debugInfo += `エラー: ${error instanceof Error ? error.message : String(error)}\n`;
           matchesByDate[date] = [];
         }
       }
@@ -951,7 +956,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const allStoreNames = pharmacyProfile?.store_names || ['本店'];
         
         // 全店舗がNGに含まれているかチェック
-        const allStoresInNg = allStoreNames.every(storeName => stores.includes(storeName));
+        const allStoresInNg = allStoreNames.every((storeName: string) => stores.includes(storeName));
         
         if (allStoresInNg && stores.length === allStoreNames.length) {
           // 全店舗がNGの場合
@@ -997,6 +1002,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       // 薬剤師の場合、NG薬局設定をstore_ng_pharmaciesテーブルに保存
       if (profile.user_type === 'pharmacist') {
+        if (!supabase) {
+          console.error('Supabase client is not available');
+          return;
+        }
+        
         // 一時的にRLSを無効化
         try {
           await supabase.rpc('disable_rls_for_table', { table_name: 'store_ng_pharmacies' });
@@ -1119,6 +1129,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           });
 
           try {
+            if (!supabase) {
+              console.error('Supabase client is not available');
+              return;
+            }
+            
             // まずセッションをリフレッシュしてから取得
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             if (refreshError) {
@@ -2301,6 +2316,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('Current requests:', requests);
       console.log('Current postings:', postings);
       
+      if (!supabase) {
+        console.error('Supabase client is not available');
+        return;
+      }
+      
       // 現在のユーザーIDを確認
       const { data: { user: authUser } } = await supabase.auth.getUser();
       console.log('Admin auth user:', authUser);
@@ -2392,6 +2412,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           console.log('AIマッチングで生成されたシフト:', aiShifts);
           
           // AIマッチング結果をデータベースに保存
+          if (!supabase) {
+            console.error('Supabase client is not available');
+            return;
+          }
+          
           const { error } = await supabase.from('assigned_shifts').insert(aiShifts);
           if (error) throw error;
           
@@ -2610,6 +2635,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
           // 希望の復元（薬剤師）
           try {
+            if (!supabase) {
+              console.error('Supabase client is not available');
+              continue;
+            }
+            
             const { data: existingReq, error: findReqErr } = await supabase
               .from('shift_requests')
               .select('id')
@@ -2618,6 +2648,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               .eq('time_slot', timeSlot)
               .limit(1);
             if (!findReqErr && (!existingReq || existingReq.length === 0)) {
+              if (!supabase) {
+                console.error('Supabase client is not available');
+                continue;
+              }
+              
               await supabase.from('shift_requests').insert({
                 pharmacist_id: pharmacistId,
                 date,
@@ -2631,6 +2666,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
           // 募集の復元（薬局）: 同日の同時間帯の募集が無い場合に1名分を再作成
           try {
+            if (!supabase) {
+              console.error('Supabase client is not available');
+              continue;
+            }
+            
             const { data: existingPost, error: findPostErr } = await supabase
               .from('shift_postings')
               .select('id')
@@ -2639,6 +2679,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               .eq('time_slot', timeSlot)
               .limit(1);
             if (!findPostErr && (!existingPost || existingPost.length === 0)) {
+              if (!supabase) {
+                console.error('Supabase client is not available');
+                continue;
+              }
+              
               await supabase.from('shift_postings').insert({
                 pharmacy_id: pharmacyId,
                 date,
@@ -3266,8 +3311,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   monthlyMatchingExecuted,
                                   shortage: matchingStatus.shortage,
                                   shouldShowShortage,
-                                  totalRequired,
-                                  totalMatched
+                                  totalRequired: matchingStatus.count || 0,
+                                  totalMatched: matchingStatus.count - matchingStatus.shortage || 0
                                 });
                               }
                               return shouldShowShortage;
@@ -3494,7 +3539,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                 className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
                                               >
                                                 <option value="">薬剤師を選択してください</option>
-                                                {availablePharmacists.map((pharmacist, pharmacistIndex) => {
+                                                {availablePharmacists.map((pharmacist: any, pharmacistIndex: number) => {
                                                   console.log('薬剤師選択オプション:', {
                                                     pharmacist,
                                                     id: pharmacist.id,
@@ -3604,13 +3649,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
                         {/* 薬局の不足状況表示（独立） */}
                         {(() => {
-                          const pharmacyNeeds = analyzePharmacyShortage(dayRequests, dayPostings);
+                          const pharmacyNeeds = analyzePharmacyShortage(selectedDate);
                           const currentDayMatches = aiMatchesByDate[selectedDate] || [];
                           
                           // マッチング済みの薬剤師と薬局を除外して不足を計算
                           const pharmaciesWithShortage = Array.isArray(pharmacyNeeds) ? pharmacyNeeds.filter(pharmacy => {
-                            const matchedCount = Array.isArray(currentDayMatches) ? currentDayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length : 0;
-                            const remainingShortage = Math.max(0, pharmacy.required_staff - matchedCount);
+                            const matchedCount = Array.isArray(currentDayMatches) ? currentDayMatches.filter((match: any) => match.pharmacy.id === pharmacy.id).length : 0;
+                            const remainingShortage = Math.max(0, pharmacy.required - matchedCount);
                             return remainingShortage > 0;
                           }) : [];
                           
@@ -3623,10 +3668,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 </div>
                                 <div className="space-y-1 max-h-24 overflow-y-auto">
                                   {pharmaciesWithShortage.map((pharmacy, index) => {
-                                    const matchedCount = Array.isArray(currentDayMatches) ? currentDayMatches.filter(match => match.pharmacy.id === pharmacy.pharmacy_id).length : 0;
-                                    const remainingShortage = Math.max(0, pharmacy.required_staff - matchedCount);
-                                    const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
-                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.pharmacy_id.slice(-4)}`;
+                                    const matchedCount = Array.isArray(currentDayMatches) ? currentDayMatches.filter((match: any) => match.pharmacy.id === pharmacy.id).length : 0;
+                                    const remainingShortage = Math.max(0, pharmacy.required - matchedCount);
+                                    const pharmacyProfile = userProfiles[pharmacy.id];
+                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.id.slice(-4)}`;
                                     const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
                                     
                                     return (
@@ -3638,7 +3683,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                           </span>
                                         </div>
                                         <div className="text-gray-500">
-                                          必要: {pharmacy.required_staff}人 / マッチ: {matchedCount}人
+                                          必要: {pharmacy.required}人 / マッチ: {matchedCount}人
                                         </div>
                                       </div>
                                     );
@@ -4320,7 +4365,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     logToRailway('マッチング分析結果:', matchingAnalysis);
                     
                     // 不足薬局の表示（マッチング状況とは独立）
-                    const shortagePharmacies = analyzePharmacyShortage(dayRequests, dayPostings);
+                    const shortagePharmacies = analyzePharmacyShortage(selectedDate);
                     if (shortagePharmacies.length > 0) {
                       return (
                         <div className="bg-red-50 rounded-lg border border-red-200 p-4">
@@ -4589,7 +4634,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     const pharmacyName = (profile as any).name || (profile as any).email || id;
                                     // 薬局全体が選択されているか、または個別店舗が選択されているかをチェック
                                     const isPharmacySelected = userEditForm.ng_list.includes(id);
-                                    const hasIndividualStores = userEditForm.ng_list.some(ngId => ngId.startsWith(`${id}_`));
+                                    const hasIndividualStores = userEditForm.ng_list.some((ngId: string) => ngId.startsWith(`${id}_`));
                                     const checked = isPharmacySelected || hasIndividualStores;
                                     
                                     return (

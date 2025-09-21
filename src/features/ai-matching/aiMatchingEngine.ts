@@ -233,8 +233,8 @@ export class AIMatchingEngine {
       
     } catch (error) {
       debugInfo += `\n=== エラー発生 ===\n`;
-      debugInfo += `エラーメッセージ: ${error.message}\n`;
-      debugInfo += `エラースタック: ${error.stack}\n`;
+      debugInfo += `エラーメッセージ: ${error instanceof Error ? error.message : String(error)}\n`;
+      debugInfo += `エラースタック: ${error instanceof Error ? error.stack : 'N/A'}\n`;
       
       console.error('generateMatchCandidates エラー:', error);
     }
@@ -517,8 +517,8 @@ export class AIMatchingEngine {
       
     } catch (error) {
       debugInfo += `\n=== エラー発生 ===\n`;
-      debugInfo += `エラーメッセージ: ${error.message}\n`;
-      debugInfo += `エラースタック: ${error.stack}\n`;
+      debugInfo += `エラーメッセージ: ${error instanceof Error ? error.message : String(error)}\n`;
+      debugInfo += `エラースタック: ${error instanceof Error ? error.stack : 'N/A'}\n`;
       
       console.error('executeOptimalMatching エラー:', error);
       console.log('AIマッチングエンジンエラーデバッグ:', debugInfo);
