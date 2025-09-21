@@ -85,10 +85,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   useEffect(() => {
     logToRailway('State changed', {
       selectedDates,
-      selectedTimeSlot,
-      selectedPriority
+      selectedTimeSlot
     });
-  }, [selectedDates, selectedTimeSlot, selectedPriority]);
+  }, [selectedDates, selectedTimeSlot]);
 
   // 個別の状態変更監視
   useEffect(() => {
@@ -629,7 +628,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
 
   const handleSubmit = async () => {
     console.log('PharmacistDashboard: handleSubmit called');
-    console.log('Form data:', { selectedDates, selectedTimeSlot, selectedPriority, memo, userId: user.id });
+      console.log('Form data:', { selectedDates, selectedTimeSlot, userId: user.id });
     
     if (selectedDates.length === 0 || (!customTimeMode && !selectedTimeSlot)) {
       alert('日付と時間帯を選択してください');
@@ -656,8 +655,8 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         time_slot: customTimeMode ? 'custom' : selectedTimeSlot,
         start_time: customTimeMode ? startTime + ':00' : undefined,
         end_time: customTimeMode ? endTime + ':00' : undefined,
-        priority: selectedPriority,
-        memo: memo,
+        priority: 'medium',
+        memo: '',
         status: 'pending'
       }));
 
@@ -959,11 +958,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                                 shift.time_slot === 'consult' ? '要相談' :
                                 shift.time_slot === 'custom' ? (shift.start_time && shift.end_time ? `${shift.start_time.slice(0,5)}-${shift.end_time.slice(0,5)}` : 'カスタム') : '夜間'}
                         </div>
-                        {shift.memo && (
-                          <div className="text-xs text-gray-600 mt-1 italic">
-                            📝 メモ: {shift.memo}
-                          </div>
-                        )}
                     </div>
                   );
                 })
@@ -997,11 +991,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                     selectedTimeSlot === 'consult' ? '要相談' :
                     selectedTimeSlot === 'custom' ? `${startTime}-${endTime}` : selectedTimeSlot
                   ) : '未選択'}
-                </div>
-                <div className="text-xs text-blue-600 mt-1">
-                  優先度: {selectedPriority === 'high' ? '高優先度' :
-                   selectedPriority === 'medium' ? '中優先度' :
-                   selectedPriority === 'low' ? '低優先度' : selectedPriority}
                 </div>
               </div>
             )}
@@ -1142,39 +1131,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               )}
             </div>
 
-            {/* 優先度 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                優先度
-              </label>
-              <div className="flex space-x-2">
-                {priorities.map((priority) => (
-                  <button
-                    key={priority.id}
-                    onClick={() => setSelectedPriority(priority.id)}
-                    className={`flex-1 py-2 px-3 rounded-lg text-white text-sm font-medium transition-colors ${
-                      selectedPriority === priority.id ? priority.color : 'bg-gray-300 hover:bg-gray-400'
-                    }`}
-                  >
-                    {priority.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* メモ */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                メモ(任意)
-              </label>
-              <textarea
-                value={memo}
-                onChange={(e) => setMemo(e.target.value)}
-                placeholder="特別な要望や対応可能な業務があれば記入してください (例:在宅医療対応可能)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                rows={3}
-              />
-            </div>
 
 
 

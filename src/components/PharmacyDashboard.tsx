@@ -699,7 +699,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
   const handlePost = async () => {
     console.log('=== handlePost START ===');
-    console.log('handlePost called', { selectedDates, timeSlot, requiredStaff, memo });
+    console.log('handlePost called', { selectedDates, timeSlot, requiredStaff });
     
     // バリデーション
     if (selectedDates.length === 0) {
@@ -783,7 +783,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                 start_time: customTimeMode ? startTime + ':00' : undefined,
                 end_time: customTimeMode ? endTime + ':00' : undefined,
                 required_staff: requiredStaff,
-                memo
+                memo: '': ''
               })
             )
           );
@@ -813,7 +813,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             start_time: customTimeMode ? startTime + ':00' : undefined,
             end_time: customTimeMode ? endTime + ':00' : undefined,
             required_staff: requiredStaff,
-            memo,
+            memo: '',
             status: 'open'
           }))
         );
@@ -841,7 +841,6 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         selectedDates,
         timeSlot,
         requiredStaff,
-        memo,
         targets,
         updates,
         creates
@@ -922,7 +921,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   }
 
   console.log('PharmacyDashboard rendering, loading:', loading, 'user:', user);
-  console.log('Form state:', { selectedDates, timeSlot, requiredStaff, memo });
+  console.log('Form state:', { selectedDates, timeSlot, requiredStaff });
   console.log('Calendar data:', { myShifts: myShifts.length, confirmedShifts: confirmedShifts.length });
   
   return (
@@ -1233,7 +1232,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                     time_slot_type: typeof shift.time_slot,
                     date: shift.date,
                     store_name: shift.store_name,
-                    memo: shift.memo
+                    memo: '': '': shift.memo
                   });
                   
                   // 店舗名を取得（memoから抽出または直接指定）
@@ -1250,7 +1249,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                       shift_id: shift.id,
                       date: shift.date,
                       store_name: shift.store_name,
-                      memo: shift.memo,
+                      memo: '': '': shift.memo,
                       direct: direct,
                       fromMemo: fromMemo,
                       result: direct || fromMemo || '（店舗名未設定）'
@@ -1685,11 +1684,6 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             </div>
           </div>
 
-          {/* 備考 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">備考・特記事項（任意）</label>
-            <textarea value={memo} onChange={(e)=>setMemo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" rows={3} placeholder="経験年数の要件、特別な業務内容、その他の条件があれば記入してください" />
-          </div>
 
           {/* 作成/削除ボタン */}
           {selectedDates.length > 0 && confirmedShifts.some((s: any) => selectedDates.includes(s.date)) ? (
@@ -1702,7 +1696,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
               type="button"
               onClick={() => {
                 console.log('=== BUTTON CLICK START ===');
-                console.log('Form state:', { selectedDates, timeSlot, requiredStaff, memo });
+                console.log('Form state:', { selectedDates, timeSlot, requiredStaff });
                 
                 if (isSystemConfirmed) {
                   alert('シフト確定済みのため編集できません');
