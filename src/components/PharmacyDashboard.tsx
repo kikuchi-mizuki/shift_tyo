@@ -246,7 +246,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
-        .select('*')
+        .select('*, start_time, end_time')
         .eq('pharmacy_id', userIdToUse)
         .eq('status', 'confirmed');
       
@@ -264,7 +264,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         console.log('Trying alternative query without status filter...');
         const { data: altData, error: altError } = await supabase
           .from('assigned_shifts')
-          .select('*')
+          .select('*, start_time, end_time')
           .eq('pharmacy_id', userIdToUse);
         
         if (altError) {
@@ -1415,9 +1415,19 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                           console.log('Time slot processing:', {
                             shift_id: shift.id,
                             time_slot: timeSlot,
-                            time_slot_type: typeof timeSlot
+                            time_slot_type: typeof timeSlot,
+                            start_time: shift.start_time,
+                            end_time: shift.end_time
                           });
                           
+                          // start_timeとend_timeが存在する場合は優先表示
+                          if (shift.start_time && shift.end_time) {
+                            const startTime = shift.start_time.substring(0, 5);
+                            const endTime = shift.end_time.substring(0, 5);
+                            return `${startTime}-${endTime}`;
+                          }
+                          
+                          // 定型時間帯の処理
                           if (timeSlot === 'morning' || timeSlot === 'am') {
                             return '午前 (9:00-13:00)';
                           } else if (timeSlot === 'afternoon' || timeSlot === 'pm') {
@@ -1428,8 +1438,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                             return '要相談';
                           } else if (timeSlot === 'evening' || timeSlot === 'night') {
                             return '夜間';
-                          } else if (timeSlot === 'custom' && shift.start_time && shift.end_time) {
-                            return `${shift.start_time.substring(0, 5)}-${shift.end_time.substring(0, 5)}`;
+                          } else if (timeSlot === 'custom') {
+                            return 'カスタム時間';
                           } else {
                             console.warn('Unknown time_slot value:', timeSlot);
                             return `不明 (${timeSlot})`;
