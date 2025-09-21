@@ -4837,6 +4837,158 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             )}
                             <span className="text-xs text-gray-500">{pharmacist.email}</span>
                           </div>
+                          
+                          {/* NG薬局・店舗リスト */}
+                          <div>
+                            <div className="text-xs text-gray-600 mb-1">NG薬局・店舗:</div>
+                            {editingUserId === pharmacist.id ? (
+                              <div className="space-y-2">
+                                {Object.entries(userProfiles || {})
+                                  .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy')
+                                  .map(([id, profile]: [string, any]) => {
+                                    const pharmacyName = (profile as any).name || (profile as any).email || id;
+                                    // 薬局全体が選択されているか、または個別店舗が選択されているかをチェック
+                                    const isPharmacySelected = userEditForm.ng_list.includes(id);
+                                    const hasIndividualStores = userEditForm.ng_list.some(ngId => ngId.startsWith(`${id}_`));
+                                    const checked = isPharmacySelected || hasIndividualStores;
+                                    
+                                    return (
+                                      <div key={id} className="border rounded p-2">
+                                        <label className="inline-flex items-center gap-1 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            className="accent-red-600"
+                                            checked={checked}
+                                            onChange={(e) => {
+                                              const next = new Set<string>(userEditForm.ng_list);
+                                              
+                                              if (e.target.checked) {
+                                                // 薬局全体を選択する場合
+                                                // 1. 薬局IDを追加
+                                                next.add(id);
+                                                // 2. その薬局の店舗個別選択は削除しない（全店舗選択として扱う）
+                                              } else {
+                                                // 薬局全体の選択を解除する場合
+                                                next.delete(id);
+                                                // その薬局の店舗個別選択もすべて削除
+                                                const pharmacyProfile = userProfiles[id];
+                                                const storeNames = pharmacyProfile?.store_names || ['本店'];
+                                                storeNames.forEach((storeName: string) => {
+                                                  next.delete(`${id}_${storeName}`);
+                                                });
+                                              }
+                                              
+                                              setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                            }}
+                                          />
+                                          <span className="font-medium">{pharmacyName}</span>
+                                        </label>
+                                        
+                                        {/* 店舗選択 */}
+                                        <div className="ml-6 mt-1 space-y-1">
+                                          {((profile as any).store_names || ['本店']).map((storeName: string) => {
+                                            const storeId = `${id}_${storeName}`;
+                                            const isStoreSelected = userEditForm.ng_list.includes(storeId);
+                                            const isPharmacySelectedForStore = userEditForm.ng_list.includes(id);
+                                            const storeChecked = isStoreSelected;
+                                            
+                                            return (
+                                              <label key={storeId} className="inline-flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                  type="checkbox"
+                                                  className="accent-red-600"
+                                                  checked={storeChecked}
+                                                  disabled={false}
+                                                  onChange={(e) => {
+                                                    const next = new Set<string>(userEditForm.ng_list);
+                                                    
+                                                    if (e.target.checked) {
+                                                      // 店舗を選択する場合
+                                                      next.add(storeId);
+                                                      // 薬局全体の選択は削除（個別店舗選択が優先）
+                                                      next.delete(id);
+                                                    } else {
+                                                      // 店舗選択を解除する場合
+                                                      next.delete(storeId);
+                                                      // その薬局の他の店舗が選択されているかチェック
+                                                      const otherStoresSelected = ((profile as any).store_names || ['本店'])
+                                                        .filter((name: string) => name !== storeName)
+                                                        .some((name: string) => next.has(`${id}_${name}`));
+                                                      
+                                                      // 他の店舗が選択されていない場合、薬局全体の選択も削除
+                                                      if (!otherStoresSelected) {
+                                                        next.delete(id);
+                                                      }
+                                                    }
+                                                    
+                                                    setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                                  }}
+                                                />
+                                                <span className="text-xs">{storeName}</span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            ) : (
+                              <div className="text-sm">
+                                {(() => {
+                                  // store_ng_pharmaciesテーブルからNG薬局情報を取得
+                                  const ngPharmacies = storeNgPharmacists[pharmacist.id] || [];
+                                  
+                                  // デバッグログ
+                                  console.log('NG薬局表示デバッグ:', {
+                                    pharmacistId: pharmacist.id,
+                                    pharmacistName: pharmacist.name,
+                                    ngPharmacies: ngPharmacies,
+                                    storeNgPharmacists: storeNgPharmacists
+                                  });
+                                  
+                                  if (ngPharmacies.length === 0) {
+                                    return <span className="text-gray-400">NG設定なし</span>;
+                                  }
+                                  
+                                  return (
+                                    <div className="space-y-1">
+                                      {ngPharmacies.map((ngPharmacy: any, index: number) => {
+                                        const pharmacyName = userProfiles[ngPharmacy.pharmacy_id]?.name || 'Unknown';
+                                        const storeName = ngPharmacy.store_name || '本店';
+                                        return (
+                                          <div key={index} className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded">
+                                            {pharmacyName} - {storeName}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-3 flex items-center gap-2">
+                            {editingUserId === pharmacist.id ? (
+                              <>
+                                <button onClick={() => saveEditUser(pharmacist)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">保存</button>
+                                <button onClick={() => setEditingUserId(null)} className="text-xs bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded">キャンセル</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => {
+                                  console.log('Edit button clicked for pharmacist:', pharmacist.id);
+                                  beginEditUser(pharmacist);
+                                }} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
+                                <button onClick={() => {
+                                  console.log('Delete button clicked for pharmacist:', pharmacist);
+                                  alert('削除ボタンがクリックされました: ' + (pharmacist.name || pharmacist.email));
+                                  deleteUser(pharmacist);
+                                }} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       ))
                     )}
