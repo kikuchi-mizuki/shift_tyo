@@ -1996,6 +1996,12 @@ const handleRatingSubmit = async (
       comment
     });
     
+    // 認証状態の確認
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    console.log('=== AUTH CHECK ===');
+    console.log('Auth user:', authUser);
+    console.log('Auth error:', authError);
+    
     const ratingData = {
       pharmacy_id: pharmacyId,
       pharmacist_id: pharmacistId,

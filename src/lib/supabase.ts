@@ -1449,6 +1449,8 @@ export const pharmacistRatings = {
     try {
       console.log('=== UPSERT RATING START ===');
       console.log('Rating data:', ratingData);
+      console.log('Supabase URL:', supabase.supabaseUrl);
+      console.log('Supabase Key (first 10 chars):', supabase.supabaseKey?.substring(0, 10));
       
       const { data, error } = await supabase
         .from('pharmacist_ratings')
