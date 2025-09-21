@@ -320,6 +320,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         // 成功メッセージ
         alert(`${shiftRequests.length}件の希望シフトを保存しました。AIマッチングを実行します。`);
         
+        // データを再読み込み（新しい希望シフトを取得）
+        console.log('データを再読み込み中...');
+        await loadData();
+        console.log('データ再読み込み完了');
+        
         // AIマッチングを再実行
         console.log('AIマッチングを再実行中...');
         await executeMonthlyAIMatching();
