@@ -179,9 +179,17 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('Loading pharmacy data for user:', user.id);
       
       // システム状態を取得
+      console.log('=== LOADING SYSTEM STATUS ===');
       const { data: systemStatusData, error: systemStatusError } = await systemStatus.getSystemStatus();
+      console.log('System status data:', systemStatusData);
+      console.log('System status error:', systemStatusError);
       if (!systemStatusError && systemStatusData) {
-        setIsSystemConfirmed(systemStatusData.status === 'confirmed');
+        const isConfirmed = systemStatusData.status === 'confirmed';
+        console.log('Setting isSystemConfirmed to:', isConfirmed);
+        setIsSystemConfirmed(isConfirmed);
+      } else {
+        console.log('System status not loaded, defaulting to false');
+        setIsSystemConfirmed(false);
       }
       
       // 募集シフトを取得
@@ -218,7 +226,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       }
       
       // 直接Supabaseから確定済みシフトを取得
+      console.log('=== LOADING CONFIRMED SHIFTS ===');
       console.log('Attempting to load assigned shifts for pharmacy_id:', user.id);
+      console.log('User object:', user);
       console.log('Supabase client status:', {
         url: supabase.supabaseUrl,
         hasAuth: !!supabase.auth,
@@ -1286,7 +1296,15 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           )}
           
           {/* 確定シフトの詳細表示 */}
-          {isSystemConfirmed && selectedDates.length > 0 && (
+          {(() => {
+            console.log('=== CONFIRMED SHIFTS DISPLAY CONDITION CHECK ===');
+            console.log('isSystemConfirmed:', isSystemConfirmed);
+            console.log('selectedDates.length:', selectedDates.length);
+            console.log('selectedDates:', selectedDates);
+            console.log('confirmedShifts.length:', confirmedShifts.length);
+            console.log('confirmedShifts:', confirmedShifts);
+            return isSystemConfirmed && selectedDates.length > 0;
+          })() && (
             <div className="p-4 bg-green-50 rounded-lg">
               <h3 className="text-sm font-medium text-green-800 mb-3">確定シフト一覧</h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
