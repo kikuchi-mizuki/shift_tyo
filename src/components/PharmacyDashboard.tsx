@@ -2000,10 +2000,13 @@ const handleRatingSubmit = async (
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
     console.log('=== AUTH CHECK ===');
     console.log('Auth user:', authUser);
+    console.log('Auth user ID:', authUser?.id);
+    console.log('Pharmacy ID from parameter:', pharmacyId);
+    console.log('IDs match:', authUser?.id === pharmacyId);
     console.log('Auth error:', authError);
     
     const ratingData = {
-      pharmacy_id: pharmacyId,
+      pharmacy_id: authUser?.id || pharmacyId, // Use authenticated user ID if available
       pharmacist_id: pharmacistId,
       assigned_shift_id: shiftId,
       rating: rating,
