@@ -834,34 +834,17 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                       const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
                       const dayReqs = myRequests.filter((r: any) => r.date === dateStr);
                       const hasConsult = dayReqs.some((r: any) => r.time_slot === 'consult' || r.time_slot === 'negotiable');
-                      const hasCustom = dayReqs.some((r: any) => r.time_slot === 'custom');
-                      
-                      if (hasConsult) {
-                        return (
-                          <div className="text-[9px] sm:text-[10px] text-purple-700 bg-purple-50 border border-purple-200 rounded px-1 py-0.5 mt-1 inline-block">
-                            <span className="sm:hidden">相</span>
-                            <span className="hidden sm:inline">相談</span>
-                          </div>
-                        );
-                      } else if (hasCustom) {
-                        const customReq = dayReqs.find((r: any) => r.time_slot === 'custom');
-                        const timeStr = customReq && customReq.start_time && customReq.end_time 
-                          ? `${customReq.start_time.slice(0,5)}-${customReq.end_time.slice(0,5)}`
-                          : 'カスタム';
-                        return (
-                          <div className="text-[9px] sm:text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1 py-0.5 mt-1 inline-block">
-                            <span className="sm:hidden">カ</span>
-                            <span className="hidden sm:inline">{timeStr}</span>
-                          </div>
-                        );
-                      } else {
-                        return (
-                          <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">
-                            <span className="sm:hidden">希</span>
-                            <span className="hidden sm:inline">希望</span>
-                          </div>
-                        );
-                      }
+                      return hasConsult ? (
+                        <div className="text-[9px] sm:text-[10px] text-purple-700 bg-purple-50 border border-purple-200 rounded px-1 py-0.5 mt-1 inline-block">
+                          <span className="sm:hidden">相</span>
+                          <span className="hidden sm:inline">相談</span>
+                        </div>
+                      ) : (
+                        <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">
+                          <span className="sm:hidden">希</span>
+                          <span className="hidden sm:inline">希望</span>
+                        </div>
+                      );
                     })()}
                   </>
                 )}
