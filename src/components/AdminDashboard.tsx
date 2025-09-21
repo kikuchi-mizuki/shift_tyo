@@ -3799,32 +3799,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           return null;
                         })()}
 
-                        {/* シフト確定ボタン */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <Calendar className="w-4 h-4 text-blue-600" />
-                            <h4 className="text-sm font-semibold text-blue-800">シフト確定</h4>
-                          </div>
-                          <p className="text-xs text-blue-700 mb-3">
-                            {dayMatches.length > 0 ? 'マッチング結果を確定してシフトを保存します' : '従来の方法でシフトを確定します'}
-                          </p>
-                        <button
-                            onClick={() => {
-                              if (dayMatches.length > 0) {
-                                // AIマッチング結果がある場合はそれを使用
-                                const shifts = convertAIMatchesToShifts(dayMatches, selectedDate);
-                                handleConfirmShiftsForDate(selectedDate, shifts);
-                              } else {
-                                // AIマッチング結果がない場合は従来の方法で確定
-                                handleConfirmShiftsForDate(selectedDate);
-                              }
-                            }}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
-                        >
-                          <Calendar className="w-4 h-4" />
-                            <span>シフトを確定</span>
-                        </button>
-                        </div>
                       </div>
                     );
                   }
