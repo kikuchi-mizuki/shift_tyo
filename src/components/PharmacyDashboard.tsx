@@ -235,10 +235,19 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         currentUser: await supabase.auth.getUser()
       });
       
+      // 認証ユーザーIDを取得
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const userIdToUse = authUser?.id || user.id;
+      
+      console.log('=== AUTH USER CHECK ===');
+      console.log('authUser:', authUser);
+      console.log('user.id:', user.id);
+      console.log('userIdToUse:', userIdToUse);
+      
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
         .select('*')
-        .eq('pharmacy_id', user.id)
+        .eq('pharmacy_id', userIdToUse)
         .eq('status', 'confirmed');
       
       if (assignedError) {
@@ -256,7 +265,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         const { data: altData, error: altError } = await supabase
           .from('assigned_shifts')
           .select('*')
-          .eq('pharmacy_id', user.id);
+          .eq('pharmacy_id', userIdToUse);
         
         if (altError) {
           console.error('Alternative query also failed:', altError);
