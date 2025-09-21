@@ -1692,49 +1692,77 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             </div>
           ) : (
             <div>
-            <button 
-              type="button"
-              onClick={() => {
-                console.log('=== BUTTON CLICK START ===');
-                console.log('Form state:', { selectedDates, timeSlot, requiredStaff });
-                
-                if (isSystemConfirmed) {
-                  alert('シフト確定済みのため編集できません');
-                  return;
-                }
-                if (selectedDates.length === 0 || (!customTimeMode && !timeSlot) || (customTimeMode && (!startTime || !endTime)) || !requiredStaff) {
-                  alert('募集日・時間帯・人数を選択してください');
-                  return;
-                }
-                
-                console.log('Validation passed, calling handlePost');
-                handlePost();
-              }}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${
-                isSystemConfirmed ? 'bg-gray-400 text-white cursor-not-allowed' :
-                findExistingPostingForCurrentSelection() ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-              disabled={isSystemConfirmed}
-            >
-              {(() => {
-                if (isSystemConfirmed) return 'シフト確定済み';
-                const existing = findExistingPostingForCurrentSelection();
-                if (!existing) return '募集を追加';
-                return '募集を更新';
-              })()}
-            </button>
             {(() => {
               const existing = findExistingPostingForCurrentSelection();
-              if (!existing) return null;
-              return (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteExisting(existing.id)}
-                  className="mt-2 w-full py-2 px-4 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700"
-                >
-                  募集を削除
-                </button>
-              );
+              
+              if (existing) {
+                // 既存の募集がある場合は「募集を更新」と「募集を削除」の両方を表示
+                return (
+                  <div className="space-y-3 mt-4">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        console.log('=== BUTTON CLICK START ===');
+                        console.log('Form state:', { selectedDates, timeSlot, requiredStaff });
+                        
+                        if (isSystemConfirmed) {
+                          alert('シフト確定済みのため編集できません');
+                          return;
+                        }
+                        if (selectedDates.length === 0 || (!customTimeMode && !timeSlot) || (customTimeMode && (!startTime || !endTime)) || !requiredStaff) {
+                          alert('募集日・時間帯・人数を選択してください');
+                          return;
+                        }
+                        
+                        console.log('Validation passed, calling handlePost');
+                        handlePost();
+                      }}
+                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-amber-600 text-white hover:bg-amber-700 text-sm sm:text-base"
+                      disabled={isSystemConfirmed}
+                    >
+                      募集を更新
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteExisting(existing.id)}
+                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-red-700 text-sm sm:text-base"
+                    >
+                      募集を削除
+                    </button>
+                  </div>
+                );
+              } else {
+                // 既存の募集がない場合は「募集を追加」のみ表示
+                return (
+                  <div className="mt-4">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        console.log('=== BUTTON CLICK START ===');
+                        console.log('Form state:', { selectedDates, timeSlot, requiredStaff });
+                        
+                        if (isSystemConfirmed) {
+                          alert('シフト確定済みのため編集できません');
+                          return;
+                        }
+                        if (selectedDates.length === 0 || (!customTimeMode && !timeSlot) || (customTimeMode && (!startTime || !endTime)) || !requiredStaff) {
+                          alert('募集日・時間帯・人数を選択してください');
+                          return;
+                        }
+                        
+                        console.log('Validation passed, calling handlePost');
+                        handlePost();
+                      }}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer text-sm sm:text-base ${
+                        isSystemConfirmed ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                      disabled={isSystemConfirmed}
+                    >
+                      {isSystemConfirmed ? 'シフト確定済み' : '募集を追加'}
+                    </button>
+                  </div>
+                );
+              }
             })()}
             </div>
           )}
