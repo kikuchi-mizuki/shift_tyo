@@ -523,6 +523,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       setAiMatchesByDate({});
       setMonthlyMatchingExecuted(false); // マッチング実行フラグをリセット
       console.log('既存のマッチング結果をクリアしました');
+      console.log('🔄 monthlyMatchingExecutedフラグをfalseにリセット');
 
       // 現在の月の全ての日付を取得
       const currentMonth = currentDate.getMonth();
@@ -706,6 +707,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       // 1ヶ月分のマッチング実行完了フラグを設定
       setMonthlyMatchingExecuted(true);
+      console.log('✅ 1ヶ月分マッチング実行完了 - monthlyMatchingExecutedフラグをtrueに設定');
       
       console.log('マッチング結果:', monthlyMatches);
       console.log('日付別マッチング結果:', matchesByDate);
@@ -3153,213 +3155,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const dayConsultRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === dateStr && r.time_slot === 'consult') : [];
               
               
-              // マッチング状況を計算
+              // マッチング状況を計算（右パネルと同じロジックを使用）
               const calculateMatchingStatus = () => {
-                // データがある日付のみログを出力
                 if (dayRequests.length > 0 || dayPostings.length > 0) {
-                  console.log(`🎯🎯🎯 マッチング状況計算開始 (${dateStr}) 🎯🎯🎯`);
-                  console.log('確定シフト数:', dayAssignedShifts.length);
-                  console.log('募集数:', dayPostings.length);
-                  console.log('希望数:', dayRequests.length);
-                  console.log('募集詳細:', dayPostings);
-                  console.log('希望詳細:', dayRequests);
-                  console.log('マッチング処理が開始されました - コンソールを確認してください');
+                  console.log(`=== カレンダーマッチング状況計算開始 (${dateStr}) ===`);
+                  console.log('dayRequests:', dayRequests);
+                  console.log('dayPostings:', dayPostings);
                 }
-                // 重複カウント防止用セット（終日が午前/午後に跨っても1件扱い）
-                const uniqueAvailableRequestIds = new Set<string>();
-                
+
+                // 確定シフトがあるかチェック
                 if (dayAssignedShifts.length > 0) {
-                  console.log('確定シフトが存在するため、確定状態を返します');
-                  
-                  // 確定シフトがある場合でも、不足や余裕の情報を計算
-                  let totalRequired = 0;
-                  let totalAvailable = 0;
-                  let totalMatched = 0;
-                  let totalShortage = 0;
-                  let totalExcess = 0;
+                  const totalRequired = dayPostings.reduce((sum, posting) => sum + (posting.required_staff || 1), 0);
+                  const totalMatched = dayAssignedShifts.length;
+                  const totalShortage = Math.max(0, totalRequired - totalMatched);
+                  const totalExcess = Math.max(0, dayRequests.length - totalMatched);
 
-                  // 時間範囲ベースの計算
-                  totalRequired = dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                  totalAvailable = Array.isArray(dayRequests) ? dayRequests.filter((r: any) => r.start_time && r.end_time).length : 0;
-                  totalMatched = dayAssignedShifts.length;
-                  
-                  // 確定シフトがある場合の不足・余裕計算
-                  // 不足 = 必要人数 - 確定シフト数
-                  totalShortage = Math.max(0, totalRequired - totalMatched);
-                  // 余裕 = 利用可能人数 - 確定シフト数
-                  totalExcess = Math.max(0, totalAvailable - totalMatched);
-                  
-                  console.log(`確定後計算: 総必要=${totalRequired}, 総利用可能=${totalAvailable}, 総マッチ=${totalMatched}, 総不足=${totalShortage}, 総余裕=${totalExcess}`);
-                  
-                  return { 
-                    type: 'confirmed', 
-                    count: dayAssignedShifts.length, 
+                  console.log(`確定シフト存在 [${dateStr}]: 必要=${totalRequired}, 確定=${totalMatched}, 不足=${totalShortage}, 余裕=${totalExcess}`);
+
+                  return {
+                    type: 'confirmed',
+                    count: totalMatched,
                     shortage: totalShortage,
-                    excess: totalExcess,
-                    requestsCount: dayRequests.length 
-                  } as any;
-                }
-                if (dayRequests.length === 0 && dayPostings.length === 0) {
-                  console.log('募集も希望もないため、空状態を返します');
-                  return { type: 'empty', count: 0, requestsCount: 0 } as any;
-                }
-
-                // ヘルパー
-                const getProfile = (id: string) => {
-                  if (!userProfiles) return {} as any;
-                  if (Array.isArray(userProfiles)) {
-                    return (userProfiles as any[]).find((u: any) => u?.id === id) || ({} as any);
-                  }
-                  return (userProfiles as any)[id] || ({} as any);
-                };
-                // 時間範囲ベースのマッチング関数
-                const isRangeCompatible = (request: any, posting: any) => {
-                  const rs = request?.start_time;
-                  const re = request?.end_time;
-                  const ps = posting?.start_time;
-                  const pe = posting?.end_time;
-                  
-                  if (!rs || !re || !ps || !pe) return false;
-
-                  // 時間を数値に変換（HH:MM:SS形式を分に変換）
-                  const timeToMinutes = (timeStr: string) => {
-                    const [hours, minutes] = timeStr.split(':').map(Number);
-                    return hours * 60 + minutes;
+                    excess: totalExcess
                   };
+                }
 
-                  const requestStart = timeToMinutes(rs);
-                  const requestEnd = timeToMinutes(re);
-                  const postingStart = timeToMinutes(ps);
-                  const postingEnd = timeToMinutes(pe);
+                // 右パネルと同じロジックで不足を計算
+                const shortagePharmacies = analyzePharmacyShortage(dateStr);
+                const totalShortage = shortagePharmacies.reduce((sum, pharmacy) => sum + pharmacy.shortage, 0);
+                const dayMatches = aiMatchesByDate[dateStr] || [];
+                const totalMatched = dayMatches.length;
+                const totalAvailable = dayRequests.length;
+                const totalExcess = Math.max(0, totalAvailable - totalMatched);
 
-                  // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-                  return requestStart <= postingStart && requestEnd >= postingEnd;
+                if (dayRequests.length > 0 || dayPostings.length > 0) {
+                  console.log(`右パネル連携計算 [${dateStr}]: マッチ=${totalMatched}, 不足=${totalShortage}, 余裕=${totalExcess}`);
+                  console.log(`不足薬局詳細:`, shortagePharmacies);
+                }
+
+                const result = {
+                  type: totalMatched > 0 ? 'matched' : (totalShortage > 0 || totalAvailable > 0 ? 'pending' : 'empty'),
+                  count: totalMatched,
+                  shortage: totalShortage,
+                  excess: totalExcess
                 };
 
-                let totalRequired = 0;
-                let totalAvailable = 0;
-                let totalMatched = 0;
-                let totalShortage = 0;
-                let totalExcess = 0;
-
-                // 時間範囲ベースの計算
-                totalRequired = dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
-                totalAvailable = Array.isArray(dayRequests) ? dayRequests.filter((r: any) => r.start_time && r.end_time).length : 0;
-                
-                // マッチング数を計算（薬剤師と薬局の組み合わせで計算）
-                let matchedCount = 0;
-                const matchedPharmacists = new Set<string>();
-                
-                // 薬剤師を評価順にソート
-                const sortedRequests = dayRequests.sort((a: any, b: any) => {
-                      const aRating = getPharmacistRating(a.pharmacist_id);
-                      const bRating = getPharmacistRating(b.pharmacist_id);
-                  if (aRating !== bRating) return bRating - aRating;
-                      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-                      return priorityOrder[b.priority] - priorityOrder[a.priority];
-                    });
-
-                  // 各薬局の必要人数を管理
-                const pharmacyNeeds = dayPostings.map((p: any) => ({
-                    ...p,
-                    remaining: Number(p.required_staff) || 0
-                  }));
-
-                  sortedRequests.forEach((request: any) => {
-                  const pharmacist = getProfile(request.pharmacist_id);
-                  const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
-                  
-                  // 利用可能な薬局を探す
-                  for (const pharmacyNeed of pharmacyNeeds) {
-                    if (pharmacyNeed.remaining <= 0) continue;
-                    
-                    const pharmacy = getProfile(pharmacyNeed.pharmacy_id);
-                    const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
-                    
-                    // 新しいNGリストテーブルからもチェック
-                    const pharmacistNgPharmacies = storeNgPharmacies[request.pharmacist_id] || [];
-                    const pharmacyNgPharmacists = storeNgPharmacists[pharmacyNeed.pharmacy_id] || [];
-                    
-                    // 薬剤師が薬局をNGにしているかチェック（新しいテーブル + 旧ng_list）
-                    const blockedByPharmacistNew = pharmacistNgPharmacies.some((ngPharmacy: any) => 
-                      ngPharmacy.pharmacy_id === pharmacyNeed.pharmacy_id && 
-                      (ngPharmacy.store_name === pharmacyNeed.store_name || ngPharmacy.store_name === null)
-                    );
-                    const blockedByPharmacistOld = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
-                    const blockedByPharmacist = blockedByPharmacistNew || blockedByPharmacistOld;
-                    
-                    // 薬局が薬剤師をNGにしているかチェック（新しいテーブル + 旧ng_list）
-                    const blockedByPharmacyNew = pharmacyNgPharmacists.some((ngPharmacist: any) => 
-                      ngPharmacist.pharmacist_id === request.pharmacist_id
-                    );
-                    const blockedByPharmacyOld = pharmacyNg.includes(request.pharmacist_id);
-                    const blockedByPharmacy = blockedByPharmacyNew || blockedByPharmacyOld;
-                    
-                    // NGリストチェックの詳細ログ
-                    if (blockedByPharmacist || blockedByPharmacy) {
-                      console.log(`❌ カレンダー計算NGリストブロック: 薬剤師(${pharmacist?.name || request.pharmacist_id}) ↔ 薬局(${pharmacy?.name || pharmacyNeed.pharmacy_id})`);
-                      if (blockedByPharmacist) {
-                        console.log(`  - 薬剤師NG薬局リスト:`, pharmacistNgPharmacies);
-                        console.log(`  - 薬剤師NGリスト:`, pharmacistNg);
-                      }
-                      if (blockedByPharmacy) {
-                        console.log(`  - 薬局NG薬剤師リスト:`, pharmacyNgPharmacists);
-                        console.log(`  - 薬局NGリスト:`, pharmacyNg);
-                      }
-                    }
-                    
-                    if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
-                      matchedCount++;
-                      matchedPharmacists.add(request.pharmacist_id);
-                      pharmacyNeed.remaining--;
-                      break;
-                    }
-                  }
-                });
-                
-                totalMatched = matchedCount;
-                totalShortage = Math.max(0, totalRequired - totalMatched);
-                totalExcess = Math.max(0, totalAvailable - totalMatched);
-
-                // デバッグ用ログ（データがある日付のみ）
-                if (dayRequests.length > 0 || dayPostings.length > 0) {
-                  console.log(`日付 ${dateStr}: 総必要=${totalRequired}, 総利用可能=${totalAvailable}, 総マッチ=${totalMatched}, 総不足=${totalShortage}`);
-                  console.log(`カレンダー計算: 不足=${totalShortage}, 余裕=${totalExcess}`);
-                }
-
-                // カレンダーのマッチ数が0になってしまうケースを右パネルに合わせて補正
-                let effectiveMatched = totalMatched;
-                if (effectiveMatched === 0 && totalRequired > 0 && totalAvailable > 0) {
-                  effectiveMatched = Math.min(totalRequired, totalAvailable);
-                }
-                const uniqueAvailableCount = uniqueAvailableRequestIds.size;
-                let result;
-                if (totalRequired === 0) {
-                  if (uniqueAvailableCount > 0) {
-                    result = { type: 'requests_only', count: uniqueAvailableCount, requestsCount: totalAvailable } as any;
-                  } else if (dayPostings.length > 0) {
-                    // 薬局の募集のみの場合
-                    result = { type: 'postings_only', count: dayPostings.length, postingsCount: dayPostings.length } as any;
-                  } else {
-                    result = { type: 'empty', count: 0, requestsCount: 0 } as any;
-                  }
-                  if (dayRequests.length > 0 || dayPostings.length > 0) {
-                    console.log('結果: requests_only/postings_only/empty', result);
-                  }
-                } else if (totalAvailable === 0) {
-                  // 募集はあるが希望がない場合
-                  result = { type: 'postings_only', count: dayPostings.length, postingsCount: dayPostings.length } as any;
-                  if (dayRequests.length > 0 || dayPostings.length > 0) {
-                    console.log('結果: postings_only (募集のみ)', result);
-                  }
-                } else {
-                  // 必要>0かつ応募>0なら、右パネルと同じ計算に合わせて表示
-                  result = { type: 'summary', count: Math.max(effectiveMatched, 0), shortage: totalShortage, excess: totalExcess, requestsCount: totalAvailable } as any;
-                  if (dayRequests.length > 0 || dayPostings.length > 0) {
-                    console.log('結果: summary', result);
-                  }
-                }
-                
                 if (dayRequests.length > 0 || dayPostings.length > 0) {
                   console.log(`=== マッチング状況計算完了 (${dateStr}) ===`);
                 }
@@ -3432,7 +3272,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             )}
                             
                             {/* 不足件数（1ヶ月分マッチング実行後に不足がある場合に表示） */}
-                            {monthlyMatchingExecuted && matchingStatus.shortage > 0 && (
+                            {(() => {
+                              const shouldShowShortage = monthlyMatchingExecuted && matchingStatus.shortage > 0;
+                              if (matchingStatus.shortage > 0) {
+                                console.log(`カレンダー不足パッチ表示判定 [${dateStr}]:`, {
+                                  monthlyMatchingExecuted,
+                                  shortage: matchingStatus.shortage,
+                                  shouldShowShortage,
+                                  totalRequired,
+                                  totalMatched
+                                });
+                              }
+                              return shouldShowShortage;
+                            })() && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">不{matchingStatus.shortage}</span>
                                 <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
