@@ -2165,17 +2165,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           
           // 薬剤師ユーザーのみを対象にNG薬局情報を取得
           const pharmacistUsers = Object.values(profilesMap || {}).filter((profile: any) => profile.user_type === 'pharmacist');
+          console.log('薬剤師ユーザー数:', pharmacistUsers.length);
+          
           for (const pharmacist of pharmacistUsers) {
             try {
+              console.log(`薬剤師 ${(pharmacist as any).id} のNG薬局情報を取得中...`);
               const { data: ngPharmaciesData, error: ngPharmaciesError } = await supabase
                 .from('store_ng_pharmacies')
                 .select('*')
                 .eq('pharmacist_id', (pharmacist as any).id);
               
+              console.log(`薬剤師 ${(pharmacist as any).id} のNG薬局データ:`, {
+                data: ngPharmaciesData,
+                error: ngPharmaciesError,
+                count: ngPharmaciesData?.length || 0
+              });
+              
               if (!ngPharmaciesError && ngPharmaciesData) {
                 pharmacistNgPharmaciesMap[(pharmacist as any).id] = ngPharmaciesData;
               }
             } catch (error) {
+              console.error(`Error fetching NG pharmacies for pharmacist ${(pharmacist as any).id}:`, error);
               logToRailway(`Error fetching NG pharmacies for pharmacist ${(pharmacist as any).id}:`, error);
             }
           }
@@ -4696,7 +4706,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     pharmacistId: pharmacist.id,
                                     pharmacistName: pharmacist.name,
                                     ngPharmacies: ngPharmacies,
-                                    storeNgPharmacies: storeNgPharmacies
+                                    storeNgPharmacies: storeNgPharmacies,
+                                    storeNgPharmaciesKeys: Object.keys(storeNgPharmacies || {}),
+                                    allPharmacistIds: Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.user_type === 'pharmacist')
                                   });
                                   
                                   if (ngPharmacies.length === 0) {
