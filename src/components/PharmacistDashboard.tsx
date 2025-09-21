@@ -735,8 +735,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const timeSlots = [
     { id: 'morning', label: '午前 (9:00-13:00)', icon: Sun, color: 'bg-green-500 hover:bg-green-600' },
     { id: 'afternoon', label: '午後 (13:00-18:00)', icon: Sun, color: 'bg-orange-500 hover:bg-orange-600' },
-    { id: 'full', label: '終日 (9:00-18:00)', icon: Smile, color: 'bg-yellow-500 hover:bg-yellow-600' },
-    { id: 'consult', label: '要相談', icon: MessageCircle, color: 'bg-purple-500 hover:bg-purple-600' }
+    { id: 'full', label: '終日 (9:00-18:00)', icon: Smile, color: 'bg-yellow-500 hover:bg-yellow-600' }
   ];
 
   const priorities = [
@@ -1226,7 +1225,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               </h3>
               <ul className="text-xs text-blue-700 space-y-1">
                 <li>• 希望日は月初に一括登録することをお勧めします</li>
-                <li>• 「要相談」を選択すると柔軟な時間調整が可能です</li>
                 <li>• 高優先度の日程は優先的にマッチングされます</li>
                 <li>• NG薬局の設定は別途管理画面で行えます</li>
               </ul>
