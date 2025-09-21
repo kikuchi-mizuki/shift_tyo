@@ -34,7 +34,14 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   // 日付をリストに追加する関数
   const addDateToList = () => {
     if (tempSelectedDate && !selectedDates.includes(tempSelectedDate)) {
-      setSelectedDates(prev => [...prev, tempSelectedDate]);
+      console.log('=== ADDING DATE TO LIST ===');
+      console.log('tempSelectedDate:', tempSelectedDate);
+      console.log('current selectedDates:', selectedDates);
+      setSelectedDates(prev => {
+        const newDates = [...prev, tempSelectedDate];
+        console.log('new selectedDates:', newDates);
+        return newDates;
+      });
       setTempSelectedDate('');
     }
   };
@@ -184,7 +191,17 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         console.error('Error loading shift postings:', myShiftsError);
         setMyShifts([]);
       } else {
-        console.log('Loaded shift postings:', myShiftsData);
+        console.log('=== SHIFT POSTINGS LOADED ===');
+        console.log('Raw myShiftsData:', myShiftsData);
+        console.log('myShiftsData type:', typeof myShiftsData);
+        console.log('myShiftsData length:', myShiftsData?.length || 0);
+        
+        // 9月1日のデータを特別にチェック
+        const sept1Data = myShiftsData?.filter((posting: any) => posting.date === '2025-09-01');
+        console.log('=== SEPTEMBER 1st DATA CHECK ===');
+        console.log('September 1st postings:', sept1Data);
+        console.log('September 1st count:', sept1Data?.length || 0);
+        
         console.log('Shift postings detailed analysis:', myShiftsData?.map((posting: any) => ({
           id: posting.id,
           date: posting.date,
@@ -455,23 +472,38 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
     const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    console.log('=== DATE SELECT DEBUG ===');
+    console.log('Clicked day:', day);
+    console.log('formattedDate:', formattedDate);
+    console.log('current selectedDates:', selectedDates);
+    console.log('current timeSlot:', timeSlot);
+    console.log('current customTimeMode:', customTimeMode);
+    
     // 選択済み日付リストのトグル（追加/削除）
     if (selectedDates.includes(formattedDate)) {
       // 既に選択済みの場合は削除
+      console.log('Removing date from selection');
       setSelectedDates(prev => prev.filter(date => date !== formattedDate));
     } else {
       // 未選択の場合は追加
-      setSelectedDates(prev => [...prev, formattedDate]);
+      console.log('Adding date to selection');
+      setSelectedDates(prev => {
+        const newDates = [...prev, formattedDate];
+        console.log('New selectedDates:', newDates);
+        return newDates;
+      });
+      
+      // 新しい日付の場合はフォームをリセット（ただし時間帯はデフォルト値を設定）
+      console.log('Resetting form for new date');
+      setTimeSlot('morning'); // 空文字列ではなくデフォルト値を設定
+      setCustomTimeMode(false);
+      setStartTime('09:00');
+      setEndTime('13:00');
+      setRequiredStaff(1); // nullではなくデフォルト値を設定
+      setMemo('');
+      // 店舗名はリセットしない（ユーザーが選択した店舗名を保持）
     }
-    
-    // 新しい日付の場合はフォームをリセット
-    setTimeSlot('');
-    setCustomTimeMode(false);
-    setStartTime('09:00');
-    setEndTime('13:00');
-    setRequiredStaff(null);
-    setMemo('');
-    // 店舗名はリセットしない（ユーザーが選択した店舗名を保持）
   };
 
   const handleAddStoreName = () => {
@@ -1735,19 +1767,53 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           ) : (
             <div>
             {(() => {
-              // シンプルな条件チェック
-              const hasExistingPosting = selectedDates.length > 0 && myShifts.some((s: any) => 
-                selectedDates.includes(s.date) && 
-                s.pharmacy_id === user?.id &&
-                s.time_slot === (customTimeMode ? 'custom' : timeSlot)
-              );
+              // より詳細な条件チェック
+              const currentTimeSlot = customTimeMode ? 'custom' : timeSlot;
               
               console.log('=== BUTTON RENDERING DEBUG ===');
-              console.log('hasExistingPosting:', hasExistingPosting);
               console.log('selectedDates:', selectedDates);
               console.log('user.id:', user?.id);
               console.log('timeSlot:', timeSlot);
               console.log('customTimeMode:', customTimeMode);
+              console.log('currentTimeSlot:', currentTimeSlot);
+              console.log('myShifts:', myShifts);
+              console.log('myShifts length:', myShifts?.length || 0);
+              
+              // 各myShiftの詳細をログ出力
+              if (myShifts && myShifts.length > 0) {
+                console.log('=== MYSHIFTS DETAIL ===');
+                myShifts.forEach((shift: any, index: number) => {
+                  console.log(`Shift ${index}:`, {
+                    id: shift.id,
+                    date: shift.date,
+                    time_slot: shift.time_slot,
+                    pharmacy_id: shift.pharmacy_id,
+                    start_time: shift.start_time,
+                    end_time: shift.end_time,
+                    store_name: shift.store_name
+                  });
+                });
+              }
+              
+              // 既存募集の検出
+              const hasExistingPosting = selectedDates.length > 0 && myShifts && myShifts.some((s: any) => {
+                const dateMatch = selectedDates.includes(s.date);
+                const pharmacyMatch = s.pharmacy_id === user?.id;
+                const timeSlotMatch = s.time_slot === currentTimeSlot;
+                
+                console.log(`Checking shift ${s.id}:`, {
+                  dateMatch,
+                  pharmacyMatch,
+                  timeSlotMatch,
+                  shiftDate: s.date,
+                  shiftPharmacyId: s.pharmacy_id,
+                  shiftTimeSlot: s.time_slot
+                });
+                
+                return dateMatch && pharmacyMatch && timeSlotMatch;
+              });
+              
+              console.log('hasExistingPosting:', hasExistingPosting);
               
               if (hasExistingPosting) {
                 // 既存の募集がある場合は「募集を更新」と「募集を削除」の両方を表示
