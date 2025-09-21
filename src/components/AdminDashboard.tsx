@@ -3293,8 +3293,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     const pharmacy = getProfile(pharmacyNeed.pharmacy_id);
                     const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
                     
-                    const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
-                    const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+                    // 新しいNGリストテーブルからもチェック
+                    const pharmacistNgPharmacies = storeNgPharmacies[request.pharmacist_id] || [];
+                    const pharmacyNgPharmacists = storeNgPharmacists[pharmacyNeed.pharmacy_id] || [];
+                    
+                    // 薬剤師が薬局をNGにしているかチェック（新しいテーブル + 旧ng_list）
+                    const blockedByPharmacistNew = pharmacistNgPharmacies.some((ngPharmacy: any) => 
+                      ngPharmacy.pharmacy_id === pharmacyNeed.pharmacy_id && 
+                      (ngPharmacy.store_name === pharmacyNeed.store_name || ngPharmacy.store_name === null)
+                    );
+                    const blockedByPharmacistOld = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
+                    const blockedByPharmacist = blockedByPharmacistNew || blockedByPharmacistOld;
+                    
+                    // 薬局が薬剤師をNGにしているかチェック（新しいテーブル + 旧ng_list）
+                    const blockedByPharmacyNew = pharmacyNgPharmacists.some((ngPharmacist: any) => 
+                      ngPharmacist.pharmacist_id === request.pharmacist_id
+                    );
+                    const blockedByPharmacyOld = pharmacyNg.includes(request.pharmacist_id);
+                    const blockedByPharmacy = blockedByPharmacyNew || blockedByPharmacyOld;
+                    
+                    // NGリストチェックの詳細ログ
+                    if (blockedByPharmacist || blockedByPharmacy) {
+                      console.log(`❌ カレンダー計算NGリストブロック: 薬剤師(${pharmacist?.name || request.pharmacist_id}) ↔ 薬局(${pharmacy?.name || pharmacyNeed.pharmacy_id})`);
+                      if (blockedByPharmacist) {
+                        console.log(`  - 薬剤師NG薬局リスト:`, pharmacistNgPharmacies);
+                        console.log(`  - 薬剤師NGリスト:`, pharmacistNg);
+                      }
+                      if (blockedByPharmacy) {
+                        console.log(`  - 薬局NG薬剤師リスト:`, pharmacyNgPharmacists);
+                        console.log(`  - 薬局NGリスト:`, pharmacyNg);
+                      }
+                    }
                     
                     if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
                       matchedCount++;
@@ -3419,8 +3448,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             )}
                             
-                            {/* 不足件数（マッチング実行後のみ表示） */}
-                            {matchingStatus.shortage > 0 && (aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0) && (
+                            {/* 不足件数（不足がある場合に表示） */}
+                            {matchingStatus.shortage > 0 && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">不{matchingStatus.shortage}</span>
                                 <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
