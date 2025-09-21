@@ -919,7 +919,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [editingRequestId, setEditingRequestId] = useState<string | null>(null);
   const [requestEditForm, setRequestEditForm] = useState<any>({
     time_slot: 'morning',
-    priority: 'medium'
+    priority: 'medium',
+    memo: ''
   });
 
   // ユーザー管理（編集/削除）
@@ -2603,13 +2604,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     setEditingRequestId(r.id);
     setRequestEditForm({
       time_slot: r.time_slot === 'fullday' ? 'full' : r.time_slot,
-      priority: r.priority || 'medium'
+      priority: r.priority || 'medium',
+      memo: r.memo || ''
     });
   };
   const saveEditRequest = async (requestId: string) => {
     const { error } = await shiftRequestsAdmin.updateRequest(requestId, {
       time_slot: requestEditForm.time_slot,
-      priority: requestEditForm.priority
+      priority: requestEditForm.priority,
+      memo: requestEditForm.memo
     });
     if (error) {
       alert(`希望の更新に失敗しました: ${error.message || error.code || 'Unknown error'}`);
@@ -4196,7 +4199,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <div key={index} className="bg-white rounded border px-2 py-1">
                             {isEditing ? (
                               <div className="space-y-2">
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 gap-2">
                                   <select
                                     className="text-xs border rounded px-2 py-1"
                                     value={requestEditForm.time_slot}
@@ -4215,6 +4218,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     <option value="medium">中</option>
                                     <option value="low">低</option>
                                   </select>
+                                </div>
+                                <div>
+                                  <input
+                                    type="text"
+                                    placeholder="メモ（任意）"
+                                    className="w-full text-xs border rounded px-2 py-1"
+                                    value={requestEditForm.memo || ''}
+                                    onChange={(e) => setRequestEditForm({ ...requestEditForm, memo: e.target.value })}
+                                  />
                                 </div>
                                 <div className="text-right space-x-1">
                                   <button onClick={() => saveEditRequest(request.id)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded">保存</button>
@@ -4238,6 +4250,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       return '要相談';
                                     })()}
                                   </div>
+                                  {request.memo && (
+                                    <div className="text-[11px] text-gray-600 mt-1 italic">
+                                      📝 {request.memo}
+                                    </div>
+                                  )}
                                   <div className="mt-1 space-x-1">
                                     <button onClick={() => beginEditRequest(request)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
                                     <button onClick={() => deleteRequest(request.id)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">削除</button>

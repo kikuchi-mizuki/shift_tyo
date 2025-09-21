@@ -959,6 +959,11 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                                 shift.time_slot === 'consult' ? '要相談' :
                                 shift.time_slot === 'custom' ? (shift.start_time && shift.end_time ? `${shift.start_time.slice(0,5)}-${shift.end_time.slice(0,5)}` : 'カスタム') : '夜間'}
                         </div>
+                        {shift.memo && (
+                          <div className="text-xs text-gray-600 mt-1 italic">
+                            📝 メモ: {shift.memo}
+                          </div>
+                        )}
                     </div>
                   );
                 })
