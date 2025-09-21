@@ -4364,39 +4364,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     console.log('マッチング分析結果:', matchingAnalysis);
                     logToRailway('マッチング分析結果:', matchingAnalysis);
                     
-                    // 不足薬局の表示（マッチング状況とは独立）
-                    const shortagePharmacies = analyzePharmacyShortage(selectedDate);
-                    if (shortagePharmacies.length > 0) {
-                      return (
-                        <div className="bg-red-50 rounded-lg border border-red-200 p-4">
-                          <div className="flex items-center space-x-2 mb-3">
-                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <h4 className="text-xs font-semibold text-red-800">人数が不足している薬局</h4>
-                          </div>
-                          <div className="space-y-2 max-h-48 overflow-y-auto">
-                            {shortagePharmacies.map((pharmacy: any, index: number) => {
-                              const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
-                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.pharmacy_id ? pharmacy.pharmacy_id.slice(-4) : 'unknown'}`;
-                              const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
-                              const timeLabel = pharmacy.start_time && pharmacy.end_time 
-                                ? `${pharmacy.start_time.slice(0,5)}-${pharmacy.end_time.slice(0,5)}`
-                                : '09:00-18:00';
-                                    return (
-                                <div key={index} className="bg-white rounded border px-2 py-1">
-                                        <div className="flex items-start justify-between">
-                                          <div className="text-xs">
-                                      <div className="font-medium text-gray-800">{pharmacyName}{storeLabel}</div>
-                                      <div className="text-[11px] text-gray-600 mt-0.5">{timeLabel}</div>
-                                          </div>
-                                    <span className="text-xs text-red-600 font-medium">不足 {pharmacy.shortage}人</span>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                          </div>
-                        </div>
-                      );
-                    }
                     return null;
                   })()}
                   
