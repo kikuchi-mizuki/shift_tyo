@@ -287,7 +287,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             start_time: startTime,
             end_time: endTime,
             priority: 'high', // 手動選択なので高優先度
-            memo: `手動選択: 薬局${pharmacyId.slice(-4)}の応募時間に合わせて希望`,
+            memo: `手動選択: 薬局${pharmacyId ? pharmacyId.slice(-4) : 'unknown'}の応募時間に合わせて希望`,
             status: 'pending'
           };
           
@@ -408,7 +408,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         if (!pharmacyNeeds[pharmacyId]) {
           pharmacyNeeds[pharmacyId] = {
             id: pharmacyId,
-            name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId.slice(-4)}`,
+            name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId ? pharmacyId.slice(-4) : 'unknown'}`,
             store_name: posting.store_name || '店舗名なし',
             required: 0,
             matched: 0,
@@ -480,7 +480,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       if (!pharmacyNeeds[pharmacyId]) {
         pharmacyNeeds[pharmacyId] = {
           id: pharmacyId,
-          name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId.slice(-4)}`,
+          name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId ? pharmacyId.slice(-4) : 'unknown'}`,
           store_name: posting.store_name || '店舗名なし',
           required: 0,
           matched: 0,
@@ -565,7 +565,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // サンプルデータを3件まで表示
       if (monthlyRequests.length > 0) {
         debugInfo += `希望サンプル:\n`;
-        monthlyRequests.slice(0, 3).forEach((req, i) => {
+        (monthlyRequests || []).slice(0, 3).forEach((req, i) => {
           debugInfo += `${i+1}. 日付: ${req.date}, 時間: ${req.start_time}-${req.end_time}\n`;
         });
         debugInfo += `\n`;
@@ -573,7 +573,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       if (monthlyPostings.length > 0) {
         debugInfo += `募集サンプル:\n`;
-        monthlyPostings.slice(0, 3).forEach((post, i) => {
+        (monthlyPostings || []).slice(0, 3).forEach((post, i) => {
           debugInfo += `${i+1}. 日付: ${post.date}, 時間: ${post.start_time}-${post.end_time}\n`;
         });
         debugInfo += `\n`;
@@ -638,7 +638,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // サンプル募集の薬局名取得状況を確認
       if (monthlyPostings.length > 0) {
         debugInfo += `募集サンプルの薬局名取得状況:\n`;
-        monthlyPostings.slice(0, 3).forEach((posting, i) => {
+        (monthlyPostings || []).slice(0, 3).forEach((posting, i) => {
           const pharmacyId = posting.pharmacy_id;
           const userProfile = userProfiles?.[pharmacyId];
           const storeName = posting.store_name;
@@ -646,7 +646,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           debugInfo += `${i+1}. 薬局ID: ${pharmacyId}\n`;
           debugInfo += `   - store_name: "${storeName || 'なし'}"\n`;
           debugInfo += `   - userProfiles[${pharmacyId}]: ${userProfile ? `"${userProfile.name || '名前なし'}"` : 'なし'}\n`;
-          debugInfo += `   - 最終表示名: ${storeName || userProfile?.name || `薬局${pharmacyId.slice(-4)}`}\n\n`;
+          debugInfo += `   - 最終表示名: ${storeName || userProfile?.name || `薬局${pharmacyId ? pharmacyId.slice(-4) : 'unknown'}`}\n\n`;
         });
       }
 
@@ -3454,7 +3454,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       {Math.round(match.compatibilityScore * 100)}%
                                     </div>
                                     <div className="text-xs text-gray-500">
-                                      {match.reasons.slice(0, 2).join(', ')}
+                                      {(match.reasons || []).slice(0, 2).join(', ')}
                                     </div>
                                   </div>
                                 </div>
@@ -3553,7 +3553,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                                       value={pharmacist.id}
                                                       disabled={manualMatches[pharmacy.id]?.includes(pharmacist.id) && manualMatches[pharmacy.id]?.[index] !== pharmacist.id}
                                                     >
-                                                      {pharmacist.name || `薬剤師${pharmacist.id.slice(-4)}`}
+                                                      {pharmacist.name || `薬剤師${pharmacist.id ? pharmacist.id.slice(-4) : 'unknown'}`}
                                                     </option>
                                                   );
                                                 })}
@@ -3671,7 +3671,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     const matchedCount = Array.isArray(currentDayMatches) ? currentDayMatches.filter((match: any) => match.pharmacy.id === pharmacy.id).length : 0;
                                     const remainingShortage = Math.max(0, pharmacy.required - matchedCount);
                                     const pharmacyProfile = userProfiles[pharmacy.id];
-                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.id.slice(-4)}`;
+                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.id ? pharmacy.id.slice(-4) : 'unknown'}`;
                                     const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
                                     
                                     return (
@@ -3846,7 +3846,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 <div className="flex-1 pr-2">
                                   <div className="text-xs text-gray-800 leading-snug break-words">
                                     <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}</div>
-                                    <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || `薬局${shift.pharmacy_id.slice(-4)}`}</div>
+                                    <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || `薬局${shift.pharmacy_id ? shift.pharmacy_id.slice(-4) : 'unknown'}`}</div>
                                     <div>店舗: {getStoreName(shift)}</div>
                                     
                                     {/* 評価情報表示 */}
@@ -3893,7 +3893,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     const s = (shift.start_time || '').toString();
                                     const e = (shift.end_time || '').toString();
                                     if (s && e) {
-                                      const fmt = (t: string) => t.slice(0,5);
+                                      const fmt = (t: string) => t ? t.slice(0,5) : '00:00';
                                       return `${fmt(s)}-${fmt(e)}`;
                                     }
                                     // 既存スロットから時間範囲を導出
@@ -4376,7 +4376,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             {shortagePharmacies.map((pharmacy: any, index: number) => {
                               const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
-                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.pharmacy_id.slice(-4)}`;
+                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.pharmacy_id ? pharmacy.pharmacy_id.slice(-4) : 'unknown'}`;
                               const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
                               const timeLabel = pharmacy.start_time && pharmacy.end_time 
                                 ? `${pharmacy.start_time.slice(0,5)}-${pharmacy.end_time.slice(0,5)}`
