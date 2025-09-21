@@ -4570,7 +4570,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       pharmacies.map((pharmacy: any) => (
                         <div key={pharmacy.id} className="bg-white border border-gray-200 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
-                            {editingUserId === pharmacist.id ? (
+                            {editingUserId === pharmacy.id ? (
                               <input
                                 className="text-sm border rounded px-2 py-1 w-1/2"
                                 value={userEditForm.name}
@@ -4585,7 +4585,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           {/* 店舗名 */}
                           <div className="mb-2">
                             <div className="text-xs text-gray-600 mb-1">店舗名:</div>
-                            {editingUserId === pharmacist.id ? (
+                            {editingUserId === pharmacy.id ? (
                               <input
                                 className="text-xs border rounded px-2 py-1 w-full"
                                 placeholder="カンマ区切りで入力 (例: 渋谷,新宿)"
@@ -4613,7 +4613,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           {/* NG薬局・店舗リスト */}
                           <div>
                             <div className="text-xs text-gray-600 mb-1">NG薬局・店舗:</div>
-                            {editingUserId === pharmacist.id ? (
+                            {editingUserId === pharmacy.id ? (
                               <div className="space-y-2">
                                 {Object.entries(userProfiles || {})
                                   .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy')
@@ -4714,12 +4714,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <div className="text-sm">
                                 {(() => {
                                   // store_ng_pharmaciesテーブルからNG薬局情報を取得
-                                  const ngPharmacies = storeNgPharmacists[pharmacist.id] || [];
+                                  const ngPharmacies = storeNgPharmacists[pharmacy.id] || [];
                                   
                                   // デバッグログ
                                   console.log('NG薬局表示デバッグ:', {
-                                    pharmacistId: pharmacist.id,
-                                    pharmacistName: pharmacist.name,
+                                    pharmacistId: pharmacy.id,
+                                    pharmacistName: pharmacy.name,
                                     ngPharmacies: ngPharmacies,
                                     storeNgPharmacists: storeNgPharmacists
                                   });
@@ -4746,21 +4746,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
 
                           <div className="mt-3 flex items-center gap-2">
-                            {editingUserId === pharmacist.id ? (
+                            {editingUserId === pharmacy.id ? (
                               <>
-                                <button onClick={() => saveEditUser(pharmacist)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">保存</button>
+                                <button onClick={() => saveEditUser(pharmacy)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">保存</button>
                                 <button onClick={() => setEditingUserId(null)} className="text-xs bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded">キャンセル</button>
                               </>
                             ) : (
                               <>
                                 <button onClick={() => {
-                                  console.log('Edit button clicked for pharmacist:', pharmacist.id);
-                                  beginEditUser(pharmacist);
+                                  console.log('Edit button clicked for pharmacy:', pharmacy.id);
+                                  beginEditUser(pharmacy);
                                 }} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
                                 <button onClick={() => {
-                                  console.log('Delete button clicked for pharmacist:', pharmacist);
-                                  alert('削除ボタンがクリックされました: ' + (pharmacist.name || pharmacist.email));
-                                  deleteUser(pharmacist);
+                                  console.log('Delete button clicked for pharmacy:', pharmacy);
+                                  alert('削除ボタンがクリックされました: ' + (pharmacy.name || pharmacy.email));
+                                  deleteUser(pharmacy);
                                 }} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
                               </>
                             )}
@@ -4794,7 +4794,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       pharmacists.map((pharmacist: any) => (
                         <div key={pharmacist.id} className="bg-white border border-gray-200 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
-                            {editingUserId === pharmacist.id ? (
+                            {editingUserId === pharmacy.id ? (
                               <input
                                 className="text-sm border rounded px-2 py-1 w-1/2"
                                 value={userEditForm.name}
