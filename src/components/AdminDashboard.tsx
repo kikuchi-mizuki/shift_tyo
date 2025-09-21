@@ -4609,112 +4609,135 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             )}
                           </div>
                           
-                          {/* 店舗毎のNG薬剤師 */}
-                          <div>
-                            <div className="text-xs text-gray-600 mb-1">店舗毎NG薬剤師:</div>
-                            {storeNgPharmacists[pharmacy.id] && storeNgPharmacists[pharmacy.id].length > 0 ? (
-                              <div className="space-y-1">
-                                {storeNgPharmacists[pharmacy.id].map((storeNg: any, idx: number) => {
-                                  const pharmacist = userProfiles[storeNg.pharmacist_id];
-                                  return (
-                                    <div key={idx} className="text-xs">
-                                      <span className="font-medium text-blue-600">{storeNg.store_name}:</span>
-                                      <span className="ml-1 bg-red-100 text-red-800 px-2 py-1 rounded">
-                                        {pharmacist?.name || pharmacist?.email || storeNg.pharmacist_id}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <span className="text-gray-500 text-xs">なし</span>
-                            )}
-                          </div>
                           
-                          {/* NGリスト - 削除済み */}
-                          {/* <div>
-                            <div className="text-xs text-gray-600 mb-1">NG薬剤師:</div>
-                            {editingUserId === pharmacy.id ? (
-                              <div className="text-xs">
-                                <div className="flex flex-wrap gap-2 mb-2">
-                                        {Object.entries(userProfiles || {})
-                                          .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacist')
-                                          .map(([id, profile]: [string, any]) => {
-                                      const checked = userEditForm.ng_list.includes(id);
-                                            return (
-                                              <label key={id} className="inline-flex items-center gap-1 border rounded px-2 py-1 cursor-pointer">
-                                                <input
-                                                  type="checkbox"
-                                                  className="accent-red-600"
-                                                  checked={checked}
-                                                  onChange={(e) => {
-                                                    const next = new Set<string>(userEditForm.ng_list);
-                                                    
-                                                    if (e.target.checked) {
-                                                      // 薬局全体をチェックした場合、その薬局の全店舗もチェック
-                                                      next.add(id);
-                                                      const pharmacyProfile = userProfiles[id];
-                                                      const storeNames = pharmacyProfile?.store_names || [];
-                                                      const displayStoreNames = storeNames.length > 0 ? storeNames : ['本店'];
-                                                      displayStoreNames.forEach((storeName: string) => {
-                                                        const storeKey = `${id}_${storeName}`;
-                                                        next.add(storeKey);
-                                                      });
-                                                    } else {
-                                                      // 薬局全体のチェックを外した場合、その薬局の全店舗も外す
-                                                      next.delete(id);
-                                                      const pharmacyProfile = userProfiles[id];
-                                                      const storeNames = pharmacyProfile?.store_names || [];
-                                                      const displayStoreNames = storeNames.length > 0 ? storeNames : ['本店'];
-                                                      displayStoreNames.forEach((storeName: string) => {
-                                                        const storeKey = `${id}_${storeName}`;
-                                                        next.delete(storeKey);
-                                                      });
-                                                    }
-                                                    
-                                                    setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
-                                                  }}
-                                                />
-                                                <span>{(profile as any).name || (profile as any).email || id}</span>
-                                              </label>
-                                            );
-                                          })}
+                          {/* NG薬局・店舗リスト */}
+                          <div>
+                            <div className="text-xs text-gray-600 mb-1">NG薬局・店舗:</div>
+                            {editingUserId === pharmacist.id ? (
+                              <div className="space-y-2">
+                                {Object.entries(userProfiles || {})
+                                  .filter(([_, profile]: [string, any]) => (profile as any).user_type === 'pharmacy')
+                                  .map(([id, profile]: [string, any]) => {
+                                    const pharmacyName = (profile as any).name || (profile as any).email || id;
+                                    // 薬局全体が選択されているか、または個別店舗が選択されているかをチェック
+                                    const isPharmacySelected = userEditForm.ng_list.includes(id);
+                                    const hasIndividualStores = userEditForm.ng_list.some(ngId => ngId.startsWith(`${id}_`));
+                                    const checked = isPharmacySelected || hasIndividualStores;
+                                    
+                                    return (
+                                      <div key={id} className="border rounded p-2">
+                                        <label className="inline-flex items-center gap-1 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            className="accent-red-600"
+                                            checked={checked}
+                                            onChange={(e) => {
+                                              const next = new Set<string>(userEditForm.ng_list);
+                                              
+                                              if (e.target.checked) {
+                                                // 薬局全体を選択する場合
+                                                // 1. 薬局IDを追加
+                                                next.add(id);
+                                                // 2. その薬局の店舗個別選択は削除しない（全店舗選択として扱う）
+                                              } else {
+                                                // 薬局全体の選択を解除する場合
+                                                next.delete(id);
+                                                // その薬局の店舗個別選択もすべて削除
+                                                const pharmacyProfile = userProfiles[id];
+                                                const storeNames = pharmacyProfile?.store_names || ['本店'];
+                                                storeNames.forEach((storeName: string) => {
+                                                  next.delete(`${id}_${storeName}`);
+                                                });
+                                              }
+                                              
+                                              setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                            }}
+                                          />
+                                          <span className="font-medium">{pharmacyName}</span>
+                                        </label>
+                                        
+                                        {/* 店舗選択 */}
+                                        {(isPharmacySelected || hasIndividualStores) && (
+                                          <div className="mt-2 ml-6 space-y-1">
+                                            <div className="text-xs text-gray-500 mb-2">店舗選択:</div>
+                                            {(() => {
+                                              // この薬局の店舗一覧を取得
+                                              const pharmacyProfile = userProfiles[id];
+                                              const storeNames = pharmacyProfile?.store_names || [];
+                                              
+                                              // 店舗情報がない場合はデフォルトの店舗名を表示
+                                              const displayStoreNames = storeNames.length > 0 ? storeNames : ['本店'];
+                                              
+                                              return displayStoreNames.map((storeName: string) => {
+                                                const storeKey = `${id}_${storeName}`;
+                                                const isPharmacySelectedForStore = userEditForm.ng_list.includes(id);
+                                                const isStoreSelected = userEditForm.ng_list.includes(storeKey);
+                                                
+                                                // 個別店舗の選択状態のみを表示（薬局全体の選択とは独立）
+                                                const storeChecked = isStoreSelected;
+                                                
+                                                return (
+                                                  <label key={storeKey} className="inline-flex items-center gap-1 text-xs cursor-pointer">
+                                                    <input
+                                                      type="checkbox"
+                                                      className="accent-orange-600"
+                                                      checked={storeChecked}
+                                                      disabled={false}
+                                                      onChange={(e) => {
+                                                        const next = new Set<string>(userEditForm.ng_list);
+                                                        
+                                                        if (e.target.checked) {
+                                                          // チェックを入れる場合
+                                                          next.add(storeKey);
+                                                          // 薬局全体が選択されている場合は削除
+                                                          next.delete(id);
+                                                        } else {
+                                                          // チェックを外す場合
+                                                          next.delete(storeKey);
+                                                        }
+                                                        
+                                                        setUserEditForm({ ...userEditForm, ng_list: Array.from(next) });
+                                                      }}
+                                                    />
+                                                    <span className={isPharmacySelectedForStore ? "text-gray-400" : ""}>{storeName}</span>
+                                                  </label>
+                                                );
+                                              });
+                                            })()}
+                                          </div>
+                                        )}
                                       </div>
+                                    );
+                                  })}
                               </div>
                             ) : (
                               <div className="text-sm">
                                 {(() => {
-                                  // store_ng_pharmacistsテーブルからNG薬剤師情報を取得
-                                  const ngPharmacists = storeNgPharmacists[pharmacy.id] || [];
+                                  // store_ng_pharmaciesテーブルからNG薬局情報を取得
+                                  const ngPharmacies = storeNgPharmacists[pharmacist.id] || [];
                                   
                                   // デバッグログ
-                                  console.log('NG薬剤師表示デバッグ:', {
-                                    pharmacyId: pharmacy.id,
-                                    pharmacyName: pharmacy.name,
-                                    ngPharmacists: ngPharmacists,
+                                  console.log('NG薬局表示デバッグ:', {
+                                    pharmacistId: pharmacist.id,
+                                    pharmacistName: pharmacist.name,
+                                    ngPharmacies: ngPharmacies,
                                     storeNgPharmacists: storeNgPharmacists
                                   });
                                   
-                                  if (ngPharmacists.length === 0) {
+                                  if (ngPharmacies.length === 0) {
                                     return <span className="text-gray-500">なし</span>;
                                   }
                                   
-                                  // 薬剤師IDでグループ化（重複を除去）
-                                  const uniquePharmacistIds = new Set<string>();
-                                  ngPharmacists.forEach((ngPharmacist: any) => {
-                                    uniquePharmacistIds.add(ngPharmacist.pharmacist_id);
-                                  });
-                                  
                                   return (
                                     <div className="flex flex-wrap gap-1">
-                                      {Array.from(uniquePharmacistIds).map((pharmacistId: string, idx: number) => {
-                                        const ngPharmacist = userProfiles[pharmacistId];
-                                        return (
-                                          <span key={idx} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                                            {ngPharmacist?.name || ngPharmacist?.email || pharmacistId}
-                                          </span>
-                                        );
-                                      })}
+                                      {ngPharmacies.map((pharmacy: any, index: number) => (
+                                        <span 
+                                          key={index} 
+                                          className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded"
+                                        >
+                                          {pharmacy.pharmacy_name || pharmacy.store_name || `薬局${pharmacy.pharmacy_id?.slice(-4) || '不明'}`}
+                                        </span>
+                                      ))}
                                     </div>
                                   );
                                 })()}
