@@ -3168,15 +3168,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const totalRequired = dayPostings.reduce((sum, posting) => sum + (posting.required_staff || 1), 0);
                   const totalMatched = dayAssignedShifts.length;
                   const totalShortage = Math.max(0, totalRequired - totalMatched);
-                  const totalExcess = Math.max(0, dayRequests.length - totalMatched);
-
-                  console.log(`確定シフト存在 [${dateStr}]: 必要=${totalRequired}, 確定=${totalMatched}, 不足=${totalShortage}, 余裕=${totalExcess}`);
+                  console.log(`確定シフト存在 [${dateStr}]: 必要=${totalRequired}, 確定=${totalMatched}, 不足=${totalShortage}`);
 
                   return {
                     type: 'confirmed',
                     count: totalMatched,
-                    shortage: totalShortage,
-                    excess: totalExcess
+                    shortage: totalShortage
                   };
                 }
 
@@ -3186,18 +3183,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 const dayMatches = aiMatchesByDate[dateStr] || [];
                 const totalMatched = dayMatches.length;
                 const totalAvailable = dayRequests.length;
-                const totalExcess = Math.max(0, totalAvailable - totalMatched);
-
                 if (dayRequests.length > 0 || dayPostings.length > 0) {
-                  console.log(`右パネル連携計算 [${dateStr}]: マッチ=${totalMatched}, 不足=${totalShortage}, 余裕=${totalExcess}`);
+                  console.log(`右パネル連携計算 [${dateStr}]: マッチ=${totalMatched}, 不足=${totalShortage}`);
                   console.log(`不足薬局詳細:`, shortagePharmacies);
                 }
 
                 const result = {
                   type: totalMatched > 0 ? 'matched' : (totalShortage > 0 || totalAvailable > 0 ? 'pending' : 'empty'),
                   count: totalMatched,
-                  shortage: totalShortage,
-                  excess: totalExcess
+                  shortage: totalShortage
                 };
 
                 if (dayRequests.length > 0 || dayPostings.length > 0) {
@@ -3239,13 +3233,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             )}
                             
-                            {/* 確定後も余裕パッチを表示 */}
-                            {typeof matchingStatus.excess === 'number' && matchingStatus.excess > 0 && (
-                              <div className="text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">余{matchingStatus.excess}</span>
-                                <span className="hidden sm:inline">余裕 {matchingStatus.excess}</span>
-                              </div>
-                            )}
                             
                             {dayConsultRequests.length > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
@@ -4253,7 +4240,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       totalAvailable: Array.isArray(dayRequests) ? dayRequests.filter((r: any) => r.start_time && r.end_time).length : 0,
                       totalMatched: 0,
                       shortage: 0,
-                      excess: 0,
                       requests: Array.isArray(dayRequests) ? dayRequests.filter((r: any) => r.start_time && r.end_time) : [],
                       postings: dayPostings,
                       matchedPharmacists: [] as any[],
@@ -4326,8 +4312,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     // 結果を更新
                     matchingAnalysis[0].totalMatched = matchedCount;
                     matchingAnalysis[0].shortage = Math.max(0, matchingAnalysis[0].totalRequired - matchedCount);
-                    matchingAnalysis[0].excess = Math.max(0, matchingAnalysis[0].totalAvailable - matchedCount);
-                    matchingAnalysis[0].excessPharmacists = Math.max(0, matchingAnalysis[0].totalAvailable - matchedCount);
                     matchingAnalysis[0].matchedPharmacists = matchedPharmacists;
                     matchingAnalysis[0].matchedPharmacies = matchedPharmacies;
                     
