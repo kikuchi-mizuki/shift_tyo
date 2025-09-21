@@ -2861,11 +2861,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const pharmacist = userProfiles[request.pharmacist_id];
           const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
           
+        // 薬剤師のNG薬局・店舗リストを取得（store_ng_pharmaciesテーブルから）
+        const pharmacistNgPharmacies = storeNgPharmacists[request.pharmacist_id] || [];
         const pharmacistNg = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+        
+        // 薬局のNG薬剤師リストを取得（store_ng_pharmacistsテーブルから）
+        const pharmacyNgPharmacists = storeNgPharmacists[pharmacyNeed.pharmacy_id] || [];
         const pharmacyNg = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
         
-        const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
-        const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+        // 薬剤師が薬局をNGにしているかチェック（店舗名も考慮）
+        const blockedByPharmacist = pharmacistNgPharmacies.some((ngPharmacy: any) => 
+          ngPharmacy.pharmacy_id === pharmacyNeed.pharmacy_id && 
+          (ngPharmacy.store_name === pharmacyNeed.store_name || ngPharmacy.store_name === null)
+        ) || pharmacistNg.includes(pharmacyNeed.pharmacy_id);
+        
+        // 薬局が薬剤師をNGにしているかチェック
+        const blockedByPharmacy = pharmacyNgPharmacists.some((ngPharmacist: any) => 
+          ngPharmacist.pharmacist_id === request.pharmacist_id
+        ) || pharmacyNg.includes(request.pharmacist_id);
+        
+        // NGリストチェックの詳細ログ
+        if (blockedByPharmacist || blockedByPharmacy) {
+          console.log(`❌ NGリストによりマッチング不可: 薬剤師(${pharmacist?.name || request.pharmacist_id}) ↔ 薬局(${pharmacy?.name || pharmacyNeed.pharmacy_id})`);
+          if (blockedByPharmacist) {
+            console.log(`  - 薬剤師のNGリストに薬局が含まれています`);
+            console.log(`  - 薬剤師NG薬局リスト:`, pharmacistNgPharmacies);
+            console.log(`  - 薬剤師NGリスト:`, pharmacistNg);
+          }
+          if (blockedByPharmacy) {
+            console.log(`  - 薬局のNGリストに薬剤師が含まれています`);
+            console.log(`  - 薬局NG薬剤師リスト:`, pharmacyNgPharmacists);
+            console.log(`  - 薬局NGリスト:`, pharmacyNg);
+          }
+        }
         
         // 時間範囲ベースのマッチング
         const isRangeCompatible = (request: any, posting: any) => {
