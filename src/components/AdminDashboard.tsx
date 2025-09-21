@@ -802,7 +802,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         useAPI: true,
         algorithm: 'hybrid',
         priority: 'balance'
-      });
+      }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists);
       setAiMatches(matches);
 
       console.log(`AI Matching completed: ${matches.length} matches found`);
@@ -2883,15 +2883,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           console.log(`❌ NGリストによりマッチング不可: 薬剤師(${pharmacist?.name || request.pharmacist_id}) ↔ 薬局(${pharmacy?.name || pharmacyNeed.pharmacy_id})`);
           if (blockedByPharmacist) {
             console.log(`  - 薬剤師のNGリストに薬局が含まれています`);
-          console.log(`  - 薬剤師NG薬局リスト:`, pharmacistNgPharmacies);
-          console.log(`  - 薬剤師NGリスト:`, pharmacistNg);
-          console.log(`  - storeNgPharmacies:`, storeNgPharmacies);
+            console.log(`  - 薬剤師NG薬局リスト:`, pharmacistNgPharmacies);
+            console.log(`  - 薬剤師NGリスト:`, pharmacistNg);
+            console.log(`  - storeNgPharmacies:`, storeNgPharmacies);
+            console.log(`  - チェック対象薬局ID:`, pharmacyNeed.pharmacy_id);
+            console.log(`  - チェック対象店舗名:`, pharmacyNeed.store_name);
           }
           if (blockedByPharmacy) {
             console.log(`  - 薬局のNGリストに薬剤師が含まれています`);
             console.log(`  - 薬局NG薬剤師リスト:`, pharmacyNgPharmacists);
             console.log(`  - 薬局NGリスト:`, pharmacyNg);
+            console.log(`  - チェック対象薬剤師ID:`, request.pharmacist_id);
           }
+        } else {
+          // NGリストチェック通過時のログも追加
+          console.log(`✅ NGリストチェック通過: 薬剤師(${pharmacist?.name || request.pharmacist_id}) ↔ 薬局(${pharmacy?.name || pharmacyNeed.pharmacy_id})`);
+          console.log(`  - 薬剤師NG薬局リスト:`, pharmacistNgPharmacies);
+          console.log(`  - 薬局NG薬剤師リスト:`, pharmacyNgPharmacists);
         }
         
         // 時間範囲ベースのマッチング

@@ -73,7 +73,9 @@ export class AIMatchingEngine {
     requests: any[],
     postings: any[],
     userProfiles?: any,
-    ratings?: any[]
+    ratings?: any[],
+    storeNgPharmacies?: any,
+    storeNgPharmacists?: any
   ): Promise<MatchCandidate[]> {
     console.log('=== generateMatchCandidates START ===');
     console.log('requests:', requests);
@@ -153,7 +155,7 @@ export class AIMatchingEngine {
             const timeCompatible = this.isBasicCompatible(request, posting);
             
             // NGリストチェック
-            const ngCompatible = this.isNgCompatible(request, posting, userProfiles);
+            const ngCompatible = this.isNgCompatible(request, posting, userProfiles, storeNgPharmacies, storeNgPharmacists);
             
             debugInfo += `    日付一致: ${dateMatch}\n`;
             debugInfo += `    時間適合: ${timeCompatible}\n`;
@@ -399,7 +401,7 @@ export class AIMatchingEngine {
    * NGリストの互換性チェック
    * 薬剤師と薬局のNGリストを確認して、マッチング可能かチェック
    */
-  private isNgCompatible(request: any, posting: any, userProfiles?: any): boolean {
+  private isNgCompatible(request: any, posting: any, userProfiles?: any, storeNgPharmacies?: any, storeNgPharmacists?: any): boolean {
     if (!userProfiles) return true; // userProfilesがない場合は互換性ありとする
 
     const pharmacist = userProfiles[request.pharmacist_id];
@@ -407,15 +409,30 @@ export class AIMatchingEngine {
 
     if (!pharmacist || !pharmacy) return true; // プロファイルがない場合は互換性ありとする
 
-    // 薬剤師のNGリスト（薬局IDまたは店舗ID）
+    // 薬剤師のNGリスト（user_profiles.ng_list）
     const pharmacistNg: string[] = Array.isArray(pharmacist.ng_list) ? pharmacist.ng_list : [];
-    // 薬局のNGリスト（薬剤師ID）
+    // 薬局のNGリスト（user_profiles.ng_list）
     const pharmacyNg: string[] = Array.isArray(pharmacy.ng_list) ? pharmacy.ng_list : [];
 
-    // 薬剤師が薬局をNGにしているかチェック
-    const blockedByPharmacist = pharmacistNg.includes(posting.pharmacy_id);
-    // 薬局が薬剤師をNGにしているかチェック
-    const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+    // store_ng_pharmaciesテーブルから薬剤師のNG薬局・店舗リストを取得
+    const pharmacistNgPharmacies = storeNgPharmacies?.[request.pharmacist_id] || [];
+    // store_ng_pharmacistsテーブルから薬局のNG薬剤師リストを取得
+    const pharmacyNgPharmacists = storeNgPharmacists?.[posting.pharmacy_id] || [];
+
+    // 薬剤師が薬局をNGにしているかチェック（新しいテーブル + 旧ng_list）
+    const blockedByPharmacistNew = pharmacistNgPharmacies.some((ngPharmacy: any) => 
+      ngPharmacy.pharmacy_id === posting.pharmacy_id && 
+      (ngPharmacy.store_name === posting.store_name || ngPharmacy.store_name === null)
+    );
+    const blockedByPharmacistOld = pharmacistNg.includes(posting.pharmacy_id);
+    const blockedByPharmacist = blockedByPharmacistNew || blockedByPharmacistOld;
+
+    // 薬局が薬剤師をNGにしているかチェック（新しいテーブル + 旧ng_list）
+    const blockedByPharmacyNew = pharmacyNgPharmacists.some((ngPharmacist: any) => 
+      ngPharmacist.pharmacist_id === request.pharmacist_id
+    );
+    const blockedByPharmacyOld = pharmacyNg.includes(request.pharmacist_id);
+    const blockedByPharmacy = blockedByPharmacyNew || blockedByPharmacyOld;
 
     // どちらかがNGにしている場合は互換性なし
     const isCompatible = !blockedByPharmacist && !blockedByPharmacy;
@@ -424,9 +441,21 @@ export class AIMatchingEngine {
       console.log(`❌ NGリストによりマッチング不可: 薬剤師(${pharmacist.name || request.pharmacist_id}) ↔ 薬局(${pharmacy.name || posting.pharmacy_id})`);
       if (blockedByPharmacist) {
         console.log(`  - 薬剤師のNGリストに薬局が含まれています`);
+        if (blockedByPharmacistNew) {
+          console.log(`    - store_ng_pharmaciesテーブル:`, pharmacistNgPharmacies);
+        }
+        if (blockedByPharmacistOld) {
+          console.log(`    - user_profiles.ng_list:`, pharmacistNg);
+        }
       }
       if (blockedByPharmacy) {
         console.log(`  - 薬局のNGリストに薬剤師が含まれています`);
+        if (blockedByPharmacyNew) {
+          console.log(`    - store_ng_pharmacistsテーブル:`, pharmacyNgPharmacists);
+        }
+        if (blockedByPharmacyOld) {
+          console.log(`    - user_profiles.ng_list:`, pharmacyNg);
+        }
       }
     }
 
@@ -445,7 +474,9 @@ export class AIMatchingEngine {
       priority?: 'satisfaction' | 'efficiency' | 'balance' | 'pharmacy_satisfaction';
     },
     userProfiles?: any,
-    ratings?: any[]
+    ratings?: any[],
+    storeNgPharmacies?: any,
+    storeNgPharmacists?: any
   ): Promise<MatchCandidate[]> {
     console.log('=== executeOptimalMatching START ===');
     console.log('requests:', requests);
@@ -461,7 +492,7 @@ export class AIMatchingEngine {
       // ローカルマッチングを実行
       debugInfo += `=== ローカルマッチング実行 ===\n`;
     
-    const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings);
+    const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists);
     console.log(`生成された候補: ${candidates.length}件`);
     
     // 薬局の応募満足度を優先する最適化アルゴリズム
