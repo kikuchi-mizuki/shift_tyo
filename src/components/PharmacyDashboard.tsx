@@ -851,64 +851,68 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
   // 同日・同店舗の既存募集を検索
   const findExistingPostingForCurrentSelection = () => {
-    console.log('=== findExistingPostingForCurrentSelection DEBUG ===');
-    console.log('selectedDates:', selectedDates);
-    console.log('singleStoreName:', singleStoreName);
-    console.log('batchStoreNames:', batchStoreNames);
-    console.log('timeSlot:', timeSlot);
-    console.log('customTimeMode:', customTimeMode);
-    console.log('startTime:', startTime);
-    console.log('endTime:', endTime);
-    console.log('myShifts:', myShifts);
+    if (!selectedDates || selectedDates.length === 0) {
+      console.log('No selected dates');
+      return null;
+    }
     
-    // まず日付と時間帯で絞り込み
+    if (!myShifts || myShifts.length === 0) {
+      console.log('No myShifts data');
+      return null;
+    }
+    
     const currentTimeSlot = customTimeMode ? 'custom' : timeSlot;
     
-    const result = myShifts.find((s: any) => {
-      console.log('Checking shift:', {
-        id: s.id,
-        date: s.date,
-        time_slot: s.time_slot,
-        start_time: s.start_time,
-        end_time: s.end_time,
-        store_name: s.store_name,
-        pharmacy_id: s.pharmacy_id
-      });
-      
-      // 日付チェック
-      if (!selectedDates.includes(s.date)) {
-        console.log('Date mismatch:', s.date, 'not in', selectedDates);
-        return false;
-      }
-      
-      // 時間帯チェック
-      if (s.time_slot !== currentTimeSlot) {
-        console.log('Time slot mismatch:', s.time_slot, 'vs', currentTimeSlot);
-        return false;
-      }
-      
-      // カスタム時間の場合は開始・終了時間も比較
-      if (customTimeMode && currentTimeSlot === 'custom') {
-        const sStartTime = s.start_time ? s.start_time.slice(0, 5) : '';
-        const sEndTime = s.end_time ? s.end_time.slice(0, 5) : '';
-        if (sStartTime !== startTime || sEndTime !== endTime) {
-          console.log('Custom time mismatch:', sStartTime, '-', sEndTime, 'vs', startTime, '-', endTime);
+    console.log('=== findExistingPostingForCurrentSelection ===');
+    console.log('selectedDates:', selectedDates);
+    console.log('currentTimeSlot:', currentTimeSlot);
+    console.log('user.id:', user?.id);
+    console.log('myShifts count:', myShifts.length);
+    
+    // 選択された日付のいずれかに既存募集があるかチェック
+    for (const selectedDate of selectedDates) {
+      const existingPosting = myShifts.find((s: any) => {
+        // 基本的な条件チェック
+        if (!s || !s.date || !s.time_slot || !s.pharmacy_id) {
           return false;
         }
-      }
+        
+        // 日付が一致するか
+        if (s.date !== selectedDate) {
+          return false;
+        }
+        
+        // 同じ薬局の募集か
+        if (s.pharmacy_id !== user?.id) {
+          return false;
+        }
+        
+        // 時間帯が一致するか
+        if (s.time_slot !== currentTimeSlot) {
+          return false;
+        }
+        
+        // カスタム時間の場合は時間範囲もチェック
+        if (customTimeMode && currentTimeSlot === 'custom') {
+          const sStartTime = s.start_time ? s.start_time.slice(0, 5) : '';
+          const sEndTime = s.end_time ? s.end_time.slice(0, 5) : '';
+          if (sStartTime !== startTime || sEndTime !== endTime) {
+            return false;
+          }
+        }
+        
+        console.log('Found matching posting:', s);
+        return true;
+      });
       
-      // 同じ薬局の募集かチェック
-      if (s.pharmacy_id !== user?.id) {
-        console.log('Pharmacy ID mismatch:', s.pharmacy_id, 'vs', user?.id);
-        return false;
+      if (existingPosting) {
+        console.log('Returning existing posting:', existingPosting);
+        return existingPosting;
       }
-      
-      console.log('Match found!');
-      return true;
-    });
+    }
     
-    console.log('Final result:', result);
-    return result;
+    console.log('No existing posting found');
+    return null;
   };
 
   const handleUpdateExisting = async (postingId: string) => {
@@ -1731,13 +1735,21 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           ) : (
             <div>
             {(() => {
-              const existing = findExistingPostingForCurrentSelection();
+              // シンプルな条件チェック
+              const hasExistingPosting = selectedDates.length > 0 && myShifts.some((s: any) => 
+                selectedDates.includes(s.date) && 
+                s.pharmacy_id === user?.id &&
+                s.time_slot === (customTimeMode ? 'custom' : timeSlot)
+              );
               
               console.log('=== BUTTON RENDERING DEBUG ===');
-              console.log('existing posting found:', existing);
-              console.log('Will show update/delete buttons:', !!existing);
+              console.log('hasExistingPosting:', hasExistingPosting);
+              console.log('selectedDates:', selectedDates);
+              console.log('user.id:', user?.id);
+              console.log('timeSlot:', timeSlot);
+              console.log('customTimeMode:', customTimeMode);
               
-              if (existing) {
+              if (hasExistingPosting) {
                 // 既存の募集がある場合は「募集を更新」と「募集を削除」の両方を表示
                 return (
                   <div className="space-y-3 mt-4">
