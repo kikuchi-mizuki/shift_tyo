@@ -433,9 +433,11 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         }
 
         // 評価データを取得
-        if (user?.id) {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const userIdToUse = authUser?.id || user?.id;
+        if (userIdToUse) {
           const { data: ratingsData } = await pharmacistRatings.getRatings({
-            pharmacy_id: user.id
+            pharmacy_id: userIdToUse
           });
           if (ratingsData) {
             setRatings(ratingsData);
@@ -1465,16 +1467,22 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                                 )}
                                 <div className="flex space-x-2">
                                   <button
-                                    onClick={() => handleRatingSubmit(
-                                      shift.id,
-                                      shift.pharmacist_id,
-                                      user.id,
-                                      ratingForm.rating,
-                                      '', // コメントは常に空文字列
-                                      setRatings,
-                                      setEditingRating,
-                                      setRatingForm
-                                    )}
+                                    onClick={async () => {
+                                      // 認証ユーザーIDを取得
+                                      const { data: { user: authUser } } = await supabase.auth.getUser();
+                                      const pharmacyIdToUse = authUser?.id || user.id;
+                                      
+                                      await handleRatingSubmit(
+                                        shift.id,
+                                        shift.pharmacist_id,
+                                        pharmacyIdToUse,
+                                        ratingForm.rating,
+                                        '', // コメントは常に空文字列
+                                        setRatings,
+                                        setEditingRating,
+                                        setRatingForm
+                                      );
+                                    }}
                                     className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                                   >
                                     保存
@@ -2036,7 +2044,7 @@ const handleRatingSubmit = async (
     // 評価データを再読み込み
     console.log('Reloading ratings data...');
     const { data: ratingsData } = await pharmacistRatings.getRatings({
-      pharmacy_id: pharmacyId
+      pharmacy_id: authUser?.id || pharmacyId
     });
     if (ratingsData) {
       console.log('Reloaded ratings:', ratingsData);
