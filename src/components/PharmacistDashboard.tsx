@@ -1055,7 +1055,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
             </div>
 
             {/* 希望時間帯 */}
-            <div>
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 希望時間帯
               </label>
@@ -1131,16 +1131,13 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               )}
             </div>
 
-
-
-
             {/* 登録/削除ボタン */}
             {isSystemConfirmed ? (
-              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium text-sm sm:text-base break-words">
+              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium text-sm sm:text-base break-words mt-4 mb-4">
                 シフト確定済みのため編集できません
               </div>
             ) : selectedDates.length > 0 && myShifts.some((s: any) => selectedDates.includes(s.date)) ? (
-              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium text-sm sm:text-base break-words">
+              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium text-sm sm:text-base break-words mt-4 mb-4">
                 確定済みのため編集できません
               </div>
             ) : (() => {
