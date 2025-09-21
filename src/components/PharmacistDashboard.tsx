@@ -760,7 +760,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {isDebug && (
         <div className="fixed right-2 top-2 z-50 text-[10px] bg-black/70 text-white px-2 py-1 rounded">
           <div>PD debug</div>
@@ -853,7 +853,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         </div>
 
         {/* 右側: シフト希望登録フォーム */}
-        <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow">
+        <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow mb-8">
                       <div className="p-4 lg:p-6 pb-20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">
@@ -1184,7 +1184,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
 
             {/* 情報ボックス */}
             {/* 管理画面のみ許可: NG設定UIは非表示（この情報ブロックはそのまま） */}
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+            <div className="mt-4 mb-8 p-4 bg-blue-50 rounded-lg">
               <h3 className="text-sm font-medium text-blue-800 mb-2">
                 シフト希望登録のポイント
               </h3>
