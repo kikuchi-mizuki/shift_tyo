@@ -418,6 +418,14 @@ export class AIMatchingEngine {
     const pharmacistNgPharmacies = storeNgPharmacies?.[request.pharmacist_id] || [];
     // store_ng_pharmacistsテーブルから薬局のNG薬剤師リストを取得
     const pharmacyNgPharmacists = storeNgPharmacists?.[posting.pharmacy_id] || [];
+    
+    // デバッグログ
+    console.log(`=== AIマッチングエンジン NGリストチェック ===`);
+    console.log(`薬剤師ID: ${request.pharmacist_id}, 薬局ID: ${posting.pharmacy_id}`);
+    console.log(`薬剤師NG薬局リスト:`, pharmacistNgPharmacies);
+    console.log(`薬局NG薬剤師リスト:`, pharmacyNgPharmacists);
+    console.log(`storeNgPharmacies全体:`, storeNgPharmacies);
+    console.log(`storeNgPharmacists全体:`, storeNgPharmacists);
 
     // 薬剤師が薬局をNGにしているかチェック（新しいテーブル + 旧ng_list）
     const blockedByPharmacistNew = pharmacistNgPharmacies.some((ngPharmacy: any) => 

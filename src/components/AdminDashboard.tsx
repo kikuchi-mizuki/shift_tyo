@@ -546,6 +546,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('monthlyPostings:', monthlyPostings);
       console.log('userProfiles:', userProfiles);
       console.log('ratings:', ratings);
+      console.log('storeNgPharmacies:', storeNgPharmacies);
+      console.log('storeNgPharmacists:', storeNgPharmacists);
       
       // 簡潔なデバッグ情報をモーダルで表示
       let debugInfo = `=== AIマッチング処理デバッグ ===\n`;
@@ -675,7 +677,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             useAPI: false,
             algorithm: 'hybrid',
             priority: 'pharmacy_satisfaction'
-          }, userProfiles, ratings);
+          }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists);
           
           matchesByDate[date] = dayMatches;
           debugInfo += `マッチング成功: ${dayMatches.length}件\n`;
@@ -2158,6 +2160,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           
           setStoreNgPharmacies(pharmacistNgPharmaciesMap);
           logToRailway('Pharmacist NG pharmacies data:', pharmacistNgPharmaciesMap);
+          
+          // 詳細なデバッグログ
+          console.log('=== 薬剤師NG薬局・店舗データ読み込み完了 ===');
+          console.log('storeNgPharmacies:', pharmacistNgPharmaciesMap);
+          Object.keys(pharmacistNgPharmaciesMap).forEach(pharmacistId => {
+            const ngData = pharmacistNgPharmaciesMap[pharmacistId];
+            console.log(`薬剤師ID ${pharmacistId}:`, ngData);
+          });
           
           // シフトに含まれるユーザーIDをチェック
           const shiftUserIds = Array.from(userIds);
