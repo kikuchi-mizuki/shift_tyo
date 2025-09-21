@@ -4631,8 +4631,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             )}
                           </div>
                           
-                          {/* NGリスト */}
-                          <div>
+                          {/* NGリスト - 削除済み */}
+                          {/* <div>
                             <div className="text-xs text-gray-600 mb-1">NG薬剤師:</div>
                             {editingUserId === pharmacy.id ? (
                               <div className="text-xs">
@@ -4815,9 +4815,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             <span className="text-xs text-gray-500">{pharmacist.email}</span>
                           </div>
                           
-                          {/* NGリスト */}
-                          <div>
-                            <div className="text-xs text-gray-600 mb-1">NG薬局・店舗:</div>
                             {editingUserId === pharmacist.id ? (
                               <div className="space-y-2">
                                 {Object.entries(userProfiles || {})
