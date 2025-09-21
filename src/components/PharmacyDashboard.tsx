@@ -855,8 +855,27 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       .map(n => (n || '').trim())
       .filter(n => n !== '');
     
-    return myShifts.find((s: any) => {
+    console.log('=== findExistingPostingForCurrentSelection DEBUG ===');
+    console.log('selectedDates:', selectedDates);
+    console.log('singleStoreName:', singleStoreName);
+    console.log('batchStoreNames:', batchStoreNames);
+    console.log('targets:', targets);
+    console.log('myShifts:', myShifts);
+    
+    const result = myShifts.find((s: any) => {
       if (!selectedDates.includes(s.date)) return false;
+      
+      // 時間帯も比較（カスタム時間の場合は時間範囲を比較）
+      const currentTimeSlot = customTimeMode ? 'custom' : timeSlot;
+      if (s.time_slot !== currentTimeSlot) return false;
+      
+      // カスタム時間の場合は開始・終了時間も比較
+      if (customTimeMode && currentTimeSlot === 'custom') {
+        const sStartTime = s.start_time ? s.start_time.slice(0, 5) : '';
+        const sEndTime = s.end_time ? s.end_time.slice(0, 5) : '';
+        if (sStartTime !== startTime || sEndTime !== endTime) return false;
+      }
+      
       const direct = (s.store_name || '').trim();
       let fromMemo = '';
       if (!direct && typeof s.memo === 'string') {
@@ -865,12 +884,32 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       }
       const sStoreName = direct || fromMemo;
       
+      console.log('Checking shift:', {
+        id: s.id,
+        date: s.date,
+        time_slot: s.time_slot,
+        start_time: s.start_time,
+        end_time: s.end_time,
+        store_name: s.store_name,
+        memo: s.memo,
+        sStoreName: sStoreName,
+        currentTimeSlot: currentTimeSlot,
+        startTime: startTime,
+        endTime: endTime
+      });
+      
       // 選択された店舗名のいずれかと一致するかチェック
-      return targets.some(selectedStore => {
+      const matches = targets.some(selectedStore => {
         if (sStoreName === '' && selectedStore === '') return true;
         return sStoreName === selectedStore;
       });
+      
+      console.log('Matches:', matches);
+      return matches;
     });
+    
+    console.log('Found existing posting:', result);
+    return result;
   };
 
   const handleUpdateExisting = async (postingId: string) => {
