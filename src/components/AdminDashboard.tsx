@@ -4794,7 +4794,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       pharmacists.map((pharmacist: any) => (
                         <div key={pharmacist.id} className="bg-white border border-gray-200 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
-                            {editingUserId === pharmacy.id ? (
+                            {editingUserId === pharmacist.id ? (
                               <input
                                 className="text-sm border rounded px-2 py-1 w-1/2"
                                 value={userEditForm.name}
