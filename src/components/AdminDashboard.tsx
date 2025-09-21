@@ -320,7 +320,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         setManualMatches({});
         
         // 成功メッセージ
-        alert(`${shiftRequests.length}件の希望シフトを保存しました。AIマッチングを実行します。`);
+        alert(`${shiftRequests.length}件の希望シフトを保存しました。\n\n注意: 手動マッチングにより新しいシフト希望が作成されました。AIマッチングを実行します。`);
         
         // データを再読み込み（新しい希望シフトを取得）
         console.log('データを再読み込み中...');
@@ -2225,7 +2225,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.log('クリーンアップは既に実行済みです');
       }
       
-      // データ読み込み完了後に自動マッチングを実行
+      // DISABLED: データ読み込み完了後の自動マッチング実行を無効化
+      // ユーザーが手動で「① 1ヶ月分マッチングを実行」ボタンを押した時のみ実行
+      /*
       if (aiMatchingEngine && requests.length > 0 && postings.length > 0) {
         console.log('Auto-executing monthly AI matching...');
         setTimeout(async () => {
@@ -2237,6 +2239,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           }
         }, 1000); // 1秒後に実行
       }
+      */
       
     }
   };
@@ -3628,6 +3631,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       <div className="mt-2">
                                         <div className="text-xs text-gray-600 mb-1">
                                           不足分の薬剤師を希望シフトとして選択してください:
+                                          <br />
+                                          <span className="text-red-600">※ 選択した薬剤師の新しいシフト希望が作成されます</span>
                                         </div>
                                         <div className="space-y-1">
                                           {Array.from({ length: pharmacy.shortage }, (_, index) => (
@@ -3687,6 +3692,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-xs font-medium"
             >
               選択した薬剤師を希望シフトとして保存
+              <br />
+              <span className="text-xs opacity-90">（新しいシフト希望が作成されます）</span>
             </button>
           </div>
         )}
