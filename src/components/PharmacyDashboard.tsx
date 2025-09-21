@@ -973,16 +973,45 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
   const handleDeleteExisting = async (postingId: string) => {
     try {
+      console.log('=== handleDeleteExisting START ===');
+      console.log('postingId:', postingId);
+      console.log('user.id:', user?.id);
+      
+      if (!postingId) {
+        throw new Error('Posting ID is required');
+      }
+      
+      if (!user?.id) {
+        throw new Error('User ID is required');
+      }
+      
+      console.log('Attempting to delete posting from shift_postings table');
       const { error } = await supabase
         .from('shift_postings')
         .delete()
-        .eq('id', postingId);
-      if (error) throw error;
+        .eq('id', postingId)
+        .eq('pharmacy_id', user.id); // 追加のセキュリティチェック
+      
+      if (error) {
+        console.error('Supabase delete error:', error);
+        throw error;
+      }
+      
+      console.log('Posting deleted successfully, refreshing data');
       const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
-      if (!myShiftsError) setMyShifts(myShiftsData || []);
+      if (myShiftsError) {
+        console.error('Error refreshing data:', myShiftsError);
+        throw myShiftsError;
+      }
+      
+      setMyShifts(myShiftsData || []);
+      console.log('Data refreshed successfully');
+      alert('募集を削除しました');
+      
     } catch (e) {
-      console.error('Delete existing posting failed:', e);
-      alert('募集の削除に失敗しました');
+      console.error('=== handleDeleteExisting ERROR ===');
+      console.error('Error details:', e);
+      alert(`募集の削除に失敗しました: ${e instanceof Error ? e.message : 'Unknown error'}`);
     }
   };
 
@@ -1795,8 +1824,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                 });
               }
               
-              // 既存募集の検出
-              const hasExistingPosting = selectedDates.length > 0 && myShifts && myShifts.some((s: any) => {
+              // 既存募集の検出（実際のオブジェクトを取得）
+              const existingPosting = selectedDates.length > 0 && myShifts ? myShifts.find((s: any) => {
                 const dateMatch = selectedDates.includes(s.date);
                 const pharmacyMatch = s.pharmacy_id === user?.id;
                 const timeSlotMatch = s.time_slot === currentTimeSlot;
@@ -1811,11 +1840,13 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                 });
                 
                 return dateMatch && pharmacyMatch && timeSlotMatch;
-              });
+              }) : null;
               
+              const hasExistingPosting = !!existingPosting;
               console.log('hasExistingPosting:', hasExistingPosting);
+              console.log('existingPosting:', existingPosting);
               
-              if (hasExistingPosting) {
+              if (hasExistingPosting && existingPosting) {
                 // 既存の募集がある場合は「募集を更新」と「募集を削除」の両方を表示
                 return (
                   <div className="space-y-3 mt-4">
@@ -1844,7 +1875,17 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDeleteExisting(existing.id)}
+                      onClick={() => {
+                        console.log('=== DELETE BUTTON CLICKED ===');
+                        console.log('existingPosting:', existingPosting);
+                        if (existingPosting && existingPosting.id) {
+                          console.log('Calling handleDeleteExisting with ID:', existingPosting.id);
+                          handleDeleteExisting(existingPosting.id);
+                        } else {
+                          console.error('No existing posting ID found');
+                          alert('削除対象の募集が見つかりません');
+                        }
+                      }}
                       className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-red-700 text-sm sm:text-base"
                     >
                       募集を削除
