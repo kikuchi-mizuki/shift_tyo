@@ -1131,7 +1131,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             {isSystemConfirmed ? '確定されたシフトの詳細を確認できます' : '必要な薬剤師の募集条件を設定してください'}
           </p>
         </div>
-        <div className="p-4 lg:p-6 space-y-6">
+        <div className="p-4 lg:p-6 space-y-6 pb-20">
           {/* プロフィール編集フォーム */}
           {showProfileEdit && (
             <div className="p-4 bg-gray-50 rounded-lg space-y-4">
@@ -1790,7 +1790,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
           {/* 作成/削除ボタン */}
           {selectedDates.length > 0 && confirmedShifts.some((s: any) => selectedDates.includes(s.date)) ? (
-            <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
+            <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium text-sm sm:text-base break-words">
               確定済みのため編集できません
             </div>
           ) : (
@@ -1849,7 +1849,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
               if (hasExistingPosting && existingPosting) {
                 // 既存の募集がある場合は「募集を更新」と「募集を削除」の両方を表示
                 return (
-                  <div className="space-y-3 mt-4">
+                  <div className="space-y-3 mt-4 mb-4">
                     <button 
                       type="button"
                       onClick={() => {
@@ -1895,7 +1895,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
               } else {
                 // 既存の募集がない場合は「募集を追加」のみ表示
                 return (
-                  <div className="mt-4">
+                  <div className="mt-4 mb-4">
                     <button 
                       type="button"
                       onClick={() => {
