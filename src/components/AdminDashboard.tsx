@@ -34,6 +34,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
   const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
   const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
+  const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false); // 1ヶ月分マッチング実行フラグ
 
   // AIマッチングエンジンの初期化
   useEffect(() => {
@@ -520,6 +521,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // 既存のマッチング結果をクリア
       setAiMatches([]);
       setAiMatchesByDate({});
+      setMonthlyMatchingExecuted(false); // マッチング実行フラグをリセット
       console.log('既存のマッチング結果をクリアしました');
 
       // 現在の月の全ての日付を取得
@@ -701,6 +703,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // 日付別のマッチング結果を保存
       setAiMatchesByDate(matchesByDate);
       setAiMatches(monthlyMatches);
+      
+      // 1ヶ月分のマッチング実行完了フラグを設定
+      setMonthlyMatchingExecuted(true);
       
       console.log('マッチング結果:', monthlyMatches);
       console.log('日付別マッチング結果:', matchesByDate);
@@ -3383,8 +3388,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <span className="hidden sm:inline">確定 {matchingStatus.count}件</span>
                             </div>
                             
-                            {/* 確定後も不足パッチを表示 */}
-                            {matchingStatus.shortage > 0 && (
+                            {/* 確定後も不足パッチを表示（1ヶ月分マッチング実行後にのみ） */}
+                            {monthlyMatchingExecuted && matchingStatus.shortage > 0 && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">不{matchingStatus.shortage}</span>
                                 <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
@@ -3423,8 +3428,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </div>
                             )}
                             
-                            {/* 不足件数（不足がある場合に表示） */}
-                            {matchingStatus.shortage > 0 && (
+                            {/* 不足件数（1ヶ月分マッチング実行後に不足がある場合に表示） */}
+                            {monthlyMatchingExecuted && matchingStatus.shortage > 0 && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">不{matchingStatus.shortage}</span>
                                 <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
