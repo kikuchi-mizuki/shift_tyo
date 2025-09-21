@@ -121,118 +121,118 @@ CREATE TRIGGER update_pharmacy_profiles_updated_at BEFORE UPDATE ON pharmacy_pro
 
 -- DISABLED: サンプルデータの挿入（既存のuser_profilesから）
 -- INSERT INTO pharmacist_profiles (user_id, skills, experience_years, rating, preferred_pharmacy_types, max_commute_time, preferred_time_slots, total_shifts, average_satisfaction, completion_rate, no_show_rate)
-SELECT 
-  id,
-  ARRAY['調剤', '服薬指導'] as skills,
-  FLOOR(RANDOM() * 10) + 1 as experience_years,
-  ROUND((RANDOM() * 2 + 3)::numeric, 1) as rating, -- 3.0-5.0の範囲
-  ARRAY['community', 'hospital'] as preferred_pharmacy_types,
-  FLOOR(RANDOM() * 60) + 30 as max_commute_time, -- 30-90分
-  ARRAY['morning', 'afternoon', 'full'] as preferred_time_slots,
-  FLOOR(RANDOM() * 100) + 10 as total_shifts,
-  ROUND((RANDOM() * 2 + 3)::numeric, 1) as average_satisfaction,
-  ROUND((RANDOM() * 0.2 + 0.8)::numeric, 2) as completion_rate, -- 0.8-1.0
-  ROUND((RANDOM() * 0.1)::numeric, 2) as no_show_rate -- 0-0.1
-FROM user_profiles 
-WHERE user_type = 'pharmacist'
-ON CONFLICT (user_id) DO NOTHING;
+-- SELECT 
+--   id,
+--   ARRAY['調剤', '服薬指導'] as skills,
+--   FLOOR(RANDOM() * 10) + 1 as experience_years,
+--   ROUND((RANDOM() * 2 + 3)::numeric, 1) as rating, -- 3.0-5.0の範囲
+--   ARRAY['community', 'hospital'] as preferred_pharmacy_types,
+--   FLOOR(RANDOM() * 60) + 30 as max_commute_time, -- 30-90分
+--   ARRAY['morning', 'afternoon', 'full'] as preferred_time_slots,
+--   FLOOR(RANDOM() * 100) + 10 as total_shifts,
+--   ROUND((RANDOM() * 2 + 3)::numeric, 1) as average_satisfaction,
+--   ROUND((RANDOM() * 0.2 + 0.8)::numeric, 2) as completion_rate, -- 0.8-1.0
+--   ROUND((RANDOM() * 0.1)::numeric, 2) as no_show_rate -- 0-0.1
+-- FROM user_profiles 
+-- WHERE user_type = 'pharmacist'
+-- ON CONFLICT (user_id) DO NOTHING;
 
 -- INSERT INTO pharmacy_profiles (user_id, pharmacy_type, pharmacy_size, specialties, required_skills, experience_level, special_needs, average_pharmacist_satisfaction, retention_rate, work_environment)
-SELECT 
-  id,
-  CASE 
-    WHEN RANDOM() < 0.6 THEN 'community'
-    WHEN RANDOM() < 0.8 THEN 'hospital'
-    ELSE 'clinic'
-  END as pharmacy_type,
-  CASE 
-    WHEN RANDOM() < 0.3 THEN 'small'
-    WHEN RANDOM() < 0.7 THEN 'medium'
-    ELSE 'large'
-  END as pharmacy_size,
-  ARRAY['一般調剤', '在宅医療'] as specialties,
-  ARRAY['調剤', '服薬指導', '在宅医療'] as required_skills,
-  CASE 
-    WHEN RANDOM() < 0.3 THEN 'junior'
-    WHEN RANDOM() < 0.7 THEN 'intermediate'
-    ELSE 'senior'
-  END as experience_level,
-  ARRAY['多言語対応', '小児科対応'] as special_needs,
-  ROUND((RANDOM() * 2 + 3)::numeric, 1) as average_pharmacist_satisfaction,
-  ROUND((RANDOM() * 0.3 + 0.7)::numeric, 2) as retention_rate, -- 0.7-1.0
-  ROUND((RANDOM() * 2 + 3)::numeric, 1) as work_environment
-FROM user_profiles 
-WHERE user_type = 'pharmacy'
-ON CONFLICT (user_id) DO NOTHING;
+-- SELECT 
+--   id,
+--   CASE 
+--     WHEN RANDOM() < 0.6 THEN 'community'
+--     WHEN RANDOM() < 0.8 THEN 'hospital'
+--     ELSE 'clinic'
+--   END as pharmacy_type,
+--   CASE 
+--     WHEN RANDOM() < 0.3 THEN 'small'
+--     WHEN RANDOM() < 0.7 THEN 'medium'
+--     ELSE 'large'
+--   END as pharmacy_size,
+--   ARRAY['一般調剤', '在宅医療'] as specialties,
+--   ARRAY['調剤', '服薬指導', '在宅医療'] as required_skills,
+--   CASE 
+--     WHEN RANDOM() < 0.3 THEN 'junior'
+--     WHEN RANDOM() < 0.7 THEN 'intermediate'
+--     ELSE 'senior'
+--   END as experience_level,
+--   ARRAY['多言語対応', '小児科対応'] as special_needs,
+--   ROUND((RANDOM() * 2 + 3)::numeric, 1) as average_pharmacist_satisfaction,
+--   ROUND((RANDOM() * 0.3 + 0.7)::numeric, 2) as retention_rate, -- 0.7-1.0
+--   ROUND((RANDOM() * 2 + 3)::numeric, 1) as work_environment
+-- FROM user_profiles 
+-- WHERE user_type = 'pharmacy'
+-- ON CONFLICT (user_id) DO NOTHING;
 
 -- DISABLED: 既存の確定シフトからマッチング結果を生成
 -- INSERT INTO match_outcomes (pharmacist_id, pharmacy_id, date, start_time, end_time, success, satisfaction_score, efficiency_score, feedback, completion_time, no_show, early_leave)
-SELECT 
-  pharmacist_id,
-  pharmacy_id,
-  date,
-  start_time::TIME,
-  end_time::TIME,
-  true as success,
-  ROUND((RANDOM() * 2 + 3)::numeric, 1) as satisfaction_score, -- 3.0-5.0
-  ROUND((RANDOM() * 2 + 3)::numeric, 1) as efficiency_score, -- 3.0-5.0
-  'AIマッチングシステムによる自動生成データ' as feedback,
-  NOW() as completion_time,
-  false as no_show,
-  false as early_leave
-FROM assigned_shifts 
-WHERE status = 'confirmed'
-ON CONFLICT DO NOTHING;
+-- SELECT 
+--   pharmacist_id,
+--   pharmacy_id,
+--   date,
+--   start_time::TIME,
+--   end_time::TIME,
+--   true as success,
+--   ROUND((RANDOM() * 2 + 3)::numeric, 1) as satisfaction_score, -- 3.0-5.0
+--   ROUND((RANDOM() * 2 + 3)::numeric, 1) as efficiency_score, -- 3.0-5.0
+--   'AIマッチングシステムによる自動生成データ' as feedback,
+--   NOW() as completion_time,
+--   false as no_show,
+--   false as early_leave
+-- FROM assigned_shifts 
+-- WHERE status = 'confirmed'
+-- ON CONFLICT DO NOTHING;
 
 -- DISABLED: 学習データの生成
 -- INSERT INTO learning_data (input_data, output_data, metadata)
-SELECT 
-  jsonb_build_object(
-    'pharmacist_id', pharmacist_id,
-    'pharmacy_id', pharmacy_id,
-    'date', date,
-    'start_time', start_time,
-    'end_time', end_time,
-    'day_of_week', EXTRACT(DOW FROM date),
-    'is_weekend', EXTRACT(DOW FROM date) IN (0, 6),
-    'season', CASE 
-      WHEN EXTRACT(MONTH FROM date) BETWEEN 3 AND 5 THEN 'spring'
-      WHEN EXTRACT(MONTH FROM date) BETWEEN 6 AND 8 THEN 'summer'
-      WHEN EXTRACT(MONTH FROM date) BETWEEN 9 AND 11 THEN 'autumn'
-      ELSE 'winter'
-    END
-  ) as input_data,
-  jsonb_build_object(
-    'success', success,
-    'satisfaction', satisfaction_score,
-    'efficiency', efficiency_score
-  ) as output_data,
-  jsonb_build_object(
-    'version', '1.0',
-    'generated_at', NOW(),
-    'source', 'historical_data'
-  ) as metadata
-FROM match_outcomes
-WHERE success = true;
+-- SELECT 
+--   jsonb_build_object(
+--     'pharmacist_id', pharmacist_id,
+--     'pharmacy_id', pharmacy_id,
+--     'date', date,
+--     'start_time', start_time,
+--     'end_time', end_time,
+--     'day_of_week', EXTRACT(DOW FROM date),
+--     'is_weekend', EXTRACT(DOW FROM date) IN (0, 6),
+--     'season', CASE 
+--       WHEN EXTRACT(MONTH FROM date) BETWEEN 3 AND 5 THEN 'spring'
+--       WHEN EXTRACT(MONTH FROM date) BETWEEN 6 AND 8 THEN 'summer'
+--       WHEN EXTRACT(MONTH FROM date) BETWEEN 9 AND 11 THEN 'autumn'
+--       ELSE 'winter'
+--     END
+--   ) as input_data,
+--   jsonb_build_object(
+--     'success', success,
+--     'satisfaction', satisfaction_score,
+--     'efficiency', efficiency_score
+--   ) as output_data,
+--   jsonb_build_object(
+--     'version', '1.0',
+--     'generated_at', NOW(),
+--     'source', 'historical_data'
+--   ) as metadata
+-- FROM match_outcomes
+-- WHERE success = true;
 
 -- DISABLED: マッチング履歴の生成
 -- INSERT INTO matching_history (date, matching_type, total_requests, total_postings, matched_count, success_rate, average_compatibility_score, execution_time_ms, metadata)
-SELECT 
-  date,
-  'rule_based' as matching_type,
-  FLOOR(RANDOM() * 20) + 5 as total_requests,
-  FLOOR(RANDOM() * 15) + 3 as total_postings,
-  FLOOR(RANDOM() * 10) + 2 as matched_count,
-  ROUND((RANDOM() * 0.3 + 0.7)::numeric, 2) as success_rate, -- 0.7-1.0
-  ROUND((RANDOM() * 0.3 + 0.7)::numeric, 2) as average_compatibility_score, -- 0.7-1.0
-  FLOOR(RANDOM() * 5000) + 1000 as execution_time_ms, -- 1-6秒
-  jsonb_build_object(
-    'algorithm_version', '1.0',
-    'notes', 'Historical matching data'
-  ) as metadata
-FROM (
-  SELECT DISTINCT date FROM match_outcomes
-) dates;
+-- SELECT 
+--   date,
+--   'rule_based' as matching_type,
+--   FLOOR(RANDOM() * 20) + 5 as total_requests,
+--   FLOOR(RANDOM() * 15) + 3 as total_postings,
+--   FLOOR(RANDOM() * 10) + 2 as matched_count,
+--   ROUND((RANDOM() * 0.3 + 0.7)::numeric, 2) as success_rate, -- 0.7-1.0
+--   ROUND((RANDOM() * 0.3 + 0.7)::numeric, 2) as average_compatibility_score, -- 0.7-1.0
+--   FLOOR(RANDOM() * 5000) + 1000 as execution_time_ms, -- 1-6秒
+--   jsonb_build_object(
+--     'algorithm_version', '1.0',
+--     'notes', 'Historical matching data'
+--   ) as metadata
+-- FROM (
+--   SELECT DISTINCT date FROM match_outcomes
+-- ) dates;
 
 -- 権限の設定
 GRANT ALL ON match_outcomes TO authenticated;
