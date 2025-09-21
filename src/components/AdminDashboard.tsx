@@ -21,6 +21,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [storeNgPharmacists, setStoreNgPharmacists] = useState<{[pharmacyId: string]: any[]}>({});
+  const [storeNgPharmacies, setStoreNgPharmacies] = useState<{[pharmacistId: string]: any[]}>({});
   const [ratings, setRatings] = useState<any[]>([]);
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     pharmacies: false,
@@ -2155,10 +2156,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             }
           }
           
-          setStoreNgPharmacists(prev => ({
-            ...prev,
-            ...pharmacistNgPharmaciesMap
-          }));
+          setStoreNgPharmacies(pharmacistNgPharmaciesMap);
           logToRailway('Pharmacist NG pharmacies data:', pharmacistNgPharmaciesMap);
           
           // シフトに含まれるユーザーIDをチェック
@@ -2862,7 +2860,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
           
         // 薬剤師のNG薬局・店舗リストを取得（store_ng_pharmaciesテーブルから）
-        const pharmacistNgPharmacies = storeNgPharmacists[request.pharmacist_id] || [];
+        const pharmacistNgPharmacies = storeNgPharmacies[request.pharmacist_id] || [];
         const pharmacistNg = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
         
         // 薬局のNG薬剤師リストを取得（store_ng_pharmacistsテーブルから）
@@ -2885,8 +2883,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           console.log(`❌ NGリストによりマッチング不可: 薬剤師(${pharmacist?.name || request.pharmacist_id}) ↔ 薬局(${pharmacy?.name || pharmacyNeed.pharmacy_id})`);
           if (blockedByPharmacist) {
             console.log(`  - 薬剤師のNGリストに薬局が含まれています`);
-            console.log(`  - 薬剤師NG薬局リスト:`, pharmacistNgPharmacies);
-            console.log(`  - 薬剤師NGリスト:`, pharmacistNg);
+          console.log(`  - 薬剤師NG薬局リスト:`, pharmacistNgPharmacies);
+          console.log(`  - 薬剤師NGリスト:`, pharmacistNg);
+          console.log(`  - storeNgPharmacies:`, storeNgPharmacies);
           }
           if (blockedByPharmacy) {
             console.log(`  - 薬局のNGリストに薬剤師が含まれています`);
@@ -4834,14 +4833,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               <div className="text-sm">
                                 {(() => {
                                   // store_ng_pharmaciesテーブルからNG薬局情報を取得
-                                  const ngPharmacies = storeNgPharmacists[pharmacist.id] || [];
+                                  const ngPharmacies = storeNgPharmacies[pharmacist.id] || [];
                                   
                                   // デバッグログ
                                   console.log('NG薬局表示デバッグ:', {
                                     pharmacistId: pharmacist.id,
                                     pharmacistName: pharmacist.name,
                                     ngPharmacies: ngPharmacies,
-                                    storeNgPharmacists: storeNgPharmacists
+                                    storeNgPharmacies: storeNgPharmacies
                                   });
                                   
                                   if (ngPharmacies.length === 0) {
