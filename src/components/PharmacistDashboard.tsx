@@ -854,7 +854,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
 
         {/* 右側: シフト希望登録フォーム */}
         <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow">
-                      <div className="p-4 lg:p-6">
+                      <div className="p-4 lg:p-6 pb-20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">
                 {isSystemConfirmed ? '確定シフト詳細' : 'シフト希望登録'}
@@ -1136,11 +1136,11 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
 
             {/* 登録/削除ボタン */}
             {isSystemConfirmed ? (
-              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
+              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium text-sm sm:text-base break-words">
                 シフト確定済みのため編集できません
               </div>
             ) : selectedDates.length > 0 && myShifts.some((s: any) => selectedDates.includes(s.date)) ? (
-              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium">
+              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium text-sm sm:text-base break-words">
                 確定済みのため編集できません
               </div>
             ) : (() => {
@@ -1152,7 +1152,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               if (hasExistingRequests) {
                 // 既存の希望がある場合は「希望を更新」と「希望を削除」の両方を表示
                 return (
-                  <div className="space-y-3 mt-4">
+                  <div className="space-y-3 mt-4 mb-4">
                     <button
                       onClick={handleSubmit}
                       className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-amber-600 text-white hover:bg-amber-700 text-sm sm:text-base"
@@ -1170,7 +1170,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               } else {
                 // 既存の希望がない場合は「希望を追加」のみ表示
                 return (
-                  <div className="mt-4">
+                  <div className="mt-4 mb-4">
                     <button
                       onClick={handleSubmit}
                       className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 text-sm sm:text-base"
