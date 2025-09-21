@@ -1394,6 +1394,11 @@ export const pharmacistRatings = {
     pharmacist_id?: string;
     assigned_shift_id?: string;
   }) {
+    if (!supabase) {
+      console.error('Supabase client not initialized');
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+    
     try {
       let query = supabase
         .from('pharmacist_ratings')
@@ -1436,7 +1441,15 @@ export const pharmacistRatings = {
     rating: number;
     comment?: string;
   }) {
+    if (!supabase) {
+      console.error('Supabase client not initialized');
+      return { data: null, error: { message: 'Supabaseが設定されていません' } };
+    }
+
     try {
+      console.log('=== UPSERT RATING START ===');
+      console.log('Rating data:', ratingData);
+      
       const { data, error } = await supabase
         .from('pharmacist_ratings')
         .upsert(ratingData, {
@@ -1446,14 +1459,24 @@ export const pharmacistRatings = {
         .single();
 
       if (error) {
-        console.error('Error upserting pharmacist rating:', error);
+        console.error('=== UPSERT RATING ERROR ===');
+        console.error('Error details:', {
+          error,
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
         return { data: null, error };
       }
 
+      console.log('=== UPSERT RATING SUCCESS ===');
+      console.log('Saved rating:', data);
       return { data, error: null };
     } catch (error) {
-      console.error('Pharmacist rating upsert error:', error);
-      return { data: null, error } as any;
+      console.error('=== UPSERT RATING EXCEPTION ===');
+      console.error('Exception details:', error);
+      return { data: null, error: { message: '評価の保存中にエラーが発生しました' } };
     }
   },
 

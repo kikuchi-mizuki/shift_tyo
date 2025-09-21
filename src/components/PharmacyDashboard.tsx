@@ -1987,26 +1987,53 @@ const handleRatingSubmit = async (
   setRatingForm: (form: { rating: number; comment: string }) => void
 ) => {
   try {
-    const { data, error } = await pharmacistRatings.upsertRating({
+    console.log('=== RATING SUBMISSION START ===');
+    console.log('Parameters:', {
+      shiftId,
+      pharmacistId,
+      pharmacyId,
+      rating,
+      comment
+    });
+    
+    const ratingData = {
       pharmacy_id: pharmacyId,
       pharmacist_id: pharmacistId,
       assigned_shift_id: shiftId,
       rating: rating,
       comment: comment
-    });
+    };
+    
+    console.log('Rating data to submit:', ratingData);
+    
+    const { data, error } = await pharmacistRatings.upsertRating(ratingData);
 
     if (error) {
-      console.error('Error saving rating:', error);
-      alert('評価の保存に失敗しました');
+      console.error('=== RATING SUBMISSION ERROR ===');
+      console.error('Error details:', {
+        error,
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      alert(`評価の保存に失敗しました: ${error.message || 'Unknown error'}`);
       return;
     }
 
+    console.log('=== RATING SUBMISSION SUCCESS ===');
+    console.log('Saved rating data:', data);
+
     // 評価データを再読み込み
+    console.log('Reloading ratings data...');
     const { data: ratingsData } = await pharmacistRatings.getRatings({
       pharmacy_id: pharmacyId
     });
     if (ratingsData) {
+      console.log('Reloaded ratings:', ratingsData);
       setRatings(ratingsData);
+    } else {
+      console.log('No ratings data reloaded');
     }
 
     setEditingRating(null);
