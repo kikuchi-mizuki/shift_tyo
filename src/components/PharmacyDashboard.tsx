@@ -1463,13 +1463,6 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                                 {renderStarRating(ratingForm.rating, (rating) => 
                                   setRatingForm(prev => ({ ...prev, rating }))
                                 )}
-                                <textarea
-                                  value={ratingForm.comment}
-                                  onChange={(e) => setRatingForm(prev => ({ ...prev, comment: e.target.value }))}
-                                  placeholder="コメント（任意）"
-                                  className="w-full p-2 text-xs border border-gray-300 rounded resize-none"
-                                  rows={2}
-                                />
                                 <div className="flex space-x-2">
                                   <button
                                     onClick={() => handleRatingSubmit(
@@ -1477,7 +1470,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                                       shift.pharmacist_id,
                                       user.id,
                                       ratingForm.rating,
-                                      ratingForm.comment,
+                                      '', // コメントは常に空文字列
                                       setRatings,
                                       setEditingRating,
                                       setRatingForm
