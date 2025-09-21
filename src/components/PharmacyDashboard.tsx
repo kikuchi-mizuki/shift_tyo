@@ -783,7 +783,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                 start_time: customTimeMode ? startTime + ':00' : undefined,
                 end_time: customTimeMode ? endTime + ':00' : undefined,
                 required_staff: requiredStaff,
-                memo: '': ''
+                memo: ''
               })
             )
           );
@@ -1232,7 +1232,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                     time_slot_type: typeof shift.time_slot,
                     date: shift.date,
                     store_name: shift.store_name,
-                    memo: '': '': shift.memo
+                    memo: shift.memo
                   });
                   
                   // 店舗名を取得（memoから抽出または直接指定）
@@ -1249,7 +1249,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                       shift_id: shift.id,
                       date: shift.date,
                       store_name: shift.store_name,
-                      memo: '': '': shift.memo,
+                      memo: shift.memo,
                       direct: direct,
                       fromMemo: fromMemo,
                       result: direct || fromMemo || '（店舗名未設定）'
