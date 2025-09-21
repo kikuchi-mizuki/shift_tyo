@@ -152,10 +152,14 @@ export class AIMatchingEngine {
             const dateMatch = request.date === posting.date;
             const timeCompatible = this.isBasicCompatible(request, posting);
             
+            // NGリストチェック
+            const ngCompatible = this.isNgCompatible(request, posting, userProfiles);
+            
             debugInfo += `    日付一致: ${dateMatch}\n`;
             debugInfo += `    時間適合: ${timeCompatible}\n`;
+            debugInfo += `    NG適合: ${ngCompatible}\n`;
             
-            if (dateMatch && timeCompatible) {
+            if (dateMatch && timeCompatible && ngCompatible) {
               debugInfo += `    → マッチング候補を作成\n`;
               
               // 重複防止の更新
@@ -389,6 +393,44 @@ export class AIMatchingEngine {
 
     // 薬剤師が薬局の希望時間を完全に満たしているかチェック
     return requestStart <= postingStart && requestEnd >= postingEnd;
+  }
+
+  /**
+   * NGリストの互換性チェック
+   * 薬剤師と薬局のNGリストを確認して、マッチング可能かチェック
+   */
+  private isNgCompatible(request: any, posting: any, userProfiles?: any): boolean {
+    if (!userProfiles) return true; // userProfilesがない場合は互換性ありとする
+
+    const pharmacist = userProfiles[request.pharmacist_id];
+    const pharmacy = userProfiles[posting.pharmacy_id];
+
+    if (!pharmacist || !pharmacy) return true; // プロファイルがない場合は互換性ありとする
+
+    // 薬剤師のNGリスト（薬局IDまたは店舗ID）
+    const pharmacistNg: string[] = Array.isArray(pharmacist.ng_list) ? pharmacist.ng_list : [];
+    // 薬局のNGリスト（薬剤師ID）
+    const pharmacyNg: string[] = Array.isArray(pharmacy.ng_list) ? pharmacy.ng_list : [];
+
+    // 薬剤師が薬局をNGにしているかチェック
+    const blockedByPharmacist = pharmacistNg.includes(posting.pharmacy_id);
+    // 薬局が薬剤師をNGにしているかチェック
+    const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+
+    // どちらかがNGにしている場合は互換性なし
+    const isCompatible = !blockedByPharmacist && !blockedByPharmacy;
+
+    if (!isCompatible) {
+      console.log(`❌ NGリストによりマッチング不可: 薬剤師(${pharmacist.name || request.pharmacist_id}) ↔ 薬局(${pharmacy.name || posting.pharmacy_id})`);
+      if (blockedByPharmacist) {
+        console.log(`  - 薬剤師のNGリストに薬局が含まれています`);
+      }
+      if (blockedByPharmacy) {
+        console.log(`  - 薬局のNGリストに薬剤師が含まれています`);
+      }
+    }
+
+    return isCompatible;
   }
 
   /**
