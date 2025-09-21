@@ -3660,53 +3660,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         )}
 
 
-                        {/* 薬局の不足状況表示（独立） */}
-                        {(() => {
-                          const pharmacyNeeds = analyzePharmacyShortage(selectedDate);
-                          const currentDayMatches = aiMatchesByDate[selectedDate] || [];
-                          
-                          // マッチング済みの薬剤師と薬局を除外して不足を計算
-                          const pharmaciesWithShortage = Array.isArray(pharmacyNeeds) ? pharmacyNeeds.filter(pharmacy => {
-                            const matchedCount = Array.isArray(currentDayMatches) ? currentDayMatches.filter((match: any) => match.pharmacy.id === pharmacy.id).length : 0;
-                            const remainingShortage = Math.max(0, pharmacy.required - matchedCount);
-                            return remainingShortage > 0;
-                          }) : [];
-                          
-                          if (pharmaciesWithShortage.length > 0) {
-                            return (
-                              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <div className="w-4 h-4 text-red-600">⚠️</div>
-                                  <h4 className="text-sm font-semibold text-red-800">薬局の不足状況</h4>
-                                </div>
-                                <div className="space-y-1 max-h-24 overflow-y-auto">
-                                  {pharmaciesWithShortage.map((pharmacy, index) => {
-                                    const matchedCount = Array.isArray(currentDayMatches) ? currentDayMatches.filter((match: any) => match.pharmacy.id === pharmacy.id).length : 0;
-                                    const remainingShortage = Math.max(0, pharmacy.required - matchedCount);
-                                    const pharmacyProfile = userProfiles[pharmacy.id];
-                                    const pharmacyName = pharmacyProfile?.name || pharmacyProfile?.email || `薬局${pharmacy.id ? pharmacy.id.slice(-4) : 'unknown'}`;
-                                    const storeLabel = pharmacy.store_name ? `（${pharmacy.store_name}）` : '';
-                                    
-                                    return (
-                                      <div key={index} className="bg-white rounded border p-2 text-xs">
-                                        <div className="flex justify-between items-center">
-                                          <span className="font-medium text-gray-800">{pharmacyName}{storeLabel}</span>
-                                          <span className="text-red-600 font-medium">
-                                            不足 {remainingShortage}人
-                                          </span>
-                                        </div>
-                                        <div className="text-gray-500">
-                                          必要: {pharmacy.required}人 / マッチ: {matchedCount}人
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
 
                       </div>
                     );
