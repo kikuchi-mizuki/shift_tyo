@@ -1024,7 +1024,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               <button
                 type="button"
                 onClick={addDateToList}
-                className="mt-2 py-2 px-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs"
+                className="w-full mt-3 py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
               >
                 リストに追加
               </button>
@@ -1061,17 +1061,17 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               </label>
               
               {/* 時間帯選択モード切り替え */}
-              <div className="mb-3">
-                <div className="grid grid-cols-2 gap-2 w-full">
+              <div className="mb-4">
+                <div className="grid grid-cols-2 gap-3 w-full">
                   <button
                     onClick={() => setCustomTimeMode(false)}
-                    className={`w-full px-3 py-2 rounded text-sm ${!customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                    className={`w-full px-3 py-3 rounded-lg text-sm font-medium transition-colors ${!customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                   >
                     定型時間
                   </button>
                   <button
                     onClick={() => setCustomTimeMode(true)}
-                    className={`w-full px-3 py-2 rounded text-sm ${customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                    className={`w-full px-3 py-3 rounded-lg text-sm font-medium transition-colors ${customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                   >
                     時間を選択
                   </button>
@@ -1079,7 +1079,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               </div>
 
               {!customTimeMode ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-3 mt-3">
                   {timeSlots.map((slot) => {
                     const Icon = slot.icon;
                     return (
@@ -1091,13 +1091,13 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                           setSelectedTimeSlot(slot.id);
                           logToRailway('After setSelectedTimeSlot call');
                         }}
-                        className={`w-full flex items-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
+                        className={`w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${
                           selectedTimeSlot === slot.id ? slot.color : 'bg-gray-300 hover:bg-gray-400'
                         }`}
                         style={{ border: selectedTimeSlot === slot.id ? '2px solid blue' : 'none' }}
                       >
-                        <Icon className="w-4 h-4" />
-                        <span>{slot.label}</span>
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{slot.label}</span>
                       </button>
                     );
                   })}
@@ -1152,16 +1152,16 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               if (hasExistingRequests) {
                 // 既存の希望がある場合は「希望を更新」と「希望を削除」の両方を表示
                 return (
-                  <div className="space-y-2">
+                  <div className="space-y-3 mt-4">
                     <button
                       onClick={handleSubmit}
-                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-amber-600 text-white hover:bg-amber-700"
+                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-amber-600 text-white hover:bg-amber-700 text-sm sm:text-base"
                     >
                       希望を更新
                     </button>
                     <button
                       onClick={handleDeleteExistingRequests}
-                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-red-700"
+                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-red-700 text-sm sm:text-base"
                     >
                       希望を削除
                     </button>
@@ -1170,12 +1170,14 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               } else {
                 // 既存の希望がない場合は「希望を追加」のみ表示
                 return (
-                  <button
-                    onClick={handleSubmit}
-                    className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
-                  >
-                    希望を追加
-                  </button>
+                  <div className="mt-4">
+                    <button
+                      onClick={handleSubmit}
+                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 text-sm sm:text-base"
+                    >
+                      希望を追加
+                    </button>
+                  </div>
                 );
               }
             })()}
