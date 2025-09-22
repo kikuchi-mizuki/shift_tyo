@@ -1159,7 +1159,8 @@ export const shiftRequests = {
     try {
       const { pharmacist_id, dates } = params;
       // time_slot 正規化
-      const normalizedTimeSlot = params.time_slot === 'full' ? 'fullday' : params.time_slot;
+      // DBは 'custom' を許容しないため、カスタムは 'fullday' に正規化
+      const normalizedTimeSlot = (params.time_slot === 'full' || params.time_slot === 'custom') ? 'fullday' : params.time_slot;
       const toHHMMSS = (v?: string) => {
         if (!v) return v;
         if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v;

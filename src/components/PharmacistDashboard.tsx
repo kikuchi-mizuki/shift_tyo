@@ -652,7 +652,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       const requestsToInsert = selectedDates.map(date => ({
         pharmacist_id: userIdToUse,
         date: date,
-        time_slot: customTimeMode ? 'custom' : selectedTimeSlot,
+        // DBの制約に合わせ、カスタム時間の場合も time_slot は 'fullday' を保存し、
+        // 実際の時間は start_time/end_time で表現する
+        time_slot: customTimeMode ? 'fullday' : selectedTimeSlot,
         start_time: customTimeMode ? startTime + ':00' : undefined,
         end_time: customTimeMode ? endTime + ':00' : undefined,
         priority: 'medium',
@@ -1156,7 +1158,8 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                         try {
                           const { data: { user: authUser } } = await supabase.auth.getUser();
                           const userIdToUse = authUser?.id || user.id;
-                          const currentSlot = customTimeMode ? 'custom' : selectedTimeSlot;
+                          // カスタム時間の場合も time_slot は 'fullday' を保存
+                          const currentSlot = customTimeMode ? 'fullday' : selectedTimeSlot;
                           const { error } = await shiftRequests.updateRequests({
                             pharmacist_id: userIdToUse,
                             dates: selectedDates,
