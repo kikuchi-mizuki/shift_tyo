@@ -1626,6 +1626,13 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                   {selectedDates.map(date => (
                     <span key={date} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
                       {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
+                      {/* 時間表示: カスタムなら start-end、通常はプリセット表示 */}
+                      {customTimeMode && startTime && endTime ? (
+                        <> / {startTime}-{endTime}</>
+                      ) : timeSlot === 'morning' ? ' / 09:00-13:00'
+                        : timeSlot === 'afternoon' ? ' / 13:00-18:00'
+                        : timeSlot === 'full' ? ' / 09:00-18:00'
+                        : null}
                     </span>
                   ))}
                 </div>
