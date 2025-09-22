@@ -832,7 +832,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
               shiftPostings.updatePosting(u.id, {
                 date: selectedDates[0],
                 store_name: u.storeName || null,
-                time_slot: customTimeMode ? 'custom' : timeSlot,
+                // DBは 'custom' を許容しないため、カスタムは 'fullday' で保存
+                time_slot: customTimeMode ? 'fullday' : timeSlot,
                 start_time: customTimeMode ? startTime + ':00' : undefined,
                 end_time: customTimeMode ? endTime + ':00' : undefined,
                 required_staff: requiredStaff,
@@ -862,7 +863,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             pharmacy_id: user.id,
             date: date,
             store_name: name || null,
-            time_slot: customTimeMode ? 'custom' : timeSlot,
+            // カスタムは 'fullday' として保存し、start/end に実時間を保存
+            time_slot: customTimeMode ? 'fullday' : timeSlot,
             start_time: customTimeMode ? startTime + ':00' : undefined,
             end_time: customTimeMode ? endTime + ':00' : undefined,
             required_staff: requiredStaff,

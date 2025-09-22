@@ -1270,7 +1270,8 @@ export const shiftPostings = {
         // time_slot を既存スキーマに合わせて正規化
         const normalizedTimeSlot =
           p.time_slot === 'full' ? 'fullday' :
-          p.time_slot === 'consult' ? 'negotiable' : p.time_slot;
+          p.time_slot === 'consult' ? 'negotiable' :
+          p.time_slot === 'custom' ? 'fullday' : p.time_slot;
 
         // カラム名の差異: required_staff / required_people のどちらでも受け入れられるように
         const requiredStaff =
