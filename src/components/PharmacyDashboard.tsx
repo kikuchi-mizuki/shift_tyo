@@ -1597,13 +1597,19 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                       <div key={idx} className="flex items-center justify-between bg-white rounded border px-2 py-1">
                         <div className="text-gray-800">店舗: {name && name.trim() !== '' ? name : '（店舗名未設定）'}</div>
                         <div className="text-gray-500">
-                          {s.time_slot === 'morning' ? '午前' : 
-                           s.time_slot === 'afternoon' ? '午後' : 
-                           s.time_slot === 'full' ? '終日' : 
-                           s.time_slot === 'consult' ? '要相談' : 
-                           s.time_slot === 'custom' && s.start_time && s.end_time ? 
-                             `${s.start_time.substring(0, 5)}-${s.end_time.substring(0, 5)}` : 
-                           s.time_slot} / {s.required_staff || 1}人
+                          {(() => {
+                            // 登録済みデータの表示は時間帯名ではなく時間を優先
+                            if (s.start_time && s.end_time) {
+                              const st = String(s.start_time).substring(0, 5);
+                              const et = String(s.end_time).substring(0, 5);
+                              return `${st}-${et}`;
+                            }
+                            if (s.time_slot === 'morning') return '09:00-13:00';
+                            if (s.time_slot === 'afternoon') return '13:00-18:00';
+                            if (s.time_slot === 'full' || s.time_slot === 'fullday') return '09:00-18:00';
+                            if (s.time_slot === 'consult' || s.time_slot === 'negotiable') return '要相談';
+                            return '09:00-18:00';
+                          })()} / {s.required_staff || 1}人
                         </div>
                       </div>
                     );
@@ -1626,13 +1632,6 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                   {selectedDates.map(date => (
                     <span key={date} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
                       {new Date(date).getMonth() + 1}月{new Date(date).getDate()}日
-                      {/* 時間表示: カスタムなら start-end、通常はプリセット表示 */}
-                      {customTimeMode && startTime && endTime ? (
-                        <> / {startTime}-{endTime}</>
-                      ) : timeSlot === 'morning' ? ' / 09:00-13:00'
-                        : timeSlot === 'afternoon' ? ' / 13:00-18:00'
-                        : timeSlot === 'full' ? ' / 09:00-18:00'
-                        : null}
                     </span>
                   ))}
                 </div>
