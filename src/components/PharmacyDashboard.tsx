@@ -1870,22 +1870,22 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                 });
               }
               
-              // 既存募集の検出（実際のオブジェクトを取得）
+              // 既存募集の検出（日付と薬局IDのみで判定、時間帯は柔軟に）
               const existingPosting = selectedDates.length > 0 && myShifts ? myShifts.find((s: any) => {
                 const dateMatch = selectedDates.includes(s.date);
                 const pharmacyMatch = s.pharmacy_id === user?.id;
-                const timeSlotMatch = s.time_slot === currentTimeSlot;
                 
                 console.log(`Checking shift ${s.id}:`, {
                   dateMatch,
                   pharmacyMatch,
-                  timeSlotMatch,
                   shiftDate: s.date,
                   shiftPharmacyId: s.pharmacy_id,
-                  shiftTimeSlot: s.time_slot
+                  shiftTimeSlot: s.time_slot,
+                  currentTimeSlot
                 });
                 
-                return dateMatch && pharmacyMatch && timeSlotMatch;
+                // 日付と薬局IDが一致すれば既存募集とみなす（時間帯は更新可能）
+                return dateMatch && pharmacyMatch;
               }) : null;
               
               const hasExistingPosting = !!existingPosting;
