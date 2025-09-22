@@ -1151,7 +1151,32 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                 return (
                   <div className="space-y-3 mt-4 mb-4">
                     <button
-                      onClick={handleSubmit}
+                      onClick={async () => {
+                        // 既存の希望を更新
+                        try {
+                          const { data: { user: authUser } } = await supabase.auth.getUser();
+                          const userIdToUse = authUser?.id || user.id;
+                          const currentSlot = customTimeMode ? 'custom' : selectedTimeSlot;
+                          const { error } = await shiftRequests.updateRequests({
+                            pharmacist_id: userIdToUse,
+                            dates: selectedDates,
+                            time_slot: currentSlot,
+                            start_time: customTimeMode ? `${startTime}:00` : undefined,
+                            end_time: customTimeMode ? `${endTime}:00` : undefined,
+                          });
+                          if (error) {
+                            console.error('Error updating requests:', error);
+                            alert(`希望の更新に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+                            return;
+                          }
+                          // UI リフレッシュ
+                          await loadShifts();
+                          alert('希望を更新しました');
+                        } catch (e) {
+                          console.error('Update existing requests failed:', e);
+                          alert('希望の更新に失敗しました');
+                        }
+                      }}
                       className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-amber-600 text-white hover:bg-amber-700 text-sm sm:text-base"
                     >
                       希望を更新

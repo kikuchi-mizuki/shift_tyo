@@ -1141,6 +1141,56 @@ export const shiftRequests = {
       return { data: [], error };
     }
   }
+  ,
+
+  // シフト希望更新（薬剤師自身）: 指定日付群の既存レコードを更新
+  updateRequests: async (params: {
+    pharmacist_id: string;
+    dates: string[];
+    time_slot: string;
+    start_time?: string;
+    end_time?: string;
+  }) => {
+    if (!supabase) {
+      console.error('Supabase not initialized');
+      return { data: [], error: { message: 'Supabaseが設定されていません' } } as any;
+    }
+
+    try {
+      const { pharmacist_id, dates } = params;
+      // time_slot 正規化
+      const normalizedTimeSlot = params.time_slot === 'full' ? 'fullday' : params.time_slot;
+      const toHHMMSS = (v?: string) => {
+        if (!v) return v;
+        if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v;
+        if (/^\d{2}:\d{2}$/.test(v)) return `${v}:00`;
+        return v;
+      };
+      const start_time = toHHMMSS(params.start_time);
+      const end_time = toHHMMSS(params.end_time);
+
+      // まとめて更新
+      const { data, error } = await supabase
+        .from('shift_requests')
+        .update({
+          time_slot: normalizedTimeSlot,
+          start_time,
+          end_time,
+        })
+        .eq('pharmacist_id', pharmacist_id)
+        .in('date', dates)
+        .select('id,date,time_slot,start_time,end_time');
+
+      if (error) {
+        console.error('updateRequests error:', error);
+        return { data: null, error } as any;
+      }
+      return { data, error: null } as any;
+    } catch (error) {
+      console.error('updateRequests exception:', error);
+      return { data: null, error } as any;
+    }
+  }
 };
 
 // シフト募集関連の関数
