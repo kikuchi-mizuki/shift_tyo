@@ -3659,7 +3659,95 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         )}
 
-
+                        {/* 不足薬局一覧（マッチング結果がない場合も表示） */}
+                        {dayShortageAnalysis.length > 0 && (
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <AlertCircle className="w-4 h-4 text-red-600" />
+                              <h4 className="text-sm font-semibold text-red-800">不足薬局 {dayShortageAnalysis.length}薬局</h4>
+                            </div>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {dayShortageAnalysis.map((pharmacy, index) => {
+                                const availablePharmacists = Object.values(userProfiles || {}).filter((profile: any) => {
+                                  return profile?.user_type === 'pharmacist';
+                                });
+                                
+                                return (
+                                  <div key={index} className="bg-white rounded border p-2 text-xs">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <div className="font-medium text-gray-800">
+                                          {pharmacy.name}{pharmacy.store_name ? `（${pharmacy.store_name}）` : ''}
+                                        </div>
+                                        <div className="text-gray-600 mt-1">
+                                          必要: {pharmacy.required}人 / マッチ: {pharmacy.matched}人
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-red-600 font-medium">
+                                          不足 {pharmacy.shortage}人
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* 手動マッチング選択 */}
+                                    {availablePharmacists.length > 0 && (
+                                      <div className="mt-2 pt-2 border-t border-gray-200">
+                                        <div className="text-xs text-gray-600 mb-1">手動マッチング:</div>
+                                        <div className="space-y-1">
+                                          {Array.from({ length: pharmacy.shortage }).map((_, shortageIndex) => (
+                                            <div key={shortageIndex} className="flex items-center space-x-2">
+                                              <span className="text-xs text-gray-500 w-12">
+                                                {shortageIndex + 1}人目:
+                                              </span>
+                                              <select
+                                                value={manualMatches[pharmacy.id]?.[shortageIndex] || ''}
+                                                onChange={(e) => {
+                                                  const newMatches = { ...manualMatches };
+                                                  if (!newMatches[pharmacy.id]) {
+                                                    newMatches[pharmacy.id] = [];
+                                                  }
+                                                  newMatches[pharmacy.id][shortageIndex] = e.target.value;
+                                                  setManualMatches(newMatches);
+                                                }}
+                                                className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+                                              >
+                                                <option value="">薬剤師を選択してください</option>
+                                                {availablePharmacists.map((pharmacist: any, pharmacistIndex: number) => (
+                                                  <option 
+                                                    key={pharmacistIndex} 
+                                                    value={pharmacist.id}
+                                                    disabled={manualMatches[pharmacy.id]?.includes(pharmacist.id) && manualMatches[pharmacy.id]?.[shortageIndex] !== pharmacist.id}
+                                                  >
+                                                    {pharmacist.name || `薬剤師${pharmacist.id ? pharmacist.id.slice(-4) : 'unknown'}`}
+                                                  </option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            {/* 手動マッチング確定ボタン */}
+                            {Object.values(manualMatches).some(matches => matches.some(id => id && id !== '')) && (
+                              <div className="mt-3 pt-2 border-t border-red-200">
+                                <button
+                                  onClick={() => saveManualShiftRequests(selectedDate)}
+                                  className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-xs font-medium"
+                                >
+                                  選択した薬剤師を希望シフトとして保存
+                                  <br />
+                                  <span className="text-xs opacity-90">（新しいシフト希望が作成されます）</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                       </div>
                     );
