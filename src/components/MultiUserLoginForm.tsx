@@ -243,7 +243,13 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
               userId: data.user.id,
               isPC: window.innerWidth >= 1024
             });
-            setError(`ユーザープロフィールの取得に失敗しました: ${profileError.message}`);
+            // プロフィール取得に失敗しても、選択中のユーザータイプで継続
+            console.warn('Falling back to selected userType due to profile fetch failure');
+            await addSession(data.user, userType);
+            setEmail('');
+            setPassword('');
+            onLoginSuccess?.();
+            setLoading(false);
             return;
           }
 
@@ -266,7 +272,7 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
               isPC: window.innerWidth >= 1024
             });
             
-            await addSession(data.user);
+            await addSession(data.user, actualUserType);
             
             // フォームをリセット
             setEmail('');
