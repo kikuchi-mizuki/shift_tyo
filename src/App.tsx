@@ -210,7 +210,7 @@ function AppContent() {
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
               <MultiUserIndicator currentUser={currentSession} />
-              <UserTypeSwitcher />
+              {activeSessions.length > 1 && <UserTypeSwitcher />}
               <span className="text-xs sm:text-sm text-gray-600 truncate max-w-32 sm:max-w-none">
                 {currentSession?.email}
               </span>
