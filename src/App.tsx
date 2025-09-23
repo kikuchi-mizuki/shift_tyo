@@ -173,9 +173,12 @@ function AppContent() {
 
   // 現在のユーザータイプが設定されていない場合は最初のセッションを使用
   const effectiveUserType = currentUserType || activeSessions[0]?.user_type;
-  const currentUser = getCurrentUser();
+  // currentUserType が未設定でも画面遷移できるように、effectiveUserType でユーザーを解決
+  const currentSession = effectiveUserType
+    ? (activeSessions.find(s => s.user_type === effectiveUserType) || activeSessions[0] || null)
+    : null;
 
-  if (!effectiveUserType || !currentUser) {
+  if (!effectiveUserType || !currentSession) {
     return <MultiUserLoginForm onLoginSuccess={() => {}} />;
   }
 
@@ -206,10 +209,10 @@ function AppContent() {
               </h1>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <MultiUserIndicator currentUser={getCurrentUser()} />
+              <MultiUserIndicator currentUser={currentSession} />
               <UserTypeSwitcher />
               <span className="text-xs sm:text-sm text-gray-600 truncate max-w-32 sm:max-w-none">
-                {getCurrentUser()?.email}
+                {currentSession?.email}
               </span>
               <span className="text-xs sm:text-sm text-gray-500">
                 {effectiveUserType === 'pharmacist' ? '薬剤師' : effectiveUserType === 'pharmacy' ? '薬局' : effectiveUserType === 'admin' ? '管理' : 'ユーザー'}
@@ -224,13 +227,13 @@ function AppContent() {
         <ErrorBoundary>
           <React.Suspense fallback={<div className="p-6 text-gray-600">読み込み中...</div>}>
             {effectiveUserType === 'pharmacist' && (
-              <PharmacistDashboard user={getCurrentUser()} />
+              <PharmacistDashboard user={currentSession} />
             )}
             {effectiveUserType === 'pharmacy' && (
-              <PharmacyDashboard user={getCurrentUser()} />
+              <PharmacyDashboard user={currentSession} />
             )}
             {effectiveUserType === 'admin' && (
-              <AdminDashboard user={getCurrentUser()} />
+              <AdminDashboard user={currentSession} />
             )}
           </React.Suspense>
         </ErrorBoundary>
