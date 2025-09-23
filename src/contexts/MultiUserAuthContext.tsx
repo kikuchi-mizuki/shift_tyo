@@ -13,7 +13,7 @@ interface MultiUserAuthContextType {
   activeSessions: UserSession[];
   currentUserType: 'pharmacist' | 'pharmacy' | 'admin' | null;
   switchUserType: (userType: 'pharmacist' | 'pharmacy' | 'admin') => void;
-  addSession: (user: any) => Promise<void>;
+  addSession: (user: any, fallbackUserType?: 'pharmacist' | 'pharmacy' | 'admin') => Promise<void>;
   removeSession: (userType: 'pharmacist' | 'pharmacy' | 'admin') => void;
   getCurrentUser: () => UserSession | null;
   isLoggedIn: (userType: 'pharmacist' | 'pharmacy' | 'admin') => boolean;
@@ -104,7 +104,7 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
     }
   }, [currentUserType]);
 
-  const addSession = async (user: any) => {
+  const addSession = async (user: any, fallbackUserType?: 'pharmacist' | 'pharmacy' | 'admin') => {
     try {
       // ユーザープロフィールを取得
       const { data: profile, error } = await supabase
@@ -115,16 +115,18 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
 
       if (error) {
         console.error('Error fetching user profile:', error);
-        throw new Error(`ユーザープロフィールの取得に失敗しました: ${error.message}`);
+        if (!fallbackUserType) {
+          throw new Error(`ユーザープロフィールの取得に失敗しました: ${error.message}`);
+        }
       }
 
-      const userType = profile.user_type as 'pharmacist' | 'pharmacy' | 'admin';
+      const userType = (profile?.user_type as 'pharmacist' | 'pharmacy' | 'admin') || fallbackUserType!;
       
       const newSession: UserSession = {
         id: user.id,
         email: user.email,
         user_type: userType,
-        name: profile.name || user.email,
+        name: (profile?.name || user.email),
         lastActive: new Date()
       };
 
