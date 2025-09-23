@@ -954,11 +954,18 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                           店舗: {storeName}
                         </div>
                         <div className="text-xs text-gray-600">
-                          時間: {shift.time_slot === 'morning' || shift.time_slot === 'am' ? '午前 (9:00-13:00)' :
-                                shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '午後 (13:00-18:00)' :
-                                shift.time_slot === 'full' ? '終日 (9:00-18:00)' :
-                                shift.time_slot === 'consult' ? '要相談' :
-                                shift.time_slot === 'custom' ? (shift.start_time && shift.end_time ? `${shift.start_time.slice(0,5)}-${shift.end_time.slice(0,5)}` : 'カスタム') : '夜間'}
+                          時間: {(() => {
+                            // start_timeとend_timeが利用可能な場合は優先的に表示
+                            if (shift.start_time && shift.end_time) {
+                              return `${shift.start_time.slice(0,5)}-${shift.end_time.slice(0,5)}`;
+                            }
+                            // 時間が設定されていない場合は従来の表示
+                            return shift.time_slot === 'morning' || shift.time_slot === 'am' ? '午前 (9:00-13:00)' :
+                                   shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '午後 (13:00-18:00)' :
+                                   shift.time_slot === 'full' || shift.time_slot === 'fullday' ? '終日 (9:00-18:00)' :
+                                   shift.time_slot === 'consult' ? '要相談' :
+                                   shift.time_slot === 'custom' ? 'カスタム' : '夜間';
+                          })()}
                         </div>
                     </div>
                   );
