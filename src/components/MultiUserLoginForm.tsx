@@ -27,13 +27,21 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
       userAgent: navigator.userAgent,
       platform: navigator.platform,
       cookieEnabled: navigator.cookieEnabled,
-      localStorage: typeof(Storage) !== "undefined"
+      localStorage: typeof(Storage) !== "undefined",
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight
     });
 
     // フォームが正常にマウントされたことを確認
     try {
       const testElement = document.querySelector('form');
       console.log('Form element found:', !!testElement);
+      
+      // PC環境の検出
+      const isPC = window.innerWidth >= 1024 || navigator.platform.includes('Win') || navigator.platform.includes('Mac');
+      console.log('Device type detection:', { isPC, width: window.innerWidth, platform: navigator.platform });
     } catch (e) {
       console.error('Error checking form element:', e);
     }
@@ -168,8 +176,21 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           email: email,
           hasPassword: !!password,
           supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-          supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
+          supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET',
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          isPC: window.innerWidth >= 1024
         });
+        
+        // PC環境での追加デバッグ
+        if (window.innerWidth >= 1024) {
+          console.log('PC環境でのログイン試行:', {
+            screenSize: `${window.screen.width}x${window.screen.height}`,
+            viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+            cookieEnabled: navigator.cookieEnabled,
+            localStorage: typeof(Storage) !== "undefined"
+          });
+        }
         
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -184,9 +205,17 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             email: email,
             hasPassword: !!password,
             errorCode: error.code,
-            errorDetails: error
+            errorDetails: error,
+            userAgent: navigator.userAgent,
+            isPC: window.innerWidth >= 1024
           });
-          setError(`認証エラー: ${error.message}`);
+          
+          // PC環境での具体的なエラーメッセージ
+          let errorMessage = `認証エラー: ${error.message}`;
+          if (window.innerWidth >= 1024) {
+            errorMessage += ` (PC環境)`;
+          }
+          setError(errorMessage);
           return;
         }
 
@@ -195,6 +224,12 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
         if (data.user) {
           // ユーザープロフィールを取得してユーザータイプを確認
           console.log('Fetching user profile for:', data.user.id);
+          console.log('PC環境でのプロフィール取得:', {
+            userId: data.user.id,
+            userEmail: data.user.email,
+            isPC: window.innerWidth >= 1024
+          });
+          
           const { data: profile, error: profileError } = await supabase
             .from('user_profiles')
             .select('*')
@@ -203,6 +238,11 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
 
           if (profileError) {
             console.error('Profile fetch error:', profileError);
+            console.error('PC環境でのプロフィール取得エラー:', {
+              error: profileError,
+              userId: data.user.id,
+              isPC: window.innerWidth >= 1024
+            });
             setError(`ユーザープロフィールの取得に失敗しました: ${profileError.message}`);
             return;
           }
@@ -220,6 +260,12 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           // セッションを追加
           try {
             console.log('Adding session for user:', data.user.id);
+            console.log('PC環境でのセッション追加試行:', {
+              userId: data.user.id,
+              userType: actualUserType,
+              isPC: window.innerWidth >= 1024
+            });
+            
             await addSession(data.user);
             
             // フォームをリセット
@@ -230,6 +276,11 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             onLoginSuccess?.();
           } catch (sessionError) {
             console.error('Session creation error:', sessionError);
+            console.error('PC環境でのセッション追加エラー:', {
+              error: sessionError,
+              userId: data.user.id,
+              isPC: window.innerWidth >= 1024
+            });
             setError(`セッションの作成に失敗しました: ${sessionError.message || 'Unknown error'}`);
             return;
           }
