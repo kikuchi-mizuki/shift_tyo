@@ -144,8 +144,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             email: demoAccount.email
           };
           await addSession(mockUser, demoAccount.type);
-          setEmail('');
-          setPassword('');
           onLoginSuccess?.();
           setLoading(false);
           return;
@@ -172,6 +170,13 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           });
         }
         
+        // クライアントバリデーション（空送信を防止）
+        if (!email || !password) {
+          setError('メールアドレスとパスワードを入力してください');
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -226,8 +231,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             // プロフィール取得に失敗しても、選択中のユーザータイプで継続
             console.warn('Falling back to selected userType due to profile fetch failure');
             await addSession(data.user, userType);
-            setEmail('');
-            setPassword('');
             onLoginSuccess?.();
             setLoading(false);
             return;
@@ -253,11 +256,7 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
             });
             
             await addSession(data.user, actualUserType);
-            
-            // フォームをリセット
-            setEmail('');
-            setPassword('');
-            
+
             console.log('Login successful, calling onLoginSuccess');
             onLoginSuccess?.();
           } catch (sessionError) {
