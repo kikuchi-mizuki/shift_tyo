@@ -134,41 +134,21 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
         // ログイン処理
         console.log('Attempting login with:', { email, userType });
         
-        // デモ環境の場合はデモアカウント認証
-        if (!isProduction) {
-          const demoAccount = demoAccounts.find(acc => 
-            acc.email === email && acc.password === password && acc.type === userType
-          );
-
-          if (demoAccount) {
-            // デモアカウントでのログイン成功
-            const mockUser = {
-              id: `demo-${demoAccount.type}-${Date.now()}`,
-              email: demoAccount.email
-            };
-
-            const mockProfile = {
-              id: mockUser.id,
-              name: demoAccount.name,
-              email: demoAccount.email,
-              user_type: demoAccount.type
-            };
-
-            // セッションを追加
-            await addSession(mockUser);
-            
-            // フォームをリセット
-            setEmail('');
-            setPassword('');
-            
-            onLoginSuccess?.();
-            setLoading(false);
-            return;
-          } else {
-            setError('ログインに失敗しました。デモアカウントをご利用ください。');
-            setLoading(false);
-            return;
-          }
+        // デモアカウントは本番/開発を問わず常に許可（開発利便性のため）
+        const demoAccount = demoAccounts.find(acc => 
+          acc.email === email && acc.password === password && acc.type === userType
+        );
+        if (demoAccount) {
+          const mockUser = {
+            id: `demo-${demoAccount.type}-${Date.now()}`,
+            email: demoAccount.email
+          };
+          await addSession(mockUser, demoAccount.type);
+          setEmail('');
+          setPassword('');
+          onLoginSuccess?.();
+          setLoading(false);
+          return;
         }
 
         console.log('Attempting Supabase authentication...');
