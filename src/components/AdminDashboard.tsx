@@ -2361,16 +2361,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       // 対応する希望・募集のステータスを'confirmed'に更新
       try {
+        // マッチングデータから正確なtime_slotを取得
+        const requestTimeSlot = match.request?.time_slot || 'negotiable';
+        const postingTimeSlot = match.posting?.time_slot || 'negotiable';
+        
+        console.log('ステータス更新用のtime_slot:', {
+          requestTimeSlot,
+          postingTimeSlot,
+          matchRequest: match.request,
+          matchPosting: match.posting
+        });
+        
         // 薬剤師の希望を更新
         const { error: requestError } = await supabase
           .from('shift_requests')
           .update({ status: 'confirmed' })
           .eq('pharmacist_id', match.pharmacist.id)
           .eq('date', date)
-          .eq('time_slot', match.timeSlot.start ? 'fullday' : 'negotiable');
+          .eq('time_slot', requestTimeSlot);
         
         if (requestError) {
           console.warn('希望ステータス更新エラー:', requestError);
+        } else {
+          console.log('希望ステータス更新成功:', {
+            pharmacist_id: match.pharmacist.id,
+            date,
+            time_slot: requestTimeSlot
+          });
         }
         
         // 薬局の募集を更新
@@ -2379,10 +2396,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           .update({ status: 'confirmed' })
           .eq('pharmacy_id', match.pharmacy.id)
           .eq('date', date)
-          .eq('time_slot', match.timeSlot.start ? 'fullday' : 'negotiable');
+          .eq('time_slot', postingTimeSlot);
         
         if (postingError) {
           console.warn('募集ステータス更新エラー:', postingError);
+        } else {
+          console.log('募集ステータス更新成功:', {
+            pharmacy_id: match.pharmacy.id,
+            date,
+            time_slot: postingTimeSlot
+          });
         }
       } catch (statusError) {
         console.warn('ステータス更新中のエラー:', statusError);
@@ -2481,19 +2504,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         // 対応する希望・募集のステータスを'confirmed'に更新
         try {
           for (const shift of predefinedShifts) {
+            // 確定シフトからtime_slotを取得（start_time/end_timeがある場合は'fullday'、そうでなければ'negotiable'）
+            const shiftTimeSlot = (shift.start_time && shift.end_time) ? 'fullday' : shift.time_slot || 'negotiable';
+            
+            console.log('一括確定でのステータス更新:', {
+              pharmacist_id: shift.pharmacist_id,
+              pharmacy_id: shift.pharmacy_id,
+              date: shift.date,
+              time_slot: shiftTimeSlot,
+              original_time_slot: shift.time_slot
+            });
+            
             // 薬剤師の希望を更新
-            await supabase
+            const { error: requestError } = await supabase
               .from('shift_requests')
               .update({ status: 'confirmed' })
               .eq('pharmacist_id', shift.pharmacist_id)
-              .eq('date', shift.date);
+              .eq('date', shift.date)
+              .eq('time_slot', shiftTimeSlot);
+            
+            if (requestError) {
+              console.warn('希望ステータス更新エラー:', requestError);
+            }
             
             // 薬局の募集を更新
-            await supabase
+            const { error: postingError } = await supabase
               .from('shift_postings')
               .update({ status: 'confirmed' })
               .eq('pharmacy_id', shift.pharmacy_id)
-              .eq('date', shift.date);
+              .eq('date', shift.date)
+              .eq('time_slot', shiftTimeSlot);
+            
+            if (postingError) {
+              console.warn('募集ステータス更新エラー:', postingError);
+            }
           }
         } catch (statusError) {
           console.warn('ステータス更新中のエラー:', statusError);
