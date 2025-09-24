@@ -2388,6 +2388,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             date,
             time_slot: requestTimeSlot
           });
+          
+          // 更新後のデータを確認
+          const { data: updatedRequest } = await supabase
+            .from('shift_requests')
+            .select('*')
+            .eq('pharmacist_id', match.pharmacist.id)
+            .eq('date', date)
+            .eq('time_slot', requestTimeSlot)
+            .single();
+          console.log('更新後の希望データ:', updatedRequest);
         }
         
         // 薬局の募集を更新
@@ -2406,6 +2416,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             date,
             time_slot: postingTimeSlot
           });
+          
+          // 更新後のデータを確認
+          const { data: updatedPosting } = await supabase
+            .from('shift_postings')
+            .select('*')
+            .eq('pharmacy_id', match.pharmacy.id)
+            .eq('date', date)
+            .eq('time_slot', postingTimeSlot)
+            .single();
+          console.log('更新後の募集データ:', updatedPosting);
         }
       } catch (statusError) {
         console.warn('ステータス更新中のエラー:', statusError);
@@ -2435,10 +2455,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       return posting.status !== 'confirmed';
     });
     
+    console.log(`=== 管理画面フィルタリング詳細 ===`);
     console.log(`フィルタ前: 希望${requests.length}件, 募集${postings.length}件`);
     console.log(`フィルタ後: 希望${filteredRequests.length}件, 募集${filteredPostings.length}件`);
     console.log('除外された確定済み希望:', requests.filter(r => r.status === 'confirmed').length);
     console.log('除外された確定済み募集:', postings.filter(p => p.status === 'confirmed').length);
+    
+    // 詳細なステータス分析
+    console.log('=== 募集ステータス詳細分析 ===');
+    postings.forEach((posting: any, index: number) => {
+      console.log(`募集${index + 1}:`, {
+        id: posting.id,
+        pharmacy_id: posting.pharmacy_id,
+        date: posting.date,
+        time_slot: posting.time_slot,
+        store_name: posting.store_name,
+        status: posting.status,
+        status_type: typeof posting.status,
+        is_confirmed: posting.status === 'confirmed'
+      });
+    });
+    
+    console.log('=== 希望ステータス詳細分析 ===');
+    requests.forEach((request: any, index: number) => {
+      console.log(`希望${index + 1}:`, {
+        id: request.id,
+        pharmacist_id: request.pharmacist_id,
+        date: request.date,
+        time_slot: request.time_slot,
+        status: request.status,
+        status_type: typeof request.status,
+        is_confirmed: request.status === 'confirmed'
+      });
+    });
     
     return { filteredRequests, filteredPostings };
   };
