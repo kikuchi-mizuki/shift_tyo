@@ -75,7 +75,8 @@ export class AIMatchingEngine {
     userProfiles?: any,
     ratings?: any[],
     storeNgPharmacies?: any,
-    storeNgPharmacists?: any
+    storeNgPharmacists?: any,
+    confirmedMatches?: Set<string>
   ): Promise<MatchCandidate[]> {
     console.log('=== generateMatchCandidates START ===');
     console.log('requests:', requests);
@@ -133,6 +134,15 @@ export class AIMatchingEngine {
             const pharmacyId = posting.pharmacy_id;
             const currentUsage = pharmacyUsageCount.get(pharmacyId) || 0;
             const maxUsage = pharmacyNeeds.get(pharmacyId) || 0;
+            
+            // 確定済みマッチングをチェック
+            if (confirmedMatches && confirmedMatches.size > 0) {
+              const matchKey = `${request.pharmacist_id}_${request.date}_${pharmacyId}`;
+              if (confirmedMatches.has(matchKey)) {
+                debugInfo += `  薬剤師 ${request.pharmacist_id} + 薬局 ${pharmacyId} + 日付 ${request.date} は既に確定済み - スキップ\n`;
+                continue;
+              }
+            }
             
             // 薬局の募集人数をチェック
             if (currentUsage >= maxUsage) {
@@ -484,7 +494,8 @@ export class AIMatchingEngine {
     userProfiles?: any,
     ratings?: any[],
     storeNgPharmacies?: any,
-    storeNgPharmacists?: any
+    storeNgPharmacists?: any,
+    confirmedMatches?: Set<string>
   ): Promise<MatchCandidate[]> {
     console.log('=== executeOptimalMatching START ===');
     console.log('requests:', requests);
@@ -500,7 +511,7 @@ export class AIMatchingEngine {
       // ローカルマッチングを実行
       debugInfo += `=== ローカルマッチング実行 ===\n`;
     
-    const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists);
+    const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches);
     console.log(`生成された候補: ${candidates.length}件`);
     
     // 薬局の応募満足度を優先する最適化アルゴリズム
