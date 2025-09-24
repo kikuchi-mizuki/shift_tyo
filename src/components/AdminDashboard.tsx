@@ -2323,8 +2323,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         pharmacy_id: match.pharmacy.id,
         date: date,
         time_slot: 'negotiable',
-        start_time: match.posting.start_time,
-        end_time: match.posting.end_time,
+        start_time: match.timeSlot.start,
+        end_time: match.timeSlot.end,
         status: 'confirmed',
         store_name: storeName,
         memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
