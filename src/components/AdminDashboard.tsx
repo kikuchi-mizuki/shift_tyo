@@ -2304,6 +2304,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
+  // 個別マッチ確定
+  const handleConfirmSingleMatch = async (match: any, date: string) => {
+    try {
+      console.log('handleConfirmSingleMatch called:', { match, date });
+      
+      if (!supabase) {
+        console.error('Supabase client is not available');
+        return;
+      }
+      
+      // 単一マッチを確定シフトに変換
+      const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
+      const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
+      
+      const shift = {
+        pharmacist_id: match.pharmacist.id,
+        pharmacy_id: match.pharmacy.id,
+        date: date,
+        time_slot: 'negotiable',
+        start_time: match.posting.start_time,
+        end_time: match.posting.end_time,
+        status: 'confirmed',
+        store_name: storeName,
+        memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+      };
+      
+      const { error } = await supabase.from('assigned_shifts').insert([shift]);
+      if (error) throw error;
+      
+      console.log('個別マッチ確定完了:', shift);
+      
+      // データを再読み込み
+      await loadAssignedShifts();
+      
+      alert(`シフトを確定しました。\n${userProfiles[match.pharmacist.id]?.name} → ${pharmacyName}`);
+    } catch (error) {
+      console.error('個別マッチ確定エラー:', error);
+      alert(`シフト確定に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   // 確定シフトのみを再読み込みする関数
   const loadAssignedShifts = async () => {
     try {
@@ -3451,7 +3492,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             {dayMatches.map((match, index) => (
                               <div key={index} className="bg-white rounded border p-2 text-xs">
                                 <div className="flex justify-between items-start">
-                                  <div>
+                                  <div className="flex-1">
                                     <div className="font-medium text-gray-800">
                                       {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
                                     </div>
@@ -3462,13 +3503,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                       {match.timeSlot.start} - {match.timeSlot.end}
                                     </div>
                                   </div>
-                                  <div className="text-right">
-                                    <div className="text-purple-600 font-medium">
+                                  <div className="text-right ml-2">
+                                    <div className="text-purple-600 font-medium mb-1">
                                       {Math.round(match.compatibilityScore * 100)}%
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-gray-500 mb-1">
                                       {(match.reasons || []).slice(0, 2).join(', ')}
                                     </div>
+                                    <button
+                                      onClick={() => handleConfirmSingleMatch(match, selectedDate)}
+                                      className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
+                                    >
+                                      確定
+                                    </button>
                                   </div>
                                 </div>
                               </div>
@@ -3631,30 +3678,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               </span>
                             </div>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
-                              {dayMatches.map((match, index) => (
-                                <div key={index} className="bg-white rounded border p-2 text-xs">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <div className="font-medium text-gray-800">
-                                        {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
-                                      </div>
-                                      <div className="text-gray-600">
-                                        {match.timeSlot.start} - {match.timeSlot.end}
-                                      </div>
-                                      {/* 薬局名と店舗名を表示 */}
-                                      <div className="text-gray-500 text-xs">
-                                        薬局: {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
-                                        {match.pharmacy.name && match.pharmacy.name !== 'Unknown' && ` / 店舗: ${match.pharmacy.name}`}
-                                      </div>
+                            {dayMatches.map((match, index) => (
+                              <div key={index} className="bg-white rounded border p-2 text-xs">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="font-medium text-gray-800">
+                                      {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
                                     </div>
-                                    <div className="text-right">
-                                      <div className="text-purple-600 font-medium">
-                                        {Math.round(match.compatibilityScore * 100)}%
-                                      </div>
+                                    <div className="text-gray-600">
+                                      {match.timeSlot.start} - {match.timeSlot.end}
+                                    </div>
+                                    {/* 薬局名と店舗名を表示 */}
+                                    <div className="text-gray-500 text-xs">
+                                      薬局: {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
+                                      {match.pharmacy.name && match.pharmacy.name !== 'Unknown' && ` / 店舗: ${match.pharmacy.name}`}
                                     </div>
                                   </div>
+                                  <div className="text-right ml-2">
+                                    <div className="text-purple-600 font-medium mb-1">
+                                      {Math.round(match.compatibilityScore * 100)}%
+                                    </div>
+                                    <button
+                                      onClick={() => handleConfirmSingleMatch(match, selectedDate)}
+                                      className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
+                                    >
+                                      確定
+                                    </button>
+                                  </div>
                                 </div>
-                              ))}
+                              </div>
+                            ))}
                             </div>
                           </div>
                         )}
