@@ -534,24 +534,44 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const currentMonth = currentDate.getMonth();
       const currentYear = currentDate.getFullYear();
       
+      // 確定済みシフトの日付を取得
+      const confirmedDates = new Set();
+      if (Array.isArray(assigned)) {
+        assigned.forEach((shift: any) => {
+          if (shift.status === 'confirmed') {
+            confirmedDates.add(shift.date);
+          }
+        });
+      }
+      
+      console.log('確定済みシフトの日付:', Array.from(confirmedDates));
+      
       const monthlyRequests = Array.isArray(requests) ? requests.filter((r: any) => {
         const requestDate = new Date(r.date);
-        return requestDate.getMonth() === currentMonth && requestDate.getFullYear() === currentYear;
+        const isCurrentMonth = requestDate.getMonth() === currentMonth && requestDate.getFullYear() === currentYear;
+        const isNotConfirmed = !confirmedDates.has(r.date);
+        return isCurrentMonth && isNotConfirmed;
       }) : [];
       
       const monthlyPostings = Array.isArray(postings) ? postings.filter((p: any) => {
         const postingDate = new Date(p.date);
-        return postingDate.getMonth() === currentMonth && postingDate.getFullYear() === currentYear;
+        const isCurrentMonth = postingDate.getMonth() === currentMonth && postingDate.getFullYear() === currentYear;
+        const isNotConfirmed = !confirmedDates.has(p.date);
+        return isCurrentMonth && isNotConfirmed;
       }) : [];
 
       if (monthlyRequests.length === 0 && monthlyPostings.length === 0) {
-        alert('今月の希望シフトまたは募集シフトがありません。');
+        if (confirmedDates.size > 0) {
+          alert(`今月の未確定シフトがありません。\n確定済みの日付: ${Array.from(confirmedDates).join(', ')}`);
+        } else {
+          alert('今月の希望シフトまたは募集シフトがありません。');
+        }
         return;
       }
 
-      console.log(`1ヶ月分のマッチング開始: 希望${monthlyRequests.length}件、募集${monthlyPostings.length}件`);
-      console.log('monthlyRequests:', monthlyRequests);
-      console.log('monthlyPostings:', monthlyPostings);
+      console.log(`1ヶ月分のマッチング開始: 未確定希望${monthlyRequests.length}件、未確定募集${monthlyPostings.length}件`);
+      console.log('monthlyRequests (未確定のみ):', monthlyRequests);
+      console.log('monthlyPostings (未確定のみ):', monthlyPostings);
       console.log('userProfiles:', userProfiles);
       console.log('ratings:', ratings);
       console.log('storeNgPharmacies:', storeNgPharmacies);
