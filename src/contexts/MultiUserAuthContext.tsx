@@ -130,11 +130,8 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
         lastActive: new Date()
       };
 
-      setActiveSessions(prev => {
-        // 同じユーザーIDのセッションがある場合は置き換え（同じユーザータイプでも異なるユーザーは許可）
-        const filtered = prev.filter(session => session.id !== user.id);
-        return [...filtered, newSession];
-      });
+      // 単一セッション運用: 新しいログインで既存セッションを置き換える
+      setActiveSessions([newSession]);
 
       // 直近でログインしたユーザータイプを現在のユーザータイプとして採用
       setCurrentUserType(userType);
