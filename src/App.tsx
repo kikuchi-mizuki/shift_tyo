@@ -217,6 +217,18 @@ function AppContent() {
               <span className="text-xs sm:text-sm text-gray-500">
                 {effectiveUserType === 'pharmacist' ? '薬剤師' : effectiveUserType === 'pharmacy' ? '薬局' : effectiveUserType === 'admin' ? '管理' : 'ユーザー'}
               </span>
+              <button
+                onClick={async () => {
+                  try {
+                    await auth.signOut();
+                  } finally {
+                    window.location.reload();
+                  }
+                }}
+                className="text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded"
+              >
+                ログアウト
+              </button>
             </div>
           </div>
         </div>
