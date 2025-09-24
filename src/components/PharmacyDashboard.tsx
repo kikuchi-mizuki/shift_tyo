@@ -221,8 +221,14 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           status: posting.status,
           pharmacy_id: posting.pharmacy_id
         })));
-        console.log('Setting myShifts state with:', myShiftsData);
-        setMyShifts(myShiftsData || []);
+        
+        // 確定済みステータスの募集を除外
+        const filteredPostings = (myShiftsData || []).filter((posting: any) => {
+          return posting.status !== 'confirmed';
+        });
+        
+        console.log(`薬局ダッシュボード: 全募集${myShiftsData?.length || 0}件 → 表示${filteredPostings.length}件`);
+        setMyShifts(filteredPostings);
       }
       
       // 直接Supabaseから確定済みシフトを取得
@@ -889,7 +895,13 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
       // 再読込（プロフィールは保持）
       const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
-      if (!myShiftsError) setMyShifts(myShiftsData || []);
+      if (!myShiftsError) {
+        // 確定済みステータスの募集を除外
+        const filteredPostings = (myShiftsData || []).filter((posting: any) => {
+          return posting.status !== 'confirmed';
+        });
+        setMyShifts(filteredPostings);
+      }
     } catch (e) {
       console.error('Exception in handlePost:', e);
       console.error('Error details:', {
@@ -987,7 +999,13 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         memo
       });
       const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
-      if (!myShiftsError) setMyShifts(myShiftsData || []);
+      if (!myShiftsError) {
+        // 確定済みステータスの募集を除外
+        const filteredPostings = (myShiftsData || []).filter((posting: any) => {
+          return posting.status !== 'confirmed';
+        });
+        setMyShifts(filteredPostings);
+      }
     } catch (e) {
       console.error('Update existing posting failed:', e);
       alert('募集の更新に失敗しました');
@@ -1027,7 +1045,11 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         throw myShiftsError;
       }
       
-      setMyShifts(myShiftsData || []);
+      // 確定済みステータスの募集を除外
+      const filteredPostings = (myShiftsData || []).filter((posting: any) => {
+        return posting.status !== 'confirmed';
+      });
+      setMyShifts(filteredPostings);
       console.log('Data refreshed successfully');
       alert('募集を削除しました');
       

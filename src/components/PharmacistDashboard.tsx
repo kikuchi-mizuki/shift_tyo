@@ -214,10 +214,18 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           logToRailway('Database time_slot values', reqs.map((r: any) => ({ 
             date: r.date, 
             time_slot: r.time_slot, 
-            priority: r.priority 
+            priority: r.priority,
+            status: r.status
           })));
         }
-        setMyRequests(reqs || []);
+        
+        // 確定済みステータスの希望を除外
+        const filteredRequests = (reqs || []).filter((request: any) => {
+          return request.status !== 'confirmed';
+        });
+        
+        console.log(`薬剤師ダッシュボード: 全希望${reqs?.length || 0}件 → 表示${filteredRequests.length}件`);
+        setMyRequests(filteredRequests);
       }
       
       // ユーザープロフィールを取得
