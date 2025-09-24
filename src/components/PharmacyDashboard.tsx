@@ -219,8 +219,25 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           store_name: posting.store_name,
           memo: posting.memo,
           status: posting.status,
-          pharmacy_id: posting.pharmacy_id
+          pharmacy_id: posting.pharmacy_id,
+          created_at: posting.created_at,
+          updated_at: posting.updated_at
         })));
+        
+        // 重複チェック: 同じ日付・店舗・時間帯の募集がないか確認
+        const duplicates = new Map();
+        const duplicateCheck = (myShiftsData || []).forEach((posting: any) => {
+          const key = `${posting.date}_${posting.store_name}_${posting.time_slot}`;
+          if (duplicates.has(key)) {
+            console.warn(`重複募集を発見:`, {
+              key,
+              existing: duplicates.get(key),
+              duplicate: posting
+            });
+          } else {
+            duplicates.set(key, posting);
+          }
+        });
         
         // 確定済みステータスの募集を除外
         const filteredPostings = (myShiftsData || []).filter((posting: any) => {
@@ -228,6 +245,13 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         });
         
         console.log(`薬局ダッシュボード: 全募集${myShiftsData?.length || 0}件 → 表示${filteredPostings.length}件`);
+        console.log('フィルタ後の募集詳細:', filteredPostings.map(p => ({
+          id: p.id,
+          date: p.date,
+          store_name: p.store_name,
+          time_slot: p.time_slot,
+          status: p.status
+        })));
         setMyShifts(filteredPostings);
       }
       
@@ -805,12 +829,29 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       return;
     }
 
-    // 既存同日・同店舗の募集を検出（更新対象）と、新規作成対象を振り分け
+    // 既存同日・同店舗・同時間帯の募集を検出（更新対象）と、新規作成対象を振り分け
     const updates: { id: string, storeName: string }[] = [];
     const creates: string[] = [];
+    
+    console.log('=== 重複チェック開始 ===');
+    console.log('targets:', targets);
+    console.log('selectedDates:', selectedDates);
+    console.log('timeSlot:', timeSlot);
+    console.log('customTimeMode:', customTimeMode);
+    
     for (const name of targets) {
       const match = myShifts.find((s: any) => {
+        // 日付が一致するか
         if (!selectedDates.includes(s.date)) return false;
+        
+        // 同じ薬局の募集か
+        if (s.pharmacy_id !== user?.id) return false;
+        
+        // 時間帯が一致するか（カスタム時間の場合はfulldayとして比較）
+        const currentTimeSlot = customTimeMode ? 'fullday' : timeSlot;
+        if (s.time_slot !== currentTimeSlot) return false;
+        
+        // 店舗名が一致するか
         const direct = (s.store_name || '').trim();
         let fromMemo = '';
         if (!direct && typeof s.memo === 'string') {
@@ -818,15 +859,19 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           if (m && m[1]) fromMemo = m[1];
         }
         const sStoreName = direct || fromMemo;
-        // 両方空 or 完全一致を重複とみなす
         return (sStoreName === '' && name === '') || sStoreName === name;
       });
+      
       if (match) {
+        console.log(`既存募集を発見: ${name} -> 更新対象`, match);
         updates.push({ id: match.id, storeName: name });
       } else {
+        console.log(`新規募集: ${name} -> 作成対象`);
         creates.push(name);
       }
     }
+    
+    console.log(`更新対象: ${updates.length}件, 作成対象: ${creates.length}件`);
 
     try {
       // 既存分の処理: 更新 or 削除 をユーザーに選択させる
