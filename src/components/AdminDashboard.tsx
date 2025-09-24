@@ -389,11 +389,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const allDayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
       const allDayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
       
-      // 確定済みシフトがある薬剤師・薬局を除外
+      // 確定済みステータスの希望・募集を除外
       const { filteredRequests: dayRequests, filteredPostings: dayPostings } = filterConfirmedRequestsAndPostings(
         allDayRequests, 
-        allDayPostings, 
-        Array.isArray(assigned) ? assigned : []
+        allDayPostings
       );
       const dayMatches = matchesByDate[date] || [];
       
@@ -469,11 +468,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     const allDayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
     const allDayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
     
-    // 確定済みシフトがある薬剤師・薬局を除外
+    // 確定済みステータスの希望・募集を除外
     const { filteredRequests: dayRequests, filteredPostings: dayPostings } = filterConfirmedRequestsAndPostings(
       allDayRequests, 
-      allDayPostings, 
-      Array.isArray(assigned) ? assigned : []
+      allDayPostings
     );
     const dayMatches = aiMatchesByDate[date] || [];
 
@@ -2361,10 +2359,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const { error } = await supabase.from('assigned_shifts').insert([shift]);
       if (error) throw error;
       
+      // 対応する希望・募集のステータスを'confirmed'に更新
+      try {
+        // 薬剤師の希望を更新
+        const { error: requestError } = await supabase
+          .from('shift_requests')
+          .update({ status: 'confirmed' })
+          .eq('pharmacist_id', match.pharmacist.id)
+          .eq('date', date)
+          .eq('time_slot', match.timeSlot.start ? 'fullday' : 'negotiable');
+        
+        if (requestError) {
+          console.warn('希望ステータス更新エラー:', requestError);
+        }
+        
+        // 薬局の募集を更新
+        const { error: postingError } = await supabase
+          .from('shift_postings')
+          .update({ status: 'confirmed' })
+          .eq('pharmacy_id', match.pharmacy.id)
+          .eq('date', date)
+          .eq('time_slot', match.timeSlot.start ? 'fullday' : 'negotiable');
+        
+        if (postingError) {
+          console.warn('募集ステータス更新エラー:', postingError);
+        }
+      } catch (statusError) {
+        console.warn('ステータス更新中のエラー:', statusError);
+      }
+      
       console.log('個別マッチ確定完了:', shift);
       
       // データを再読み込み
       await loadAssignedShifts();
+      await loadAll(); // 希望・募集データも再読み込み
       
       alert(`シフトを確定しました。\n${userProfiles[match.pharmacist.id]?.name} → ${pharmacyName}`);
     } catch (error) {
@@ -2373,34 +2401,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
-  // 確定済みシフトがある薬剤師・薬局を除外するフィルタリング関数
-  const filterConfirmedRequestsAndPostings = (requests: any[], postings: any[], assignedShifts: any[]) => {
-    // 確定済みシフトから薬剤師IDと薬局IDを取得
-    const confirmedPharmacists = new Set<string>();
-    const confirmedPharmacies = new Set<string>();
-    
-    assignedShifts.forEach((shift: any) => {
-      if (shift.status === 'confirmed') {
-        confirmedPharmacists.add(shift.pharmacist_id);
-        confirmedPharmacies.add(shift.pharmacy_id);
-      }
-    });
-    
-    console.log('確定済み薬剤師:', Array.from(confirmedPharmacists));
-    console.log('確定済み薬局:', Array.from(confirmedPharmacies));
-    
-    // 確定済み薬剤師の希望を除外
+  // 確定済みステータスの希望・募集を除外するフィルタリング関数
+  const filterConfirmedRequestsAndPostings = (requests: any[], postings: any[]) => {
+    // ステータスが'confirmed'以外の希望・募集のみを表示
     const filteredRequests = requests.filter((request: any) => {
-      return !confirmedPharmacists.has(request.pharmacist_id);
+      return request.status !== 'confirmed';
     });
     
-    // 確定済み薬局の募集を除外
     const filteredPostings = postings.filter((posting: any) => {
-      return !confirmedPharmacies.has(posting.pharmacy_id);
+      return posting.status !== 'confirmed';
     });
     
     console.log(`フィルタ前: 希望${requests.length}件, 募集${postings.length}件`);
     console.log(`フィルタ後: 希望${filteredRequests.length}件, 募集${filteredPostings.length}件`);
+    console.log('除外された確定済み希望:', requests.filter(r => r.status === 'confirmed').length);
+    console.log('除外された確定済み募集:', postings.filter(p => p.status === 'confirmed').length);
     
     return { filteredRequests, filteredPostings };
   };
@@ -2463,8 +2478,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         
         console.log(`日付 ${date}: ${predefinedShifts.length}件の事前定義シフトを保存しました`);
         
+        // 対応する希望・募集のステータスを'confirmed'に更新
+        try {
+          for (const shift of predefinedShifts) {
+            // 薬剤師の希望を更新
+            await supabase
+              .from('shift_requests')
+              .update({ status: 'confirmed' })
+              .eq('pharmacist_id', shift.pharmacist_id)
+              .eq('date', shift.date);
+            
+            // 薬局の募集を更新
+            await supabase
+              .from('shift_postings')
+              .update({ status: 'confirmed' })
+              .eq('pharmacy_id', shift.pharmacy_id)
+              .eq('date', shift.date);
+          }
+        } catch (statusError) {
+          console.warn('ステータス更新中のエラー:', statusError);
+        }
+        
         // データを再読み込み（管理者画面）
         await loadAssignedShifts();
+        await loadAll(); // 希望・募集データも再読み込み
         
         // 他のダッシュボードでも更新されるように、ページリロードを提案
         alert(`${predefinedShifts.length}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
@@ -2534,8 +2571,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           
           console.log(`AIマッチング完了: ${aiShifts.length}件のシフトを確定しました`);
           
+          // 対応する希望・募集のステータスを'confirmed'に更新
+          try {
+            for (const shift of aiShifts) {
+              // 薬剤師の希望を更新
+              await supabase
+                .from('shift_requests')
+                .update({ status: 'confirmed' })
+                .eq('pharmacist_id', shift.pharmacist_id)
+                .eq('date', shift.date);
+              
+              // 薬局の募集を更新
+              await supabase
+                .from('shift_postings')
+                .update({ status: 'confirmed' })
+                .eq('pharmacy_id', shift.pharmacy_id)
+                .eq('date', shift.date);
+            }
+          } catch (statusError) {
+            console.warn('ステータス更新中のエラー:', statusError);
+          }
+          
           // データを再読み込み（管理者画面）
           await loadAssignedShifts();
+          await loadAll(); // 希望・募集データも再読み込み
           
           // 他のダッシュボードでも更新されるように、ページリロードを提案
           alert(`${aiShifts.length}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
@@ -2813,7 +2872,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         }
       }
 
-      // 3) 確定シフトを削除
+      // 3) 対応する希望・募集のステータスを元に戻す
+      if (toCancel && toCancel.length > 0) {
+        for (const s of toCancel) {
+          // 薬剤師の希望ステータスを元に戻す
+          await supabase
+            .from('shift_requests')
+            .update({ status: 'pending' })
+            .eq('pharmacist_id', s.pharmacist_id)
+            .eq('date', date);
+          
+          // 薬局の募集ステータスを元に戻す
+          await supabase
+            .from('shift_postings')
+            .update({ status: 'open' })
+            .eq('pharmacy_id', s.pharmacy_id)
+            .eq('date', date);
+        }
+      }
+
+      // 4) 確定シフトを削除
       const { error } = await supabase
         .from('assigned_shifts')
         .delete()
@@ -2832,8 +2910,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       setSystemStatus('pending');
       setLastUpdated(new Date());
       
-      // 全再読込だと自動マッチングが走るため、確定データのみ再取得
+      // データを再読み込み
       await loadAssignedShifts();
+      await loadAll(); // 希望・募集データも再読み込み
     } catch (error) {
       console.error('Error in handleCancelConfirmedShifts:', error);
       alert(`確定シフトの取り消しに失敗しました: ${(error as any).message || 'Unknown error'}`);
@@ -3299,11 +3378,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const allDayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult') : [];
               const allDayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === dateStr && p.time_slot !== 'consult') : [];
               
-              // 確定済みシフトがある薬剤師・薬局を除外
+              // 確定済みステータスの希望・募集を除外
               const { filteredRequests: dayRequests, filteredPostings: dayPostings } = filterConfirmedRequestsAndPostings(
                 allDayRequests, 
-                allDayPostings, 
-                Array.isArray(assigned) ? assigned : []
+                allDayPostings
               );
               
               // データがある日付のみログを出力（デバッグ用）
@@ -3539,11 +3617,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   const allDayPostings = (postings || []).filter((p: any) => p.date === selectedDate);
                   const dayAssignedShifts = (assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed');
                   
-                  // 確定済みシフトがある薬剤師・薬局を除外
+                  // 確定済みステータスの希望・募集を除外
                   const { filteredRequests: dayRequests, filteredPostings: dayPostings } = filterConfirmedRequestsAndPostings(
                     allDayRequests, 
-                    allDayPostings, 
-                    Array.isArray(assigned) ? assigned : []
+                    allDayPostings
                   );
                   
                   // AIマッチング結果の表示（選択された日付のマッチング結果のみ）
