@@ -136,10 +136,8 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
         return [...filtered, newSession];
       });
 
-      // 初回ログイン時は現在のユーザータイプを設定
-      if (!currentUserType) {
-        setCurrentUserType(userType);
-      }
+      // 直近でログインしたユーザータイプを現在のユーザータイプとして採用
+      setCurrentUserType(userType);
     } catch (error) {
       console.error('Error adding session:', error);
       throw error; // エラーを再スローして呼び出し元で処理できるようにする
