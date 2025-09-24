@@ -386,8 +386,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     // 各日付の不足状況を分析
     datesToAnalyze.forEach(date => {
       console.log(`日付 ${date} の分析開始`);
-      const dayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
-      const dayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
+      const allDayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
+      const allDayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
+      
+      // 確定済みシフトがある薬剤師・薬局を除外
+      const { filteredRequests: dayRequests, filteredPostings: dayPostings } = filterConfirmedRequestsAndPostings(
+        allDayRequests, 
+        allDayPostings, 
+        Array.isArray(assigned) ? assigned : []
+      );
       const dayMatches = matchesByDate[date] || [];
       
       
@@ -459,8 +466,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // 薬局の不足状況を分析する関数
   const analyzePharmacyShortage = (date: string) => {
-    const dayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
-    const dayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
+    const allDayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
+    const allDayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
+    
+    // 確定済みシフトがある薬剤師・薬局を除外
+    const { filteredRequests: dayRequests, filteredPostings: dayPostings } = filterConfirmedRequestsAndPostings(
+      allDayRequests, 
+      allDayPostings, 
+      Array.isArray(assigned) ? assigned : []
+    );
     const dayMatches = aiMatchesByDate[date] || [];
 
     // 薬局ごとの募集数とマッチ数を計算
@@ -2359,6 +2373,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
+  // 確定済みシフトがある薬剤師・薬局を除外するフィルタリング関数
+  const filterConfirmedRequestsAndPostings = (requests: any[], postings: any[], assignedShifts: any[]) => {
+    // 確定済みシフトから薬剤師IDと薬局IDを取得
+    const confirmedPharmacists = new Set<string>();
+    const confirmedPharmacies = new Set<string>();
+    
+    assignedShifts.forEach((shift: any) => {
+      if (shift.status === 'confirmed') {
+        confirmedPharmacists.add(shift.pharmacist_id);
+        confirmedPharmacies.add(shift.pharmacy_id);
+      }
+    });
+    
+    console.log('確定済み薬剤師:', Array.from(confirmedPharmacists));
+    console.log('確定済み薬局:', Array.from(confirmedPharmacies));
+    
+    // 確定済み薬剤師の希望を除外
+    const filteredRequests = requests.filter((request: any) => {
+      return !confirmedPharmacists.has(request.pharmacist_id);
+    });
+    
+    // 確定済み薬局の募集を除外
+    const filteredPostings = postings.filter((posting: any) => {
+      return !confirmedPharmacies.has(posting.pharmacy_id);
+    });
+    
+    console.log(`フィルタ前: 希望${requests.length}件, 募集${postings.length}件`);
+    console.log(`フィルタ後: 希望${filteredRequests.length}件, 募集${filteredPostings.length}件`);
+    
+    return { filteredRequests, filteredPostings };
+  };
+
   // 確定シフトのみを再読み込みする関数
   const loadAssignedShifts = async () => {
     try {
@@ -3250,8 +3296,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               }
               
               // その日の希望と募集を取得（要相談を除外、安全な配列チェック）
-              const dayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult') : [];
-              const dayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === dateStr && p.time_slot !== 'consult') : [];
+              const allDayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult') : [];
+              const allDayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === dateStr && p.time_slot !== 'consult') : [];
+              
+              // 確定済みシフトがある薬剤師・薬局を除外
+              const { filteredRequests: dayRequests, filteredPostings: dayPostings } = filterConfirmedRequestsAndPostings(
+                allDayRequests, 
+                allDayPostings, 
+                Array.isArray(assigned) ? assigned : []
+              );
               
               // データがある日付のみログを出力（デバッグ用）
               if (dayRequests.length > 0 || dayPostings.length > 0) {
@@ -3482,9 +3535,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 
                 {/* 日別確定ボタン */}
                 {(() => {
-                  const dayRequests = (requests || []).filter((r: any) => r.date === selectedDate);
-                  const dayPostings = (postings || []).filter((p: any) => p.date === selectedDate);
+                  const allDayRequests = (requests || []).filter((r: any) => r.date === selectedDate);
+                  const allDayPostings = (postings || []).filter((p: any) => p.date === selectedDate);
                   const dayAssignedShifts = (assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed');
+                  
+                  // 確定済みシフトがある薬剤師・薬局を除外
+                  const { filteredRequests: dayRequests, filteredPostings: dayPostings } = filterConfirmedRequestsAndPostings(
+                    allDayRequests, 
+                    allDayPostings, 
+                    Array.isArray(assigned) ? assigned : []
+                  );
                   
                   // AIマッチング結果の表示（選択された日付のマッチング結果のみ）
                   const dayMatches = aiMatchesByDate[selectedDate] || [];
