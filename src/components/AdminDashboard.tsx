@@ -2892,99 +2892,59 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.error('Error fetching confirmed shifts before cancel:', fetchErr);
       }
 
-      // 2) 事前に薬剤師希望/薬局募集を復元（存在しない場合のみ作成）
+      // 2) 対応する希望・募集のステータスを元に戻す
       if (toCancel && toCancel.length > 0) {
+        console.log('=== 確定取り消し: ステータス更新開始 ===');
+        console.log('取り消すシフト数:', toCancel.length);
+        
         for (const s of toCancel) {
-          const pharmacistId = s.pharmacist_id;
-          const pharmacyId = s.pharmacy_id;
-          const timeSlot = s.time_slot || 'full';
-
-          // 希望の復元（薬剤師）
-          try {
-            if (!supabase) {
-              console.error('Supabase client is not available');
-              continue;
-            }
-            
-            const { data: existingReq, error: findReqErr } = await supabase
-              .from('shift_requests')
-              .select('id')
-              .eq('pharmacist_id', pharmacistId)
-              .eq('date', date)
-              .eq('time_slot', timeSlot)
-              .limit(1);
-            if (!findReqErr && (!existingReq || existingReq.length === 0)) {
-              if (!supabase) {
-                console.error('Supabase client is not available');
-                continue;
-              }
-              
-              await supabase.from('shift_requests').insert({
-                pharmacist_id: pharmacistId,
-                date,
-                time_slot: timeSlot,
-                priority: 'medium'
-              });
-            }
-          } catch (e) {
-            console.error('restore request failed:', e);
-          }
-
-          // 募集の復元（薬局）: 同日の同時間帯の募集が無い場合に1名分を再作成
-          try {
-            if (!supabase) {
-              console.error('Supabase client is not available');
-              continue;
-            }
-            
-            const { data: existingPost, error: findPostErr } = await supabase
-              .from('shift_postings')
-              .select('id')
-              .eq('pharmacy_id', pharmacyId)
-              .eq('date', date)
-              .eq('time_slot', timeSlot)
-              .limit(1);
-            if (!findPostErr && (!existingPost || existingPost.length === 0)) {
-              if (!supabase) {
-                console.error('Supabase client is not available');
-                continue;
-              }
-              
-              await supabase.from('shift_postings').insert({
-                pharmacy_id: pharmacyId,
-                date,
-                time_slot: timeSlot,
-                required_staff: 1,
-                store_name: s.store_name || null,
-                memo: 'auto-restored after cancel'
-              });
-            }
-          } catch (e) {
-            console.error('restore posting failed:', e);
-          }
-        }
-      }
-
-      // 3) 対応する希望・募集のステータスを元に戻す
-      if (toCancel && toCancel.length > 0) {
-        for (const s of toCancel) {
+          console.log('シフト詳細:', {
+            pharmacist_id: s.pharmacist_id,
+            pharmacy_id: s.pharmacy_id,
+            date: s.date,
+            time_slot: s.time_slot
+          });
+          
           // 薬剤師の希望ステータスを元に戻す
-          await supabase
+          const { error: requestError } = await supabase
             .from('shift_requests')
             .update({ status: 'pending' })
             .eq('pharmacist_id', s.pharmacist_id)
-            .eq('date', date);
+            .eq('date', date)
+            .eq('time_slot', s.time_slot || 'negotiable');
+          
+          if (requestError) {
+            console.warn('希望ステータス更新エラー:', requestError);
+          } else {
+            console.log('希望ステータス更新成功:', {
+              pharmacist_id: s.pharmacist_id,
+              date,
+              time_slot: s.time_slot
+            });
+          }
           
           // 薬局の募集ステータスを元に戻す
-          await supabase
+          const { error: postingError } = await supabase
             .from('shift_postings')
             .update({ status: 'open' })
             .eq('pharmacy_id', s.pharmacy_id)
-            .eq('date', date);
+            .eq('date', date)
+            .eq('time_slot', s.time_slot || 'negotiable');
+          
+          if (postingError) {
+            console.warn('募集ステータス更新エラー:', postingError);
+          } else {
+            console.log('募集ステータス更新成功:', {
+              pharmacy_id: s.pharmacy_id,
+              date,
+              time_slot: s.time_slot
+            });
+          }
         }
+        console.log('=== 確定取り消し: ステータス更新完了 ===');
       }
 
-      // 4) 確定シフトを削除
+      // 3) 確定シフトを削除
       const { error } = await supabase
         .from('assigned_shifts')
         .delete()
