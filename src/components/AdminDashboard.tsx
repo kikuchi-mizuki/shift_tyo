@@ -4232,7 +4232,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-orange-800">
-                          募集している薬局 ({Array.isArray(postings) ? postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').length : 0}件)
+                          募集している薬局 ({(() => {
+                            const dayAssigned = Array.isArray(assigned) ? assigned : [];
+                            const list = Array.isArray(postings)
+                              ? postings.filter((p: any) =>
+                                  p.date === selectedDate &&
+                                  p.time_slot !== 'consult' &&
+                                  p.status !== 'confirmed' &&
+                                  !dayAssigned.some((s: any) =>
+                                    s.date === p.date &&
+                                    s.pharmacy_id === p.pharmacy_id &&
+                                    s.status === 'confirmed'
+                                  )
+                                )
+                              : [];
+                            return list.length;
+                          })()}件)
                         </h4>
                       </div>
                       {/* 追加ボタン */}
@@ -4323,89 +4338,104 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         </div>
                       )}
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {Array.isArray(postings) && postings.filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult').map((posting: any, index: number) => {
-                        const pharmacyProfile = userProfiles[posting.pharmacy_id];
-                        const isEditing = editingPostingId === posting.id;
-                        // 店舗名を取得（store_name または memo から）
-                        const getStoreName = (posting: any) => {
-                          const direct = (posting.store_name || '').trim();
-                          let fromMemo = '';
-                          if (!direct && typeof posting.memo === 'string') {
-                            const m = posting.memo.match(/\[store:([^\]]+)\]/);
-                            if (m && m[1]) fromMemo = m[1];
-                          }
-                          return direct || fromMemo || '（店舗名未設定）';
-                        };
-                        return (
-                          <div key={index} className="bg-white rounded border px-2 py-1">
-                            {isEditing ? (
-                              <div className="space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                  <select
-                                    className="text-xs border rounded px-2 py-1"
-                                    value={postingEditForm.time_slot}
-                                    onChange={(e) => setPostingEditForm({ ...postingEditForm, time_slot: e.target.value })}
-                                  >
-                                    <option value="morning">午前</option>
-                                    <option value="afternoon">午後</option>
-                                    <option value="full">終日</option>
-                                  </select>
-                                  <input
-                                    className="text-xs border rounded px-2 py-1"
-                                    type="number"
-                                    min={1}
-                                    value={postingEditForm.required_staff}
-                                    onChange={(e) => setPostingEditForm({ ...postingEditForm, required_staff: e.target.value })}
-                                    placeholder="必要人数"
-                                  />
-                                  <input
-                                    className="text-xs border rounded px-2 py-1"
-                                    value={postingEditForm.store_name}
-                                    onChange={(e) => setPostingEditForm({ ...postingEditForm, store_name: e.target.value })}
-                                    placeholder="店舗名（任意）"
-                                  />
-                                  <input
-                                    className="text-xs border rounded px-2 py-1"
-                                    value={postingEditForm.memo}
-                                    onChange={(e) => setPostingEditForm({ ...postingEditForm, memo: e.target.value })}
-                                    placeholder="メモ（任意）"
-                                  />
-                                </div>
-                                <div className="text-right space-x-1">
-                                  <button onClick={() => saveEditPosting(posting.id)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded">保存</button>
-                                  <button onClick={() => setEditingPostingId(null)} className="text-xs bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded">キャンセル</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 pr-2">
-                                  <div className="text-xs text-gray-800 leading-snug break-words">
-                                    {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(posting)})
+                      {(() => {
+                        const dayAssigned = Array.isArray(assigned) ? assigned : [];
+                        const list = Array.isArray(postings)
+                          ? postings.filter((p: any) =>
+                              p.date === selectedDate &&
+                              p.time_slot !== 'consult' &&
+                              p.status !== 'confirmed' &&
+                              !dayAssigned.some((s: any) =>
+                                s.date === p.date &&
+                                s.pharmacy_id === p.pharmacy_id &&
+                                s.status === 'confirmed'
+                              )
+                            )
+                          : [];
+                        return list.map((posting: any, index: number) => {
+                          const pharmacyProfile = userProfiles[posting.pharmacy_id];
+                          const isEditing = editingPostingId === posting.id;
+                          // 店舗名を取得（store_name または memo から）
+                          const getStoreName = (posting: any) => {
+                            const direct = (posting.store_name || '').trim();
+                            let fromMemo = '';
+                            if (!direct && typeof posting.memo === 'string') {
+                              const m = posting.memo.match(/\[store:([^\]]+)\]/);
+                              if (m && m[1]) fromMemo = m[1];
+                            }
+                            return direct || fromMemo || '（店舗名未設定）';
+                          };
+                          return (
+                            <div key={index} className="bg-white rounded border px-2 py-1">
+                              {isEditing ? (
+                                <div className="space-y-2">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <select
+                                      className="text-xs border rounded px-2 py-1"
+                                      value={postingEditForm.time_slot}
+                                      onChange={(e) => setPostingEditForm({ ...postingEditForm, time_slot: e.target.value })}
+                                    >
+                                      <option value="morning">午前</option>
+                                      <option value="afternoon">午後</option>
+                                      <option value="full">終日</option>
+                                    </select>
+                                    <input
+                                      className="text-xs border rounded px-2 py-1"
+                                      type="number"
+                                      min={1}
+                                      value={postingEditForm.required_staff}
+                                      onChange={(e) => setPostingEditForm({ ...postingEditForm, required_staff: e.target.value })}
+                                      placeholder="必要人数"
+                                    />
+                                    <input
+                                      className="text-xs border rounded px-2 py-1"
+                                      value={postingEditForm.store_name}
+                                      onChange={(e) => setPostingEditForm({ ...postingEditForm, store_name: e.target.value })}
+                                      placeholder="店舗名（任意）"
+                                    />
+                                    <input
+                                      className="text-xs border rounded px-2 py-1"
+                                      value={postingEditForm.memo}
+                                      onChange={(e) => setPostingEditForm({ ...postingEditForm, memo: e.target.value })}
+                                      placeholder="メモ（任意）"
+                                    />
                                   </div>
-                                  <div className="text-[11px] text-gray-500 mt-0.5">
-                                    {(() => {
-                                      const s = (posting.start_time || '').toString();
-                                      const e = (posting.end_time || '').toString();
-                                      if (s && e) return `${s.slice(0,5)}-${e.slice(0,5)}`;
-                                      if (posting.time_slot === 'morning') return '09:00-13:00';
-                                      if (posting.time_slot === 'afternoon') return '13:00-18:00';
-                                      if (posting.time_slot === 'full' || posting.time_slot === 'fullday') return '09:00-18:00';
-                                      return '要相談';
-                                    })()}
-                                  </div>
-                                  <div className="mt-1 space-x-1">
-                                    <button onClick={() => beginEditPosting(posting)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
-                                    <button onClick={() => deletePosting(posting.id)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">削除</button>
+                                  <div className="text-right space-x-1">
+                                    <button onClick={() => saveEditPosting(posting.id)} className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded">保存</button>
+                                    <button onClick={() => setEditingPostingId(null)} className="text-xs bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded">キャンセル</button>
                                   </div>
                                 </div>
-                                <div className="text-xs text-gray-500 whitespace-nowrap">
-                                  {posting.required_staff}人
+                              ) : (
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 pr-2">
+                                    <div className="text-xs text-gray-800 leading-snug break-words">
+                                      {pharmacyProfile?.name || pharmacyProfile?.email || '薬局未設定'} ({getStoreName(posting)})
+                                    </div>
+                                    <div className="text-[11px] text-gray-500 mt-0.5">
+                                      {(() => {
+                                        const s = (posting.start_time || '').toString();
+                                        const e = (posting.end_time || '').toString();
+                                        if (s && e) return `${s.slice(0,5)}-${e.slice(0,5)}`;
+                                        if (posting.time_slot === 'morning') return '09:00-13:00';
+                                        if (posting.time_slot === 'afternoon') return '13:00-18:00';
+                                        if (posting.time_slot === 'full' || posting.time_slot === 'fullday') return '09:00-18:00';
+                                        return '要相談';
+                                      })()}
+                                    </div>
+                                    <div className="mt-1 space-x-1">
+                                      <button onClick={() => beginEditPosting(posting)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
+                                      <button onClick={() => deletePosting(posting.id)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">削除</button>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-gray-500 whitespace-nowrap">
+                                    {posting.required_staff}人
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              )}
+                            </div>
+                          );
+                        });
+                      })()}
                       </div>
                     </div>
                   )}
