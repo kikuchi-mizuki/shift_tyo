@@ -833,8 +833,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
     setAiMatchingLoading(true);
     try {
-      const dayRequests = Array.isArray(requests) ? requests.filter(r => r.date === date) : [];
-      const dayPostings = Array.isArray(postings) ? postings.filter(p => p.date === date) : [];
+      // 未確定のみ抽出
+      const dayRequests = Array.isArray(requests)
+        ? (requests as any[]).filter((r: any) => r.date === date && r.status !== 'confirmed')
+        : [];
+      const dayPostings = Array.isArray(postings)
+        ? (postings as any[]).filter((p: any) => p.date === date && p.status !== 'confirmed')
+        : [];
+
+      // 既に確定済みの組み合わせ（薬剤師ID_日付_薬局ID）をセット化
+      const confirmedMatches = new Set<string>();
+      if (Array.isArray(assigned)) {
+        (assigned as any[]).forEach((s: any) => {
+          if (s?.status === 'confirmed' && s?.date === date) {
+            confirmedMatches.add(`${s.pharmacist_id}_${s.date}_${s.pharmacy_id}`);
+          }
+        });
+      }
 
       console.log(`AI Matching for ${date}: ${dayRequests.length} requests, ${dayPostings.length} postings`);
 
@@ -842,7 +857,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         useAPI: true,
         algorithm: 'hybrid',
         priority: 'balance'
-      }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists);
+      }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches as unknown as Set<string>);
       setAiMatches(matches);
 
       console.log(`AI Matching completed: ${matches.length} matches found`);
