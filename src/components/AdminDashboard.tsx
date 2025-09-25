@@ -833,6 +833,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
     setAiMatchingLoading(true);
     try {
+      // 最新の確定シフトを取得してから判定（状態の取りこぼしを防止）
+      let freshAssigned: any[] = Array.isArray(assigned) ? (assigned as any[]) : [];
+      try {
+        if (supabase) {
+          const { data: fresh, error: freshErr } = await supabase
+            .from('assigned_shifts')
+            .select('pharmacist_id, pharmacy_id, date, status, store_name')
+            .eq('date', date)
+            .eq('status', 'confirmed');
+          if (!freshErr && Array.isArray(fresh)) {
+            freshAssigned = fresh;
+          }
+        }
+      } catch (e) {
+        console.warn('最新の確定シフト取得に失敗しました（フォールバック: 既存stateを使用）:', e);
+      }
       // 未確定のみ抽出
       const dayRequests = Array.isArray(requests)
         ? (requests as any[]).filter((r: any) => r.date === date && r.status !== 'confirmed')
@@ -846,8 +862,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const confirmedPharmacies = new Set<string>();
       const confirmedPharmacists = new Set<string>();
       const confirmedStoreKeys = new Set<string>(); // pharmacy_id + store_name 単位
-      if (Array.isArray(assigned)) {
-        (assigned as any[]).forEach((s: any) => {
+      if (Array.isArray(freshAssigned)) {
+        (freshAssigned as any[]).forEach((s: any) => {
           if (s?.status === 'confirmed' && s?.date === date) {
             confirmedMatches.add(`${s.pharmacist_id}_${s.date}_${s.pharmacy_id}`);
             confirmedPharmacies.add(s.pharmacy_id);
@@ -858,8 +874,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         });
       }
 
-      // 確定済みの薬局は当日のマッチング対象から完全に除外（店舗名に関わらず）
-      const filteredDayPostings = dayPostings.filter((p: any) => !confirmedPharmacies.has(p.pharmacy_id));
+      // 確定済みの薬局は当日のマッチング対象から完全に除外
+      // さらにステータスが'open'でも、assigned_shiftsに確定がある薬局は除外
+      const filteredDayPostings = dayPostings.filter((p: any) => {
+        if (p.status === 'confirmed') return false;
+        if (confirmedPharmacies.has(p.pharmacy_id)) return false;
+        // 念のため store 単位での除外も併用
+        const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
+        if ((confirmedStoreKeys as Set<string>).has(key)) return false;
+        return true;
+      });
       const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
       console.log(`AI Matching for ${date}: ${dayRequests.length} requests, ${dayPostings.length} postings`);
