@@ -849,6 +849,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       } catch (e) {
         console.warn('最新の確定シフト取得に失敗しました（フォールバック: 既存stateを使用）:', e);
       }
+      // 当日に確定シフトが1件でもある場合はAIマッチングを実行しない
+      if (Array.isArray(freshAssigned) && freshAssigned.length > 0) {
+        try {
+          console.log('AIマッチングをスキップ（当日に確定シフトあり）', {
+            date,
+            confirmedCount: freshAssigned.length,
+            sample: freshAssigned.slice(0, 5)
+          });
+        } catch {}
+        setAiMatches([]);
+        alert('この日は既に確定シフトがあります。AIマッチングは実行しません。');
+        return;
+      }
       // 未確定のみ抽出
       const dayRequests = Array.isArray(requests)
         ? (requests as any[]).filter((r: any) => r.date === date && r.status !== 'confirmed')
