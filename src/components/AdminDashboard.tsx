@@ -962,6 +962,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
+  // 確定がある日に以前のAI結果が残らないようにクリア
+  useEffect(() => {
+    try {
+      if (!selectedDate) return;
+      const hasConfirmed = Array.isArray(assigned)
+        ? (assigned as any[]).some((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
+        : false;
+      if (hasConfirmed && aiMatches && aiMatches.length > 0) {
+        console.log('Clearing AI matches because selected date has confirmed shifts', {
+          selectedDate,
+          aiCount: aiMatches.length
+        });
+        setAiMatches([]);
+      }
+    } catch {}
+  }, [selectedDate, assigned]);
+
   // AIマッチング結果を確定シフトに変換
   const convertAIMatchesToShifts = (matches: MatchCandidate[], date: string) => {
     return matches.map(match => {
