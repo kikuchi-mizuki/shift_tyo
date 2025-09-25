@@ -845,18 +845,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const confirmedMatches = new Set<string>();
       const confirmedPharmacies = new Set<string>();
       const confirmedPharmacists = new Set<string>();
+      const confirmedStoreKeys = new Set<string>(); // pharmacy_id + store_name 単位
       if (Array.isArray(assigned)) {
         (assigned as any[]).forEach((s: any) => {
           if (s?.status === 'confirmed' && s?.date === date) {
             confirmedMatches.add(`${s.pharmacist_id}_${s.date}_${s.pharmacy_id}`);
             confirmedPharmacies.add(s.pharmacy_id);
             confirmedPharmacists.add(s.pharmacist_id);
+            const storeKey = `${s.pharmacy_id}_${(s.store_name || '').trim()}`;
+            confirmedStoreKeys.add(storeKey);
           }
         });
       }
 
-      // 確定済みの店舗（薬局）と薬剤師は当日のマッチング対象から除外
-      const filteredDayPostings = dayPostings.filter((p: any) => !confirmedPharmacies.has(p.pharmacy_id));
+      // 確定済みの店舗（薬局+店舗名）と薬剤師は当日のマッチング対象から除外
+      const filteredDayPostings = dayPostings.filter((p: any) => {
+        if (confirmedPharmacies.has(p.pharmacy_id)) {
+          // 同一薬局でも別店舗の募集は許容するため、店舗キーで精密に除外
+          const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
+          return !confirmedStoreKeys.has(key);
+        }
+        return true;
+      });
       const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
       console.log(`AI Matching for ${date}: ${dayRequests.length} requests, ${dayPostings.length} postings`);
