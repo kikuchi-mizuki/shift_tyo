@@ -904,12 +904,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.warn('診断ログ出力に失敗:', e);
       }
 
-      // 確定済みの薬局は当日のマッチング対象から完全に除外
-      // さらにステータスが'open'でも、assigned_shiftsに確定がある薬局は除外
+      // 薬局側も「未確定のみ」でマッチング（open/recruitingに限定）
+      // かつ、当日に確定がある薬局（および店舗）は除外
+      const allowedPostingStatuses = new Set(['open', 'recruiting']);
       const filteredDayPostings = dayPostings.filter((p: any) => {
-        if (p.status === 'confirmed') return false;
+        if (!allowedPostingStatuses.has((p.status || '').toLowerCase())) return false;
         if (confirmedPharmacies.has(p.pharmacy_id)) return false;
-        // 念のため store 単位での除外も併用
         const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
         if ((confirmedStoreKeys as Set<string>).has(key)) return false;
         return true;
