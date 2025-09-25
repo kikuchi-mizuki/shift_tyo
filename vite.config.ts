@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// 環境変数で本番でもログを有効化できるようにする
+// Railway/本番で `VITE_ENABLE_DEBUG_LOGS=true` を設定すると console.log を削除しません
+const enableDebugLogs = process.env.VITE_ENABLE_DEBUG_LOGS === 'true';
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -12,12 +16,12 @@ export default defineConfig({
     },
     // 本番環境でのエラーを抑制
     minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+         terserOptions: {
+           compress: {
+             drop_console: enableDebugLogs ? false : true,
+             drop_debugger: enableDebugLogs ? false : true,
+           },
+         },
   },
   optimizeDeps: {
     exclude: ['lucide-react'],
