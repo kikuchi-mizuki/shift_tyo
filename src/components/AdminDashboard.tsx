@@ -858,15 +858,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         });
       }
 
-      // 確定済みの店舗（薬局+店舗名）と薬剤師は当日のマッチング対象から除外
-      const filteredDayPostings = dayPostings.filter((p: any) => {
-        if (confirmedPharmacies.has(p.pharmacy_id)) {
-          // 同一薬局でも別店舗の募集は許容するため、店舗キーで精密に除外
-          const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
-          return !confirmedStoreKeys.has(key);
-        }
-        return true;
-      });
+      // 確定済みの薬局は当日のマッチング対象から完全に除外（店舗名に関わらず）
+      const filteredDayPostings = dayPostings.filter((p: any) => !confirmedPharmacies.has(p.pharmacy_id));
       const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
       console.log(`AI Matching for ${date}: ${dayRequests.length} requests, ${dayPostings.length} postings`);
