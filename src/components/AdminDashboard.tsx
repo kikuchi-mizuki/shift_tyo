@@ -929,7 +929,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       });
       const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
-      console.log(`AI Matching for ${date}: ${dayRequests.length} requests, ${dayPostings.length} postings`);
+      // 募集/希望が0件なら実行せずに結果をクリア（前回の残像を防止）
+      if (filteredDayPostings.length === 0 || filteredDayRequests.length === 0) {
+        try {
+          console.log('AIマッチングをスキップ（募集/希望が0件）', {
+            date,
+            requests: filteredDayRequests.length,
+            postings: filteredDayPostings.length
+          });
+        } catch {}
+        setAiMatches([]);
+        return;
+      }
+
+      console.log(`AI Matching for ${date}: ${filteredDayRequests.length} requests, ${filteredDayPostings.length} postings`);
 
       let matches = await aiMatchingEngine.executeOptimalMatching(filteredDayRequests, filteredDayPostings, {
         useAPI: true,
