@@ -888,11 +888,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       console.log(`AI Matching for ${date}: ${dayRequests.length} requests, ${dayPostings.length} postings`);
 
-      const matches = await aiMatchingEngine.executeOptimalMatching(filteredDayRequests, filteredDayPostings, {
+      let matches = await aiMatchingEngine.executeOptimalMatching(filteredDayRequests, filteredDayPostings, {
         useAPI: true,
         algorithm: 'hybrid',
         priority: 'balance'
       }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches as unknown as Set<string>);
+
+      // 最終防御: 返ってきた結果からも確定済み薬局/店舗を除外
+      try {
+        const filtered = (matches || []).filter((m: any) => {
+          const pharmacyId = m?.pharmacy?.id;
+          const storeName = (m?.pharmacy?.name || '').trim();
+          if (!pharmacyId) return false;
+          if (confirmedPharmacies.has(pharmacyId)) return false;
+          const key = `${pharmacyId}_${storeName}`;
+          if ((confirmedStoreKeys as Set<string>).has(key)) return false;
+          return true;
+        });
+        matches = filtered;
+      } catch (e) {
+        console.warn('Post-filtering AI matches failed:', e);
+      }
       setAiMatches(matches);
 
       console.log(`AI Matching completed: ${matches.length} matches found`);
