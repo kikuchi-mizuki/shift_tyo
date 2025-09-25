@@ -874,6 +874,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         });
       }
 
+      // 自動自己診断: なぜ除外されないのかを可視化
+      try {
+        const diag = (dayPostings || []).map((p: any) => {
+          const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
+          const reasons: string[] = [];
+          if (p.status === 'confirmed') reasons.push('posting.status=confirmed');
+          if (confirmedPharmacies.has(p.pharmacy_id)) reasons.push('pharmacy_id confirmed on date');
+          if (confirmedStoreKeys.has(key)) reasons.push('pharmacy_id+store_name confirmed on date');
+          return {
+            posting_id: p.id,
+            pharmacy_id: p.pharmacy_id,
+            store_name: p.store_name,
+            status: p.status,
+            excluded: reasons.length > 0,
+            reasons
+          };
+        });
+        const excluded = diag.filter(d => d.excluded);
+        const notExcluded = diag.filter(d => !d.excluded);
+        console.log('=== AI前自己診断: 当日の募集診断 ===', {
+          date,
+          postings_total: (dayPostings || []).length,
+          excluded_count: excluded.length,
+          sample_excluded: excluded.slice(0, 5),
+          sample_not_excluded: notExcluded.slice(0, 5)
+        });
+      } catch (e) {
+        console.warn('診断ログ出力に失敗:', e);
+      }
+
       // 確定済みの薬局は当日のマッチング対象から完全に除外
       // さらにステータスが'open'でも、assigned_shiftsに確定がある薬局は除外
       const filteredDayPostings = dayPostings.filter((p: any) => {
