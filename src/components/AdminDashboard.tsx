@@ -844,21 +844,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // 既に確定済みの組み合わせ（薬剤師ID_日付_薬局ID）をセット化
       const confirmedMatches = new Set<string>();
       const confirmedPharmacies = new Set<string>();
+      const confirmedPharmacists = new Set<string>();
       if (Array.isArray(assigned)) {
         (assigned as any[]).forEach((s: any) => {
           if (s?.status === 'confirmed' && s?.date === date) {
             confirmedMatches.add(`${s.pharmacist_id}_${s.date}_${s.pharmacy_id}`);
             confirmedPharmacies.add(s.pharmacy_id);
+            confirmedPharmacists.add(s.pharmacist_id);
           }
         });
       }
 
-      // 確定済みの店舗（薬局）は当日のマッチング対象から除外
+      // 確定済みの店舗（薬局）と薬剤師は当日のマッチング対象から除外
       const filteredDayPostings = dayPostings.filter((p: any) => !confirmedPharmacies.has(p.pharmacy_id));
+      const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
       console.log(`AI Matching for ${date}: ${dayRequests.length} requests, ${dayPostings.length} postings`);
 
-      const matches = await aiMatchingEngine.executeOptimalMatching(dayRequests, filteredDayPostings, {
+      const matches = await aiMatchingEngine.executeOptimalMatching(filteredDayRequests, filteredDayPostings, {
         useAPI: true,
         algorithm: 'hybrid',
         priority: 'balance'
