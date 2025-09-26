@@ -2011,6 +2011,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const action = newStatus ? '再開' : '締切';
       
       // まず UPDATE を試みる（既存レコードがある前提）
+      console.log('=== 募集状況更新デバッグ ===');
+      console.log('FIXED_ID:', FIXED_ID);
+      console.log('newStatus:', newStatus);
+      console.log('action:', action);
+      console.log('current user:', currentUserId);
+      
       const { data: updatedRow, error } = await supabase
         .from('recruitment_status')
         .update({
@@ -2022,6 +2028,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         .select('id,is_open,updated_at')
         .maybeSingle();
       
+      console.log('UPDATE結果:');
+      console.log('updatedRow:', updatedRow);
+      console.log('error:', error);
+      
       if (error) {
         console.error('募集状況更新エラー:', error);
         const message = typeof error === 'object' && error !== null ? (error as any).message || (error as any).hint || JSON.stringify(error) : String(error);
@@ -2030,6 +2040,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
 
       if (!updatedRow) {
+        console.log('updatedRow が null - レコードが見つからないか更新されなかった');
         alert('募集状況の更新結果が取得できませんでした。再度お試しください。');
         return;
       }
