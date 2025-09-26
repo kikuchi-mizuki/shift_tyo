@@ -2542,29 +2542,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         }
         
         // 薬局の募集を更新（同日・同薬局の募集を一括で confirmed にする）
-        const { error: postingError } = await supabase
+        console.log('=== 薬局募集ステータス更新開始 ===', {
+          pharmacy_id: match.pharmacy.id,
+          date,
+          postingTimeSlot
+        });
+        
+        const { data: updateResult, error: postingError } = await supabase
           .from('shift_postings')
           .update({ status: 'confirmed' })
           .eq('pharmacy_id', match.pharmacy.id)
-          .eq('date', date);
+          .eq('date', date)
+          .select();
         
         if (postingError) {
-          console.warn('募集ステータス更新エラー:', postingError);
+          console.error('募集ステータス更新エラー:', postingError);
         } else {
           console.log('募集ステータス更新成功（同日・同薬局を一括更新）:', {
             pharmacy_id: match.pharmacy.id,
-            date
+            date,
+            updated_count: updateResult?.length || 0,
+            updated_records: updateResult
           });
           
-          // 更新後のデータを確認
-          const { data: updatedPosting } = await supabase
+          // 更新後のデータを確認（全ての募集を取得）
+          const { data: allUpdatedPostings, error: fetchError } = await supabase
             .from('shift_postings')
             .select('*')
             .eq('pharmacy_id', match.pharmacy.id)
-            .eq('date', date)
-            .eq('time_slot', postingTimeSlot)
-            .single();
-          console.log('更新後の募集データ:', updatedPosting);
+            .eq('date', date);
+          console.log('更新後の全募集データ:', allUpdatedPostings);
         }
       } catch (statusError) {
         console.warn('ステータス更新中のエラー:', statusError);
