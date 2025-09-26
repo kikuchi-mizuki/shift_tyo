@@ -2011,6 +2011,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const action = newStatus ? '再開' : '締切';
       
       // まず UPDATE を試みる（既存レコードがある前提）
+      const debugInfo = {
+        FIXED_ID,
+        newStatus,
+        action,
+        currentUser: currentUserId,
+        timestamp: new Date().toISOString()
+      };
+      
       console.log('=== 募集状況更新デバッグ ===');
       console.log('FIXED_ID:', FIXED_ID);
       console.log('newStatus:', newStatus);
@@ -2028,6 +2036,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         .select('id,is_open,updated_at')
         .maybeSingle();
       
+      const resultInfo = {
+        updatedRow,
+        error: error ? {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        } : null
+      };
+      
       console.log('UPDATE結果:');
       console.log('updatedRow:', updatedRow);
       console.log('error:', error);
@@ -2035,13 +2053,56 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       if (error) {
         console.error('募集状況更新エラー:', error);
         const message = typeof error === 'object' && error !== null ? (error as any).message || (error as any).hint || JSON.stringify(error) : String(error);
-        alert(`募集状況の更新に失敗しました: ${message}`);
+        
+        // デバッグ情報をモーダルで表示
+        const debugModal = `
+=== 募集状況更新デバッグ情報 ===
+
+【リクエスト情報】
+- FIXED_ID: ${FIXED_ID}
+- newStatus: ${newStatus}
+- action: ${action}
+- current user: ${currentUserId}
+- timestamp: ${new Date().toLocaleString('ja-JP')}
+
+【エラー詳細】
+- message: ${error.message}
+- code: ${error.code}
+- details: ${error.details || 'なし'}
+- hint: ${error.hint || 'なし'}
+
+【レスポンス】
+- updatedRow: ${JSON.stringify(updatedRow, null, 2)}
+        `;
+        
+        alert(`募集状況の更新に失敗しました:\n\n${message}\n\n${debugModal}`);
         return;
       }
 
       if (!updatedRow) {
         console.log('updatedRow が null - レコードが見つからないか更新されなかった');
-        alert('募集状況の更新結果が取得できませんでした。再度お試しください。');
+        
+        // デバッグ情報をモーダルで表示
+        const debugModal = `
+=== 募集状況更新デバッグ情報 ===
+
+【リクエスト情報】
+- FIXED_ID: ${FIXED_ID}
+- newStatus: ${newStatus}
+- action: ${action}
+- current user: ${currentUserId}
+- timestamp: ${new Date().toLocaleString('ja-JP')}
+
+【問題】
+- updatedRow が null - レコードが見つからないか更新されなかった
+- レコードが存在しない可能性があります
+
+【レスポンス】
+- updatedRow: ${JSON.stringify(updatedRow, null, 2)}
+- error: ${JSON.stringify(resultInfo.error, null, 2)}
+        `;
+        
+        alert(`募集状況の更新結果が取得できませんでした。\n\n${debugModal}`);
         return;
       }
       
