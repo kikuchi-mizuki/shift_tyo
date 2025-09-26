@@ -1955,11 +1955,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // 募集状況を読み込む関数
   const loadRecruitmentStatus = async () => {
     try {
+      // 固定レコードIDを直接参照（存在しない場合の誤検知を避ける）
+      const FIXED_ID = '00000000-0000-0000-0000-000000000001';
       const { data, error } = await supabase
         .from('recruitment_status')
         .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
+        .eq('id', FIXED_ID)
         .single();
       
       if (error) {
@@ -2011,14 +2012,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       const { data: updatedRow, error } = await supabase
         .from('recruitment_status')
-        .update({
+        .upsert({
+          id: FIXED_ID,
           is_open: newStatus,
           // updated_by はRLS/外部キーの影響を避けるため一旦書かない
           notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
-        })
-        .eq('id', FIXED_ID)
+        }, { onConflict: 'id' })
         .select('id,is_open,updated_at')
-        .maybeSingle();
+        .single();
       
       if (error) {
         console.error('募集状況更新エラー:', error);
@@ -2028,7 +2029,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
 
       if (!updatedRow) {
-        alert('募集状況の更新結果が取得できませんでした（権限または該当行が見つからない可能性）。管理者でログイン中か、初期レコードが存在するかご確認ください。');
+        alert('募集状況の更新結果が取得できませんでした。再度お試しください。');
         return;
       }
       
