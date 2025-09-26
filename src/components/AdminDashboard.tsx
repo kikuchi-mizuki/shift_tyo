@@ -4702,7 +4702,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           });
                         }
                         
-                        const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                         const isEditing = editingRequestId === request.id;
                         return (
                           <div key={index} className="bg-white rounded border px-2 py-1">
@@ -4767,11 +4766,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   <div className="mt-1 space-x-1">
                                     <button onClick={() => beginEditRequest(request)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
                                     <button onClick={() => deleteRequest(request.id)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">削除</button>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-2 whitespace-nowrap">
-                                  <div className={`text-xs font-medium ${priorityColor}`}>
-                                    {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
                                   </div>
                                 </div>
                               </div>
@@ -4919,7 +4913,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         <div className="space-y-2 max-h-48 overflow-y-auto">
                           {dayConsultRequests.map((request: any) => {
                             const pharmacistProfile = userProfiles[request.pharmacist_id];
-                            const priorityColor = request.priority === 'high' ? 'text-red-600' : request.priority === 'medium' ? 'text-yellow-600' : 'text-green-600';
                             
                             return (
                               <div key={request.id} className="bg-white rounded border px-2 py-1">
@@ -4937,9 +4930,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   <div className="flex items-center space-x-2 whitespace-nowrap">
                                     <div className="text-xs text-purple-600 font-medium">
                                       相談
-                                    </div>
-                                    <div className={`text-xs font-medium ${priorityColor}`}>
-                                      {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
                                     </div>
                                   </div>
                                 </div>
