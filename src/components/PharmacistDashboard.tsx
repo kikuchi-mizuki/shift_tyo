@@ -1002,7 +1002,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                             return shift.time_slot === 'morning' || shift.time_slot === 'am' ? '9:00-13:00' :
                                    shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '13:00-18:00' :
                                    shift.time_slot === 'full' || shift.time_slot === 'fullday' ? '9:00-18:00' :
-                                   shift.time_slot === 'consult' ? '要相談' :
+                                   shift.time_slot === 'consult' || shift.time_slot === 'negotiable' ? '要相談' :
                                    shift.time_slot === 'custom' ? 'カスタム' : '夜間';
                           })()}
                         </div>
@@ -1036,7 +1036,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                     selectedTimeSlot === 'morning' || selectedTimeSlot === 'am' ? '9:00-13:00' :
                     selectedTimeSlot === 'afternoon' || selectedTimeSlot === 'pm' ? '13:00-18:00' :
                     selectedTimeSlot === 'full' ? '9:00-18:00' :
-                    selectedTimeSlot === 'consult' ? '要相談' :
+                    selectedTimeSlot === 'consult' || selectedTimeSlot === 'negotiable' ? '要相談' :
                     selectedTimeSlot === 'custom' ? `${startTime}-${endTime}` : selectedTimeSlot
                   ) : '未選択'}
                 </div>
