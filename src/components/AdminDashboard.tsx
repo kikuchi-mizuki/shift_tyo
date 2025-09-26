@@ -850,22 +850,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.warn('最新の確定シフト取得に失敗しました（フォールバック: 既存stateを使用）:', e);
       }
       // 当日に確定シフトが1件でもある場合はAIマッチングを実行しない
-      console.log('=== 確定シフトチェック ===', {
-        date,
-        freshAssigned: freshAssigned,
-        freshAssignedLength: freshAssigned.length,
-        isArray: Array.isArray(freshAssigned),
-        shouldSkip: Array.isArray(freshAssigned) && freshAssigned.length > 0
-      });
+      // より確実にチェックするため、既存のassigned stateも確認
+      const existingAssigned = Array.isArray(assigned) 
+        ? assigned.filter((s: any) => s.date === date && s.status === 'confirmed')
+        : [];
       
-      if (Array.isArray(freshAssigned) && freshAssigned.length > 0) {
-        try {
-          console.log('AIマッチングをスキップ（当日に確定シフトあり）', {
-            date,
-            confirmedCount: freshAssigned.length,
-            sample: freshAssigned.slice(0, 5)
-          });
-        } catch {}
+      const totalConfirmedShifts = Math.max(freshAssigned.length, existingAssigned.length);
+      
+      if (totalConfirmedShifts > 0) {
         setAiMatches([]);
         setAiMatchingLoading(false);
         alert('この日は既に確定シフトがあります。AIマッチングは実行しません。');
@@ -3861,8 +3853,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   // 日毎の不足薬局分析
                   const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
                   
+                  // 確定シフトがある場合はAIマッチング結果を表示しない
+                  const hasConfirmedShifts = dayAssignedShifts.length > 0;
                   
-                  if (dayMatches.length > 0 && selectedDate) {
+                  if (dayMatches.length > 0 && selectedDate && !hasConfirmedShifts) {
                     return (
                       <div className="p-4 border-b border-gray-200">
                         {/* AIマッチング結果 */}
