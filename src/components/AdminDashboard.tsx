@@ -850,6 +850,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         console.warn('最新の確定シフト取得に失敗しました（フォールバック: 既存stateを使用）:', e);
       }
       // 当日に確定シフトが1件でもある場合はAIマッチングを実行しない
+      console.log('=== 確定シフトチェック ===', {
+        date,
+        freshAssigned: freshAssigned,
+        freshAssignedLength: freshAssigned.length,
+        isArray: Array.isArray(freshAssigned),
+        shouldSkip: Array.isArray(freshAssigned) && freshAssigned.length > 0
+      });
+      
       if (Array.isArray(freshAssigned) && freshAssigned.length > 0) {
         try {
           console.log('AIマッチングをスキップ（当日に確定シフトあり）', {
