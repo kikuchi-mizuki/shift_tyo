@@ -1995,7 +1995,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         })
         .eq('id', '00000000-0000-0000-0000-000000000001')
         .select('id,is_open,updated_at')
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('募集状況更新エラー:', error);
