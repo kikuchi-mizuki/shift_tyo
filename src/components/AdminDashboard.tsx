@@ -2003,49 +2003,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         return;
       }
 
-      // 行の存在確認（固定ID → なければ先頭行 → なければ作成）
+      // 固定IDへupsert（存在しなければ作成、あれば更新）
       const FIXED_ID = '00000000-0000-0000-0000-000000000001';
-      let targetId = FIXED_ID;
-      let { data: existingRow } = await supabase
-        .from('recruitment_status')
-        .select('id,is_open')
-        .eq('id', FIXED_ID)
-        .maybeSingle();
-      if (!existingRow) {
-        const { data: anyRow } = await supabase
-          .from('recruitment_status')
-          .select('id,is_open')
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (anyRow) {
-          targetId = anyRow.id as string;
-          existingRow = anyRow;
-        } else {
-          const { data: inserted, error: insErr } = await supabase
-            .from('recruitment_status')
-            .insert({ id: FIXED_ID, is_open: true, notes: 'auto created by admin toggle' })
-            .select('id')
-            .maybeSingle();
-          if (insErr || !inserted) {
-            alert('募集状況レコードの自動作成に失敗しました。初期化SQLの実行をご確認ください。');
-            return;
-          }
-          targetId = inserted.id as string;
-        }
-      }
 
       const newStatus = !recruitmentStatus.is_open;
       const action = newStatus ? '再開' : '締切';
       
       const { data: updatedRow, error } = await supabase
         .from('recruitment_status')
-        .update({
+        .upsert({
+          id: FIXED_ID,
           is_open: newStatus,
           // updated_by はRLS/外部キーの影響を避けるため一旦書かない
           notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
-        })
-        .eq('id', targetId)
+        }, { onConflict: 'id' })
         .select('id,is_open,updated_at')
         .maybeSingle();
       
