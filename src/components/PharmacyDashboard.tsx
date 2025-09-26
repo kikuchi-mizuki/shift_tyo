@@ -96,8 +96,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       const { data, error } = await supabase
         .from('recruitment_status')
         .select('is_open')
-        .order('updated_at', { ascending: false })
-        .limit(1)
+        .eq('id', '00000000-0000-0000-0000-000000000001')
         .single();
       
       if (error) {
@@ -112,6 +111,19 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.error('募集状況チェックエラー:', error);
     }
   };
+
+  // タブフォーカス/定期ポーリングで最新化
+  useEffect(() => {
+    const onFocus = () => {
+      checkRecruitmentStatus();
+    };
+    window.addEventListener('focus', onFocus);
+    const intervalId = window.setInterval(checkRecruitmentStatus, 15000);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   // メモに埋め込んだ [store:◯◯] から店舗名を抽出（store_name が無いときのフォールバック）
   // function 宣言でTDZを回避（先に利用されてもOK）
