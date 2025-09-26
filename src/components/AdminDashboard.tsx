@@ -1990,14 +1990,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         .from('recruitment_status')
         .update({
           is_open: newStatus,
-          updated_by: user.id,
+          // updated_by はRLS/外部キーの影響を避けるため一旦書かない
           notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
         })
         .eq('id', '00000000-0000-0000-0000-000000000001');
       
       if (error) {
         console.error('募集状況更新エラー:', error);
-        alert(`募集状況の更新に失敗しました: ${error.message}`);
+        const message = typeof error === 'object' && error !== null ? (error as any).message || (error as any).hint || JSON.stringify(error) : String(error);
+        alert(`募集状況の更新に失敗しました: ${message}`);
         return;
       }
       
