@@ -863,13 +863,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         alert('この日は既に確定シフトがあります。AIマッチングは実行しません。');
         return;
       }
-      // 未確定のみ抽出
-      const dayRequests = Array.isArray(requests)
-        ? (requests as any[]).filter((r: any) => r.date === date && r.status !== 'confirmed')
-        : [];
-      const dayPostings = Array.isArray(postings)
-        ? (postings as any[]).filter((p: any) => p.date === date && p.status !== 'confirmed')
-        : [];
+      // 最新のデータを再取得してからフィルタリング
+      let freshRequests: any[] = [];
+      let freshPostings: any[] = [];
+      
+      if (supabase) {
+        // 最新の希望データを取得
+        const { data: requestsData } = await supabase
+          .from('shift_requests')
+          .select('*')
+          .eq('date', date);
+        if (requestsData) freshRequests = requestsData;
+        
+        // 最新の募集データを取得
+        const { data: postingsData } = await supabase
+          .from('shift_postings')
+          .select('*')
+          .eq('date', date);
+        if (postingsData) freshPostings = postingsData;
+      }
+      
+      // 未確定のみ抽出（最新データから）
+      const dayRequests = freshRequests.filter((r: any) => r.status !== 'confirmed');
+      const dayPostings = freshPostings.filter((p: any) => p.status !== 'confirmed');
+      
+      console.log('=== AIマッチング用データ取得 ===', {
+        date,
+        freshRequests: freshRequests.length,
+        freshPostings: freshPostings.length,
+        filteredRequests: dayRequests.length,
+        filteredPostings: dayPostings.length,
+        confirmedRequests: freshRequests.filter(r => r.status === 'confirmed').length,
+        confirmedPostings: freshPostings.filter(p => p.status === 'confirmed').length
+      });
 
       // 既に確定済みの組み合わせ（薬剤師ID_日付_薬局ID）をセット化
       const confirmedMatches = new Set<string>();
