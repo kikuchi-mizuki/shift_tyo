@@ -1032,13 +1032,30 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                   ))}
                 </div>
                 <div className="text-xs text-blue-600 mt-1">
-                  希望時間: {selectedTimeSlot ? (
-                    selectedTimeSlot === 'morning' || selectedTimeSlot === 'am' ? '9:00-13:00' :
-                    selectedTimeSlot === 'afternoon' || selectedTimeSlot === 'pm' ? '13:00-18:00' :
-                    selectedTimeSlot === 'full' ? '9:00-18:00' :
-                    selectedTimeSlot === 'consult' || selectedTimeSlot === 'negotiable' ? '要相談' :
-                    selectedTimeSlot === 'custom' ? `${startTime}-${endTime}` : selectedTimeSlot
-                  ) : '未選択'}
+                  希望時間: {(() => {
+                    if (!selectedTimeSlot) return '未選択';
+                    
+                    // カスタム時間モードの場合は実際の時間を表示
+                    if (selectedTimeSlot === 'custom') {
+                      return `${startTime}-${endTime}`;
+                    }
+                    
+                    // 定型時間帯の場合は開始時間と終了時間で表示
+                    if (selectedTimeSlot === 'morning' || selectedTimeSlot === 'am') {
+                      return '9:00-13:00';
+                    }
+                    if (selectedTimeSlot === 'afternoon' || selectedTimeSlot === 'pm') {
+                      return '13:00-18:00';
+                    }
+                    if (selectedTimeSlot === 'full') {
+                      return '9:00-18:00';
+                    }
+                    if (selectedTimeSlot === 'consult' || selectedTimeSlot === 'negotiable') {
+                      return '要相談';
+                    }
+                    
+                    return selectedTimeSlot;
+                  })()}
                 </div>
               </div>
             )}
