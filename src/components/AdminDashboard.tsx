@@ -1010,15 +1010,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const hasConfirmed = Array.isArray(assigned)
         ? (assigned as any[]).some((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
         : false;
-      if (hasConfirmed && aiMatches && aiMatches.length > 0) {
+      if (hasConfirmed) {
         console.log('Clearing AI matches because selected date has confirmed shifts', {
           selectedDate,
-          aiCount: aiMatches.length
+          aiCount: aiMatches?.length || 0,
+          confirmedShifts: assigned?.filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')?.length || 0
         });
         setAiMatches([]);
+        // AIマッチング結果の日付別マップもクリア
+        setAiMatchesByDate(prev => {
+          const newMap = { ...prev };
+          delete newMap[selectedDate];
+          return newMap;
+        });
       }
     } catch {}
-  }, [selectedDate, assigned]);
+  }, [selectedDate, assigned, aiMatches]);
 
   // AIマッチング結果を確定シフトに変換
   const convertAIMatchesToShifts = (matches: MatchCandidate[], date: string) => {
@@ -3856,6 +3863,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   // 確定シフトがある場合はAIマッチング結果を表示しない
                   const hasConfirmedShifts = dayAssignedShifts.length > 0;
                   
+                  // AIマッチング結果は確定シフトがない場合のみ表示
                   if (dayMatches.length > 0 && selectedDate && !hasConfirmedShifts) {
                     return (
                       <div className="p-4 border-b border-gray-200">
