@@ -1210,9 +1210,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                     }
                     return null;
                   })()}
-                  {/* 募集中シフト数（青色）を表示（確定シフトがない場合） */}
-                  {/* シフトが確定済みの場合は募集パッチを非表示 */}
-                  {!isSystemConfirmed && (() => {
+                  {/* 募集中シフト数（青色）を表示（募集締切でない限り） */}
+                  {isRecruitmentOpen && (() => {
                     const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                     const hasConfirmed = confirmedShifts.some((s: any) => s.date === dateStr);
                     if (hasConfirmed) return null;
@@ -1238,7 +1237,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             <div className="flex items-center space-x-2">
               <Plus className="w-5 h-5" />
               <h2 className="text-xl font-semibold">
-                {isSystemConfirmed ? '確定シフト詳細' : '薬剤師募集登録'}
+                薬剤師募集登録
               </h2>
             </div>
             <button
@@ -1249,7 +1248,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             </button>
           </div>
           <p className="text-xs text-blue-100 mt-1">
-            {isSystemConfirmed ? '確定されたシフトの詳細を確認できます' : '必要な薬剤師の募集条件を設定してください'}
+            必要な薬剤師の募集条件を設定してください
           </p>
         </div>
         <div className="p-4 lg:p-6 space-y-6 pb-20">
@@ -1414,7 +1413,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             console.log('selectedDates:', selectedDates);
             console.log('confirmedShifts.length:', confirmedShifts.length);
             console.log('confirmedShifts:', confirmedShifts);
-            return isSystemConfirmed && selectedDates.length > 0;
+            return selectedDates.length > 0 && confirmedShifts.length > 0;
           })() && (
             <div className="p-4 bg-green-50 rounded-lg">
               <h3 className="text-sm font-medium text-green-800 mb-3">確定シフト一覧</h3>
@@ -2000,8 +1999,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                         console.log('=== BUTTON CLICK START ===');
                         console.log('Form state:', { selectedDates, timeSlot, requiredStaff });
                         
-                        if (isSystemConfirmed) {
-                          alert('シフト確定済みのため編集できません');
+                        if (!isRecruitmentOpen) {
+                          alert('募集締切中のため編集できません');
                           return;
                         }
                         if (selectedDates.length === 0 || (!customTimeMode && !timeSlot) || (customTimeMode && (!startTime || !endTime)) || !requiredStaff) {
@@ -2013,13 +2012,13 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                         handlePost();
                       }}
                       className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                        !isRecruitmentOpen || isSystemConfirmed
+                        !isRecruitmentOpen
                           ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                           : 'bg-amber-600 text-white hover:bg-amber-700'
                       }`}
-                      disabled={!isRecruitmentOpen || isSystemConfirmed}
+                      disabled={!isRecruitmentOpen}
                     >
-                      {!isRecruitmentOpen ? '募集締切中' : isSystemConfirmed ? 'シフト確定済み' : '募集を更新'}
+                      {!isRecruitmentOpen ? '募集締切中' : '募集を更新'}
                     </button>
                     <button
                       type="button"
@@ -2055,8 +2054,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                         console.log('=== BUTTON CLICK START ===');
                         console.log('Form state:', { selectedDates, timeSlot, requiredStaff });
                         
-                        if (isSystemConfirmed) {
-                          alert('シフト確定済みのため編集できません');
+                        if (!isRecruitmentOpen) {
+                          alert('募集締切中のため編集できません');
                           return;
                         }
                         if (selectedDates.length === 0 || (!customTimeMode && !timeSlot) || (customTimeMode && (!startTime || !endTime)) || !requiredStaff) {
@@ -2068,13 +2067,13 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                         handlePost();
                       }}
                       className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                        !isRecruitmentOpen || isSystemConfirmed
+                        !isRecruitmentOpen
                           ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                           : 'bg-blue-600 text-white hover:bg-blue-700'
                       }`}
-                      disabled={!isRecruitmentOpen || isSystemConfirmed}
+                      disabled={!isRecruitmentOpen}
                     >
-                      {!isRecruitmentOpen ? '募集締切中' : isSystemConfirmed ? 'シフト確定済み' : '募集を追加'}
+                      {!isRecruitmentOpen ? '募集締切中' : '募集を追加'}
                     </button>
                   </div>
                 );

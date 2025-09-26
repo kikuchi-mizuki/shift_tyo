@@ -868,9 +868,8 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                         <span className="hidden sm:inline">確定</span>
                       </div>
                     )}
-                    {/* 確定シフトがない場合のみ希望バッジを表示 */}
-                    {/* シフトが確定済みの場合は希望パッチを非表示 */}
-                    {!isSystemConfirmed && !hasMyShift(day) && hasMyRequest(day) && (
+                    {/* 希望バッジを表示（募集締切でない限り） */}
+                    {isRecruitmentOpen && hasMyRequest(day) && (
                       <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">
                         <span className="sm:hidden">希</span>
                         <span className="hidden sm:inline">希望</span>
@@ -888,7 +887,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                       <div className="p-4 lg:p-6 pb-20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">
-                {isSystemConfirmed ? '確定シフト詳細' : 'シフト希望登録'}
+                シフト希望登録
               </h2>
               <button
                 onClick={() => setShowProfileEdit(!showProfileEdit)}
@@ -923,7 +922,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
             )}
             
             {/* 確定シフトの詳細表示 */}
-            {isSystemConfirmed && selectedDates.length > 0 && (
+            {selectedDates.length > 0 && myShifts.length > 0 && (
               <div className="mb-6 p-4 bg-green-50 rounded-lg">
                 <h3 className="text-sm font-medium text-green-800 mb-3">確定シフト一覧</h3>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -1187,13 +1186,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
             </div>
 
             {/* 登録/削除ボタン */}
-            {isSystemConfirmed ? (
+            {!isRecruitmentOpen ? (
               <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium text-sm sm:text-base break-words mt-4 mb-4">
-                シフト確定済みのため編集できません
-              </div>
-            ) : selectedDates.length > 0 && myShifts.some((s: any) => selectedDates.includes(s.date)) ? (
-              <div className="w-full py-3 px-4 rounded-lg bg-gray-400 text-white text-center font-medium text-sm sm:text-base break-words mt-4 mb-4">
-                確定済みのため編集できません
+                募集締切中のため編集できません
               </div>
             ) : (() => {
               // 選択された日付に既存の希望があるかチェック
