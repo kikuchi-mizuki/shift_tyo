@@ -1983,6 +1983,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // 募集締切/再開を切り替える関数
   const toggleRecruitmentStatus = async () => {
     try {
+      // 権限チェック（管理者のみ）
+      const { data: authInfo } = await supabase.auth.getUser();
+      const currentUserId = authInfo?.user?.id || user?.id;
+      if (!currentUserId) {
+        alert('ログイン情報を取得できません。再ログインしてください。');
+        return;
+      }
+      const { data: me, error: meErr } = await supabase
+        .from('user_profiles')
+        .select('id,user_type,email')
+        .eq('id', currentUserId)
+        .maybeSingle();
+      if (meErr) {
+        console.error('管理者確認エラー:', meErr);
+      }
+      if (!me || me.user_type !== 'admin') {
+        alert('この操作には管理者権限が必要です。管理者でログインしてください。');
+        return;
+      }
+
+      // 行の存在確認
+      const { data: existingRow } = await supabase
+        .from('recruitment_status')
+        .select('id,is_open')
+        .eq('id', '00000000-0000-0000-0000-000000000001')
+        .maybeSingle();
+      if (!existingRow) {
+        alert('recruitment_status の対象行が見つかりません。初期化SQLの実行をご確認ください。');
+        return;
+      }
+
       const newStatus = !recruitmentStatus.is_open;
       const action = newStatus ? '再開' : '締切';
       
@@ -2005,7 +2036,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
 
       if (!updatedRow) {
-        alert('募集状況の更新結果が取得できませんでした（該当行が見つからない可能性）。');
+        alert('募集状況の更新結果が取得できませんでした（権限または該当行が見つからない可能性）。管理者でログイン中か、初期レコードが存在するかご確認ください。');
         return;
       }
       
