@@ -3974,7 +3974,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           {/* マッチング */}
           <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
             <div className="bg-white rounded-lg shadow p-4 mb-4">
-              <h3 className="font-semibold text-gray-800 mb-3">1ヶ月分マッチング</h3>
               <div className="space-y-2">
                 <button
                   onClick={executeMonthlyAIMatching}
