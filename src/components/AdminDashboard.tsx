@@ -859,6 +859,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           });
         } catch {}
         setAiMatches([]);
+        setAiMatchingLoading(false);
         alert('この日は既に確定シフトがあります。AIマッチングは実行しません。');
         return;
       }
@@ -939,6 +940,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           });
         } catch {}
         setAiMatches([]);
+        setAiMatchingLoading(false);
         return;
       }
 
