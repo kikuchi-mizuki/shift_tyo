@@ -1956,7 +1956,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const loadRecruitmentStatus = async () => {
     try {
       // 固定レコードIDを直接参照（存在しない場合の誤検知を避ける）
-      const FIXED_ID = '00000000-0000-0000-0000-000000000001';
+      const FIXED_ID = '00000000-0000-0000-0000-000000000000';
       const { data, error } = await supabase
         .from('recruitment_status')
         .select('*')
@@ -2005,7 +2005,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
 
       // 固定IDへupsert（存在しなければ作成、あれば更新）
-      const FIXED_ID = '00000000-0000-0000-0000-000000000001';
+      const FIXED_ID = '00000000-0000-0000-0000-000000000000';
 
       const newStatus = !recruitmentStatus.is_open;
       const action = newStatus ? '再開' : '締切';
