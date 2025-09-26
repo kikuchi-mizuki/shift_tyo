@@ -3969,52 +3969,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
           <div className="bg-purple-600 text-white p-4 rounded-t-lg flex-shrink-0">
             <h2 className="text-xl font-semibold">管理者パネル</h2>
-            <p className="text-sm text-purple-100 mt-1">システム全体の状態管理と調整</p>
           </div>
           
           {/* 募集管理 */}
           <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
             <div className="bg-white rounded-lg shadow p-4 mb-4">
-              <div className="flex items-center space-x-2 mb-3">
-                <AlertCircle className={`w-5 h-5 ${recruitmentStatus.is_open ? 'text-green-600' : 'text-red-600'}`} />
-                <h3 className="font-semibold text-gray-800">募集管理</h3>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">
-                募集を締め切ると薬局・薬剤師画面での編集ができなくなります。
-              </p>
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-sm">
-                  <span className={`font-medium ${recruitmentStatus.is_open ? 'text-green-600' : 'text-red-600'}`}>
-                    現在の状況: {recruitmentStatus.is_open ? '募集受付中' : '募集締切中'}
-                  </span>
-                  {recruitmentStatus.updated_at && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      最終更新: {new Date(recruitmentStatus.updated_at).toLocaleString('ja-JP')}
-                    </div>
-                  )}
-                </div>
+              <h3 className="font-semibold text-gray-800 mb-3">募集管理</h3>
+              <div className="mb-3">
+                <span className={`inline-flex items-center px-2 py-1 rounded text-sm font-medium ${
+                  recruitmentStatus.is_open 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {recruitmentStatus.is_open ? '募集受付中' : '募集締切中'}
+                </span>
               </div>
               <button
                 onClick={toggleRecruitmentStatus}
-                className={`w-full py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2 ${
+                className={`w-full py-2 px-4 rounded-lg font-medium text-sm ${
                   recruitmentStatus.is_open 
                     ? 'bg-red-600 hover:bg-red-700 text-white' 
                     : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
               >
-                <AlertCircle className="w-4 h-4" />
-                <span>{recruitmentStatus.is_open ? '募集を締め切る' : '募集を再開する'}</span>
+                {recruitmentStatus.is_open ? '募集を締め切る' : '募集を再開する'}
               </button>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4 mb-4">
-              <div className="flex items-center space-x-2 mb-3">
-                <Brain className="w-5 h-5 text-purple-600" />
-                <h3 className="font-semibold text-gray-800">1ヶ月分マッチング</h3>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">
-                今月の全ての希望シフトと募集シフトを一括でマッチングします。
-              </p>
+              <h3 className="font-semibold text-gray-800 mb-3">1ヶ月分マッチング</h3>
               <div className="space-y-2">
                 <button
                   onClick={executeMonthlyAIMatching}
@@ -4034,9 +4017,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   )}
                 </button>
               </div>
-            </div>
-            <div className="text-sm text-gray-600 mb-2">
-              <p>カレンダーの日付をクリックして選択すると、右側に「マッチング結果」と「シフトを確定」ボタンが表示されます。</p>
             </div>
           </div>
 
