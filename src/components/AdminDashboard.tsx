@@ -4132,18 +4132,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 });
                                 
                                 return (
-                                  <div key={index} className="bg-white rounded border p-2 text-xs">
-                                    <div className="font-medium text-gray-800">
-                                      {pharmacy.name}（{pharmacy.store_name || '店舗名なし'}）
+                                  <div key={index} className="bg-white rounded border p-3 text-sm">
+                                    <div className="font-semibold text-gray-800 mb-2">
+                                      {pharmacy.store_name || pharmacy.name}
                                     </div>
-                                    <div className="text-gray-600">
-                                      必要人数: {pharmacy.required}人
-                                    </div>
-                                    <div className="text-gray-600">
-                                      マッチ人数: {pharmacy.matched}人
-                                    </div>
-                                    <div className="text-red-600 font-medium">
-                                      不足人数: {pharmacy.shortage}人
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                      <div className="text-gray-600">
+                                        不足人数: <span className="text-red-600 font-semibold">{pharmacy.shortage}人</span>
+                                      </div>
+                                      <div className="text-gray-600">
+                                        時間: {pharmacy.start_time || '09:00'}-{pharmacy.end_time || '18:00'}
+                                      </div>
                                     </div>
                                     
                                     {/* 手動マッチング用のプルダウン */}
@@ -4302,20 +4301,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 });
                                 
                                 return (
-                                  <div key={index} className="bg-white rounded border p-2 text-xs">
-                                    <div className="flex justify-between items-start">
-                                      <div>
-                                        <div className="font-medium text-gray-800">
-                                          {pharmacy.name}{pharmacy.store_name ? `（${pharmacy.store_name}）` : ''}
-                                        </div>
-                                        <div className="text-gray-600 mt-1">
-                                          必要: {pharmacy.required}人 / マッチ: {pharmacy.matched}人
-                                        </div>
+                                  <div key={index} className="bg-white rounded border p-3 text-sm">
+                                    <div className="font-semibold text-gray-800 mb-2">
+                                      {pharmacy.store_name || pharmacy.name}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                      <div className="text-gray-600">
+                                        不足人数: <span className="text-red-600 font-semibold">{pharmacy.shortage}人</span>
                                       </div>
-                                      <div className="text-right">
-                                        <div className="text-red-600 font-medium">
-                                          不足 {pharmacy.shortage}人
-                                        </div>
+                                      <div className="text-gray-600">
+                                        時間: {pharmacy.start_time || '09:00'}-{pharmacy.end_time || '18:00'}
                                       </div>
                                     </div>
                                     
