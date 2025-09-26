@@ -2011,12 +2011,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       
       const { data: updatedRow, error } = await supabase
         .from('recruitment_status')
-        .upsert({
-          id: FIXED_ID,
+        .update({
           is_open: newStatus,
           // updated_by はRLS/外部キーの影響を避けるため一旦書かない
           notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
-        }, { onConflict: 'id' })
+        })
+        .eq('id', FIXED_ID)
         .select('id,is_open,updated_at')
         .maybeSingle();
       
