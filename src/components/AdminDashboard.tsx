@@ -2010,16 +2010,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const newStatus = !recruitmentStatus.is_open;
       const action = newStatus ? '再開' : '締切';
       
+      // まず UPDATE を試みる（既存レコードがある前提）
       const { data: updatedRow, error } = await supabase
         .from('recruitment_status')
-        .upsert({
-          id: FIXED_ID,
+        .update({
           is_open: newStatus,
           // updated_by はRLS/外部キーの影響を避けるため一旦書かない
           notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
-        }, { onConflict: 'id' })
+        })
+        .eq('id', FIXED_ID)
         .select('id,is_open,updated_at')
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('募集状況更新エラー:', error);
