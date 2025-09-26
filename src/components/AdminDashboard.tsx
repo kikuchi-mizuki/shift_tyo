@@ -3997,15 +3997,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
             {/* 募集管理 */}
             <div className="bg-white rounded-lg shadow p-4 mb-4">
-              <div className="mb-3">
-                <span className={`inline-flex items-center px-2 py-1 rounded text-sm font-medium ${
-                  recruitmentStatus.is_open 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {recruitmentStatus.is_open ? '募集受付中' : '募集締切中'}
-                </span>
-              </div>
               <button
                 onClick={toggleRecruitmentStatus}
                 className={`w-full py-2 px-4 rounded-lg font-medium text-sm ${
