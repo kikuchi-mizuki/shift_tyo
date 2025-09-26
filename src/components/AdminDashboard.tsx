@@ -2033,8 +2033,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
         })
         .eq('id', FIXED_ID)
-        .select('id,is_open,updated_at')
-        .maybeSingle();
+        .select('id,is_open,updated_at,notes');
       
       const resultInfo = {
         updatedRow,
