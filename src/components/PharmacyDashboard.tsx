@@ -1531,11 +1531,11 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                           
                           // 定型時間帯の処理
                           if (timeSlot === 'morning' || timeSlot === 'am') {
-                            return '午前 (9:00-13:00)';
+                            return '9:00-13:00';
                           } else if (timeSlot === 'afternoon' || timeSlot === 'pm') {
-                            return '午後 (13:00-18:00)';
+                            return '13:00-18:00';
                           } else if (timeSlot === 'full' || timeSlot === 'fullday') {
-                            return '終日 (9:00-18:00)';
+                            return '9:00-18:00';
                           } else if (timeSlot === 'consult' || timeSlot === 'negotiable') {
                             return '要相談';
                           } else if (timeSlot === 'evening' || timeSlot === 'night') {
@@ -1863,9 +1863,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
             {!customTimeMode ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {[{id:'morning',label:'午前 (9:00-13:00)',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
-                  {id:'afternoon',label:'午後 (13:00-18:00)',icon:Sun,color:'bg-orange-500 hover:bg-orange-600'},
-                  {id:'full',label:'終日 (9:00-18:00)',icon:Users,color:'bg-yellow-500 hover:bg-yellow-600'}].map(slot=>{
+                {[{id:'morning',label:'9:00-13:00',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
+                  {id:'afternoon',label:'13:00-18:00',icon:Sun,color:'bg-orange-500 hover:bg-orange-600'},
+                  {id:'full',label:'9:00-18:00',icon:Users,color:'bg-yellow-500 hover:bg-yellow-600'}].map(slot=>{
                     const Icon = slot.icon as any;
                     return (
                       <button 

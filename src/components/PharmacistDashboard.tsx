@@ -773,9 +773,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   };
 
   const timeSlots = [
-    { id: 'morning', label: '午前 (9:00-13:00)', icon: Sun, color: 'bg-green-500 hover:bg-green-600' },
-    { id: 'afternoon', label: '午後 (13:00-18:00)', icon: Sun, color: 'bg-orange-500 hover:bg-orange-600' },
-    { id: 'full', label: '終日 (9:00-18:00)', icon: Smile, color: 'bg-yellow-500 hover:bg-yellow-600' }
+    { id: 'morning', label: '9:00-13:00', icon: Sun, color: 'bg-green-500 hover:bg-green-600' },
+    { id: 'afternoon', label: '13:00-18:00', icon: Sun, color: 'bg-orange-500 hover:bg-orange-600' },
+    { id: 'full', label: '9:00-18:00', icon: Smile, color: 'bg-yellow-500 hover:bg-yellow-600' }
   ];
 
   const priorities = [
@@ -999,9 +999,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                               return `${shift.start_time.slice(0,5)}-${shift.end_time.slice(0,5)}`;
                             }
                             // 時間が設定されていない場合は従来の表示
-                            return shift.time_slot === 'morning' || shift.time_slot === 'am' ? '午前 (9:00-13:00)' :
-                                   shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '午後 (13:00-18:00)' :
-                                   shift.time_slot === 'full' || shift.time_slot === 'fullday' ? '終日 (9:00-18:00)' :
+                            return shift.time_slot === 'morning' || shift.time_slot === 'am' ? '9:00-13:00' :
+                                   shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '13:00-18:00' :
+                                   shift.time_slot === 'full' || shift.time_slot === 'fullday' ? '9:00-18:00' :
                                    shift.time_slot === 'consult' ? '要相談' :
                                    shift.time_slot === 'custom' ? 'カスタム' : '夜間';
                           })()}
@@ -1033,9 +1033,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                 </div>
                 <div className="text-xs text-blue-600 mt-1">
                   希望時間: {selectedTimeSlot ? (
-                    selectedTimeSlot === 'morning' || selectedTimeSlot === 'am' ? '午前 (9:00-13:00)' :
-                    selectedTimeSlot === 'afternoon' || selectedTimeSlot === 'pm' ? '午後 (13:00-18:00)' :
-                    selectedTimeSlot === 'full' ? '終日 (9:00-18:00)' :
+                    selectedTimeSlot === 'morning' || selectedTimeSlot === 'am' ? '9:00-13:00' :
+                    selectedTimeSlot === 'afternoon' || selectedTimeSlot === 'pm' ? '13:00-18:00' :
+                    selectedTimeSlot === 'full' ? '9:00-18:00' :
                     selectedTimeSlot === 'consult' ? '要相談' :
                     selectedTimeSlot === 'custom' ? `${startTime}-${endTime}` : selectedTimeSlot
                   ) : '未選択'}
