@@ -29,6 +29,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const [singleStoreName, setSingleStoreName] = useState('');
   const [batchStoreNames, setBatchStoreNames] = useState<string[]>([]); // 追加リスト
   const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
+  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
   // quick add input removed per request
 
   // 日付をリストに追加する関数
@@ -86,7 +87,31 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     } catch {}
     // 2) サーバーデータを正とする
     loadData();
+    checkRecruitmentStatus();
   }, [user]);
+
+  // 募集状況をチェックする関数
+  const checkRecruitmentStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('recruitment_status')
+        .select('is_open')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error('募集状況チェックエラー:', error);
+        return;
+      }
+      
+      if (data) {
+        setIsRecruitmentOpen(data.is_open);
+      }
+    } catch (error) {
+      console.error('募集状況チェックエラー:', error);
+    }
+  };
 
   // メモに埋め込んだ [store:◯◯] から店舗名を抽出（store_name が無いときのフォールバック）
   // function 宣言でTDZを回避（先に利用されてもOK）
@@ -783,6 +808,12 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const handlePost = async () => {
     console.log('=== handlePost START ===');
     console.log('handlePost called', { selectedDates, timeSlot, requiredStaff });
+    
+    // 募集締切チェック
+    if (!isRecruitmentOpen) {
+      alert('現在募集は締め切られています。管理者にお問い合わせください。');
+      return;
+    }
     
     // バリデーション
     if (selectedDates.length === 0) {
@@ -1981,10 +2012,14 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                         console.log('Validation passed, calling handlePost');
                         handlePost();
                       }}
-                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-amber-600 text-white hover:bg-amber-700 text-sm sm:text-base"
-                      disabled={isSystemConfirmed}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                        !isRecruitmentOpen || isSystemConfirmed
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          : 'bg-amber-600 text-white hover:bg-amber-700'
+                      }`}
+                      disabled={!isRecruitmentOpen || isSystemConfirmed}
                     >
-                      募集を更新
+                      {!isRecruitmentOpen ? '募集締切中' : isSystemConfirmed ? 'シフト確定済み' : '募集を更新'}
                     </button>
                     <button
                       type="button"
@@ -1999,9 +2034,14 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                           alert('削除対象の募集が見つかりません');
                         }
                       }}
-                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-red-600 text-white hover:bg-red-700 text-sm sm:text-base"
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                        !isRecruitmentOpen
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          : 'bg-red-600 text-white hover:bg-red-700'
+                      }`}
+                      disabled={!isRecruitmentOpen}
                     >
-                      募集を削除
+                      {!isRecruitmentOpen ? '募集締切中' : '募集を削除'}
                     </button>
                   </div>
                 );
@@ -2027,12 +2067,14 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                         console.log('Validation passed, calling handlePost');
                         handlePost();
                       }}
-                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer text-sm sm:text-base ${
-                        isSystemConfirmed ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                        !isRecruitmentOpen || isSystemConfirmed
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
                       }`}
-                      disabled={isSystemConfirmed}
+                      disabled={!isRecruitmentOpen || isSystemConfirmed}
                     >
-                      {isSystemConfirmed ? 'シフト確定済み' : '募集を追加'}
+                      {!isRecruitmentOpen ? '募集締切中' : isSystemConfirmed ? 'シフト確定済み' : '募集を追加'}
                     </button>
                   </div>
                 );

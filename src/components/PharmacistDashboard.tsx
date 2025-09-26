@@ -16,6 +16,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [endTime, setEndTime] = useState('13:00');
   const [selectedPriority, setSelectedPriority] = useState('medium');
   const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
+  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
 
   // 日付をリストに追加する関数
   const addDateToList = () => {
@@ -79,7 +80,31 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       console.error('[PD] PharmacistDashboard mounted', { userId: user?.id });
     } catch {}
     loadShifts();
+    checkRecruitmentStatus();
   }, [user]);
+
+  // 募集状況をチェックする関数
+  const checkRecruitmentStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('recruitment_status')
+        .select('is_open')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error('募集状況チェックエラー:', error);
+        return;
+      }
+      
+      if (data) {
+        setIsRecruitmentOpen(data.is_open);
+      }
+    } catch (error) {
+      console.error('募集状況チェックエラー:', error);
+    }
+  };
 
   // デバッグ用: 状態の変更を監視
   useEffect(() => {
@@ -637,6 +662,12 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const handleSubmit = async () => {
     console.log('PharmacistDashboard: handleSubmit called');
       console.log('Form data:', { selectedDates, selectedTimeSlot, userId: user.id });
+    
+    // 募集締切チェック
+    if (!isRecruitmentOpen) {
+      alert('現在募集は締め切られています。管理者にお問い合わせください。');
+      return;
+    }
     
     if (selectedDates.length === 0 || (!customTimeMode && !selectedTimeSlot)) {
       alert('日付と時間帯を選択してください');
@@ -1213,9 +1244,14 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                   <div className="mt-4 mb-4">
                     <button
                       onClick={handleSubmit}
-                      className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 text-sm sm:text-base"
+                      disabled={!isRecruitmentOpen}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                        isRecruitmentOpen 
+                          ? 'bg-green-600 text-white hover:bg-green-700' 
+                          : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                      }`}
                     >
-                      希望を追加
+                      {isRecruitmentOpen ? '希望を追加' : '募集締切中'}
                     </button>
                   </div>
                 );

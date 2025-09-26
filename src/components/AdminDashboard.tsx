@@ -28,6 +28,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     pharmacists: false
   });
 
+  // 募集状況管理
+  const [recruitmentStatus, setRecruitmentStatus] = useState<{
+    is_open: boolean;
+    updated_at: string;
+    updated_by: string | null;
+    notes: string | null;
+  }>({
+    is_open: true,
+    updated_at: '',
+    updated_by: null,
+    notes: null
+  });
+
   // AI Matching関連の状態
   const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
   const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
@@ -1939,6 +1952,74 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
+  // 募集状況を読み込む関数
+  const loadRecruitmentStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('recruitment_status')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error('募集状況読み込みエラー:', error);
+        return;
+      }
+      
+      if (data) {
+        setRecruitmentStatus({
+          is_open: data.is_open,
+          updated_at: data.updated_at,
+          updated_by: data.updated_by,
+          notes: data.notes
+        });
+      }
+    } catch (error) {
+      console.error('募集状況読み込みエラー:', error);
+    }
+  };
+
+  // 募集締切/再開を切り替える関数
+  const toggleRecruitmentStatus = async () => {
+    try {
+      const newStatus = !recruitmentStatus.is_open;
+      const action = newStatus ? '再開' : '締切';
+      
+      const { error } = await supabase
+        .from('recruitment_status')
+        .update({
+          is_open: newStatus,
+          updated_by: user.id,
+          notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
+        })
+        .eq('id', '00000000-0000-0000-0000-000000000001');
+      
+      if (error) {
+        console.error('募集状況更新エラー:', error);
+        alert(`募集状況の更新に失敗しました: ${error.message}`);
+        return;
+      }
+      
+      // ローカル状態を更新
+      setRecruitmentStatus(prev => ({
+        ...prev,
+        is_open: newStatus,
+        updated_at: new Date().toISOString(),
+        updated_by: user.id,
+        notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
+      }));
+      
+      alert(`募集を${action}しました`);
+      
+      // 募集状況を再読み込み
+      await loadRecruitmentStatus();
+    } catch (error) {
+      console.error('募集状況切り替えエラー:', error);
+      alert(`募集状況の切り替えに失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   const loadAll = async () => {
     try {
       console.log('🚀🚀🚀 ADMIN DASHBOARD loadAll STARTED 🚀🚀🚀');
@@ -1961,6 +2042,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       logToRailway('=== LOADALL START ===');
       logToRailway('Loading all data...');
+      
+      // 募集状況を読み込み
+      await loadRecruitmentStatus();
       
       // 直接Supabaseからassigned_shiftsを取得
       logToRailway('Attempting to load all assigned shifts...');
@@ -3784,8 +3868,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             <p className="text-sm text-purple-100 mt-1">システム全体の状態管理と調整</p>
           </div>
           
-          {/* 1ヶ月分マッチング実行ボタン */}
+          {/* 募集管理 */}
           <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow p-4 mb-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <AlertCircle className={`w-5 h-5 ${recruitmentStatus.is_open ? 'text-green-600' : 'text-red-600'}`} />
+                <h3 className="font-semibold text-gray-800">募集管理</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">
+                募集を締め切ると薬局・薬剤師画面での編集ができなくなります。
+              </p>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm">
+                  <span className={`font-medium ${recruitmentStatus.is_open ? 'text-green-600' : 'text-red-600'}`}>
+                    現在の状況: {recruitmentStatus.is_open ? '募集受付中' : '募集締切中'}
+                  </span>
+                  {recruitmentStatus.updated_at && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      最終更新: {new Date(recruitmentStatus.updated_at).toLocaleString('ja-JP')}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={toggleRecruitmentStatus}
+                className={`w-full py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2 ${
+                  recruitmentStatus.is_open 
+                    ? 'bg-red-600 hover:bg-red-700 text-white' 
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span>{recruitmentStatus.is_open ? '募集を締め切る' : '募集を再開する'}</span>
+              </button>
+            </div>
+
             <div className="bg-white rounded-lg shadow p-4 mb-4">
               <div className="flex items-center space-x-2 mb-3">
                 <Brain className="w-5 h-5 text-purple-600" />
