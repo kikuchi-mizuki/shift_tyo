@@ -1986,19 +1986,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const newStatus = !recruitmentStatus.is_open;
       const action = newStatus ? '再開' : '締切';
       
-      const { error } = await supabase
+      const { data: updatedRow, error } = await supabase
         .from('recruitment_status')
         .update({
           is_open: newStatus,
           // updated_by はRLS/外部キーの影響を避けるため一旦書かない
           notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
         })
-        .eq('id', '00000000-0000-0000-0000-000000000001');
+        .eq('id', '00000000-0000-0000-0000-000000000001')
+        .select('id,is_open,updated_at')
+        .single();
       
       if (error) {
         console.error('募集状況更新エラー:', error);
         const message = typeof error === 'object' && error !== null ? (error as any).message || (error as any).hint || JSON.stringify(error) : String(error);
         alert(`募集状況の更新に失敗しました: ${message}`);
+        return;
+      }
+
+      if (!updatedRow) {
+        alert('募集状況の更新結果が取得できませんでした（該当行が見つからない可能性）。');
         return;
       }
       
