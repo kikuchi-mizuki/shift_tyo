@@ -77,6 +77,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // 簡易AIマッチング関数（従来のロジックを踏襲）
   const executeSimpleAIMatching = async (requests: any[], postings: any[]) => {
     console.log('簡易AIマッチング開始:', { requests: requests.length, postings: postings.length });
+    console.log('薬剤師希望詳細:', requests.map(r => ({ 
+      id: r.pharmacist_id, 
+      time: `${r.start_time}-${r.end_time}`,
+      priority: r.priority 
+    })));
+    console.log('薬局募集詳細:', postings.map(p => ({ 
+      id: p.pharmacy_id, 
+      time: `${p.start_time}-${p.end_time}`,
+      required: p.required_staff,
+      store: p.store_name 
+    })));
     
     const matches: any[] = [];
     const usedPharmacists = new Set<string>();
@@ -1118,7 +1129,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     });
 
     // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-    return requestStart <= postingStart && requestEnd >= postingEnd;
+    const isFullyCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
+    
+    console.log('時間適合性詳細:', {
+      request: { start: rs, end: re, startMin: requestStart, endMin: requestEnd },
+      posting: { start: ps, end: pe, startMin: postingStart, endMin: postingEnd },
+      condition: `${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd}`,
+      result: isFullyCompatible
+    });
+    
+    return isFullyCompatible;
   };
 
   // 薬剤師の評価を取得する関数
@@ -3658,7 +3678,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           const postingEnd = timeToMinutes(pe);
 
           // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-          return requestStart <= postingStart && requestEnd >= postingEnd;
+          const isFullyCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
+          
+          console.log('時間適合性詳細:', {
+            request: { start: rs, end: re, startMin: requestStart, endMin: requestEnd },
+            posting: { start: ps, end: pe, startMin: postingStart, endMin: postingEnd },
+            condition: `${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd}`,
+            result: isFullyCompatible
+          });
+          
+          return isFullyCompatible;
           };
           
         if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
