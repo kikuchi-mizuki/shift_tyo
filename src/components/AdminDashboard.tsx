@@ -4275,6 +4275,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               const selectedPharmacists = manualMatches[pharmacy.id] || [];
                               for (const pharmacistId of selectedPharmacists) {
                                 if (pharmacistId) {
+                                  // デバッグ: 薬局の時間を確認
+                                  console.log('=== 手動マッチング時間デバッグ ===');
+                                  console.log('薬局ID:', pharmacy.id);
+                                  console.log('薬局名:', pharmacy.name);
+                                  console.log('店舗名:', pharmacy.store_name);
+                                  console.log('pharmacy.start_time:', pharmacy.start_time);
+                                  console.log('pharmacy.end_time:', pharmacy.end_time);
+                                  console.log('pharmacy.postings:', pharmacy.postings);
+                                  
                                   // 薬局の時間に合わせて希望シフトを作成
                                   manualShiftRequests.push({
                                     pharmacist_id: pharmacistId,
