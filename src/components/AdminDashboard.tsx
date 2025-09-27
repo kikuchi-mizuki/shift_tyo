@@ -2041,16 +2041,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('action:', action);
       console.log('current user:', currentUserId);
       
-      // upsertを使用して確実に更新または作成
+      // まずUPDATEを試行
       const { data: updatedRow, error } = await supabase
         .from('recruitment_status')
-        .upsert({
-          id: FIXED_ID,
+        .update({
           is_open: newStatus,
           notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
-        }, {
-          onConflict: 'id'
         })
+        .eq('id', FIXED_ID)
         .select('id,is_open,updated_at,notes');
       
       const resultInfo = {
@@ -2099,8 +2097,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       if (!updatedRow || updatedRow.length === 0) {
         console.log('updatedRow が null または空配列 - レコードが見つからないか更新されなかった');
         
-        // デバッグ情報をモーダルで表示
-        const debugModal = `
+        // レコードが存在しない場合はINSERTを試行
+        console.log('レコードが存在しないため、INSERTを試行します');
+        const { data: insertedRow, error: insertError } = await supabase
+          .from('recruitment_status')
+          .insert({
+            id: FIXED_ID,
+            is_open: newStatus,
+            notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
+          })
+          .select('id,is_open,updated_at,notes');
+        
+        if (insertError) {
+          console.error('INSERTエラー:', insertError);
+          const debugModal = `
 === 募集状況更新デバッグ情報 ===
 
 【リクエスト情報】
@@ -2111,15 +2121,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 - timestamp: ${new Date().toLocaleString('ja-JP')}
 
 【問題】
-- updatedRow が null または空配列 - レコードが見つからないか更新されなかった
-- upsertが失敗した可能性があります
+- UPDATE: updatedRow が null または空配列
+- INSERT: エラーが発生
 
 【レスポンス】
-- updatedRow: ${JSON.stringify(updatedRow, null, 2)}
-- error: ${JSON.stringify(resultInfo.error, null, 2)}
-        `;
+- UPDATE updatedRow: ${JSON.stringify(updatedRow, null, 2)}
+- UPDATE error: ${JSON.stringify(resultInfo.error, null, 2)}
+- INSERT error: ${JSON.stringify(insertError, null, 2)}
+          `;
+          
+          alert(`募集状況の更新に失敗しました。\n\n${debugModal}`);
+          return;
+        }
         
-        alert(`募集状況の更新結果が取得できませんでした。\n\n${debugModal}`);
+        // INSERT成功の場合
+        const finalData = insertedRow[0];
+        setRecruitmentStatus(prev => ({
+          ...prev,
+          is_open: finalData.is_open,
+          updated_at: finalData.updated_at,
+          updated_by: finalData.updated_by,
+          notes: finalData.notes
+        }));
+        
+        alert(`募集を${action}しました（新規作成）`);
+        await loadRecruitmentStatus();
         return;
       }
       
