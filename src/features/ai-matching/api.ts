@@ -154,7 +154,7 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promi
   
   const matches: any[] = [];
   const usedPharmacists = new Set<string>();
-  const usedPharmacies = new Set<string>();
+  const pharmacyUsageCount = new Map<string, number>(); // 薬局・店舗ごとの使用数を追跡
 
   // 薬剤師を評価順にソート
   const sortedRequests = requests.sort((a, b) => {
@@ -166,18 +166,25 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promi
   for (const request of sortedRequests) {
     for (const posting of postings) {
       const isCompatible = isBasicCompatible(request, posting);
+      const uniqueKey = `${posting.pharmacy_id}_${posting.store_name || 'default'}`;
+      const currentUsage = pharmacyUsageCount.get(uniqueKey) || 0;
+      const requiredStaff = posting.required_staff || 1;
+      
       console.log(`Checking compatibility:`, {
         request_id: request.id,
         posting_id: posting.id,
         pharmacist_time: `${request.start_time}-${request.end_time}`,
         pharmacy_time: `${posting.start_time}-${posting.end_time}`,
         isCompatible,
+        uniqueKey,
+        currentUsage,
+        requiredStaff,
         logic: `pharmacist_start(${request.start_time}) <= pharmacy_start(${posting.start_time}) && pharmacist_end(${request.end_time}) >= pharmacy_end(${posting.end_time})`
       });
       
       if (
         !usedPharmacists.has(request.pharmacist_id) &&
-        !usedPharmacies.has(posting.pharmacy_id) &&
+        currentUsage < requiredStaff &&
         isCompatible
       ) {
         matches.push({
@@ -194,7 +201,7 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promi
         });
 
         usedPharmacists.add(request.pharmacist_id);
-        usedPharmacies.add(posting.pharmacy_id);
+        pharmacyUsageCount.set(uniqueKey, currentUsage + 1);
         break;
       }
     }
@@ -211,7 +218,7 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promi
 const executeAIBasedMatching = async (requests: any[], postings: any[]): Promise<any[]> => {
   const matches: any[] = [];
   const usedPharmacists = new Set<string>();
-  const usedPharmacies = new Set<string>();
+  const pharmacyUsageCount = new Map<string, number>(); // 薬局・店舗ごとの使用数を追跡
 
   // AIスコアリング（簡易版）
   const scoredMatches: Array<{ match: any; score: number }> = [];
@@ -244,14 +251,18 @@ const executeAIBasedMatching = async (requests: any[], postings: any[]): Promise
 
   // 最適な組み合わせを選択
   for (const { match } of scoredMatches) {
+    const uniqueKey = `${match.pharmacy_id}_${match.store_name || 'default'}`;
+    const currentUsage = pharmacyUsageCount.get(uniqueKey) || 0;
+    const requiredStaff = postings.find(p => p.pharmacy_id === match.pharmacy_id && p.store_name === match.store_name)?.required_staff || 1;
+    
     if (
       !usedPharmacists.has(match.pharmacist_id) &&
-      !usedPharmacies.has(match.pharmacy_id) &&
+      currentUsage < requiredStaff &&
       match.compatibility_score > 0.3
     ) {
       matches.push(match);
       usedPharmacists.add(match.pharmacist_id);
-      usedPharmacies.add(match.pharmacy_id);
+      pharmacyUsageCount.set(uniqueKey, currentUsage + 1);
     }
   }
 
