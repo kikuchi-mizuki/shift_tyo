@@ -4290,7 +4290,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         )}
 
-                        {/* 不足薬局一覧（マッチング結果がない場合も表示） */}
+                        {/* 不足薬局一覧（マッチング後も不足がある薬局のみ表示） */}
                         {dayShortageAnalysis.length > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                             <div className="flex items-center space-x-2 mb-2">
