@@ -510,6 +510,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           id: pharmacyId,
           name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId ? pharmacyId.slice(-4) : 'unknown'}`,
           store_name: posting.store_name || '店舗名なし',
+          start_time: posting.start_time || '09:00',
+          end_time: posting.end_time || '18:00',
           required: 0,
           matched: 0,
           shortage: 0,
