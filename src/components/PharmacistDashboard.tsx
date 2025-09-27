@@ -98,6 +98,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       }
       
       if (data) {
+        console.log('募集状況チェック結果:', { is_open: data.is_open, current: isRecruitmentOpen });
         setIsRecruitmentOpen(data.is_open);
       }
     } catch (error) {
@@ -111,7 +112,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       checkRecruitmentStatus();
     };
     window.addEventListener('focus', onFocus);
-    const intervalId = window.setInterval(checkRecruitmentStatus, 15000);
+    const intervalId = window.setInterval(checkRecruitmentStatus, 5000); // 5秒ごとにチェック
     return () => {
       window.removeEventListener('focus', onFocus);
       window.clearInterval(intervalId);
@@ -1195,6 +1196,15 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* 募集状況表示 */}
+            <div className={`w-full py-2 px-4 rounded-lg text-center font-medium text-sm mb-3 ${
+              isRecruitmentOpen 
+                ? 'bg-green-100 text-green-800 border border-green-200' 
+                : 'bg-red-100 text-red-800 border border-red-200'
+            }`}>
+              {isRecruitmentOpen ? '✅ 募集受付中' : '❌ 募集締切中'}
             </div>
 
             {/* 登録/削除ボタン */}
