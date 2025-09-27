@@ -146,16 +146,6 @@ ${postings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_tim
 
         // 時間範囲の互換性を考慮
         if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
-          // マッチング成功のログ
-          const successInfo = `✅ AIマッチング成功
-薬剤師: ${pharmacist?.name} (${request.start_time}-${request.end_time})
-薬局: ${pharmacy?.name} (${pharmacyNeed.start_time}-${pharmacyNeed.end_time})
-店舗: ${storeName}
-適合度: ${compatibilityScore.toFixed(2)}`;
-          
-          console.log(successInfo);
-          alert(successInfo);
-          
           // 店舗名を取得
           const getStoreNameFromPosting = (posting: any) => {
             const direct = (posting.store_name || posting.pharmacy_name || '').trim();
@@ -173,6 +163,16 @@ ${postings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_tim
           const ratingScore = getPharmacistRating(request.pharmacist_id) / 5; // 0-1に正規化
           const priorityScore = request.priority === 'high' ? 1 : request.priority === 'medium' ? 0.7 : 0.5;
           const compatibilityScore = (ratingScore * 0.7 + priorityScore * 0.3);
+          
+          // マッチング成功のログ
+          const successInfo = `✅ AIマッチング成功
+薬剤師: ${pharmacist?.name} (${request.start_time}-${request.end_time})
+薬局: ${pharmacy?.name} (${pharmacyNeed.start_time}-${pharmacyNeed.end_time})
+店舗: ${storeName}
+適合度: ${compatibilityScore.toFixed(2)}`;
+          
+          console.log(successInfo);
+          alert(successInfo);
           
           matches.push({
             pharmacist: {
