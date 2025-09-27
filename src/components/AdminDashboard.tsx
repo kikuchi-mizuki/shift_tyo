@@ -4279,10 +4279,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                   manualShiftRequests.push({
                                     pharmacist_id: pharmacistId,
                                     date: selectedDate,
-                                    time_slot: 'fullday',
+                                    time_slot: 'custom', // カスタム時間として明示
                                     start_time: pharmacy.start_time,
                                     end_time: pharmacy.end_time,
-                                    priority: 'medium'
+                                    priority: 'high', // 手動選択なので高優先度
+                                    memo: `手動選択: 薬局${pharmacy.id ? pharmacy.id.slice(-4) : 'unknown'}の応募時間に合わせて希望`
                                   });
                                 }
                               }

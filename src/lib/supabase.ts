@@ -1083,6 +1083,7 @@ export const shiftRequests = {
       const toRange = (slot: string) => {
         if (slot === 'morning') return { start_time: '09:00:00', end_time: '13:00:00' };
         if (slot === 'afternoon') return { start_time: '13:00:00', end_time: '18:00:00' };
+        if (slot === 'custom') return null; // カスタム時間の場合は補完しない
         return { start_time: '09:00:00', end_time: '18:00:00' };
       };
       const normalized = (requestsData || []).map((r: any) => {
@@ -1090,8 +1091,10 @@ export const shiftRequests = {
         let end_time = toHHMMSS(r?.end_time);
         if (!start_time || !end_time) {
           const range = toRange(r?.time_slot || 'full');
-          start_time = range.start_time;
-          end_time = range.end_time;
+          if (range) {
+            start_time = range.start_time;
+            end_time = range.end_time;
+          }
         }
         return { ...r, start_time, end_time };
       });
