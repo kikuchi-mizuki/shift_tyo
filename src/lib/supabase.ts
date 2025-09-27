@@ -1089,7 +1089,8 @@ export const shiftRequests = {
       const normalized = (requestsData || []).map((r: any) => {
         let start_time = toHHMMSS(r?.start_time);
         let end_time = toHHMMSS(r?.end_time);
-        if (!start_time || !end_time) {
+        // customの場合は時間を補完しない
+        if ((!start_time || !end_time) && r?.time_slot !== 'custom') {
           const range = toRange(r?.time_slot || 'full');
           if (range) {
             start_time = range.start_time;
