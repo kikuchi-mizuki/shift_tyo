@@ -92,7 +92,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     const matches: any[] = [];
     const usedPharmacists = new Set<string>();
     const usedPharmacies = new Set<string>();
-    const usedPharmacistTimeSlots = new Set<string>(); // 薬剤師ID + 時間帯の組み合わせを追跡
 
     // ヘルパー関数
     const getProfile = (id: string) => {
@@ -143,12 +142,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
         const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
 
-        // 薬剤師の時間帯が既に使用されているかチェック
-        const pharmacistTimeSlot = `${request.pharmacist_id}_${request.start_time}_${request.end_time}`;
-        const isTimeSlotUsed = usedPharmacistTimeSlots.has(pharmacistTimeSlot);
-        
         // 時間範囲の互換性を考慮
-        if (!blockedByPharmacist && !blockedByPharmacy && !isTimeSlotUsed && isRangeCompatible(request, pharmacyNeed)) {
+        if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
           // マッチング成功のログ
           console.log(`✅ AIマッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
           
@@ -190,7 +185,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
           usedPharmacists.add(request.pharmacist_id);
           usedPharmacies.add(pharmacyNeed.pharmacy_id);
-          usedPharmacistTimeSlots.add(pharmacistTimeSlot); // 薬剤師の時間帯を記録
           pharmacyNeed.remaining--;
           remainingRequired--;
           break;
@@ -200,8 +194,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             console.log(`❌ AIマッチング失敗: 薬剤師NGリストに薬局が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
           } else if (blockedByPharmacy) {
             console.log(`❌ AIマッチング失敗: 薬局NGリストに薬剤師が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
-          } else if (isTimeSlotUsed) {
-            console.log(`❌ AIマッチング失敗: 薬剤師の時間帯が既に使用されています (薬剤師:${pharmacist?.name}, 時間:${request.start_time}-${request.end_time})`);
           } else if (!isRangeCompatible(request, pharmacyNeed)) {
             console.log(`❌ AIマッチング失敗: 時間範囲不適合 (薬剤師:${request.start_time}-${request.end_time} vs 薬局:${pharmacyNeed.start_time}-${pharmacyNeed.end_time})`);
           }
