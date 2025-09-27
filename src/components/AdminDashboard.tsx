@@ -4115,8 +4115,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         </div>
                         
-                        {/* 不足薬局一覧 */}
-                        {dayShortageAnalysis.length > 0 && (
+                        {/* 不足薬局一覧（AIマッチング実行後のみ表示） */}
+                        {monthlyMatchingExecuted && dayShortageAnalysis.length > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-4 h-4 text-red-600" />
@@ -4304,8 +4304,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                           </div>
                         )}
 
-                        {/* 不足薬局一覧（マッチング後も不足がある薬局のみ表示） */}
-                        {dayShortageAnalysis.length > 0 && (
+                        {/* 不足薬局一覧（AIマッチング実行後のみ表示） */}
+                        {monthlyMatchingExecuted && dayShortageAnalysis.length > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-4 h-4 text-red-600" />
