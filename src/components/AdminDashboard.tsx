@@ -4168,8 +4168,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                     {pharmacy.shortage > 0 && (
                                       <div className="mt-2">
                                         <div className="text-xs text-gray-600 mb-1">
-                                          不足分の薬剤師を希望シフトとして選択してください:
-                                          <br />
                                           <span className="text-red-600">※ 選択した薬剤師の新しいシフト希望が作成されます</span>
                                         </div>
                                         <div className="space-y-1">
