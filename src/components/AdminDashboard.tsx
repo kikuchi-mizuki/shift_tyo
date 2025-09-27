@@ -89,7 +89,7 @@ ${requests.map(r => `- ID: ${r.pharmacist_id}, 時間: ${r.start_time}-${r.end_t
 ${postings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_time}, 必要人数: ${p.required_staff}, 店舗: ${p.store_name}`).join('\n')}`;
     
     console.log(debugInfo);
-    alert(debugInfo);
+    // alert(debugInfo); // モーダルログを非表示
     
     const matches: any[] = [];
     const usedPharmacists = new Set<string>();
@@ -172,7 +172,7 @@ ${postings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_tim
 適合度: ${compatibilityScore.toFixed(2)}`;
           
           console.log(successInfo);
-          alert(successInfo);
+          // alert(successInfo); // モーダルログを非表示
           
           matches.push({
             pharmacist: {
@@ -210,7 +210,7 @@ ${postings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_tim
           
           if (failureReason) {
             console.log(failureReason);
-            alert(failureReason);
+            // alert(failureReason); // モーダルログを非表示
           }
         }
       }
@@ -223,7 +223,7 @@ ${postings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_tim
 ${matches.map((match, index) => `${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.timeSlot.start}-${match.timeSlot.end})`).join('\n')}`;
     
     console.log(finalResult);
-    alert(finalResult);
+    // alert(finalResult); // モーダルログを非表示
     
     return matches;
   };
@@ -334,7 +334,7 @@ pharmacyInfo?.start_time: ${pharmacyInfo?.start_time}
 pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           console.log(debugInfo);
-          alert(debugInfo);
+          // alert(debugInfo); // モーダルログを非表示
           
           const startTime = pharmacyInfo?.start_time || '09:00:00';
           const endTime = pharmacyInfo?.end_time || '18:00:00';
