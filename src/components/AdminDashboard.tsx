@@ -491,25 +491,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     // マッチング済みの薬局IDを取得
     const matchedPharmacyIds = new Set(dayMatches.map(match => match.pharmacy.id));
 
-    // 薬局ごとの募集数とマッチ数を計算
-    const pharmacyNeeds: { [pharmacyId: string]: { 
+    // 薬局・店舗ごとの募集数とマッチ数を計算（店舗ごとに個別管理）
+    const pharmacyNeeds: { [key: string]: { 
       id: string;
       name: string; 
       store_name: string;
+      start_time: string;
+      end_time: string;
       required: number; 
       matched: number; 
       shortage: number; 
       postings: any[] 
     } } = {};
 
-    // 募集数を集計
+    // 募集数を集計（店舗ごとに個別）
     dayPostings.forEach(posting => {
       const pharmacyId = posting.pharmacy_id;
-      if (!pharmacyNeeds[pharmacyId]) {
-        pharmacyNeeds[pharmacyId] = {
+      const storeName = posting.store_name || '店舗名なし';
+      // 薬局ID + 店舗名の組み合わせでユニークキーを作成
+      const uniqueKey = `${pharmacyId}_${storeName}`;
+      
+      if (!pharmacyNeeds[uniqueKey]) {
+        pharmacyNeeds[uniqueKey] = {
           id: pharmacyId,
           name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId ? pharmacyId.slice(-4) : 'unknown'}`,
-          store_name: posting.store_name || '店舗名なし',
+          store_name: storeName,
           start_time: posting.start_time || '09:00',
           end_time: posting.end_time || '18:00',
           required: 0,
@@ -520,15 +526,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       }
       // required_staffフィールドを使用（デフォルトは1）
       const requiredStaff = posting.required_staff || 1;
-      pharmacyNeeds[pharmacyId].required += requiredStaff;
-      pharmacyNeeds[pharmacyId].postings.push(posting);
+      pharmacyNeeds[uniqueKey].required += requiredStaff;
+      pharmacyNeeds[uniqueKey].postings.push(posting);
     });
 
-    // マッチ数を集計
+    // マッチ数を集計（店舗ごとに個別）
     dayMatches.forEach(match => {
       const pharmacyId = match.pharmacy.id;
-      if (pharmacyNeeds[pharmacyId]) {
-        pharmacyNeeds[pharmacyId].matched++;
+      const storeName = match.pharmacy.name || '店舗名なし';
+      const uniqueKey = `${pharmacyId}_${storeName}`;
+      
+      if (pharmacyNeeds[uniqueKey]) {
+        pharmacyNeeds[uniqueKey].matched++;
       }
     });
 
