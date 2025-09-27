@@ -1080,20 +1080,33 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   useEffect(() => {
     try {
       if (!selectedDate) return;
-      const hasConfirmed = Array.isArray(assigned)
-        ? (assigned as any[]).some((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
-        : false;
-      if (hasConfirmed) {
-        console.log('Clearing AI matches because selected date has confirmed shifts', {
+      const confirmedShifts = Array.isArray(assigned)
+        ? (assigned as any[]).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
+        : [];
+      
+      if (confirmedShifts.length > 0) {
+        console.log('Filtering AI matches to remove confirmed ones', {
           selectedDate,
           aiCount: aiMatches?.length || 0,
-          confirmedShifts: assigned?.filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')?.length || 0
+          confirmedShifts: confirmedShifts.length
         });
-        setAiMatches([]);
-        // AIマッチング結果の日付別マップもクリア
+        
+        // 確定済みシフトの薬剤師IDを取得
+        const confirmedPharmacistIds = new Set(confirmedShifts.map(s => s.pharmacist_id));
+        
+        // AIマッチング結果から確定済みの薬剤師を除外
         setAiMatchesByDate(prev => {
           const newMap = { ...prev };
-          delete newMap[selectedDate];
+          if (newMap[selectedDate]) {
+            const filteredMatches = newMap[selectedDate].filter(match => 
+              !confirmedPharmacistIds.has(match.pharmacist.id)
+            );
+            if (filteredMatches.length === 0) {
+              delete newMap[selectedDate];
+            } else {
+              newMap[selectedDate] = filteredMatches;
+            }
+          }
           return newMap;
         });
       }
