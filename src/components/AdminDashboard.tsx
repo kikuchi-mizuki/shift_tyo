@@ -4184,7 +4184,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                         <span className="text-gray-600 font-normal">（{pharmacy.store_name}）</span>
                                       )}
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="space-y-1 text-xs">
                                       <div className="text-gray-600">
                                         不足人数: <span className="text-red-600 font-semibold">{pharmacy.shortage}人</span>
                                       </div>
@@ -4354,7 +4354,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                         <span className="text-gray-600 font-normal">（{pharmacy.store_name}）</span>
                                       )}
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="space-y-1 text-xs">
                                       <div className="text-gray-600">
                                         不足人数: <span className="text-red-600 font-semibold">{pharmacy.shortage}人</span>
                                       </div>
