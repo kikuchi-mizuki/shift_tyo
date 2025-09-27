@@ -578,9 +578,25 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     });
 
     // マッチ数を集計（店舗ごとに個別）
+    // 1. AIマッチング結果から
     dayMatches.forEach(match => {
       const pharmacyId = match.pharmacy.id;
       const storeName = match.pharmacy.name || '店舗名なし';
+      const uniqueKey = `${pharmacyId}_${storeName}`;
+      
+      if (pharmacyNeeds[uniqueKey]) {
+        pharmacyNeeds[uniqueKey].matched++;
+      }
+    });
+    
+    // 2. 確定済みシフトから
+    const confirmedShifts = Array.isArray(assigned) 
+      ? assigned.filter((s: any) => s?.date === date && s?.status === 'confirmed')
+      : [];
+    
+    confirmedShifts.forEach(shift => {
+      const pharmacyId = shift.pharmacy_id;
+      const storeName = shift.store_name || '店舗名なし';
       const uniqueKey = `${pharmacyId}_${storeName}`;
       
       if (pharmacyNeeds[uniqueKey]) {
@@ -2949,6 +2965,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       // await loadAssignedShifts();
       // AIマッチング結果を保持するため、loadAll()は呼ばない
       
+      // 確定済みシフトをassigned状態に追加
+      setAssigned(prev => {
+        const existing = Array.isArray(prev) ? prev : [];
+        return [...existing, shift];
+      });
+      
       // 確定済みマッチをaiMatchesByDateから除外
       setAiMatchesByDate(prev => {
         const newMap = { ...prev };
@@ -3124,6 +3146,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         // await loadAssignedShifts();
         // AIマッチング結果を保持するため、loadAll()は呼ばない
         
+        // 確定済みシフトをassigned状態に追加
+        setAssigned(prev => {
+          const existing = Array.isArray(prev) ? prev : [];
+          return [...existing, ...predefinedShifts];
+        });
+        
         // 確定済みマッチをaiMatchesByDateから除外
         const confirmedPharmacistIds = new Set(predefinedShifts.map(s => s.pharmacist_id));
         setAiMatchesByDate(prev => {
@@ -3233,6 +3261,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           // データを再読み込み（AIマッチング結果を保持するため、loadAssignedShiftsは呼ばない）
           // await loadAssignedShifts();
           // AIマッチング結果を保持するため、loadAll()は呼ばない
+          
+          // 確定済みシフトをassigned状態に追加
+          setAssigned(prev => {
+            const existing = Array.isArray(prev) ? prev : [];
+            return [...existing, ...aiShifts];
+          });
           
           // 確定済みマッチをaiMatchesByDateから除外
           const confirmedPharmacistIds = new Set(aiShifts.map(s => s.pharmacist_id));
