@@ -4992,12 +4992,7 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                               ? postings.filter((p: any) =>
                                   p.date === selectedDate &&
                                   p.time_slot !== 'consult' &&
-                                  p.status !== 'confirmed' &&
-                                  !dayAssigned.some((s: any) =>
-                                    s.date === p.date &&
-                                    s.pharmacy_id === p.pharmacy_id &&
-                                    s.status === 'confirmed'
-                                  )
+                                  p.status !== 'confirmed'
                                 )
                               : [];
                             
@@ -5101,12 +5096,7 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                           ? postings.filter((p: any) =>
                               p.date === selectedDate &&
                               p.time_slot !== 'consult' &&
-                              p.status !== 'confirmed' &&
-                              !dayAssigned.some((s: any) =>
-                                s.date === p.date &&
-                                s.pharmacy_id === p.pharmacy_id &&
-                                s.status === 'confirmed'
-                              )
+                              p.status !== 'confirmed'
                             )
                           : [];
                         
@@ -5206,11 +5196,17 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                         <h4 className="text-sm font-semibold text-blue-800">
                           応募している薬剤師 ({(() => {
                             // 通常の希望（確定済みでない）のみをカウント
+                            const dayAssigned = Array.isArray(assigned) ? assigned : [];
                             const regularRequests = Array.isArray(requests) 
                               ? requests.filter((r: any) => 
                                   r.date === selectedDate && 
                                   r.time_slot !== 'consult' &&
-                                  r.status !== 'confirmed'
+                                  r.status !== 'confirmed' &&
+                                  !dayAssigned.some((s: any) =>
+                                    s.date === r.date &&
+                                    s.pharmacist_id === r.pharmacist_id &&
+                                    s.status === 'confirmed'
+                                  )
                                 )
                               : [];
                             
@@ -5280,11 +5276,17 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {(() => {
                         // 通常の希望（確定済みでない）のみを表示
+                        const dayAssigned = Array.isArray(assigned) ? assigned : [];
                         const regularRequests = Array.isArray(requests) 
                           ? requests.filter((r: any) => 
                               r.date === selectedDate && 
                               r.time_slot !== 'consult' &&
-                              r.status !== 'confirmed'
+                              r.status !== 'confirmed' &&
+                              !dayAssigned.some((s: any) =>
+                                s.date === r.date &&
+                                s.pharmacist_id === r.pharmacist_id &&
+                                s.status === 'confirmed'
+                              )
                             )
                           : [];
                         
