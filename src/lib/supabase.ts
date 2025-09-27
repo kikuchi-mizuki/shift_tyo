@@ -1118,7 +1118,15 @@ export const shiftRequests = {
             ? { start_time: '09:00:00', end_time: '13:00:00' }
             : slot === 'afternoon'
             ? { start_time: '13:00:00', end_time: '18:00:00' }
+            : slot === 'custom'
+            ? null // カスタム時間の場合は更新しない
             : { start_time: '09:00:00', end_time: '18:00:00' };
+          
+          if (!range) {
+            console.warn('Custom time slot detected, skipping follow-up update for id:', row.id);
+            return null;
+          }
+          
           console.warn('Detected NULL times after insert, issuing update for id:', row.id, range);
           return supabase
             .from('shift_requests')
