@@ -77,17 +77,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // 簡易AIマッチング関数（従来のロジックを踏襲）
   const executeSimpleAIMatching = async (requests: any[], postings: any[]) => {
     console.log('簡易AIマッチング開始:', { requests: requests.length, postings: postings.length });
-    console.log('薬剤師希望詳細:', requests.map(r => ({ 
-      id: r.pharmacist_id, 
-      time: `${r.start_time}-${r.end_time}`,
-      priority: r.priority 
-    })));
-    console.log('薬局募集詳細:', postings.map(p => ({ 
-      id: p.pharmacy_id, 
-      time: `${p.start_time}-${p.end_time}`,
-      required: p.required_staff,
-      store: p.store_name 
-    })));
+    
+    const debugInfo = `=== AIマッチング開始 ===
+薬剤師希望数: ${requests.length}件
+薬局募集数: ${postings.length}件
+
+薬剤師希望詳細:
+${requests.map(r => `- ID: ${r.pharmacist_id}, 時間: ${r.start_time}-${r.end_time}, 優先度: ${r.priority}`).join('\n')}
+
+薬局募集詳細:
+${postings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_time}, 必要人数: ${p.required_staff}, 店舗: ${p.store_name}`).join('\n')}`;
+    
+    console.log(debugInfo);
+    alert(debugInfo);
     
     const matches: any[] = [];
     const usedPharmacists = new Set<string>();
@@ -145,7 +147,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         // 時間範囲の互換性を考慮
         if (!blockedByPharmacist && !blockedByPharmacy && isRangeCompatible(request, pharmacyNeed)) {
           // マッチング成功のログ
-          console.log(`✅ AIマッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
+          const successInfo = `✅ AIマッチング成功
+薬剤師: ${pharmacist?.name} (${request.start_time}-${request.end_time})
+薬局: ${pharmacy?.name} (${pharmacyNeed.start_time}-${pharmacyNeed.end_time})
+店舗: ${storeName}
+適合度: ${compatibilityScore.toFixed(2)}`;
+          
+          console.log(successInfo);
+          alert(successInfo);
           
           // 店舗名を取得
           const getStoreNameFromPosting = (posting: any) => {
@@ -190,18 +199,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           break;
         } else {
           // マッチング失敗の理由をログ出力
+          let failureReason = '';
           if (blockedByPharmacist) {
-            console.log(`❌ AIマッチング失敗: 薬剤師NGリストに薬局が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+            failureReason = `❌ AIマッチング失敗: 薬剤師NGリストに薬局が含まれています\n薬剤師: ${pharmacist?.name}\n薬局: ${pharmacy?.name}`;
           } else if (blockedByPharmacy) {
-            console.log(`❌ AIマッチング失敗: 薬局NGリストに薬剤師が含まれています (薬剤師:${pharmacist?.name}, 薬局:${pharmacy?.name})`);
+            failureReason = `❌ AIマッチング失敗: 薬局NGリストに薬剤師が含まれています\n薬剤師: ${pharmacist?.name}\n薬局: ${pharmacy?.name}`;
           } else if (!isRangeCompatible(request, pharmacyNeed)) {
-            console.log(`❌ AIマッチング失敗: 時間範囲不適合 (薬剤師:${request.start_time}-${request.end_time} vs 薬局:${pharmacyNeed.start_time}-${pharmacyNeed.end_time})`);
+            failureReason = `❌ AIマッチング失敗: 時間範囲不適合\n薬剤師: ${request.start_time}-${request.end_time}\n薬局: ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`;
+          }
+          
+          if (failureReason) {
+            console.log(failureReason);
+            alert(failureReason);
           }
         }
       }
     });
 
-    console.log('簡易AIマッチング完了:', matches.length, '件のマッチ');
+    const finalResult = `=== AIマッチング完了 ===
+マッチ数: ${matches.length}件
+
+マッチング結果:
+${matches.map((match, index) => `${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.timeSlot.start}-${match.timeSlot.end})`).join('\n')}`;
+    
+    console.log(finalResult);
+    alert(finalResult);
+    
     return matches;
   };
 
