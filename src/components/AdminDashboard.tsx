@@ -2980,13 +2980,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         return [...existing, shift];
       });
       
-      // 確定済みマッチをaiMatchesByDateから除外
+      // 確定済みマッチをaiMatchesByDateから除外（特定のマッチのみ）
       setAiMatchesByDate(prev => {
         const newMap = { ...prev };
         if (newMap[date]) {
-          const filteredMatches = newMap[date].filter(matchItem => 
-            matchItem.pharmacist.id !== match.pharmacist.id // 確定したマッチを除外
-          );
+          // 同じ薬剤師の他のマッチは保持し、確定したマッチのみを除外
+          const filteredMatches = newMap[date].filter(matchItem => {
+            // 同じ薬剤師かつ同じ薬局のマッチのみを除外
+            return !(matchItem.pharmacist.id === match.pharmacist.id && 
+                    matchItem.pharmacy.id === match.pharmacy.id);
+          });
           if (filteredMatches.length === 0) {
             delete newMap[date];
           } else {
