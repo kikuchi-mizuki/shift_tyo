@@ -4266,9 +4266,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                         )}
                         
                         <button
-                          onClick={() => {
+                          onClick={async () => {
+                            // 手動マッチングの処理
+                            const manualShiftRequests = [];
+                            const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
+                            
+                            for (const pharmacy of dayShortageAnalysis) {
+                              const selectedPharmacists = manualMatches[pharmacy.id] || [];
+                              for (const pharmacistId of selectedPharmacists) {
+                                if (pharmacistId) {
+                                  // 薬局の時間に合わせて希望シフトを作成
+                                  manualShiftRequests.push({
+                                    pharmacist_id: pharmacistId,
+                                    date: selectedDate,
+                                    time_slot: 'fullday',
+                                    start_time: pharmacy.start_time,
+                                    end_time: pharmacy.end_time,
+                                    priority: 'medium'
+                                  });
+                                }
+                              }
+                            }
+                            
+                            // 手動マッチングで作成された希望シフトを保存
+                            if (manualShiftRequests.length > 0) {
+                              try {
+                                const { error } = await shiftRequests.createRequests(manualShiftRequests);
+                                if (error) {
+                                  console.error('手動マッチング希望シフト作成エラー:', error);
+                                  alert('手動マッチングの希望シフト作成に失敗しました');
+                                  return;
+                                }
+                                console.log('手動マッチング希望シフト作成完了:', manualShiftRequests.length, '件');
+                              } catch (error) {
+                                console.error('手動マッチング処理エラー:', error);
+                                alert('手動マッチングの処理に失敗しました');
+                                return;
+                              }
+                            }
+                            
+                            // AIマッチング結果も確定
                             const shifts = convertAIMatchesToShifts(dayMatches, selectedDate);
-                            // AIマッチング結果を確定シフトとして保存
                             handleConfirmShiftsForDate(selectedDate, shifts);
                           }}
                           className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
