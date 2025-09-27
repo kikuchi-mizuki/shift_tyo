@@ -2930,9 +2930,25 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       console.log('個別マッチ確定完了:', shift);
       
-      // データを再読み込み
-      await loadAssignedShifts();
+      // データを再読み込み（AIマッチング結果を保持するため、loadAssignedShiftsは呼ばない）
+      // await loadAssignedShifts();
       // AIマッチング結果を保持するため、loadAll()は呼ばない
+      
+      // 確定済みマッチをaiMatchesByDateから除外
+      setAiMatchesByDate(prev => {
+        const newMap = { ...prev };
+        if (newMap[date]) {
+          const filteredMatches = newMap[date].filter(matchItem => 
+            matchItem.pharmacist.id !== match.pharmacist.id // 確定したマッチを除外
+          );
+          if (filteredMatches.length === 0) {
+            delete newMap[date];
+          } else {
+            newMap[date] = filteredMatches;
+          }
+        }
+        return newMap;
+      });
       
       alert(`シフトを確定しました。\n${userProfiles[match.pharmacist.id]?.name} → ${pharmacyName}`);
     } catch (error) {
@@ -3089,9 +3105,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           console.warn('ステータス更新中のエラー:', statusError);
         }
         
-        // データを再読み込み（管理者画面）
-        await loadAssignedShifts();
+        // データを再読み込み（AIマッチング結果を保持するため、loadAssignedShiftsは呼ばない）
+        // await loadAssignedShifts();
         // AIマッチング結果を保持するため、loadAll()は呼ばない
+        
+        // 確定済みマッチをaiMatchesByDateから除外
+        const confirmedPharmacistIds = new Set(predefinedShifts.map(s => s.pharmacist_id));
+        setAiMatchesByDate(prev => {
+          const newMap = { ...prev };
+          if (newMap[date]) {
+            const filteredMatches = newMap[date].filter(matchItem => 
+              !confirmedPharmacistIds.has(matchItem.pharmacist.id)
+            );
+            if (filteredMatches.length === 0) {
+              delete newMap[date];
+            } else {
+              newMap[date] = filteredMatches;
+            }
+          }
+          return newMap;
+        });
         
         // 他のダッシュボードでも更新されるように、ページリロードを提案
         alert(`${predefinedShifts.length}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
@@ -3182,9 +3215,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             console.warn('ステータス更新中のエラー:', statusError);
           }
           
-          // データを再読み込み（管理者画面）
-          await loadAssignedShifts();
+          // データを再読み込み（AIマッチング結果を保持するため、loadAssignedShiftsは呼ばない）
+          // await loadAssignedShifts();
           // AIマッチング結果を保持するため、loadAll()は呼ばない
+          
+          // 確定済みマッチをaiMatchesByDateから除外
+          const confirmedPharmacistIds = new Set(aiShifts.map(s => s.pharmacist_id));
+          setAiMatchesByDate(prev => {
+            const newMap = { ...prev };
+            if (newMap[date]) {
+              const filteredMatches = newMap[date].filter(matchItem => 
+                !confirmedPharmacistIds.has(matchItem.pharmacist.id)
+              );
+              if (filteredMatches.length === 0) {
+                delete newMap[date];
+              } else {
+                newMap[date] = filteredMatches;
+              }
+            }
+            return newMap;
+          });
           
           // 他のダッシュボードでも更新されるように、ページリロードを提案
           alert(`${aiShifts.length}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
