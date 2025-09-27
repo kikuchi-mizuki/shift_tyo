@@ -1111,7 +1111,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         });
       }
     } catch {}
-  }, [selectedDate, assigned, aiMatches]);
+  }, [selectedDate, assigned]);
 
   // AIマッチング結果を確定シフトに変換
   const convertAIMatchesToShifts = (matches: MatchCandidate[], date: string) => {
@@ -2913,7 +2913,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       // データを再読み込み
       await loadAssignedShifts();
-      await loadAll(); // 希望・募集データも再読み込み
+      // AIマッチング結果を保持するため、loadAll()は呼ばない
       
       alert(`シフトを確定しました。\n${userProfiles[match.pharmacist.id]?.name} → ${pharmacyName}`);
     } catch (error) {
@@ -3165,7 +3165,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           // データを再読み込み（管理者画面）
           await loadAssignedShifts();
-          await loadAll(); // 希望・募集データも再読み込み
+          // AIマッチング結果を保持するため、loadAll()は呼ばない
           
           // 他のダッシュボードでも更新されるように、ページリロードを提案
           alert(`${aiShifts.length}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
