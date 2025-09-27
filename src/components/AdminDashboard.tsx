@@ -4138,6 +4138,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               <span className="hidden sm:inline">確定 {matchingStatus.count}件</span>
                             </div>
                             
+                            {/* 未確定マッチを表示 */}
+                            {aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0 && (
+                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
+                                <span className="sm:hidden">マ{aiMatchesByDate[dateStr].length}</span>
+                                <span className="hidden sm:inline">マッチ {aiMatchesByDate[dateStr].length}</span>
+                              </div>
+                            )}
+                            
                             {/* 確定後も不足パッチを表示（1ヶ月分マッチング実行後にのみ） */}
                             {monthlyMatchingExecuted && matchingStatus.shortage > 0 && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
