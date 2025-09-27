@@ -2041,14 +2041,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('action:', action);
       console.log('current user:', currentUserId);
       
+      // upsertを使用して確実に更新または作成
       const { data: updatedRow, error } = await supabase
         .from('recruitment_status')
-        .update({
+        .upsert({
+          id: FIXED_ID,
           is_open: newStatus,
-          // updated_by はRLS/外部キーの影響を避けるため一旦書かない
           notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
+        }, {
+          onConflict: 'id'
         })
-        .eq('id', FIXED_ID)
         .select('id,is_open,updated_at,notes');
       
       const resultInfo = {
@@ -2094,8 +2096,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         return;
       }
 
-      if (!updatedRow) {
-        console.log('updatedRow が null - レコードが見つからないか更新されなかった');
+      if (!updatedRow || updatedRow.length === 0) {
+        console.log('updatedRow が null または空配列 - レコードが見つからないか更新されなかった');
         
         // デバッグ情報をモーダルで表示
         const debugModal = `
@@ -2109,8 +2111,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 - timestamp: ${new Date().toLocaleString('ja-JP')}
 
 【問題】
-- updatedRow が null - レコードが見つからないか更新されなかった
-- レコードが存在しない可能性があります
+- updatedRow が null または空配列 - レコードが見つからないか更新されなかった
+- upsertが失敗した可能性があります
 
 【レスポンス】
 - updatedRow: ${JSON.stringify(updatedRow, null, 2)}
@@ -2121,13 +2123,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         return;
       }
       
-      // ローカル状態を更新
+      // ローカル状態を更新（upsertの結果を使用）
+      const updatedData = updatedRow[0];
       setRecruitmentStatus(prev => ({
         ...prev,
-        is_open: newStatus,
-        updated_at: new Date().toISOString(),
-        updated_by: user.id,
-        notes: `募集を${action}しました (${new Date().toLocaleString('ja-JP')})`
+        is_open: updatedData.is_open,
+        updated_at: updatedData.updated_at,
+        updated_by: updatedData.updated_by,
+        notes: updatedData.notes
       }));
       
       alert(`募集を${action}しました`);
