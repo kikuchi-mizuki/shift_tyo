@@ -4986,7 +4986,10 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                         <h4 className="text-sm font-semibold text-orange-800">
                           募集している薬局 ({(() => {
                             const dayAssigned = Array.isArray(assigned) ? assigned : [];
-                            const list = Array.isArray(postings)
+                            const dayMatches = aiMatchesByDate[selectedDate] || [];
+                            
+                            // 1. 通常の募集（確定済みでない）
+                            const regularPostings = Array.isArray(postings)
                               ? postings.filter((p: any) =>
                                   p.date === selectedDate &&
                                   p.time_slot !== 'consult' &&
@@ -4998,7 +5001,16 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                   )
                                 )
                               : [];
-                            return list.length;
+                            
+                            // 2. AIマッチング結果の薬局（未確定マッチがある薬局）
+                            const matchedPharmacies = new Set(
+                              dayMatches.map((match: any) => match.pharmacy.id)
+                            );
+                            
+                            // 3. 両方を合計
+                            const totalCount = regularPostings.length + matchedPharmacies.size;
+                            
+                            return totalCount;
                           })()}件)
                         </h4>
                       </div>
@@ -5198,7 +5210,28 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-blue-800">
-                          応募している薬剤師 ({Array.isArray(requests) ? requests.filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult').length : 0}件)
+                          応募している薬剤師 ({(() => {
+                            const dayMatches = aiMatchesByDate[selectedDate] || [];
+                            
+                            // 1. 通常の希望（確定済みでない）
+                            const regularRequests = Array.isArray(requests) 
+                              ? requests.filter((r: any) => 
+                                  r.date === selectedDate && 
+                                  r.time_slot !== 'consult' &&
+                                  r.status !== 'confirmed'
+                                )
+                              : [];
+                            
+                            // 2. AIマッチング結果の薬剤師（未確定マッチがある薬剤師）
+                            const matchedPharmacists = new Set(
+                              dayMatches.map((match: any) => match.pharmacist.id)
+                            );
+                            
+                            // 3. 両方を合計
+                            const totalCount = regularRequests.length + matchedPharmacists.size;
+                            
+                            return totalCount;
+                          })()}件)
                         </h4>
                       </div>
                       {/* 追加ボタン */}
