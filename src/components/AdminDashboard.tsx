@@ -4276,13 +4276,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                               for (const pharmacistId of selectedPharmacists) {
                                 if (pharmacistId) {
                                   // デバッグ: 薬局の時間を確認
-                                  console.log('=== 手動マッチング時間デバッグ ===');
-                                  console.log('薬局ID:', pharmacy.id);
-                                  console.log('薬局名:', pharmacy.name);
-                                  console.log('店舗名:', pharmacy.store_name);
-                                  console.log('pharmacy.start_time:', pharmacy.start_time);
-                                  console.log('pharmacy.end_time:', pharmacy.end_time);
-                                  console.log('pharmacy.postings:', pharmacy.postings);
+                                  const debugInfo = `=== 手動マッチング時間デバッグ ===
+薬局ID: ${pharmacy.id}
+薬局名: ${pharmacy.name}
+店舗名: ${pharmacy.store_name}
+pharmacy.start_time: ${pharmacy.start_time}
+pharmacy.end_time: ${pharmacy.end_time}
+pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
+                                  
+                                  console.log(debugInfo);
+                                  alert(debugInfo);
                                   
                                   // 薬局の時間に合わせて希望シフトを作成
                                   manualShiftRequests.push({
