@@ -487,6 +487,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       allDayPostings
     );
     const dayMatches = aiMatchesByDate[date] || [];
+    
+    // マッチング済みの薬局IDを取得
+    const matchedPharmacyIds = new Set(dayMatches.map(match => match.pharmacy.id));
 
     // 薬局ごとの募集数とマッチ数を計算
     const pharmacyNeeds: { [pharmacyId: string]: { 
@@ -532,8 +535,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       pharmacy.shortage = Math.max(0, pharmacy.required - pharmacy.matched);
     });
 
-    // 不足がある薬局のみを配列で返す
-    const shortagePharmacies = Object.values(pharmacyNeeds).filter(pharmacy => pharmacy.shortage > 0);
+    // 不足がある薬局のみを配列で返す（マッチング済みの薬局は除外）
+    const shortagePharmacies = Object.values(pharmacyNeeds).filter(pharmacy => 
+      pharmacy.shortage > 0 && !matchedPharmacyIds.has(pharmacy.id)
+    );
     
     
     return shortagePharmacies;
