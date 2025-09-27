@@ -783,11 +783,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         }
         
         try {
-          const dayMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
-            useAPI: false,
-            algorithm: 'hybrid',
-            priority: 'pharmacy_satisfaction'
-          }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches);
+          // 簡易AIマッチングを使用（デバッグモーダル付き）
+          const dayMatches = await executeSimpleAIMatching(dayRequests, dayPostings);
           
           matchesByDate[date] = dayMatches;
           debugInfo += `マッチング成功: ${dayMatches.length}件\n`;
