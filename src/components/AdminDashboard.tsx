@@ -4271,8 +4271,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                             const manualShiftRequests = [];
                             const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
                             
+                            // デバッグ: 手動マッチング開始
+                            alert(`手動マッチング開始\n不足薬局数: ${dayShortageAnalysis.length}\nmanualMatches: ${JSON.stringify(manualMatches, null, 2)}`);
+                            
                             for (const pharmacy of dayShortageAnalysis) {
                               const selectedPharmacists = manualMatches[pharmacy.id] || [];
+                              alert(`薬局処理開始\n薬局ID: ${pharmacy.id}\n選択された薬剤師: ${selectedPharmacists.length}人`);
+                              
                               for (const pharmacistId of selectedPharmacists) {
                                 if (pharmacistId) {
                                   // デバッグ: 薬局の時間を確認
