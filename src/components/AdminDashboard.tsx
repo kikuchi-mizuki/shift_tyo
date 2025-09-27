@@ -2882,8 +2882,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
       };
       
-      const { error } = await supabase.from('assigned_shifts').insert([shift]);
+      const { data: insertedData, error } = await supabase.from('assigned_shifts').insert([shift]).select();
       if (error) throw error;
+      
+      // 挿入されたデータのIDを取得
+      const insertedShift = insertedData?.[0];
+      if (insertedShift) {
+        shift.id = insertedShift.id;
+      }
       
       // 対応する希望・募集のステータスを'confirmed'に更新
       try {
@@ -3149,10 +3155,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         // await loadAssignedShifts();
         // AIマッチング結果を保持するため、loadAll()は呼ばない
         
-        // 確定済みシフトをassigned状態に追加
+        // 確定済みシフトをassigned状態に追加（IDを含む）
         setAssigned(prev => {
           const existing = Array.isArray(prev) ? prev : [];
-          return [...existing, ...predefinedShifts];
+          return [...existing, ...(insertResult || [])];
         });
         
         // 確定済みマッチをaiMatchesByDateから除外
@@ -3235,7 +3241,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             return;
           }
           
-          const { error } = await supabase.from('assigned_shifts').insert(aiShifts);
+          const { data: insertedAiShifts, error } = await supabase.from('assigned_shifts').insert(aiShifts).select();
           if (error) throw error;
           
           console.log(`AIマッチング完了: ${aiShifts.length}件のシフトを確定しました`);
@@ -3265,10 +3271,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           // await loadAssignedShifts();
           // AIマッチング結果を保持するため、loadAll()は呼ばない
           
-          // 確定済みシフトをassigned状態に追加
+          // 確定済みシフトをassigned状態に追加（IDを含む）
           setAssigned(prev => {
             const existing = Array.isArray(prev) ? prev : [];
-            return [...existing, ...aiShifts];
+            return [...existing, ...(insertedAiShifts || [])];
           });
           
           // 確定済みマッチをaiMatchesByDateから除外
