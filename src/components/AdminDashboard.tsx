@@ -535,9 +535,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       pharmacy.shortage = Math.max(0, pharmacy.required - pharmacy.matched);
     });
 
-    // 不足がある薬局のみを配列で返す（マッチング済みの薬局は除外）
+    // 不足がある薬局のみを配列で返す（マッチング後も不足がある薬局を表示）
     const shortagePharmacies = Object.values(pharmacyNeeds).filter(pharmacy => 
-      pharmacy.shortage > 0 && !matchedPharmacyIds.has(pharmacy.id)
+      pharmacy.shortage > 0
     );
     
     
