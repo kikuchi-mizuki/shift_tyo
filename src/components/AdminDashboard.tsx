@@ -287,10 +287,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             return;
           }
           
-          // 薬局の応募時間を取得
-          const pharmacyPosting = postings.find((p: any) => p.pharmacy_id === pharmacyId && p.date === date);
-          const startTime = pharmacyPosting?.start_time || '09:00:00';
-          const endTime = pharmacyPosting?.end_time || '18:00:00';
+          // 薬局の応募時間を取得（不足薬局分析結果から取得）
+          const dayShortageAnalysis = analyzePharmacyShortage(date);
+          const pharmacyInfo = dayShortageAnalysis.find(p => p.id === pharmacyId);
+          
+          // デバッグ: 時間取得の確認
+          const debugInfo = `=== saveManualShiftRequests時間デバッグ ===
+薬局ID: ${pharmacyId}
+日付: ${date}
+pharmacyInfo: ${JSON.stringify(pharmacyInfo, null, 2)}
+pharmacyInfo?.start_time: ${pharmacyInfo?.start_time}
+pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
+          
+          console.log(debugInfo);
+          alert(debugInfo);
+          
+          const startTime = pharmacyInfo?.start_time || '09:00:00';
+          const endTime = pharmacyInfo?.end_time || '18:00:00';
           
           // 希望シフトデータを作成
           const shiftRequestData = {
