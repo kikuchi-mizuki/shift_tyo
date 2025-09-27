@@ -586,41 +586,50 @@ export class AIMatchingEngine {
       console.log(`\n=== 反復処理 ${iteration} 回目 ===`);
 
     for (const [pharmacyId, need] of sortedPharmacies) {
-        const currentUsage = pharmacyUsageCount.get(pharmacyId) || 0;
+        // 薬局・店舗ごとの募集を処理
+        const pharmacyPostings = postings.filter(p => p.pharmacy_id === pharmacyId);
         
-        console.log(`薬局 ${pharmacyId} の処理: 現在使用 ${currentUsage}/${need.count}`);
-        
-        // 薬局の募集人数をチェック
-        if (currentUsage >= need.count) {
-          console.log(`薬局 ${pharmacyId} は募集人数に達している - スキップ`);
-          continue;
+        for (const posting of pharmacyPostings) {
+          const storeName = posting.store_name || 'default';
+          const uniqueKey = `${pharmacyId}_${storeName}`;
+          const currentUsage = pharmacyUsageCount.get(uniqueKey) || 0;
+          const requiredStaff = posting.required_staff || 1;
+          
+          console.log(`薬局 ${pharmacyId} (${storeName}) の処理: 現在使用 ${currentUsage}/${requiredStaff}`);
+          
+          // 薬局・店舗の募集人数をチェック
+          if (currentUsage >= requiredStaff) {
+            console.log(`薬局 ${pharmacyId} (${storeName}) は募集人数に達している - スキップ`);
+            continue;
+          }
+
+          // この薬局・店舗に適合する薬剤師候補を取得
+          const availableCandidates = candidates.filter(candidate => 
+            candidate.pharmacy.id === pharmacyId &&
+            candidate.pharmacy.name === storeName &&
+            !usedPharmacists.has(candidate.pharmacist.id)
+          );
+
+          console.log(`薬局 ${pharmacyId} (${storeName}) の利用可能候補: ${availableCandidates.length}件`);
+
+          if (availableCandidates.length === 0) {
+            console.log(`薬局 ${pharmacyId} (${storeName}) に利用可能な候補なし - スキップ`);
+            continue;
+          }
+
+          // 最も評価の高い薬剤師を選択
+          const bestCandidate = availableCandidates.reduce((best, current) => {
+            const currentScore = pharmacistScores[current.pharmacist.id] || 0;
+            const bestScore = pharmacistScores[best.pharmacist.id] || 0;
+            return currentScore > bestScore ? current : best;
+          });
+
+          console.log(`薬局 ${pharmacyId} (${storeName}) に薬剤師 ${bestCandidate.pharmacist.id} をマッチング`);
+          selectedMatches.push(bestCandidate);
+          usedPharmacists.add(bestCandidate.pharmacist.id);
+          pharmacyUsageCount.set(uniqueKey, currentUsage + 1);
+          hasProgress = true; // 進捗があった
         }
-
-        // この薬局に適合する薬剤師候補を取得
-        const availableCandidates = candidates.filter(candidate => 
-          candidate.pharmacy.id === pharmacyId &&
-          !usedPharmacists.has(candidate.pharmacist.id)
-        );
-
-        console.log(`薬局 ${pharmacyId} の利用可能候補: ${availableCandidates.length}件`);
-
-        if (availableCandidates.length === 0) {
-          console.log(`薬局 ${pharmacyId} に利用可能な候補なし - スキップ`);
-          continue;
-        }
-
-        // 最も評価の高い薬剤師を選択
-        const bestCandidate = availableCandidates.reduce((best, current) => {
-          const currentScore = pharmacistScores[current.pharmacist.id] || 0;
-          const bestScore = pharmacistScores[best.pharmacist.id] || 0;
-        return currentScore > bestScore ? current : best;
-      });
-
-        console.log(`薬局 ${pharmacyId} に薬剤師 ${bestCandidate.pharmacist.id} をマッチング`);
-        selectedMatches.push(bestCandidate);
-        usedPharmacists.add(bestCandidate.pharmacist.id);
-        pharmacyUsageCount.set(pharmacyId, currentUsage + 1);
-        hasProgress = true; // 進捗があった
       }
     }
 
