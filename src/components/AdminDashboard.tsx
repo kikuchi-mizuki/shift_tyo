@@ -4076,13 +4076,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 // 確定シフトがあるかチェック
                 if (dayAssignedShifts.length > 0) {
                   const totalRequired = dayPostings.reduce((sum, posting) => sum + (posting.required_staff || 1), 0);
-                  const totalMatched = dayAssignedShifts.length;
+                  const totalConfirmed = dayAssignedShifts.length;
+                  const dayMatches = aiMatchesByDate[dateStr] || [];
+                  const totalUnconfirmedMatches = dayMatches.length;
+                  const totalMatched = totalConfirmed + totalUnconfirmedMatches;
                   const totalShortage = Math.max(0, totalRequired - totalMatched);
-                  console.log(`確定シフト存在 [${dateStr}]: 必要=${totalRequired}, 確定=${totalMatched}, 不足=${totalShortage}`);
+                  console.log(`確定シフト存在 [${dateStr}]: 必要=${totalRequired}, 確定=${totalConfirmed}, 未確定マッチ=${totalUnconfirmedMatches}, 合計=${totalMatched}, 不足=${totalShortage}`);
 
                   return {
                     type: 'confirmed',
-                    count: totalMatched,
+                    count: totalConfirmed,
                     shortage: totalShortage
                   };
                 }
