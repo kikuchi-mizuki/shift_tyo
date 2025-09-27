@@ -1076,42 +1076,42 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     }
   };
 
-  // 確定がある日に以前のAI結果が残らないようにクリア
-  useEffect(() => {
-    try {
-      if (!selectedDate) return;
-      const confirmedShifts = Array.isArray(assigned)
-        ? (assigned as any[]).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
-        : [];
+  // AIマッチング結果を保持するため、確定後の自動フィルタリングは無効化
+  // useEffect(() => {
+  //   try {
+  //     if (!selectedDate) return;
+  //     const confirmedShifts = Array.isArray(assigned)
+  //       ? (assigned as any[]).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
+  //       : [];
       
-      if (confirmedShifts.length > 0) {
-        console.log('Filtering AI matches to remove confirmed ones', {
-          selectedDate,
-          aiCount: aiMatches?.length || 0,
-          confirmedShifts: confirmedShifts.length
-        });
+  //     if (confirmedShifts.length > 0) {
+  //       console.log('Filtering AI matches to remove confirmed ones', {
+  //         selectedDate,
+  //         aiCount: aiMatches?.length || 0,
+  //         confirmedShifts: confirmedShifts.length
+  //       });
         
-        // 確定済みシフトの薬剤師IDを取得
-        const confirmedPharmacistIds = new Set(confirmedShifts.map(s => s.pharmacist_id));
+  //       // 確定済みシフトの薬剤師IDを取得
+  //       const confirmedPharmacistIds = new Set(confirmedShifts.map(s => s.pharmacist_id));
         
-        // AIマッチング結果から確定済みの薬剤師を除外
-        setAiMatchesByDate(prev => {
-          const newMap = { ...prev };
-          if (newMap[selectedDate]) {
-            const filteredMatches = newMap[selectedDate].filter(match => 
-              !confirmedPharmacistIds.has(match.pharmacist.id)
-            );
-            if (filteredMatches.length === 0) {
-              delete newMap[selectedDate];
-            } else {
-              newMap[selectedDate] = filteredMatches;
-            }
-          }
-          return newMap;
-        });
-      }
-    } catch {}
-  }, [selectedDate, assigned]);
+  //       // AIマッチング結果から確定済みの薬剤師を除外
+  //       setAiMatchesByDate(prev => {
+  //         const newMap = { ...prev };
+  //         if (newMap[selectedDate]) {
+  //           const filteredMatches = newMap[selectedDate].filter(match => 
+  //             !confirmedPharmacistIds.has(match.pharmacist.id)
+  //           );
+  //           if (filteredMatches.length === 0) {
+  //             delete newMap[selectedDate];
+  //           } else {
+  //             newMap[selectedDate] = filteredMatches;
+  //           }
+  //         }
+  //         return newMap;
+  //       });
+  //     }
+  //   } catch {}
+  // }, [selectedDate, assigned]);
 
   // AIマッチング結果を確定シフトに変換
   const convertAIMatchesToShifts = (matches: MatchCandidate[], date: string) => {
@@ -4166,7 +4166,17 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   );
                   
                   // AIマッチング結果の表示（選択された日付のマッチング結果のみ）
-                  const dayMatches = aiMatchesByDate[selectedDate] || [];
+                  const allDayMatches = aiMatchesByDate[selectedDate] || [];
+                  
+                  // 確定済みシフトの薬剤師IDを取得してフィルタリング
+                  const confirmedPharmacistIds = new Set(
+                    (assigned || []).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
+                      .map((s: any) => s.pharmacist_id)
+                  );
+                  
+                  const dayMatches = allDayMatches.filter(match => 
+                    !confirmedPharmacistIds.has(match.pharmacist.id)
+                  );
                   
                   // 日毎の不足薬局分析
                   const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
@@ -4415,7 +4425,17 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                   // 確定シフトがない日で、希望または募集がある場合のみボタンを表示
                   if (dayAssignedShifts.length === 0 && (dayRequests.length > 0 || dayPostings.length > 0)) {
                     // 選択された日付のマッチング結果を取得
-                    const dayMatches = aiMatchesByDate[selectedDate] || [];
+                    const allDayMatches = aiMatchesByDate[selectedDate] || [];
+                    
+                    // 確定済みシフトの薬剤師IDを取得してフィルタリング
+                    const confirmedPharmacistIds = new Set(
+                      (assigned || []).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
+                        .map((s: any) => s.pharmacist_id)
+                    );
+                    
+                    const dayMatches = allDayMatches.filter(match => 
+                      !confirmedPharmacistIds.has(match.pharmacist.id)
+                    );
                     
                     return (
                       <div className="p-4 border-b border-gray-200 space-y-3">
