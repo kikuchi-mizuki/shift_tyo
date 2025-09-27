@@ -5405,19 +5405,19 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                           
                           // 通常の希望を表示
                           const request = item.data;
-                        const pharmacistProfile = userProfiles[request.pharmacist_id];
-                        
-                        // デバッグログ：薬剤師プロフィールの取得状況を確認
-                        if (!pharmacistProfile) {
-                          console.log('薬剤師プロフィールが見つかりません:', {
-                            pharmacist_id: request.pharmacist_id,
-                            available_user_ids: Object.keys(userProfiles),
-                            userProfiles_count: Object.keys(userProfiles).length
-                          });
-                        }
-                        
-                        const isEditing = editingRequestId === request.id;
-                        return (
+                          const pharmacistProfile = userProfiles[request.pharmacist_id];
+                          
+                          // デバッグログ：薬剤師プロフィールの取得状況を確認
+                          if (!pharmacistProfile) {
+                            console.log('薬剤師プロフィールが見つかりません:', {
+                              pharmacist_id: request.pharmacist_id,
+                              available_user_ids: Object.keys(userProfiles),
+                              userProfiles_count: Object.keys(userProfiles).length
+                            });
+                          }
+                          
+                          const isEditing = editingRequestId === request.id;
+                          return (
                           <div key={index} className="bg-white rounded border px-2 py-1">
                             {isEditing ? (
                               <div className="space-y-2">
@@ -5485,8 +5485,9 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                               </div>
                             )}
                           </div>
-                        );
-                      })}
+                          );
+                        });
+                      })()}
                       </div>
                     </div>
                   )}
