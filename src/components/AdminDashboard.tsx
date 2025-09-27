@@ -821,23 +821,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       debugInfo += `\n=== 統合結果 ===\n`;
       debugInfo += `総マッチング件数: ${monthlyMatches.length}件\n`;
       
-      // 日付別のマッチング結果を保存（既存の確定済みマッチは保持）
+      // 日付別のマッチング結果を保存（確定済みマッチは除外）
       setAiMatchesByDate(prev => {
         const newMap = { ...prev };
-        // 新しいマッチング結果を追加（既存の確定済みマッチは上書きしない）
+        // 新しいマッチング結果を追加（確定済みマッチは除外）
         Object.keys(matchesByDate).forEach(date => {
-          if (newMap[date]) {
-            // 既存のマッチがある場合は、確定済みのマッチを保持して新しいマッチを追加
-            const confirmedPharmacistIds = new Set(
-              (assigned || []).filter((s: any) => s?.date === date && s?.status === 'confirmed')
-                .map((s: any) => s.pharmacist_id)
-            );
-            const existingConfirmedMatches = newMap[date].filter(match => 
-              confirmedPharmacistIds.has(match.pharmacist.id)
-            );
-            newMap[date] = [...existingConfirmedMatches, ...matchesByDate[date]];
+          // 確定済みの薬剤師IDを取得
+          const confirmedPharmacistIds = new Set(
+            (assigned || []).filter((s: any) => s?.date === date && s?.status === 'confirmed')
+              .map((s: any) => s.pharmacist_id)
+          );
+          
+          // 確定済みでないマッチのみを追加
+          const unconfirmedMatches = matchesByDate[date].filter(match => 
+            !confirmedPharmacistIds.has(match.pharmacist.id)
+          );
+          
+          if (unconfirmedMatches.length > 0) {
+            newMap[date] = unconfirmedMatches;
           } else {
-            newMap[date] = matchesByDate[date];
+            delete newMap[date];
           }
         });
         return newMap;
