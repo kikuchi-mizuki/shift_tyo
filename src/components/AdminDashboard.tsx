@@ -1139,13 +1139,17 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
       const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
       
+      // timeSlotの構造を確認して適切な時間を取得
+      const startTime = match.timeSlot?.start || match.timeSlot?.startTime || match.posting?.start_time || '09:00:00';
+      const endTime = match.timeSlot?.end || match.timeSlot?.endTime || match.posting?.end_time || '18:00:00';
+      
       return { 
         pharmacist_id: match.pharmacist.id,
         pharmacy_id: match.pharmacy.id,
         date: date,
         time_slot: 'negotiable', // デフォルト値（使用しないが制約のため必要）
-        start_time: match.timeSlot.start,
-        end_time: match.timeSlot.end,
+        start_time: startTime,
+        end_time: endTime,
         status: 'confirmed',
         store_name: storeName,
         memo: `マッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
@@ -2836,13 +2840,24 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
       const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
       
+      // timeSlotの構造を確認して適切な時間を取得
+      const startTime = match.timeSlot?.start || match.timeSlot?.startTime || match.posting?.start_time || '09:00:00';
+      const endTime = match.timeSlot?.end || match.timeSlot?.endTime || match.posting?.end_time || '18:00:00';
+      
+      console.log('時間取得デバッグ:', {
+        timeSlot: match.timeSlot,
+        posting: match.posting,
+        startTime,
+        endTime
+      });
+      
       const shift = {
         pharmacist_id: match.pharmacist.id,
         pharmacy_id: match.pharmacy.id,
         date: date,
         time_slot: 'negotiable',
-        start_time: match.timeSlot.start,
-        end_time: match.timeSlot.end,
+        start_time: startTime,
+        end_time: endTime,
         status: 'confirmed',
         store_name: storeName,
         memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
@@ -4275,7 +4290,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                       店舗: {match.pharmacy.name || '店舗名なし'}
                                     </div>
                                     <div className="text-gray-600">
-                                      {match.timeSlot.start} - {match.timeSlot.end}
+                                      {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
                                     </div>
                                   </div>
                                   <div className="text-right ml-2">
@@ -4527,7 +4542,7 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                       {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
                                     </div>
                                     <div className="text-gray-600">
-                                      {match.timeSlot.start} - {match.timeSlot.end}
+                                      {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
                                     </div>
                                     {/* 薬局名と店舗名を表示 */}
                                     <div className="text-gray-500 text-xs">
