@@ -611,11 +611,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
     setAiMatchingLoading(true);
     try {
-      // 既存のマッチング結果をクリア
+      // 既存のマッチング結果をクリア（確定済みマッチは保持）
       setAiMatches([]);
-      setAiMatchesByDate({});
+      // setAiMatchesByDate({}); // 確定済みマッチを保持するためコメントアウト
       setMonthlyMatchingExecuted(false); // マッチング実行フラグをリセット
-      console.log('既存のマッチング結果をクリアしました');
+      console.log('既存のマッチング結果をクリアしました（確定済みは保持）');
       console.log('🔄 monthlyMatchingExecutedフラグをfalseにリセット');
 
       // 現在の月の全ての日付を取得
@@ -805,8 +805,27 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       debugInfo += `\n=== 統合結果 ===\n`;
       debugInfo += `総マッチング件数: ${monthlyMatches.length}件\n`;
       
-      // 日付別のマッチング結果を保存
-      setAiMatchesByDate(matchesByDate);
+      // 日付別のマッチング結果を保存（既存の確定済みマッチは保持）
+      setAiMatchesByDate(prev => {
+        const newMap = { ...prev };
+        // 新しいマッチング結果を追加（既存の確定済みマッチは上書きしない）
+        Object.keys(matchesByDate).forEach(date => {
+          if (newMap[date]) {
+            // 既存のマッチがある場合は、確定済みのマッチを保持して新しいマッチを追加
+            const confirmedPharmacistIds = new Set(
+              (assigned || []).filter((s: any) => s?.date === date && s?.status === 'confirmed')
+                .map((s: any) => s.pharmacist_id)
+            );
+            const existingConfirmedMatches = newMap[date].filter(match => 
+              confirmedPharmacistIds.has(match.pharmacist.id)
+            );
+            newMap[date] = [...existingConfirmedMatches, ...matchesByDate[date]];
+          } else {
+            newMap[date] = matchesByDate[date];
+          }
+        });
+        return newMap;
+      });
       setAiMatches(monthlyMatches);
       
       // 1ヶ月分のマッチング実行完了フラグを設定
