@@ -4134,7 +4134,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 return (
                                   <div key={index} className="bg-white rounded border p-3 text-sm">
                                     <div className="font-semibold text-gray-800 mb-2">
-                                      {pharmacy.store_name || pharmacy.name}
+                                      {pharmacy.name}
+                                      {pharmacy.store_name && (
+                                        <span className="text-gray-600 font-normal">（{pharmacy.store_name}）</span>
+                                      )}
                                     </div>
                                     <div className="grid grid-cols-2 gap-2 text-xs">
                                       <div className="text-gray-600">
@@ -4303,7 +4306,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                                 return (
                                   <div key={index} className="bg-white rounded border p-3 text-sm">
                                     <div className="font-semibold text-gray-800 mb-2">
-                                      {pharmacy.store_name || pharmacy.name}
+                                      {pharmacy.name}
+                                      {pharmacy.store_name && (
+                                        <span className="text-gray-600 font-normal">（{pharmacy.store_name}）</span>
+                                      )}
                                     </div>
                                     <div className="grid grid-cols-2 gap-2 text-xs">
                                       <div className="text-gray-600">
