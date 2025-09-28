@@ -853,10 +853,24 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             !confirmedPharmacistIds.has(match.pharmacist.id)
           );
           
+          // デバッグ: マッチング結果の保存状況をログ出力
+          console.log(`=== AIマッチング結果保存デバッグ [${date}] ===`);
+          console.log(`確定済み薬剤師ID:`, Array.from(confirmedPharmacistIds));
+          console.log(`元のマッチング数:`, matchesByDate[date].length);
+          console.log(`除外後のマッチング数:`, unconfirmedMatches.length);
+          console.log(`マッチング詳細:`, matchesByDate[date].map(m => ({
+            pharmacist_id: m.pharmacist.id,
+            pharmacist_name: m.pharmacist.name,
+            pharmacy_name: m.pharmacy.name,
+            is_confirmed: confirmedPharmacistIds.has(m.pharmacist.id)
+          })));
+          
           if (unconfirmedMatches.length > 0) {
             newMap[date] = unconfirmedMatches;
+            console.log(`✅ ${date}のマッチング結果を保存: ${unconfirmedMatches.length}件`);
           } else {
             delete newMap[date];
+            console.log(`❌ ${date}のマッチング結果を削除: 全て確定済み`);
           }
         });
         return newMap;
