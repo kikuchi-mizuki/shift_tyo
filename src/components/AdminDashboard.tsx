@@ -3274,6 +3274,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           });
           
           if (excludedPostings.length > 0) {
+            const excludedInfo = `=== AIマッチング除外デバッグ ===
+除外された募集数: ${excludedPostings.length}件
+
+除外された募集詳細:
+${excludedPostings.map((p, i) => 
+  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 店舗:${p.store_name || 'なし'}, ステータス:${p.status}, 日付:${p.date}`
+).join('\n')}
+
+確定済み店舗キー:
+${Array.from(confirmedStores).join('\n')}`;
             console.log('除外された募集:', excludedPostings.map(p => ({
               id: p.id,
               pharmacy_id: p.pharmacy_id,
@@ -3281,6 +3291,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               status: p.status,
               date: p.date
             })));
+            alert(excludedInfo);
           }
           
           aiMatches = await executeSimpleAIMatching(dayRequests, availablePostings);
@@ -5237,8 +5248,23 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                     s.status === 'confirmed'
                                   );
                                   
-                                  // デバッグログ
+                                  // デバッグログ（モーダル表示）
                                   if (p.date === selectedDate) {
+                                    const debugInfo = `=== 募集フィルタリングデバッグ ===
+募集ID: ${p.id}
+薬局ID: ${p.pharmacy_id}
+店舗名: ${p.store_name || 'なし'}
+日付: ${p.date}
+選択日: ${selectedDate}
+ステータス: ${p.status}
+時間帯: ${p.time_slot}
+
+フィルタ条件:
+- 日付一致: ${dateMatch}
+- 時間帯OK: ${timeSlotMatch}
+- 未確定: ${notAssigned}
+
+確定済みシフト数: ${dayAssigned.length}`;
                                     console.log('募集フィルタリングデバッグ:', {
                                       posting: p,
                                       selectedDate,
@@ -5248,6 +5274,7 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                       dayAssigned: dayAssigned.length,
                                       status: p.status
                                     });
+                                    alert(debugInfo);
                                   }
                                   
                                   return dateMatch && timeSlotMatch && notAssigned;
