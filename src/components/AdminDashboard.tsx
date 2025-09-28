@@ -863,53 +863,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             !confirmedPharmacistIds.has(match.pharmacist.id)
           );
           
-          // デバッグ: マッチング結果の詳細を表示
-          const matchDetails = matchesByDate[date].map(m => ({
-            pharmacist_id: m.pharmacist.id,
-            pharmacist_name: m.pharmacist.name,
-            pharmacy_name: m.pharmacy.name,
-            is_confirmed: confirmedPharmacistIds.has(m.pharmacist.id)
-          }));
-          
-          const debugInfo = `=== マッチング結果詳細 [${date}] ===
-総マッチング数: ${matchesByDate[date].length}件
-確定済み薬剤師ID: ${Array.from(confirmedPharmacistIds).join(', ')}
-除外後マッチング数: ${unconfirmedMatches.length}件
-
-マッチング詳細:
-${matchDetails.map((m, i) => 
-  `${i+1}. 薬剤師: ${m.pharmacist_name} (ID: ${m.pharmacist_id})
-   薬局: ${m.pharmacy_name}
-   確定済み: ${m.is_confirmed ? 'はい' : 'いいえ'}`
-).join('\n')}`;
-          
-          console.log(`マッチング結果詳細 [${date}]:`, {
-            totalMatches: matchesByDate[date].length,
-            confirmedPharmacistIds: Array.from(confirmedPharmacistIds),
-            unconfirmedMatches: unconfirmedMatches.length,
-            matchDetails: matchDetails
-          });
-          
-          alert(debugInfo);
-          
-          // デバッグ: マッチング結果の保存状況をログ出力
-          console.log(`=== AIマッチング結果保存デバッグ [${date}] ===`);
-          console.log(`確定済み薬剤師ID:`, Array.from(confirmedPharmacistIds));
-          console.log(`元のマッチング数:`, matchesByDate[date].length);
-          console.log(`除外後のマッチング数:`, unconfirmedMatches.length);
-          console.log(`マッチング詳細:`, matchesByDate[date].map(m => ({
-            pharmacist_id: m.pharmacist.id,
-            pharmacist_name: m.pharmacist.name,
-            pharmacy_name: m.pharmacy.name,
-            is_confirmed: confirmedPharmacistIds.has(m.pharmacist.id)
-          })));
           
           if (unconfirmedMatches.length > 0) {
             newMap[date] = unconfirmedMatches;
-            console.log(`✅ ${date}のマッチング結果を保存: ${unconfirmedMatches.length}件`);
           } else {
             delete newMap[date];
-            console.log(`❌ ${date}のマッチング結果を削除: 全て確定済み`);
           }
         });
         return newMap;
@@ -920,29 +878,6 @@ ${matchDetails.map((m, i) =>
       setMonthlyMatchingExecuted(true);
       console.log('✅ 1ヶ月分マッチング実行完了 - monthlyMatchingExecutedフラグをtrueに設定');
       
-      // デバッグ: AIマッチング結果の詳細をモーダルで表示
-      const debugResult = `=== AIマッチング実行結果 ===
-実行日時: ${new Date().toLocaleString('ja-JP')}
-処理対象日数: ${allDates.length}日
-総マッチング件数: ${monthlyMatches.length}件
-
-日付別マッチング結果:
-${Object.entries(matchesByDate).map(([date, matches]) => 
-  `${date}: ${(matches as any[]).length}件`
-).join('\n')}
-
-マッチング詳細:
-${monthlyMatches.map((match, i) => 
-  `${i+1}. 薬剤師: ${match.pharmacist?.name || '不明'}, 薬局: ${match.pharmacy?.name || '不明'}, 日付: ${match.timeSlot?.date || '不明'}`
-).join('\n')}
-
-aiMatchesByDate状態:
-${Object.entries(aiMatchesByDate).map(([date, matches]) => 
-  `${date}: ${(matches as any[]).length}件`
-).join('\n')}`;
-      
-      console.log('AIマッチング実行結果:', debugResult);
-      alert(debugResult);
       
       console.log('マッチング結果:', monthlyMatches);
       console.log('日付別マッチング結果:', matchesByDate);
@@ -4473,28 +4408,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                             {(() => {
                               const dayMatches = aiMatchesByDate[dateStr];
                               
-                              // デバッグ: カレンダー表示時のマッチング状況をモーダルで表示
-                              if (dateStr === '2025-09-02') {
-                                const debugInfo = `=== カレンダー表示デバッグ [${dateStr}] ===
-マッチング存在: ${!!dayMatches}
-マッチング数: ${dayMatches?.length || 0}件
-マッチング詳細: ${dayMatches ? dayMatches.map((m, i) => 
-  `${i+1}. 薬剤師: ${m.pharmacist?.name || '不明'}, 薬局: ${m.pharmacy?.name || '不明'}`
-).join('\n') : 'なし'}
-
-aiMatchesByDate状態:
-${Object.entries(aiMatchesByDate).map(([date, matches]) => 
-  `${date}: ${(matches as any[]).length}件`
-).join('\n')}`;
-                                
-                                console.log(`カレンダー表示デバッグ [${dateStr}]:`, {
-                                  hasMatches: !!dayMatches,
-                                  matchCount: dayMatches?.length || 0,
-                                  matches: dayMatches || []
-                                });
-                                
-                                alert(debugInfo);
-                              }
                               
                               return dayMatches && dayMatches.length > 0 && (
                                 <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
