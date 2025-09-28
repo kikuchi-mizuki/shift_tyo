@@ -5026,7 +5026,12 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                             
                             const regularPostings = Array.isArray(postings)
                               ? postings.filter((p: any) => {
-                                  const dateMatch = p.date === selectedDate;
+                                  // 日付の比較を柔軟にする
+                                  const dateMatch = p.date === selectedDate || 
+                                                   p.date === selectedDate.toString() || 
+                                                   p.date.toString() === selectedDate ||
+                                                   new Date(p.date).toISOString().split('T')[0] === selectedDate ||
+                                                   new Date(selectedDate).toISOString().split('T')[0] === p.date;
                                   const timeSlotMatch = p.time_slot !== 'consult';
                                   const notAssigned = !dayAssigned.some((s: any) =>
                                     s.date === p.date &&
@@ -5182,7 +5187,12 @@ ${regularPostings.map((p: any, i: number) =>
                         // 通常の募集（確定済みでない）のみを表示
                         const regularPostings = Array.isArray(postings)
                           ? postings.filter((p: any) => {
-                              const dateMatch = p.date === selectedDate;
+                              // 日付の比較を柔軟にする
+                              const dateMatch = p.date === selectedDate || 
+                                               p.date === selectedDate.toString() || 
+                                               p.date.toString() === selectedDate ||
+                                               new Date(p.date).toISOString().split('T')[0] === selectedDate ||
+                                               new Date(selectedDate).toISOString().split('T')[0] === p.date;
                               const timeSlotMatch = p.time_slot !== 'consult';
                               const notAssigned = !dayAssigned.some((s: any) =>
                                 s.date === p.date &&
