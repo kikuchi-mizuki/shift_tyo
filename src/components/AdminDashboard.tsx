@@ -1263,6 +1263,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   const [newPosting, setNewPosting] = useState<any>({
     pharmacy_id: '',
     time_slot: 'morning',
+    start_time: '09:00',
+    end_time: '18:00',
     required_staff: 1,
     store_name: '',
     memo: ''
@@ -3438,6 +3440,8 @@ ${Array.from(confirmedStores).join('\n')}`;
       pharmacy_id: newPosting.pharmacy_id,
       date: selectedDate,
       time_slot: newPosting.time_slot,
+      start_time: (newPosting.start_time || '09:00') + ':00',
+      end_time: (newPosting.end_time || '18:00') + ':00',
       required_staff: Number(newPosting.required_staff) || 1,
       store_name: (newPosting.store_name || '').trim() || null,
       memo: (newPosting.memo || '').trim() || null,
@@ -3449,7 +3453,7 @@ ${Array.from(confirmedStores).join('\n')}`;
       alert(`募集の追加に失敗しました: ${e?.message || e?.code || 'Unknown error'}`);
       return;
     }
-    setNewPosting({ pharmacy_id: '', time_slot: 'morning', required_staff: 1, store_name: '', memo: '' });
+    setNewPosting({ pharmacy_id: '', time_slot: 'morning', start_time: '09:00', end_time: '18:00', required_staff: 1, store_name: '', memo: '' });
     loadAll();
   };
 
