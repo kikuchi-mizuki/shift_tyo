@@ -5025,15 +5025,29 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                             const dayAssigned = Array.isArray(assigned) ? assigned : [];
                             
                             const regularPostings = Array.isArray(postings)
-                              ? postings.filter((p: any) =>
-                                  p.date === selectedDate &&
-                                  p.time_slot !== 'consult' &&
-                                  !dayAssigned.some((s: any) =>
+                              ? postings.filter((p: any) => {
+                                  const dateMatch = p.date === selectedDate;
+                                  const timeSlotMatch = p.time_slot !== 'consult';
+                                  const notAssigned = !dayAssigned.some((s: any) =>
                                     s.date === p.date &&
                                     s.pharmacy_id === p.pharmacy_id &&
                                     s.status === 'confirmed'
-                                  )
-                                )
+                                  );
+                                  
+                                  // デバッグログ
+                                  console.log(`募集フィルタリング: ID=${p.id}`, {
+                                    dateMatch,
+                                    timeSlotMatch,
+                                    notAssigned,
+                                    postingDate: p.date,
+                                    selectedDate,
+                                    timeSlot: p.time_slot,
+                                    status: p.status,
+                                    pharmacyId: p.pharmacy_id
+                                  });
+                                  
+                                  return dateMatch && timeSlotMatch && notAssigned;
+                                })
                               : [];
                             
                             // デバッグログ（モーダル表示）
@@ -5154,15 +5168,29 @@ ${regularPostings.map((p: any, i: number) =>
                         
                         // 通常の募集（確定済みでない）のみを表示
                         const regularPostings = Array.isArray(postings)
-                          ? postings.filter((p: any) =>
-                              p.date === selectedDate &&
-                              p.time_slot !== 'consult' &&
-                              !dayAssigned.some((s: any) =>
+                          ? postings.filter((p: any) => {
+                              const dateMatch = p.date === selectedDate;
+                              const timeSlotMatch = p.time_slot !== 'consult';
+                              const notAssigned = !dayAssigned.some((s: any) =>
                                 s.date === p.date &&
                                 s.pharmacy_id === p.pharmacy_id &&
                                 s.status === 'confirmed'
-                              )
-                            )
+                              );
+                              
+                              // デバッグログ
+                              console.log(`募集フィルタリング表示: ID=${p.id}`, {
+                                dateMatch,
+                                timeSlotMatch,
+                                notAssigned,
+                                postingDate: p.date,
+                                selectedDate,
+                                timeSlot: p.time_slot,
+                                status: p.status,
+                                pharmacyId: p.pharmacy_id
+                              });
+                              
+                              return dateMatch && timeSlotMatch && notAssigned;
+                            })
                           : [];
                         
                         // デバッグログ（モーダル表示）
