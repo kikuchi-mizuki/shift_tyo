@@ -1271,7 +1271,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   });
   const [newRequest, setNewRequest] = useState<any>({
     pharmacist_id: '',
-    time_slot: 'morning',
+    time_slot: 'custom',
+    start_time: '09:00',
+    end_time: '18:00',
     priority: 'medium'
   });
 
@@ -3521,20 +3523,12 @@ ${Array.from(confirmedStores).join('\n')}`;
       alert('薬剤師を選択してください');
       return;
     }
-    // start_time/end_time を time_slot から補完（将来: UIで直接入力できるように）
-    const toRange = (slot: string) => {
-      // Supabaseの time 型は HH:MM:SS を推奨
-      if (slot === 'morning') return { start_time: '09:00:00', end_time: '13:00:00' };
-      if (slot === 'afternoon') return { start_time: '13:00:00', end_time: '18:00:00' };
-      return { start_time: '09:00:00', end_time: '18:00:00' };
-    };
-    const range = toRange(newRequest.time_slot);
     const payload = [{
       pharmacist_id: newRequest.pharmacist_id,
       date: selectedDate,
       time_slot: newRequest.time_slot,
-      start_time: range.start_time,
-      end_time: range.end_time,
+      start_time: (newRequest.start_time || '09:00') + ':00',
+      end_time: (newRequest.end_time || '18:00') + ':00',
       priority: newRequest.priority
     }];
     const { error } = await shiftRequests.createRequests(payload);
@@ -3543,7 +3537,7 @@ ${Array.from(confirmedStores).join('\n')}`;
       alert(`希望の追加に失敗しました: ${e?.message || e?.code || 'Unknown error'}`);
       return;
     }
-    setNewRequest({ pharmacist_id: '', time_slot: 'morning', priority: 'medium' });
+    setNewRequest({ pharmacist_id: '', time_slot: 'custom', start_time: '09:00', end_time: '18:00', priority: 'medium' });
     await loadAll();
   };
 
