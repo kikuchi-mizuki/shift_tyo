@@ -3267,6 +3267,18 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             除外数: dayPostings.length - availablePostings.length
           });
           
+          // デバッグ: 利用可能な募集の詳細
+          if (availablePostings.length > 0) {
+            const availableInfo = `=== AIマッチング利用可能募集 ===
+利用可能募集数: ${availablePostings.length}件
+
+利用可能募集詳細:
+${availablePostings.map((p, i) => 
+  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 店舗:${p.store_name || 'なし'}, ステータス:${p.status}, 日付:${p.date}`
+).join('\n')}`;
+            alert(availableInfo);
+          }
+          
           // デバッグ: 除外された募集の詳細
           const excludedPostings = dayPostings.filter((p: any) => {
             const storeKey = `${p.pharmacy_id}_${p.store_name || 'default'}`;
@@ -5285,6 +5297,9 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
 - 募集店舗名: "${postingStoreName}"
 - 確定シフト店舗名: "${shiftStoreName}"
 - 店舗名一致: ${storeNameMatch}
+
+最終判定:
+- 表示される: ${dateMatch && timeSlotMatch && notAssigned}
 
 確定済みシフト数: ${dayAssigned.length}
 確定済みシフト詳細:
