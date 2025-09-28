@@ -5428,11 +5428,20 @@ ${dayAssigned.map((s: any, i: number) =>
                                                new Date(p.date).toISOString().split('T')[0] === selectedDate ||
                                                new Date(selectedDate).toISOString().split('T')[0] === p.date;
                               const timeSlotMatch = p.time_slot !== 'consult';
-                              const notAssigned = !dayAssigned.some((s: any) =>
-                                s.date === p.date &&
-                                s.pharmacy_id === p.pharmacy_id &&
-                                s.status === 'confirmed'
-                              );
+                              const notAssigned = !dayAssigned.some((s: any) => {
+                                // 店舗名の比較を柔軟にする
+                                const shiftStoreName = s.store_name || '';
+                                const postingStoreName = p.store_name || '';
+                                const storeNameMatch = shiftStoreName === postingStoreName || 
+                                                      (shiftStoreName === '' && postingStoreName === '') ||
+                                                      (shiftStoreName === '' && !postingStoreName) ||
+                                                      (!shiftStoreName && postingStoreName === '');
+                                
+                                return s.date === p.date &&
+                                       s.pharmacy_id === p.pharmacy_id &&
+                                       storeNameMatch &&
+                                       s.status === 'confirmed';
+                              });
                               
                               
                               return dateMatch && timeSlotMatch && notAssigned;
