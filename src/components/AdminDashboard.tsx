@@ -115,7 +115,6 @@ ${availableRequests.map(r => `- ID: ${r.pharmacist_id}, 時間: ${r.start_time}-
 ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_time}, 必要人数: ${p.required_staff}, 店舗: ${p.store_name}`).join('\n')}`;
     
     console.log(debugInfo);
-    alert(debugInfo); // モーダルログを表示
     
     const matches: any[] = [];
 
@@ -215,7 +214,6 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
     allPossibleMatches.sort((a, b) => b.totalScore - a.totalScore);
     
     console.log(`可能なマッチング組み合わせ: ${allPossibleMatches.length}件`);
-    alert(`可能なマッチング組み合わせ: ${allPossibleMatches.length}件`);
     
     // 最適解を構築（薬剤師は1日1つの薬局のみ、全体で不足薬局を最小化）
     // 全探索による真の最適解アルゴリズム
@@ -232,7 +230,6 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
       // 全組み合わせを探索（2^Nの組み合わせ）
       const totalCombinations = Math.pow(2, possibleMatches.length);
       console.log(`全探索開始: ${totalCombinations}通りの組み合わせを検証`);
-      alert(`全探索開始: ${totalCombinations}通りの組み合わせを検証`);
       
       let validCombinations = 0;
       let maxMatchesFound = 0;
@@ -311,7 +308,6 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
       console.log(`有効な組み合わせ: ${validCombinations}通り`);
       console.log(`最大マッチ数: ${maxMatchesFound}件`);
       console.log(`最適解: ${bestMatches.length}件マッチ`);
-      alert(`全探索完了: ${validCombinations}通りの有効組み合わせ, 最大${maxMatchesFound}件マッチ, 最適解${bestMatches.length}件`);
       
       return bestMatches;
     };
@@ -327,7 +323,6 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
 ${matches.map((match, index) => `${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.timeSlot.start}-${match.timeSlot.end})`).join('\n')}`;
     
     console.log(finalResult);
-    alert(finalResult); // モーダルログを表示
     
     return matches;
   };
