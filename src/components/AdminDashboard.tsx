@@ -4992,7 +4992,6 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                               ? postings.filter((p: any) =>
                                   p.date === selectedDate &&
                                   p.time_slot !== 'consult' &&
-                                  p.status !== 'confirmed' &&
                                   !dayAssigned.some((s: any) =>
                                     s.date === p.date &&
                                     s.pharmacy_id === p.pharmacy_id &&
@@ -5122,7 +5121,6 @@ ${regularPostings.map((p: any, i: number) =>
                           ? postings.filter((p: any) =>
                               p.date === selectedDate &&
                               p.time_slot !== 'consult' &&
-                              p.status !== 'confirmed' &&
                               !dayAssigned.some((s: any) =>
                                 s.date === p.date &&
                                 s.pharmacy_id === p.pharmacy_id &&
