@@ -3483,7 +3483,125 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     loadAll();
   };
 
-  // 確定シフトの取り消し
+  // 個別確定シフトの取り消し
+  const handleCancelSingleConfirmedShift = async (shift: any) => {
+    if (!confirm(`このシフトを取り消しますか？\n薬剤師: ${userProfiles[shift.pharmacist_id]?.name || '不明'}\n薬局: ${userProfiles[shift.pharmacy_id]?.name || '不明'}\n店舗: ${shift.store_name || '未設定'}`)) {
+      return;
+    }
+
+    try {
+      // 1) 対応する希望・募集のステータスを元に戻す
+      console.log('=== 個別確定取り消し: ステータス更新開始 ===');
+      console.log('取り消すシフト:', {
+        pharmacist_id: shift.pharmacist_id,
+        pharmacy_id: shift.pharmacy_id,
+        date: shift.date,
+        time_slot: shift.time_slot,
+        store_name: shift.store_name
+      });
+      
+      // 薬剤師の希望ステータスを元に戻す
+      const { error: requestError } = await supabase
+        .from('shift_requests')
+        .update({ status: 'pending' })
+        .eq('pharmacist_id', shift.pharmacist_id)
+        .eq('date', shift.date)
+        .eq('time_slot', shift.time_slot || 'negotiable');
+      
+      if (requestError) {
+        console.warn('希望ステータス更新エラー:', requestError);
+      } else {
+        console.log('希望ステータス更新成功:', {
+          pharmacist_id: shift.pharmacist_id,
+          date: shift.date,
+          time_slot: shift.time_slot
+        });
+      }
+      
+      // 特定の開始時間・終了時間と店舗の募集のみを更新
+      const { data: updateResult, error: postingError } = await supabase
+        .from('shift_postings')
+        .update({ status: 'open' })
+        .eq('pharmacy_id', shift.pharmacy_id)
+        .eq('date', shift.date)
+        .eq('start_time', shift.start_time || '09:00:00')
+        .eq('end_time', shift.end_time || '18:00:00')
+        .eq('store_name', shift.store_name || null)
+        .select('id, status, pharmacy_id, date, start_time, end_time, store_name');
+      
+      if (postingError) {
+        const errorInfo = `=== 募集ステータス更新エラー ===
+エラー: ${postingError.message}
+薬局ID: ${shift.pharmacy_id}
+日付: ${shift.date}
+開始時間: ${shift.start_time || '09:00:00'}
+終了時間: ${shift.end_time || '18:00:00'}
+店舗名: ${shift.store_name || 'なし'}`;
+        console.error('募集ステータス更新エラー:', postingError);
+        alert(errorInfo);
+      } else {
+        const successInfo = `=== 募集ステータス更新結果 ===
+更新成功: ${updateResult ? updateResult.length : 0}件
+薬局ID: ${shift.pharmacy_id}
+日付: ${shift.date}
+開始時間: ${shift.start_time || '09:00:00'}
+終了時間: ${shift.end_time || '18:00:00'}
+店舗名: ${shift.store_name || 'なし'}
+
+更新されたレコード:
+${updateResult ? updateResult.map((r: any, i: number) => 
+  `${i+1}. ID:${r.id}, ステータス:${r.status}, 薬局:${r.pharmacy_id}, 日付:${r.date}, 開始:${r.start_time}, 終了:${r.end_time}, 店舗:${r.store_name || 'なし'}`
+).join('\n') : 'なし'}`;
+        console.log('募集ステータス更新成功:', updateResult);
+        alert(successInfo);
+        
+        if (updateResult && updateResult.length === 0) {
+          alert('更新対象の募集が見つかりませんでした');
+        }
+      }
+
+      // 2) 確定シフトを削除
+      const { error } = await supabase
+        .from('assigned_shifts')
+        .delete()
+        .eq('id', shift.id);
+
+      if (error) {
+        const deleteErrorInfo = `=== 個別確定シフト削除エラー ===
+エラー: ${error.message || error.code || 'Unknown error'}
+シフトID: ${shift.id}`;
+        console.error('Error canceling single confirmed shift:', error);
+        alert(deleteErrorInfo);
+        return;
+      }
+
+      const deleteSuccessInfo = `=== 個別確定シフト削除完了 ===
+シフトID: ${shift.id}
+薬剤師: ${userProfiles[shift.pharmacist_id]?.name || '不明'}
+薬局: ${userProfiles[shift.pharmacy_id]?.name || '不明'}`;
+      console.log(`個別シフトを取り消しました: ${shift.id}`);
+      alert(deleteSuccessInfo);
+      
+      // システム状態を未確定に戻す
+      setSystemStatus('pending');
+      setLastUpdated(new Date());
+      
+      // 確定取り消し後は不足薬局表示を抑制
+      setMonthlyMatchingExecuted(false);
+      
+      // データを再読み込み
+      await loadAssignedShifts();
+      await loadAll(); // 希望・募集データも再読み込み
+    } catch (error) {
+      const catchErrorInfo = `=== 個別確定取り消し処理エラー ===
+エラー: ${(error as any).message || 'Unknown error'}
+シフトID: ${shift.id}`;
+      console.error('Error in handleCancelSingleConfirmedShift:', error);
+      alert(catchErrorInfo);
+    }
+  };
+
+  // 確定シフトの取り消し（全件）
   const handleCancelConfirmedShifts = async (date: string) => {
     if (!confirm(`${date}の確定シフトを取り消しますか？`)) {
       return;
@@ -4978,12 +5096,18 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                       </div>
                                     )}
                                   </div>
-                                  <div className="mt-1">
+                                  <div className="mt-1 flex space-x-1">
                                     <button
                                       onClick={() => handleEditShift(shift)}
                                       className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
                                     >
                                       編集
+                                    </button>
+                                    <button
+                                      onClick={() => handleCancelSingleConfirmedShift(shift)}
+                                      className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+                                    >
+                                      取り消し
                                     </button>
                                   </div>
                                 </div>
