@@ -3289,8 +3289,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           try {
             aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, availablePostings, {
-              useAPI: false,
-              algorithm: 'rule_based',
+              useAPI: true,
+              algorithm: 'ai_based',
               priority: 'pharmacy_satisfaction'
             }, userProfiles, ratings);
             
