@@ -1262,7 +1262,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   // 追加フォーム用のローカル状態
   const [newPosting, setNewPosting] = useState<any>({
     pharmacy_id: '',
-    time_slot: 'morning',
+    time_slot: 'custom',
     start_time: '09:00',
     end_time: '18:00',
     required_staff: 1,
@@ -3453,7 +3453,7 @@ ${Array.from(confirmedStores).join('\n')}`;
       alert(`募集の追加に失敗しました: ${e?.message || e?.code || 'Unknown error'}`);
       return;
     }
-    setNewPosting({ pharmacy_id: '', time_slot: 'morning', start_time: '09:00', end_time: '18:00', required_staff: 1, store_name: '', memo: '' });
+    setNewPosting({ pharmacy_id: '', time_slot: 'custom', start_time: '09:00', end_time: '18:00', required_staff: 1, store_name: '', memo: '' });
     loadAll();
   };
 

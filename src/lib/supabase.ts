@@ -1295,7 +1295,8 @@ export const shiftPostings = {
         // start/end を補完・正規化
         let start_time = toHHMMSS(p.start_time);
         let end_time = toHHMMSS(p.end_time);
-        if (!start_time || !end_time) {
+        // customの場合は時間を補完しない
+        if ((!start_time || !end_time) && p.time_slot !== 'custom') {
           const r = toRange(p.time_slot || 'full');
           start_time = r.start_time;
           end_time = r.end_time;
