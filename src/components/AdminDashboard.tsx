@@ -4985,11 +4985,8 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                         <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-orange-800">
                           募集している薬局 ({(() => {
-                            // 通常の募集（確定済みでない）とAIマッチング結果の薬局をカウント
+                            // 通常の募集（確定済みでない）のみをカウント
                             const dayAssigned = Array.isArray(assigned) ? assigned : [];
-                            const dayMatches = aiMatchesByDate[selectedDate] || [];
-                            
-                            // 1. 通常の募集（確定済みでない）
                             const regularPostings = Array.isArray(postings)
                               ? postings.filter((p: any) =>
                                   p.date === selectedDate &&
@@ -5003,13 +5000,7 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                 )
                               : [];
                             
-                            // 2. AIマッチング結果の薬局（未確定マッチがある薬局）
-                            const matchedPharmacies = new Set(
-                              dayMatches.map((match: any) => match.pharmacy.id)
-                            );
-                            
-                            // 3. 両方を合計
-                            return regularPostings.length + matchedPharmacies.size;
+                            return regularPostings.length;
                           })()}件)
                         </h4>
                       </div>
@@ -5104,10 +5095,7 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                       {(() => {
                         const dayAssigned = Array.isArray(assigned) ? assigned : [];
                         
-                        // 通常の募集（確定済みでない）とAIマッチング結果の薬局を表示
-                        const dayMatches = aiMatchesByDate[selectedDate] || [];
-                        
-                        // 1. 通常の募集（確定済みでない）
+                        // 通常の募集（確定済みでない）のみを表示
                         const regularPostings = Array.isArray(postings)
                           ? postings.filter((p: any) =>
                               p.date === selectedDate &&
@@ -5121,54 +5109,7 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                             )
                           : [];
                         
-                        // 2. AIマッチング結果の薬局（未確定マッチがある薬局）
-                        const matchedPharmacies = new Set(
-                          dayMatches.map((match: any) => match.pharmacy.id)
-                        );
-                        
-                        // 3. 両方を結合して表示
-                        const allItems = [
-                          ...regularPostings.map((posting: any) => ({ type: 'posting', data: posting })),
-                          ...Array.from(matchedPharmacies).map((pharmacyId: string) => ({ 
-                            type: 'ai_match', 
-                            data: { 
-                              pharmacy_id: pharmacyId,
-                              pharmacy: dayMatches.find((m: any) => m.pharmacy.id === pharmacyId)?.pharmacy
-                            }
-                          }))
-                        ];
-                        
-                        return allItems.map((item: any, index: number) => {
-                          if (item.type === 'ai_match') {
-                            // AIマッチング結果の薬局を表示
-                            const pharmacyProfile = userProfiles[item.data.pharmacy_id];
-                            const match = dayMatches.find((m: any) => m.pharmacy.id === item.data.pharmacy_id);
-                            return (
-                              <div key={`ai-match-${index}`} className="bg-purple-50 rounded border border-purple-200 px-2 py-1">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <div className="text-sm font-medium text-purple-800">
-                                      {pharmacyProfile?.name || 'Unknown Pharmacy'}
-                                    </div>
-                                    <div className="text-xs text-purple-600">
-                                      AIマッチング結果
-                                    </div>
-                                    {match && (
-                                      <div className="text-xs text-purple-500">
-                                        {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="text-xs text-purple-600">
-                                    {Math.round((match?.compatibilityScore || 0) * 100)}%
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }
-                          
-                          // 通常の募集を表示
-                          const posting = item.data;
+                        return regularPostings.map((posting: any, index: number) => {
                           const pharmacyProfile = userProfiles[posting.pharmacy_id];
                           const isEditing = editingPostingId === posting.id;
                           // 店舗名を取得（store_name または memo から）
