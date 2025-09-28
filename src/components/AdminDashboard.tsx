@@ -115,7 +115,7 @@ ${availableRequests.map(r => `- ID: ${r.pharmacist_id}, 時間: ${r.start_time}-
 ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_time}, 必要人数: ${p.required_staff}, 店舗: ${p.store_name}`).join('\n')}`;
     
     console.log(debugInfo);
-    // alert(debugInfo); // モーダルログを非表示
+    alert(debugInfo); // モーダルログを表示
     
     const matches: any[] = [];
 
@@ -215,6 +215,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
     allPossibleMatches.sort((a, b) => b.totalScore - a.totalScore);
     
     console.log(`可能なマッチング組み合わせ: ${allPossibleMatches.length}件`);
+    alert(`可能なマッチング組み合わせ: ${allPossibleMatches.length}件`);
     
     // 最適解を構築（貪欲法で最適解に近い解を求める）
     const pharmacyNeedsMap = new Map<string, number>();
@@ -262,6 +263,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
       pharmacyMatchesMap.get(key)?.push(match);
       
       console.log(`✅ 最適解マッチング: ${match.pharmacist.name} → ${match.pharmacy.name} (${match.storeName}) スコア:${match.totalScore}`);
+      alert(`✅ 最適解マッチング: ${match.pharmacist.name} → ${match.pharmacy.name} (${match.storeName}) スコア:${match.totalScore}`);
     }
 
     const finalResult = `=== AIマッチング完了 ===
@@ -271,7 +273,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
 ${matches.map((match, index) => `${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.timeSlot.start}-${match.timeSlot.end})`).join('\n')}`;
     
     console.log(finalResult);
-    // alert(finalResult); // モーダルログを非表示
+    alert(finalResult); // モーダルログを表示
     
     return matches;
   };
