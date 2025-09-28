@@ -4988,12 +4988,6 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                             // 通常の募集（確定済みでない）のみをカウント
                             const dayAssigned = Array.isArray(assigned) ? assigned : [];
                             
-                            // デバッグログ
-                            console.log(`[DEBUG] 募集している薬局 - selectedDate: ${selectedDate}`);
-                            console.log(`[DEBUG] 募集している薬局 - dayAssigned:`, dayAssigned);
-                            console.log(`[DEBUG] 募集している薬局 - all postings:`, postings);
-                            console.log(`[DEBUG] 募集している薬局 - postings for date:`, postings.filter((p: any) => p.date === selectedDate));
-                            
                             const regularPostings = Array.isArray(postings)
                               ? postings.filter((p: any) =>
                                   p.date === selectedDate &&
@@ -5007,7 +5001,26 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                 )
                               : [];
                             
-                            console.log(`[DEBUG] 募集している薬局 - regularPostings (filtered):`, regularPostings);
+                            // デバッグログ（モーダル表示）
+                            const debugInfo = `=== 募集している薬局デバッグ ===
+選択日付: ${selectedDate}
+確定済みシフト数: ${dayAssigned.length}
+全募集数: ${Array.isArray(postings) ? postings.length : 0}
+該当日の募集数: ${Array.isArray(postings) ? postings.filter((p: any) => p.date === selectedDate).length : 0}
+フィルタ後の募集数: ${regularPostings.length}
+
+該当日の募集詳細:
+${Array.isArray(postings) ? postings.filter((p: any) => p.date === selectedDate).map((p: any, i: number) => 
+  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 時間:${p.time_slot}, ステータス:${p.status}`
+).join('\n') : 'データなし'}
+
+フィルタ後の募集詳細:
+${regularPostings.map((p: any, i: number) => 
+  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 時間:${p.time_slot}, ステータス:${p.status}`
+).join('\n')}`;
+                            
+                            console.log(debugInfo);
+                            alert(debugInfo);
                             
                             return regularPostings.length;
                           })()}件)
@@ -5118,12 +5131,26 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                             )
                           : [];
                         
-                        // デバッグログ
-                        console.log(`[DEBUG] 募集している薬局表示 - selectedDate: ${selectedDate}`);
-                        console.log(`[DEBUG] 募集している薬局表示 - dayAssigned:`, dayAssigned);
-                        console.log(`[DEBUG] 募集している薬局表示 - all postings:`, postings);
-                        console.log(`[DEBUG] 募集している薬局表示 - postings for date:`, postings.filter((p: any) => p.date === selectedDate));
-                        console.log(`[DEBUG] 募集している薬局表示 - regularPostings (filtered):`, regularPostings);
+                        // デバッグログ（モーダル表示）
+                        const debugInfo = `=== 募集している薬局表示デバッグ ===
+選択日付: ${selectedDate}
+確定済みシフト数: ${dayAssigned.length}
+全募集数: ${Array.isArray(postings) ? postings.length : 0}
+該当日の募集数: ${Array.isArray(postings) ? postings.filter((p: any) => p.date === selectedDate).length : 0}
+フィルタ後の募集数: ${regularPostings.length}
+
+該当日の募集詳細:
+${Array.isArray(postings) ? postings.filter((p: any) => p.date === selectedDate).map((p: any, i: number) => 
+  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 時間:${p.time_slot}, ステータス:${p.status}`
+).join('\n') : 'データなし'}
+
+フィルタ後の募集詳細:
+${regularPostings.map((p: any, i: number) => 
+  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 時間:${p.time_slot}, ステータス:${p.status}`
+).join('\n')}`;
+                        
+                        console.log(debugInfo);
+                        alert(debugInfo);
                         
                         return regularPostings.map((posting: any, index: number) => {
                           const pharmacyProfile = userProfiles[posting.pharmacy_id];
