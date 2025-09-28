@@ -5038,10 +5038,16 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                   const filterDebugInfo = `=== 募集フィルタリングデバッグ ===
 募集ID: ${p.id}
 薬局ID: ${p.pharmacy_id}
-日付: ${p.date}
-選択日付: ${selectedDate}
+日付: ${p.date} (型: ${typeof p.date})
+選択日付: ${selectedDate} (型: ${typeof selectedDate})
 時間帯: ${p.time_slot}
 ステータス: ${p.status}
+
+日付比較詳細:
+- p.date === selectedDate: ${p.date === selectedDate}
+- p.date == selectedDate: ${p.date == selectedDate}
+- p.date === selectedDate.toString(): ${p.date === selectedDate.toString()}
+- p.date.toString() === selectedDate: ${p.date.toString() === selectedDate}
 
 フィルタリング条件:
 - 日付一致: ${dateMatch}
@@ -5188,10 +5194,16 @@ ${regularPostings.map((p: any, i: number) =>
                               const filterDebugInfo = `=== 募集フィルタリング表示デバッグ ===
 募集ID: ${p.id}
 薬局ID: ${p.pharmacy_id}
-日付: ${p.date}
-選択日付: ${selectedDate}
+日付: ${p.date} (型: ${typeof p.date})
+選択日付: ${selectedDate} (型: ${typeof selectedDate})
 時間帯: ${p.time_slot}
 ステータス: ${p.status}
+
+日付比較詳細:
+- p.date === selectedDate: ${p.date === selectedDate}
+- p.date == selectedDate: ${p.date == selectedDate}
+- p.date === selectedDate.toString(): ${p.date === selectedDate.toString()}
+- p.date.toString() === selectedDate: ${p.date.toString() === selectedDate}
 
 フィルタリング条件:
 - 日付一致: ${dateMatch}
