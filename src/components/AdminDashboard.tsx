@@ -3532,20 +3532,36 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           }
           
           // 薬局の募集ステータスを元に戻す（同日・同薬局を一括で open に戻す）
-          const { error: postingError } = await supabase
+          console.log('=== 募集ステータス更新開始 ===');
+          console.log('更新条件:', {
+            pharmacy_id: s.pharmacy_id,
+            date: date
+          });
+          
+          // 更新前の状態を確認
+          const { data: beforeUpdate, error: beforeError } = await supabase
             .from('shift_postings')
-            .update({ status: 'open' })
+            .select('id, status, pharmacy_id, date')
             .eq('pharmacy_id', s.pharmacy_id)
             .eq('date', date);
           
+          console.log('更新前の募集状態:', beforeUpdate);
+          
+          const { data: updateResult, error: postingError } = await supabase
+            .from('shift_postings')
+            .update({ status: 'open' })
+            .eq('pharmacy_id', s.pharmacy_id)
+            .eq('date', date)
+            .select('id, status, pharmacy_id, date');
+          
+          console.log('更新結果:', updateResult);
+          
           if (postingError) {
-            console.warn('募集ステータス更新エラー:', postingError);
+            console.error('募集ステータス更新エラー:', postingError);
+            alert(`募集ステータス更新エラー: ${postingError.message}`);
           } else {
-            console.log('募集ステータス更新成功:', {
-              pharmacy_id: s.pharmacy_id,
-              date,
-              time_slot: s.time_slot
-            });
+            console.log('募集ステータス更新成功:', updateResult);
+            alert(`募集ステータス更新成功: ${updateResult?.length || 0}件更新`);
           }
         }
         console.log('=== 確定取り消し: ステータス更新完了 ===');
