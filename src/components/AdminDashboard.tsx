@@ -854,17 +854,33 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           );
           
           // デバッグ: マッチング結果の詳細を表示
+          const matchDetails = matchesByDate[date].map(m => ({
+            pharmacist_id: m.pharmacist.id,
+            pharmacist_name: m.pharmacist.name,
+            pharmacy_name: m.pharmacy.name,
+            is_confirmed: confirmedPharmacistIds.has(m.pharmacist.id)
+          }));
+          
+          const debugInfo = `=== マッチング結果詳細 [${date}] ===
+総マッチング数: ${matchesByDate[date].length}件
+確定済み薬剤師ID: ${Array.from(confirmedPharmacistIds).join(', ')}
+除外後マッチング数: ${unconfirmedMatches.length}件
+
+マッチング詳細:
+${matchDetails.map((m, i) => 
+  `${i+1}. 薬剤師: ${m.pharmacist_name} (ID: ${m.pharmacist_id})
+   薬局: ${m.pharmacy_name}
+   確定済み: ${m.is_confirmed ? 'はい' : 'いいえ'}`
+).join('\n')}`;
+          
           console.log(`マッチング結果詳細 [${date}]:`, {
             totalMatches: matchesByDate[date].length,
             confirmedPharmacistIds: Array.from(confirmedPharmacistIds),
             unconfirmedMatches: unconfirmedMatches.length,
-            matchDetails: matchesByDate[date].map(m => ({
-              pharmacist_id: m.pharmacist.id,
-              pharmacist_name: m.pharmacist.name,
-              pharmacy_name: m.pharmacy.name,
-              is_confirmed: confirmedPharmacistIds.has(m.pharmacist.id)
-            }))
+            matchDetails: matchDetails
           });
+          
+          alert(debugInfo);
           
           // デバッグ: マッチング結果の保存状況をログ出力
           console.log(`=== AIマッチング結果保存デバッグ [${date}] ===`);
@@ -4446,11 +4462,29 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                             {/* 未確定マッチを表示 */}
                             {(() => {
                               const dayMatches = aiMatchesByDate[dateStr];
-                              console.log(`カレンダー表示デバッグ [${dateStr}]:`, {
-                                hasMatches: !!dayMatches,
-                                matchCount: dayMatches?.length || 0,
-                                matches: dayMatches || []
-                              });
+                              
+                              // デバッグ: カレンダー表示時のマッチング状況をモーダルで表示
+                              if (dateStr === '2025-09-02') {
+                                const debugInfo = `=== カレンダー表示デバッグ [${dateStr}] ===
+マッチング存在: ${!!dayMatches}
+マッチング数: ${dayMatches?.length || 0}件
+マッチング詳細: ${dayMatches ? dayMatches.map((m, i) => 
+  `${i+1}. 薬剤師: ${m.pharmacist?.name || '不明'}, 薬局: ${m.pharmacy?.name || '不明'}`
+).join('\n') : 'なし'}
+
+aiMatchesByDate状態:
+${Object.entries(aiMatchesByDate).map(([date, matches]) => 
+  `${date}: ${(matches as any[]).length}件`
+).join('\n')}`;
+                                
+                                console.log(`カレンダー表示デバッグ [${dateStr}]:`, {
+                                  hasMatches: !!dayMatches,
+                                  matchCount: dayMatches?.length || 0,
+                                  matches: dayMatches || []
+                                });
+                                
+                                alert(debugInfo);
+                              }
                               
                               return dayMatches && dayMatches.length > 0 && (
                                 <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
