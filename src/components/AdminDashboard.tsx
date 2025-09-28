@@ -3279,11 +3279,29 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             除外数: dayPostings.length - availablePostings.length
           });
           
-          aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, availablePostings, {
-            useAPI: true,
-            algorithm: 'hybrid',
-            priority: 'pharmacy_satisfaction'
-          }, userProfiles, ratings);
+          console.log('AIマッチングエンジン詳細:', {
+            engine: aiMatchingEngine,
+            requests: dayRequests.length,
+            postings: availablePostings.length,
+            userProfiles: userProfiles ? Object.keys(userProfiles).length : 0,
+            ratings: ratings ? ratings.length : 0
+          });
+          
+          try {
+            aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, availablePostings, {
+              useAPI: true,
+              algorithm: 'ai_based',
+              priority: 'pharmacy_satisfaction'
+            }, userProfiles, ratings);
+            
+            console.log('AIマッチングエンジン結果:', aiMatches);
+            alert(`AIマッチングエンジン結果: ${aiMatches ? aiMatches.length : 0}件`);
+          } catch (error) {
+            console.error('AIマッチングエンジンエラー:', error);
+            alert(`AIマッチングエンジンエラー: ${error}`);
+            // エラーの場合は簡易AIマッチングにフォールバック
+            aiMatches = await executeSimpleAIMatching(dayRequests, availablePostings);
+          }
                 } else {
           // 簡易AIマッチングロジック
           console.log('簡易AIマッチングを使用します');
