@@ -3601,6 +3601,9 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
       setSystemStatus('pending');
       setLastUpdated(new Date());
       
+      // 確定取り消し後は不足薬局表示を抑制
+      setMonthlyMatchingExecuted(false);
+      
       // データを再読み込み
       await loadAssignedShifts();
       await loadAll(); // 希望・募集データも再読み込み
