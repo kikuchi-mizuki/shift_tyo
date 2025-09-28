@@ -3541,10 +3541,27 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             .select('id, status, pharmacy_id, date, time_slot');
           
           if (postingError) {
+            const errorInfo = `=== 募集ステータス更新エラー ===
+エラー: ${postingError.message}
+薬局ID: ${s.pharmacy_id}
+日付: ${date}
+時間帯: ${s.time_slot || 'fullday'}`;
             console.error('募集ステータス更新エラー:', postingError);
-            alert(`募集ステータス更新エラー: ${postingError.message}`);
+            alert(errorInfo);
           } else {
+            const successInfo = `=== 募集ステータス更新結果 ===
+更新成功: ${updateResult ? updateResult.length : 0}件
+薬局ID: ${s.pharmacy_id}
+日付: ${date}
+時間帯: ${s.time_slot || 'fullday'}
+
+更新されたレコード:
+${updateResult ? updateResult.map((r: any, i: number) => 
+  `${i+1}. ID:${r.id}, ステータス:${r.status}, 薬局:${r.pharmacy_id}, 日付:${r.date}, 時間帯:${r.time_slot}`
+).join('\n') : 'なし'}`;
             console.log('募集ステータス更新成功:', updateResult);
+            alert(successInfo);
+            
             if (updateResult && updateResult.length === 0) {
               alert('更新対象の募集が見つかりませんでした');
             }
@@ -3560,12 +3577,19 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         .eq('status', 'confirmed');
 
       if (error) {
+        const deleteErrorInfo = `=== 確定シフト削除エラー ===
+エラー: ${error.message || error.code || 'Unknown error'}
+日付: ${date}`;
         console.error('Error canceling confirmed shifts:', error);
-        alert(`確定シフトの取り消しに失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        alert(deleteErrorInfo);
         return;
       }
 
-      alert(`${date}の確定シフトを取り消しました`);
+      const deleteSuccessInfo = `=== 確定シフト削除完了 ===
+日付: ${date}
+削除された確定シフト数: ${toCancel ? toCancel.length : 0}件`;
+      console.log(`${date}の確定シフトを取り消しました`);
+      alert(deleteSuccessInfo);
       
       // システム状態を未確定に戻す
       setSystemStatus('pending');
@@ -3575,8 +3599,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       await loadAssignedShifts();
       await loadAll(); // 希望・募集データも再読み込み
     } catch (error) {
+      const catchErrorInfo = `=== 確定取り消し処理エラー ===
+エラー: ${(error as any).message || 'Unknown error'}
+日付: ${date}`;
       console.error('Error in handleCancelConfirmedShifts:', error);
-      alert(`確定シフトの取り消しに失敗しました: ${(error as any).message || 'Unknown error'}`);
+      alert(catchErrorInfo);
     }
   };
 
