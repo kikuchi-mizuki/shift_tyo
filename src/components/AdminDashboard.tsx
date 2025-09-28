@@ -5242,15 +5242,31 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                                    new Date(p.date).toISOString().split('T')[0] === selectedDate ||
                                                    new Date(selectedDate).toISOString().split('T')[0] === p.date;
                                   const timeSlotMatch = p.time_slot !== 'consult';
-                                  const notAssigned = !dayAssigned.some((s: any) =>
-                                    s.date === p.date &&
-                                    s.pharmacy_id === p.pharmacy_id &&
-                                    s.store_name === p.store_name &&
-                                    s.status === 'confirmed'
-                                  );
+                                  const notAssigned = !dayAssigned.some((s: any) => {
+                                    // 店舗名の比較を柔軟にする
+                                    const shiftStoreName = s.store_name || '';
+                                    const postingStoreName = p.store_name || '';
+                                    const storeNameMatch = shiftStoreName === postingStoreName || 
+                                                          (shiftStoreName === '' && postingStoreName === '') ||
+                                                          (shiftStoreName === '' && !postingStoreName) ||
+                                                          (!shiftStoreName && postingStoreName === '');
+                                    
+                                    return s.date === p.date &&
+                                           s.pharmacy_id === p.pharmacy_id &&
+                                           storeNameMatch &&
+                                           s.status === 'confirmed';
+                                  });
                                   
                                   // デバッグログ（モーダル表示）
                                   if (p.date === selectedDate) {
+                                    // 店舗名比較のデバッグ情報
+                                    const shiftStoreName = dayAssigned[0]?.store_name || '';
+                                    const postingStoreName = p.store_name || '';
+                                    const storeNameMatch = shiftStoreName === postingStoreName || 
+                                                          (shiftStoreName === '' && postingStoreName === '') ||
+                                                          (shiftStoreName === '' && !postingStoreName) ||
+                                                          (!shiftStoreName && postingStoreName === '');
+                                    
                                     const debugInfo = `=== 募集フィルタリングデバッグ ===
 募集ID: ${p.id}
 薬局ID: ${p.pharmacy_id}
@@ -5264,6 +5280,11 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
 - 日付一致: ${dateMatch}
 - 時間帯OK: ${timeSlotMatch}
 - 未確定: ${notAssigned}
+
+店舗名比較:
+- 募集店舗名: "${postingStoreName}"
+- 確定シフト店舗名: "${shiftStoreName}"
+- 店舗名一致: ${storeNameMatch}
 
 確定済みシフト数: ${dayAssigned.length}
 確定済みシフト詳細:
