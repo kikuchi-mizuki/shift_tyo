@@ -3267,6 +3267,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             除外数: dayPostings.length - availablePostings.length
           });
           
+          // デバッグ: 除外された募集の詳細
+          const excludedPostings = dayPostings.filter((p: any) => {
+            const storeKey = `${p.pharmacy_id}_${p.store_name || 'default'}`;
+            return confirmedStores.has(storeKey);
+          });
+          
+          if (excludedPostings.length > 0) {
+            console.log('除外された募集:', excludedPostings.map(p => ({
+              id: p.id,
+              pharmacy_id: p.pharmacy_id,
+              store_name: p.store_name,
+              status: p.status,
+              date: p.date
+            })));
+          }
+          
           aiMatches = await executeSimpleAIMatching(dayRequests, availablePostings);
         }
         
@@ -5221,6 +5237,18 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                     s.status === 'confirmed'
                                   );
                                   
+                                  // デバッグログ
+                                  if (p.date === selectedDate) {
+                                    console.log('募集フィルタリングデバッグ:', {
+                                      posting: p,
+                                      selectedDate,
+                                      dateMatch,
+                                      timeSlotMatch,
+                                      notAssigned,
+                                      dayAssigned: dayAssigned.length,
+                                      status: p.status
+                                    });
+                                  }
                                   
                                   return dateMatch && timeSlotMatch && notAssigned;
                                 })
