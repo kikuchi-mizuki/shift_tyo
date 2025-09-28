@@ -223,10 +223,19 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
       let bestMatches: any[] = [];
       let bestScore = 0;
       
+      console.log('=== 全探索アルゴリズム開始 ===');
+      console.log('可能なマッチング候補:', possibleMatches.length);
+      possibleMatches.forEach((match, index) => {
+        console.log(`${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.storeName}) スコア:${match.totalScore}`);
+      });
+      
       // 全組み合わせを探索（2^Nの組み合わせ）
       const totalCombinations = Math.pow(2, possibleMatches.length);
       console.log(`全探索開始: ${totalCombinations}通りの組み合わせを検証`);
       alert(`全探索開始: ${totalCombinations}通りの組み合わせを検証`);
+      
+      let validCombinations = 0;
+      let maxMatchesFound = 0;
       
       for (let i = 0; i < totalCombinations; i++) {
         const currentMatches: any[] = [];
@@ -278,14 +287,31 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
           }
         }
         
-        // 最適解の更新（マッチ数優先、同数の場合はスコア優先）
-        const currentScore = currentMatches.reduce((sum, match) => sum + match.compatibilityScore, 0);
-        if (currentMatches.length > bestMatches.length || 
-            (currentMatches.length === bestMatches.length && currentScore > bestScore)) {
-          bestMatches = [...currentMatches];
-          bestScore = currentScore;
+        // 有効な組み合わせをカウント
+        if (currentMatches.length > 0) {
+          validCombinations++;
+          maxMatchesFound = Math.max(maxMatchesFound, currentMatches.length);
+          
+          // 最適解の更新（マッチ数優先、同数の場合はスコア優先）
+          const currentScore = currentMatches.reduce((sum, match) => sum + match.compatibilityScore, 0);
+          if (currentMatches.length > bestMatches.length || 
+              (currentMatches.length === bestMatches.length && currentScore > bestScore)) {
+            bestMatches = [...currentMatches];
+            bestScore = currentScore;
+            
+            console.log(`✅ 新しい最適解発見: ${currentMatches.length}件マッチ, スコア: ${currentScore.toFixed(2)}`);
+            currentMatches.forEach((match, index) => {
+              console.log(`  ${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.timeSlot.start}-${match.timeSlot.end})`);
+            });
+          }
         }
       }
+      
+      console.log(`=== 全探索完了 ===`);
+      console.log(`有効な組み合わせ: ${validCombinations}通り`);
+      console.log(`最大マッチ数: ${maxMatchesFound}件`);
+      console.log(`最適解: ${bestMatches.length}件マッチ`);
+      alert(`全探索完了: ${validCombinations}通りの有効組み合わせ, 最大${maxMatchesFound}件マッチ, 最適解${bestMatches.length}件`);
       
       return bestMatches;
     };
