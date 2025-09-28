@@ -2944,6 +2944,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           .update({ status: 'confirmed' })
           .eq('pharmacy_id', match.pharmacy.id)
           .eq('date', date)
+          .eq('store_name', storeName || null)
           .select();
         
         if (postingError) {
@@ -3138,13 +3139,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               console.warn('希望ステータス更新エラー:', requestError);
             }
             
-            // 薬局の募集を更新
+            // 薬局の募集を更新（店舗毎に条件を追加）
             const { error: postingError } = await supabase
               .from('shift_postings')
               .update({ status: 'confirmed' })
               .eq('pharmacy_id', shift.pharmacy_id)
               .eq('date', shift.date)
-              .eq('time_slot', shiftTimeSlot);
+              .eq('time_slot', shiftTimeSlot)
+              .eq('store_name', shift.store_name || null);
             
             if (postingError) {
               console.warn('募集ステータス更新エラー:', postingError);
@@ -3259,12 +3261,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 .eq('pharmacist_id', shift.pharmacist_id)
                 .eq('date', shift.date);
               
-              // 薬局の募集を更新
+              // 薬局の募集を更新（店舗毎に条件を追加）
               await supabase
                 .from('shift_postings')
                 .update({ status: 'confirmed' })
                 .eq('pharmacy_id', shift.pharmacy_id)
-                .eq('date', shift.date);
+                .eq('date', shift.date)
+                .eq('store_name', shift.store_name || null);
             }
           } catch (statusError) {
             console.warn('ステータス更新中のエラー:', statusError);
