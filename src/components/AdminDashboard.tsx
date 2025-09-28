@@ -219,6 +219,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
     // 最適解を構築（貪欲法で最適解に近い解を求める）
     const pharmacyNeedsMap = new Map<string, number>();
     const pharmacyMatchesMap = new Map<string, any[]>();
+    const usedPharmacists = new Set<string>(); // 薬剤師の使用済みチェックを復活
     
     // 各薬局の必要人数を初期化
     for (const pharmacyNeed of pharmacyNeeds) {
@@ -232,8 +233,8 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
       const key = `${match.pharmacyNeed.pharmacy_id}_${match.pharmacyNeed.store_name || 'default'}`;
       const remaining = pharmacyNeedsMap.get(key) || 0;
       
-      // 薬局の必要人数が満たされている場合はスキップ（薬剤師は複数の薬局とマッチング可能）
-      if (remaining <= 0) continue;
+      // 薬剤師が既に使用済み、または薬局の必要人数が満たされている場合はスキップ
+      if (usedPharmacists.has(match.request.pharmacist_id) || remaining <= 0) continue;
       
       // マッチングを追加
       const compatibilityScore = match.pharmacistRating / 5; // 0-1に正規化
@@ -256,7 +257,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
         reasons: [`評価${match.pharmacistRating}`, `優先度${match.priority}`, '時間範囲適合']
       });
       
-      // 薬剤師は複数の薬局とマッチング可能なので、usedPharmacistsから削除
+      usedPharmacists.add(match.request.pharmacist_id);
       pharmacyNeedsMap.set(key, remaining - 1);
       pharmacyMatchesMap.get(key)?.push(match);
       
