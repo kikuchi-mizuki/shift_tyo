@@ -3531,65 +3531,18 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             });
           }
           
-          // 特定のシフトに対応する募集のみを更新
-          console.log('=== 募集ステータス更新開始 ===');
-          console.log('更新条件:', {
-            pharmacy_id: s.pharmacy_id,
-            date: date,
-            time_slot: s.time_slot
-          });
-          
-          // 更新前の状態を確認（特定の時間帯のみ）
-          const { data: beforeUpdate, error: beforeError } = await supabase
-            .from('shift_postings')
-            .select('id, status, pharmacy_id, date, time_slot')
-            .eq('pharmacy_id', s.pharmacy_id)
-            .eq('date', date)
-            .eq('time_slot', s.time_slot || 'fullday');
-          
-          console.log('更新前の募集状態:', beforeUpdate);
-          
           // 特定の時間帯の募集のみを更新
-          const { data: updateResult, error: postingError } = await supabase
+          const { error: postingError } = await supabase
             .from('shift_postings')
             .update({ status: 'open' })
             .eq('pharmacy_id', s.pharmacy_id)
             .eq('date', date)
-            .eq('time_slot', s.time_slot || 'fullday')
-            .select('id, status, pharmacy_id, date, time_slot');
-          
-          console.log('更新結果:', updateResult);
-          
-          // デバッグ情報をモーダルで表示
-          const debugInfo = `=== 募集ステータス更新デバッグ ===
-更新条件:
-- 薬局ID: ${s.pharmacy_id}
-- 日付: ${date}
-- 時間帯: ${s.time_slot || 'fullday'}
-
-更新前の募集状態:
-${beforeUpdate ? beforeUpdate.map((p: any, i: number) => 
-  `${i+1}. ID:${p.id}, ステータス:${p.status}, 薬局:${p.pharmacy_id}, 日付:${p.date}, 時間帯:${p.time_slot}`
-).join('\n') : 'データなし'}
-
-更新結果:
-${updateResult ? updateResult.map((p: any, i: number) => 
-  `${i+1}. ID:${p.id}, ステータス:${p.status}, 薬局:${p.pharmacy_id}, 日付:${p.date}, 時間帯:${p.time_slot}`
-).join('\n') : 'データなし'}
-
-エラー情報:
-${postingError ? postingError.message : 'エラーなし'}`;
-          
-          console.log(debugInfo);
-          alert(debugInfo);
+            .eq('time_slot', s.time_slot || 'fullday');
           
           if (postingError) {
             console.error('募集ステータス更新エラー:', postingError);
-          } else {
-            console.log('募集ステータス更新成功:', updateResult);
           }
         }
-        console.log('=== 確定取り消し: ステータス更新完了 ===');
       }
 
       // 3) 確定シフトを削除
@@ -5044,55 +4997,11 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                     s.status === 'confirmed'
                                   );
                                   
-                                  // デバッグログ（モーダル表示）
-                                  const filterDebugInfo = `=== 募集フィルタリングデバッグ ===
-募集ID: ${p.id}
-薬局ID: ${p.pharmacy_id}
-日付: ${p.date} (型: ${typeof p.date})
-選択日付: ${selectedDate} (型: ${typeof selectedDate})
-時間帯: ${p.time_slot}
-ステータス: ${p.status}
-
-日付比較詳細:
-- p.date === selectedDate: ${p.date === selectedDate}
-- p.date == selectedDate: ${p.date == selectedDate}
-- p.date === selectedDate.toString(): ${p.date === selectedDate.toString()}
-- p.date.toString() === selectedDate: ${p.date.toString() === selectedDate}
-
-フィルタリング条件:
-- 日付一致: ${dateMatch}
-- 相談以外: ${timeSlotMatch}
-- 確定済みシフトでない: ${notAssigned}
-
-結果: ${dateMatch && timeSlotMatch && notAssigned ? '表示される' : '除外される'}`;
-                                  
-                                  console.log(filterDebugInfo);
-                                  alert(filterDebugInfo);
                                   
                                   return dateMatch && timeSlotMatch && notAssigned;
                                 })
                               : [];
                             
-                            // デバッグログ（モーダル表示）
-                            const debugInfo = `=== 募集している薬局デバッグ ===
-選択日付: ${selectedDate}
-確定済みシフト数: ${dayAssigned.length}
-全募集数: ${Array.isArray(postings) ? postings.length : 0}
-該当日の募集数: ${Array.isArray(postings) ? postings.filter((p: any) => p.date === selectedDate).length : 0}
-フィルタ後の募集数: ${regularPostings.length}
-
-該当日の募集詳細:
-${Array.isArray(postings) ? postings.filter((p: any) => p.date === selectedDate).map((p: any, i: number) => 
-  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 時間:${p.time_slot}, ステータス:${p.status}`
-).join('\n') : 'データなし'}
-
-フィルタ後の募集詳細:
-${regularPostings.map((p: any, i: number) => 
-  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 時間:${p.time_slot}, ステータス:${p.status}`
-).join('\n')}`;
-                            
-                            console.log(debugInfo);
-                            alert(debugInfo);
                             
                             return regularPostings.length;
                           })()}件)
@@ -5205,55 +5114,11 @@ ${regularPostings.map((p: any, i: number) =>
                                 s.status === 'confirmed'
                               );
                               
-                              // デバッグログ（モーダル表示）
-                              const filterDebugInfo = `=== 募集フィルタリング表示デバッグ ===
-募集ID: ${p.id}
-薬局ID: ${p.pharmacy_id}
-日付: ${p.date} (型: ${typeof p.date})
-選択日付: ${selectedDate} (型: ${typeof selectedDate})
-時間帯: ${p.time_slot}
-ステータス: ${p.status}
-
-日付比較詳細:
-- p.date === selectedDate: ${p.date === selectedDate}
-- p.date == selectedDate: ${p.date == selectedDate}
-- p.date === selectedDate.toString(): ${p.date === selectedDate.toString()}
-- p.date.toString() === selectedDate: ${p.date.toString() === selectedDate}
-
-フィルタリング条件:
-- 日付一致: ${dateMatch}
-- 相談以外: ${timeSlotMatch}
-- 確定済みシフトでない: ${notAssigned}
-
-結果: ${dateMatch && timeSlotMatch && notAssigned ? '表示される' : '除外される'}`;
-                              
-                              console.log(filterDebugInfo);
-                              alert(filterDebugInfo);
                               
                               return dateMatch && timeSlotMatch && notAssigned;
                             })
                           : [];
                         
-                        // デバッグログ（モーダル表示）
-                        const debugInfo = `=== 募集している薬局表示デバッグ ===
-選択日付: ${selectedDate}
-確定済みシフト数: ${dayAssigned.length}
-全募集数: ${Array.isArray(postings) ? postings.length : 0}
-該当日の募集数: ${Array.isArray(postings) ? postings.filter((p: any) => p.date === selectedDate).length : 0}
-フィルタ後の募集数: ${regularPostings.length}
-
-該当日の募集詳細:
-${Array.isArray(postings) ? postings.filter((p: any) => p.date === selectedDate).map((p: any, i: number) => 
-  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 時間:${p.time_slot}, ステータス:${p.status}`
-).join('\n') : 'データなし'}
-
-フィルタ後の募集詳細:
-${regularPostings.map((p: any, i: number) => 
-  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 時間:${p.time_slot}, ステータス:${p.status}`
-).join('\n')}`;
-                        
-                        console.log(debugInfo);
-                        alert(debugInfo);
                         
                         return regularPostings.map((posting: any, index: number) => {
                           const pharmacyProfile = userProfiles[posting.pharmacy_id];
