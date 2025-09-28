@@ -217,10 +217,10 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
     console.log(`可能なマッチング組み合わせ: ${allPossibleMatches.length}件`);
     alert(`可能なマッチング組み合わせ: ${allPossibleMatches.length}件`);
     
-    // 最適解を構築（貪欲法で最適解に近い解を求める）
+    // 最適解を構築（1人の薬剤師は1日1つの薬局のみ、全体で不足薬局を最小化）
     const pharmacyNeedsMap = new Map<string, number>();
     const pharmacyMatchesMap = new Map<string, any[]>();
-    const usedPharmacists = new Set<string>(); // 薬剤師の使用済みチェックを復活
+    const usedPharmacists = new Set<string>(); // 薬剤師の使用済みチェック
     
     // 各薬局の必要人数を初期化
     for (const pharmacyNeed of pharmacyNeeds) {
@@ -229,15 +229,12 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
       pharmacyMatchesMap.set(key, []);
     }
     
-    // 最適解を構築
-    for (const match of allPossibleMatches) {
-      const key = `${match.pharmacyNeed.pharmacy_id}_${match.pharmacyNeed.store_name || 'default'}`;
-      const remaining = pharmacyNeedsMap.get(key) || 0;
-      
-      // 薬局の必要人数が満たされている場合はスキップ（薬剤師は複数マッチング可能）
-      if (remaining <= 0) continue;
-      
-      // マッチングを追加
+    // 最適解を構築（薬剤師は1日1つの薬局のみ、全体で不足薬局を最小化）
+    // 全ての可能な組み合わせを評価して最適解を選択
+    const bestSolution = findOptimalSolution(allPossibleMatches, pharmacyNeeds);
+    
+    // 最適解を適用
+    for (const match of bestSolution) {
       const compatibilityScore = match.pharmacistRating / 5; // 0-1に正規化
       
       matches.push({
@@ -258,12 +255,57 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
         reasons: [`評価${match.pharmacistRating}`, `優先度${match.priority}`, '時間範囲適合']
       });
       
-      // 薬剤師は複数マッチング可能なので、usedPharmacistsから削除
-      pharmacyNeedsMap.set(key, remaining - 1);
-      pharmacyMatchesMap.get(key)?.push(match);
-      
       console.log(`✅ 最適解マッチング: ${match.pharmacist.name} → ${match.pharmacy.name} (${match.storeName}) スコア:${match.totalScore}`);
       alert(`✅ 最適解マッチング: ${match.pharmacist.name} → ${match.pharmacy.name} (${match.storeName}) スコア:${match.totalScore}`);
+    }
+    
+    // 最適解を見つける関数
+    function findOptimalSolution(allMatches: any[], pharmacyNeeds: any[]) {
+      const solutions: any[][] = [];
+      
+      // 再帰的に全ての可能な組み合わせを生成
+      function generateSolutions(currentSolution: any[], remainingMatches: any[], usedPharmacists: Set<string>) {
+        if (remainingMatches.length === 0) {
+          solutions.push([...currentSolution]);
+          return;
+        }
+        
+        for (let i = 0; i < remainingMatches.length; i++) {
+          const match = remainingMatches[i];
+          
+          // 薬剤師が既に使用済みの場合はスキップ
+          if (usedPharmacists.has(match.request.pharmacist_id)) continue;
+          
+          // 薬局の必要人数をチェック
+          const key = `${match.pharmacyNeed.pharmacy_id}_${match.pharmacyNeed.store_name || 'default'}`;
+          const currentCount = currentSolution.filter(m => 
+            `${m.pharmacyNeed.pharmacy_id}_${m.pharmacyNeed.store_name || 'default'}` === key
+          ).length;
+          const requiredCount = Number(match.pharmacyNeed.required_staff) || 1;
+          
+          if (currentCount >= requiredCount) continue;
+          
+          // 新しい解を生成
+          const newSolution = [...currentSolution, match];
+          const newUsedPharmacists = new Set(usedPharmacists);
+          newUsedPharmacists.add(match.request.pharmacist_id);
+          
+          const newRemainingMatches = remainingMatches.filter((_, index) => index !== i);
+          generateSolutions(newSolution, newRemainingMatches, newUsedPharmacists);
+        }
+      }
+      
+      generateSolutions([], allMatches, new Set());
+      
+      // 最適解を選択（マッチ数が多い順、同じならスコアの高い順）
+      solutions.sort((a, b) => {
+        if (a.length !== b.length) return b.length - a.length;
+        const aScore = a.reduce((sum, match) => sum + match.totalScore, 0);
+        const bScore = b.reduce((sum, match) => sum + match.totalScore, 0);
+        return bScore - aScore;
+      });
+      
+      return solutions[0] || [];
     }
 
     const finalResult = `=== AIマッチング完了 ===
