@@ -5245,6 +5245,7 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                   const notAssigned = !dayAssigned.some((s: any) =>
                                     s.date === p.date &&
                                     s.pharmacy_id === p.pharmacy_id &&
+                                    s.store_name === p.store_name &&
                                     s.status === 'confirmed'
                                   );
                                   
@@ -5264,7 +5265,11 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
 - 時間帯OK: ${timeSlotMatch}
 - 未確定: ${notAssigned}
 
-確定済みシフト数: ${dayAssigned.length}`;
+確定済みシフト数: ${dayAssigned.length}
+確定済みシフト詳細:
+${dayAssigned.map((s: any, i: number) => 
+  `${i+1}. 薬局:${s.pharmacy_id}, 店舗:${s.store_name || 'なし'}, 日付:${s.date}, ステータス:${s.status}`
+).join('\n')}`;
                                     console.log('募集フィルタリングデバッグ:', {
                                       posting: p,
                                       selectedDate,
