@@ -3532,15 +3532,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           }
           
           // 特定の時間帯の募集のみを更新
-          const { error: postingError } = await supabase
+          const { data: updateResult, error: postingError } = await supabase
             .from('shift_postings')
             .update({ status: 'open' })
             .eq('pharmacy_id', s.pharmacy_id)
             .eq('date', date)
-            .eq('time_slot', s.time_slot || 'fullday');
+            .eq('time_slot', s.time_slot || 'fullday')
+            .select('id, status, pharmacy_id, date, time_slot');
           
           if (postingError) {
             console.error('募集ステータス更新エラー:', postingError);
+            alert(`募集ステータス更新エラー: ${postingError.message}`);
+          } else {
+            console.log('募集ステータス更新成功:', updateResult);
+            if (updateResult && updateResult.length === 0) {
+              alert('更新対象の募集が見つかりませんでした');
+            }
           }
         }
       }
