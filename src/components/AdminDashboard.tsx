@@ -78,15 +78,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const executeSimpleAIMatching = async (requests: any[], postings: any[]) => {
     console.log('簡易AIマッチング開始:', { requests: requests.length, postings: postings.length });
     
+    // 確定済み店舗を取得して除外
+    const confirmedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s?.status === 'confirmed') : [];
+    const confirmedStores = new Set(
+      confirmedShifts.map((s: any) => `${s.pharmacy_id}_${s.store_name || 'default'}`)
+    );
+    
+    console.log('確定済み店舗:', Array.from(confirmedStores));
+    
+    // 確定済み店舗を除外した募集のみを使用
+    const availablePostings = postings.filter((p: any) => {
+      const storeKey = `${p.pharmacy_id}_${p.store_name || 'default'}`;
+      return !confirmedStores.has(storeKey);
+    });
+    
+    console.log('利用可能な募集数:', availablePostings.length, '(除外:', postings.length - availablePostings.length, '件)');
+    
     const debugInfo = `=== AIマッチング開始 ===
 薬剤師希望数: ${requests.length}件
-薬局募集数: ${postings.length}件
+薬局募集数: ${postings.length}件 (利用可能: ${availablePostings.length}件)
 
 薬剤師希望詳細:
 ${requests.map(r => `- ID: ${r.pharmacist_id}, 時間: ${r.start_time}-${r.end_time}, 優先度: ${r.priority}`).join('\n')}
 
 薬局募集詳細:
-${postings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_time}, 必要人数: ${p.required_staff}, 店舗: ${p.store_name}`).join('\n')}`;
+${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_time}, 必要人数: ${p.required_staff}, 店舗: ${p.store_name}`).join('\n')}`;
     
     console.log(debugInfo);
     // alert(debugInfo); // モーダルログを非表示
@@ -119,10 +135,10 @@ ${postings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_tim
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         });
       
-    let remainingRequired = postings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
+    let remainingRequired = availablePostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0);
 
-    // 各薬局の必要人数を管理
-    const pharmacyNeeds = postings.map((p: any) => ({
+    // 各薬局の必要人数を管理（利用可能な募集のみ）
+    const pharmacyNeeds = availablePostings.map((p: any) => ({
       ...p,
       remaining: Number(p.required_staff) || 0
     }));
@@ -3205,7 +3221,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         if (aiMatchingEngine) {
           // フルAIマッチングエンジンを使用
           console.log('AIマッチングエンジンを使用します');
-          aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
+          
+          // 確定済み店舗を除外
+          const confirmedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s?.status === 'confirmed') : [];
+          const confirmedStores = new Set(
+            confirmedShifts.map((s: any) => `${s.pharmacy_id}_${s.store_name || 'default'}`)
+          );
+          
+          // 確定済み店舗を除外した募集のみを使用
+          const availablePostings = dayPostings.filter((p: any) => {
+            const storeKey = `${p.pharmacy_id}_${p.store_name || 'default'}`;
+            return !confirmedStores.has(storeKey);
+          });
+          
+          console.log('AIマッチング対象:', {
+            全募集数: dayPostings.length,
+            利用可能募集数: availablePostings.length,
+            除外数: dayPostings.length - availablePostings.length
+          });
+          
+          aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, availablePostings, {
             useAPI: true,
             algorithm: 'hybrid',
             priority: 'pharmacy_satisfaction'
@@ -3213,7 +3248,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 } else {
           // 簡易AIマッチングロジック
           console.log('簡易AIマッチングを使用します');
-          aiMatches = await executeSimpleAIMatching(dayRequests, dayPostings);
+          
+          // 確定済み店舗を除外
+          const confirmedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s?.status === 'confirmed') : [];
+          const confirmedStores = new Set(
+            confirmedShifts.map((s: any) => `${s.pharmacy_id}_${s.store_name || 'default'}`)
+          );
+          
+          // 確定済み店舗を除外した募集のみを使用
+          const availablePostings = dayPostings.filter((p: any) => {
+            const storeKey = `${p.pharmacy_id}_${p.store_name || 'default'}`;
+            return !confirmedStores.has(storeKey);
+          });
+          
+          console.log('簡易AIマッチング対象:', {
+            全募集数: dayPostings.length,
+            利用可能募集数: availablePostings.length,
+            除外数: dayPostings.length - availablePostings.length
+          });
+          
+          aiMatches = await executeSimpleAIMatching(dayRequests, availablePostings);
         }
         
         console.log(`AIマッチング結果: ${aiMatches.length}件のマッチが見つかりました`);
