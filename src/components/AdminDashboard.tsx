@@ -853,6 +853,19 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             !confirmedPharmacistIds.has(match.pharmacist.id)
           );
           
+          // デバッグ: マッチング結果の詳細を表示
+          console.log(`マッチング結果詳細 [${date}]:`, {
+            totalMatches: matchesByDate[date].length,
+            confirmedPharmacistIds: Array.from(confirmedPharmacistIds),
+            unconfirmedMatches: unconfirmedMatches.length,
+            matchDetails: matchesByDate[date].map(m => ({
+              pharmacist_id: m.pharmacist.id,
+              pharmacist_name: m.pharmacist.name,
+              pharmacy_name: m.pharmacy.name,
+              is_confirmed: confirmedPharmacistIds.has(m.pharmacist.id)
+            }))
+          });
+          
           // デバッグ: マッチング結果の保存状況をログ出力
           console.log(`=== AIマッチング結果保存デバッグ [${date}] ===`);
           console.log(`確定済み薬剤師ID:`, Array.from(confirmedPharmacistIds));
@@ -4431,12 +4444,21 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                             </div>
                             
                             {/* 未確定マッチを表示 */}
-                            {aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0 && (
-                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">マ{aiMatchesByDate[dateStr].length}</span>
-                                <span className="hidden sm:inline">マッチ {aiMatchesByDate[dateStr].length}</span>
-                              </div>
-                            )}
+                            {(() => {
+                              const dayMatches = aiMatchesByDate[dateStr];
+                              console.log(`カレンダー表示デバッグ [${dateStr}]:`, {
+                                hasMatches: !!dayMatches,
+                                matchCount: dayMatches?.length || 0,
+                                matches: dayMatches || []
+                              });
+                              
+                              return dayMatches && dayMatches.length > 0 && (
+                                <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
+                                  <span className="sm:hidden">マ{dayMatches.length}</span>
+                                  <span className="hidden sm:inline">マッチ {dayMatches.length}</span>
+                                </div>
+                              );
+                            })()}
                             
                             {/* 確定後も不足パッチを表示（1ヶ月分マッチング実行後にのみ） */}
                             {monthlyMatchingExecuted && matchingStatus.shortage > 0 && (
