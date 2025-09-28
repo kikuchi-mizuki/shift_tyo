@@ -867,6 +867,30 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       setMonthlyMatchingExecuted(true);
       console.log('✅ 1ヶ月分マッチング実行完了 - monthlyMatchingExecutedフラグをtrueに設定');
       
+      // デバッグ: AIマッチング結果の詳細をモーダルで表示
+      const debugResult = `=== AIマッチング実行結果 ===
+実行日時: ${new Date().toLocaleString('ja-JP')}
+処理対象日数: ${allDates.length}日
+総マッチング件数: ${monthlyMatches.length}件
+
+日付別マッチング結果:
+${Object.entries(matchesByDate).map(([date, matches]) => 
+  `${date}: ${(matches as any[]).length}件`
+).join('\n')}
+
+マッチング詳細:
+${monthlyMatches.map((match, i) => 
+  `${i+1}. 薬剤師: ${match.pharmacist?.name || '不明'}, 薬局: ${match.pharmacy?.name || '不明'}, 日付: ${match.timeSlot?.date || '不明'}`
+).join('\n')}
+
+aiMatchesByDate状態:
+${Object.entries(aiMatchesByDate).map(([date, matches]) => 
+  `${date}: ${(matches as any[]).length}件`
+).join('\n')}`;
+      
+      console.log('AIマッチング実行結果:', debugResult);
+      alert(debugResult);
+      
       console.log('マッチング結果:', monthlyMatches);
       console.log('日付別マッチング結果:', matchesByDate);
       
