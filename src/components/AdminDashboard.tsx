@@ -5034,17 +5034,24 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                     s.status === 'confirmed'
                                   );
                                   
-                                  // デバッグログ
-                                  console.log(`募集フィルタリング: ID=${p.id}`, {
-                                    dateMatch,
-                                    timeSlotMatch,
-                                    notAssigned,
-                                    postingDate: p.date,
-                                    selectedDate,
-                                    timeSlot: p.time_slot,
-                                    status: p.status,
-                                    pharmacyId: p.pharmacy_id
-                                  });
+                                  // デバッグログ（モーダル表示）
+                                  const filterDebugInfo = `=== 募集フィルタリングデバッグ ===
+募集ID: ${p.id}
+薬局ID: ${p.pharmacy_id}
+日付: ${p.date}
+選択日付: ${selectedDate}
+時間帯: ${p.time_slot}
+ステータス: ${p.status}
+
+フィルタリング条件:
+- 日付一致: ${dateMatch}
+- 相談以外: ${timeSlotMatch}
+- 確定済みシフトでない: ${notAssigned}
+
+結果: ${dateMatch && timeSlotMatch && notAssigned ? '表示される' : '除外される'}`;
+                                  
+                                  console.log(filterDebugInfo);
+                                  alert(filterDebugInfo);
                                   
                                   return dateMatch && timeSlotMatch && notAssigned;
                                 })
@@ -5177,17 +5184,24 @@ ${regularPostings.map((p: any, i: number) =>
                                 s.status === 'confirmed'
                               );
                               
-                              // デバッグログ
-                              console.log(`募集フィルタリング表示: ID=${p.id}`, {
-                                dateMatch,
-                                timeSlotMatch,
-                                notAssigned,
-                                postingDate: p.date,
-                                selectedDate,
-                                timeSlot: p.time_slot,
-                                status: p.status,
-                                pharmacyId: p.pharmacy_id
-                              });
+                              // デバッグログ（モーダル表示）
+                              const filterDebugInfo = `=== 募集フィルタリング表示デバッグ ===
+募集ID: ${p.id}
+薬局ID: ${p.pharmacy_id}
+日付: ${p.date}
+選択日付: ${selectedDate}
+時間帯: ${p.time_slot}
+ステータス: ${p.status}
+
+フィルタリング条件:
+- 日付一致: ${dateMatch}
+- 相談以外: ${timeSlotMatch}
+- 確定済みシフトでない: ${notAssigned}
+
+結果: ${dateMatch && timeSlotMatch && notAssigned ? '表示される' : '除外される'}`;
+                              
+                              console.log(filterDebugInfo);
+                              alert(filterDebugInfo);
                               
                               return dateMatch && timeSlotMatch && notAssigned;
                             })
