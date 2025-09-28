@@ -4763,25 +4763,12 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                             const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
                             
                             // デバッグ: 手動マッチング開始
-                            alert(`手動マッチング開始\n不足薬局数: ${dayShortageAnalysis.length}\nmanualMatches: ${JSON.stringify(manualMatches, null, 2)}`);
                             
                             for (const pharmacy of dayShortageAnalysis) {
                               const selectedPharmacists = manualMatches[pharmacy.id] || [];
-                              alert(`薬局処理開始\n薬局ID: ${pharmacy.id}\n選択された薬剤師: ${selectedPharmacists.length}人`);
                               
                               for (const pharmacistId of selectedPharmacists) {
                                 if (pharmacistId) {
-                                  // デバッグ: 薬局の時間を確認
-                                  const debugInfo = `=== 手動マッチング時間デバッグ ===
-薬局ID: ${pharmacy.id}
-薬局名: ${pharmacy.name}
-店舗名: ${pharmacy.store_name}
-pharmacy.start_time: ${pharmacy.start_time}
-pharmacy.end_time: ${pharmacy.end_time}
-pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
-                                  
-                                  console.log(debugInfo);
-                                  alert(debugInfo);
                                   
                                   // 薬局の時間に合わせて希望シフトを作成
                                   manualShiftRequests.push({
@@ -4803,13 +4790,11 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                 const { error } = await shiftRequests.createRequests(manualShiftRequests);
                                 if (error) {
                                   console.error('手動マッチング希望シフト作成エラー:', error);
-                                  alert('手動マッチングの希望シフト作成に失敗しました');
                                   return;
                                 }
                                 console.log('手動マッチング希望シフト作成完了:', manualShiftRequests.length, '件');
                               } catch (error) {
                                 console.error('手動マッチング処理エラー:', error);
-                                alert('手動マッチングの処理に失敗しました');
                                 return;
                               }
                             }
@@ -5296,43 +5281,6 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                                           (shiftStoreName === '' && !postingStoreName) ||
                                                           (!shiftStoreName && postingStoreName === '');
                                     
-                                    const debugInfo = `=== 募集フィルタリングデバッグ ===
-募集ID: ${p.id}
-薬局ID: ${p.pharmacy_id}
-店舗名: ${p.store_name || 'なし'}
-日付: ${p.date}
-選択日: ${selectedDate}
-ステータス: ${p.status}
-時間帯: ${p.time_slot}
-
-フィルタ条件:
-- 日付一致: ${dateMatch}
-- 時間帯OK: ${timeSlotMatch}
-- 未確定: ${notAssigned}
-
-店舗名比較:
-- 募集店舗名: "${postingStoreName}"
-- 確定シフト店舗名: "${shiftStoreName}"
-- 店舗名一致: ${storeNameMatch}
-
-最終判定:
-- 表示される: ${dateMatch && timeSlotMatch && notAssigned}
-
-確定済みシフト数: ${dayAssigned.length}
-確定済みシフト詳細:
-${dayAssigned.map((s: any, i: number) => 
-  `${i+1}. 薬局:${s.pharmacy_id}, 店舗:${s.store_name || 'なし'}, 日付:${s.date}, ステータス:${s.status}`
-).join('\n')}`;
-                                    console.log('募集フィルタリングデバッグ:', {
-                                      posting: p,
-                                      selectedDate,
-                                      dateMatch,
-                                      timeSlotMatch,
-                                      notAssigned,
-                                      dayAssigned: dayAssigned.length,
-                                      status: p.status
-                                    });
-                                    alert(debugInfo);
                                   }
                                   
                                   return dateMatch && timeSlotMatch && notAssigned;
@@ -6004,7 +5952,6 @@ ${dayAssigned.map((s: any, i: number) =>
                                 }} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
                                 <button onClick={() => {
                                   console.log('Delete button clicked for pharmacy:', pharmacy);
-                                  alert('削除ボタンがクリックされました: ' + (pharmacy.name || pharmacy.email));
                                   deleteUser(pharmacy);
                                 }} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
                               </>
@@ -6230,7 +6177,6 @@ ${dayAssigned.map((s: any, i: number) =>
                                 }} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">編集</button>
                                 <button onClick={() => {
                                   console.log('Delete button clicked for pharmacist:', pharmacist);
-                                  alert('削除ボタンがクリックされました: ' + (pharmacist.name || pharmacist.email));
                                   deleteUser(pharmacist);
                                 }} className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">削除</button>
                               </>
