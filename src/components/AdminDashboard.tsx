@@ -3531,22 +3531,24 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             });
           }
           
-          // 特定の時間帯と店舗の募集のみを更新
+          // 特定の開始時間・終了時間と店舗の募集のみを更新
           const { data: updateResult, error: postingError } = await supabase
             .from('shift_postings')
             .update({ status: 'open' })
             .eq('pharmacy_id', s.pharmacy_id)
             .eq('date', date)
-            .eq('time_slot', s.time_slot || 'fullday')
+            .eq('start_time', s.start_time || '09:00:00')
+            .eq('end_time', s.end_time || '18:00:00')
             .eq('store_name', s.store_name || null)
-            .select('id, status, pharmacy_id, date, time_slot, store_name');
+            .select('id, status, pharmacy_id, date, start_time, end_time, store_name');
           
           if (postingError) {
             const errorInfo = `=== 募集ステータス更新エラー ===
 エラー: ${postingError.message}
 薬局ID: ${s.pharmacy_id}
 日付: ${date}
-時間帯: ${s.time_slot || 'fullday'}
+開始時間: ${s.start_time || '09:00:00'}
+終了時間: ${s.end_time || '18:00:00'}
 店舗名: ${s.store_name || 'なし'}`;
             console.error('募集ステータス更新エラー:', postingError);
             alert(errorInfo);
@@ -3555,12 +3557,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 更新成功: ${updateResult ? updateResult.length : 0}件
 薬局ID: ${s.pharmacy_id}
 日付: ${date}
-時間帯: ${s.time_slot || 'fullday'}
+開始時間: ${s.start_time || '09:00:00'}
+終了時間: ${s.end_time || '18:00:00'}
 店舗名: ${s.store_name || 'なし'}
 
 更新されたレコード:
 ${updateResult ? updateResult.map((r: any, i: number) => 
-  `${i+1}. ID:${r.id}, ステータス:${r.status}, 薬局:${r.pharmacy_id}, 日付:${r.date}, 時間帯:${r.time_slot}, 店舗:${r.store_name || 'なし'}`
+  `${i+1}. ID:${r.id}, ステータス:${r.status}, 薬局:${r.pharmacy_id}, 日付:${r.date}, 開始:${r.start_time}, 終了:${r.end_time}, 店舗:${r.store_name || 'なし'}`
 ).join('\n') : 'なし'}`;
             console.log('募集ステータス更新成功:', updateResult);
             alert(successInfo);
