@@ -5350,14 +5350,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                               onChange={(e) => setNewPosting({ ...newPosting, required_staff: e.target.value })}
                               placeholder="必要人数"
                             />
-                            <input
-                              id="new-posting-memo"
-                              name="new-posting-memo"
-                              className="text-xs border rounded px-2 py-1"
-                              value={newPosting.memo}
-                              onChange={(e) => setNewPosting({ ...newPosting, memo: e.target.value })}
-                              placeholder="メモ（任意）"
-                            />
                           </div>
                           <div className="mt-2">
                             <button onClick={handleAddPosting} className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded">追加</button>
@@ -5439,12 +5431,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                                       value={postingEditForm.store_name}
                                       onChange={(e) => setPostingEditForm({ ...postingEditForm, store_name: e.target.value })}
                                       placeholder="店舗名（任意）"
-                                    />
-                                    <input
-                                      className="text-xs border rounded px-2 py-1"
-                                      value={postingEditForm.memo}
-                                      onChange={(e) => setPostingEditForm({ ...postingEditForm, memo: e.target.value })}
-                                      placeholder="メモ（任意）"
                                     />
                                   </div>
                                   <div className="text-right space-x-1">
@@ -5540,17 +5526,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                                   <option key={id} value={id}>{(profile as any).name || (profile as any).email}</option>
                                 ))}
                             </select>
-                            <select
-                              id="new-request-priority"
-                              name="new-request-priority"
-                              className="text-xs border rounded px-2 py-1"
-                              value={newRequest.priority}
-                              onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
-                            >
-                              <option value="high">高</option>
-                              <option value="medium">中</option>
-                              <option value="low">低</option>
-                            </select>
                             <input
                               className="text-xs border rounded px-2 py-1"
                               type="time"
@@ -5614,15 +5589,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                                     <option value="morning">午前</option>
                                     <option value="afternoon">午後</option>
                                     <option value="full">終日</option>
-                                  </select>
-                                  <select
-                                    className="text-xs border rounded px-2 py-1"
-                                    value={requestEditForm.priority}
-                                    onChange={(e) => setRequestEditForm({ ...requestEditForm, priority: e.target.value })}
-                                  >
-                                    <option value="high">高</option>
-                                    <option value="medium">中</option>
-                                    <option value="low">低</option>
                                   </select>
                                 </div>
                                 <div>
