@@ -78,13 +78,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const executeSimpleAIMatching = async (requests: any[], postings: any[]) => {
     console.log('簡易AIマッチング開始:', { requests: requests.length, postings: postings.length });
     
-    // 確定済み店舗を取得して除外
+    // 確定済み店舗と薬剤師を取得して除外
     const confirmedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s?.status === 'confirmed') : [];
     const confirmedStores = new Set(
       confirmedShifts.map((s: any) => `${s.pharmacy_id}_${s.store_name || 'default'}`)
     );
+    const confirmedPharmacists = new Set(
+      confirmedShifts.map((s: any) => s.pharmacist_id)
+    );
     
     console.log('確定済み店舗:', Array.from(confirmedStores));
+    console.log('確定済み薬剤師:', Array.from(confirmedPharmacists));
     
     // 確定済み店舗を除外した募集のみを使用
     const availablePostings = postings.filter((p: any) => {
@@ -92,16 +96,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       return !confirmedStores.has(storeKey);
     });
     
+    // 確定済み薬剤師を除外した希望のみを使用
+    const availableRequests = requests.filter((r: any) => {
+      return !confirmedPharmacists.has(r.pharmacist_id);
+    });
+    
     console.log('利用可能な募集数:', availablePostings.length, '(除外:', postings.length - availablePostings.length, '件)');
+    console.log('利用可能な希望数:', availableRequests.length, '(除外:', requests.length - availableRequests.length, '件)');
     
     const debugInfo = `=== AIマッチング開始 ===
-薬剤師希望数: ${requests.length}件
+薬剤師希望数: ${requests.length}件 (利用可能: ${availableRequests.length}件)
 薬局募集数: ${postings.length}件 (利用可能: ${availablePostings.length}件)
 
-薬剤師希望詳細:
-${requests.map(r => `- ID: ${r.pharmacist_id}, 時間: ${r.start_time}-${r.end_time}, 優先度: ${r.priority}`).join('\n')}
+利用可能な薬剤師希望詳細:
+${availableRequests.map(r => `- ID: ${r.pharmacist_id}, 時間: ${r.start_time}-${r.end_time}, 優先度: ${r.priority}`).join('\n')}
 
-薬局募集詳細:
+利用可能な薬局募集詳細:
 ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${p.end_time}, 必要人数: ${p.required_staff}, 店舗: ${p.store_name}`).join('\n')}`;
     
     console.log(debugInfo);
@@ -121,7 +131,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
     };
 
     // 薬剤師を評価と優先順位でソート（評価が高い順、同じ評価なら優先度順）
-    const sortedRequests = requests.sort((a: any, b: any) => {
+    const sortedRequests = availableRequests.sort((a: any, b: any) => {
           const aRating = getPharmacistRating(a.pharmacist_id);
           const bRating = getPharmacistRating(b.pharmacist_id);
       
