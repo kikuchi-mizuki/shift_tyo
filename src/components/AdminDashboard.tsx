@@ -4987,6 +4987,13 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                           募集している薬局 ({(() => {
                             // 通常の募集（確定済みでない）のみをカウント
                             const dayAssigned = Array.isArray(assigned) ? assigned : [];
+                            
+                            // デバッグログ
+                            console.log(`[DEBUG] 募集している薬局 - selectedDate: ${selectedDate}`);
+                            console.log(`[DEBUG] 募集している薬局 - dayAssigned:`, dayAssigned);
+                            console.log(`[DEBUG] 募集している薬局 - all postings:`, postings);
+                            console.log(`[DEBUG] 募集している薬局 - postings for date:`, postings.filter((p: any) => p.date === selectedDate));
+                            
                             const regularPostings = Array.isArray(postings)
                               ? postings.filter((p: any) =>
                                   p.date === selectedDate &&
@@ -4999,6 +5006,8 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                                   )
                                 )
                               : [];
+                            
+                            console.log(`[DEBUG] 募集している薬局 - regularPostings (filtered):`, regularPostings);
                             
                             return regularPostings.length;
                           })()}件)
@@ -5108,6 +5117,13 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                               )
                             )
                           : [];
+                        
+                        // デバッグログ
+                        console.log(`[DEBUG] 募集している薬局表示 - selectedDate: ${selectedDate}`);
+                        console.log(`[DEBUG] 募集している薬局表示 - dayAssigned:`, dayAssigned);
+                        console.log(`[DEBUG] 募集している薬局表示 - all postings:`, postings);
+                        console.log(`[DEBUG] 募集している薬局表示 - postings for date:`, postings.filter((p: any) => p.date === selectedDate));
+                        console.log(`[DEBUG] 募集している薬局表示 - regularPostings (filtered):`, regularPostings);
                         
                         return regularPostings.map((posting: any, index: number) => {
                           const pharmacyProfile = userProfiles[posting.pharmacy_id];
