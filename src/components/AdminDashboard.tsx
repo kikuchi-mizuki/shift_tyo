@@ -4970,13 +4970,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                   
                   // 確定済みバッジは右パネルに表示を残す
                   if (dayAssignedShifts.length > 0) {
-                    return (
-                      <div className="p-4 border-b border-gray-200">
-                        <div className="bg-green-100 text-green-800 py-2 px-4 rounded-lg text-sm text-center">
-                          <span className="font-medium">✓ この日のシフトは確定です</span>
-                        </div>
-                      </div>
-                    );
                   }
                   
                   // 未確定のAIマッチング結果がある場合は表示
