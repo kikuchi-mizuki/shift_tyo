@@ -3531,28 +3531,32 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             });
           }
           
-          // 薬局の募集ステータスを元に戻す（同日・同薬局を一括で open に戻す）
+          // 特定のシフトに対応する募集のみを更新
           console.log('=== 募集ステータス更新開始 ===');
           console.log('更新条件:', {
             pharmacy_id: s.pharmacy_id,
-            date: date
+            date: date,
+            time_slot: s.time_slot
           });
           
-          // 更新前の状態を確認
+          // 更新前の状態を確認（特定の時間帯のみ）
           const { data: beforeUpdate, error: beforeError } = await supabase
             .from('shift_postings')
-            .select('id, status, pharmacy_id, date')
+            .select('id, status, pharmacy_id, date, time_slot')
             .eq('pharmacy_id', s.pharmacy_id)
-            .eq('date', date);
+            .eq('date', date)
+            .eq('time_slot', s.time_slot || 'fullday');
           
           console.log('更新前の募集状態:', beforeUpdate);
           
+          // 特定の時間帯の募集のみを更新
           const { data: updateResult, error: postingError } = await supabase
             .from('shift_postings')
             .update({ status: 'open' })
             .eq('pharmacy_id', s.pharmacy_id)
             .eq('date', date)
-            .select('id, status, pharmacy_id, date');
+            .eq('time_slot', s.time_slot || 'fullday')
+            .select('id, status, pharmacy_id, date, time_slot');
           
           console.log('更新結果:', updateResult);
           
@@ -3561,15 +3565,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 更新条件:
 - 薬局ID: ${s.pharmacy_id}
 - 日付: ${date}
+- 時間帯: ${s.time_slot || 'fullday'}
 
 更新前の募集状態:
 ${beforeUpdate ? beforeUpdate.map((p: any, i: number) => 
-  `${i+1}. ID:${p.id}, ステータス:${p.status}, 薬局:${p.pharmacy_id}, 日付:${p.date}`
+  `${i+1}. ID:${p.id}, ステータス:${p.status}, 薬局:${p.pharmacy_id}, 日付:${p.date}, 時間帯:${p.time_slot}`
 ).join('\n') : 'データなし'}
 
 更新結果:
 ${updateResult ? updateResult.map((p: any, i: number) => 
-  `${i+1}. ID:${p.id}, ステータス:${p.status}, 薬局:${p.pharmacy_id}, 日付:${p.date}`
+  `${i+1}. ID:${p.id}, ステータス:${p.status}, 薬局:${p.pharmacy_id}, 日付:${p.date}, 時間帯:${p.time_slot}`
 ).join('\n') : 'データなし'}
 
 エラー情報:
