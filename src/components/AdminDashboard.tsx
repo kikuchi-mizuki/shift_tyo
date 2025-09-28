@@ -4985,14 +4985,18 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                         <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-orange-800">
                           募集している薬局 ({(() => {
-                            const dayAssigned = Array.isArray(assigned) ? assigned : [];
-                            
                             // 通常の募集（確定済みでない）のみをカウント
+                            const dayAssigned = Array.isArray(assigned) ? assigned : [];
                             const regularPostings = Array.isArray(postings)
                               ? postings.filter((p: any) =>
                                   p.date === selectedDate &&
                                   p.time_slot !== 'consult' &&
-                                  p.status !== 'confirmed'
+                                  p.status !== 'confirmed' &&
+                                  !dayAssigned.some((s: any) =>
+                                    s.date === p.date &&
+                                    s.pharmacy_id === p.pharmacy_id &&
+                                    s.status === 'confirmed'
+                                  )
                                 )
                               : [];
                             
@@ -5096,7 +5100,12 @@ pharmacy.postings: ${JSON.stringify(pharmacy.postings, null, 2)}`;
                           ? postings.filter((p: any) =>
                               p.date === selectedDate &&
                               p.time_slot !== 'consult' &&
-                              p.status !== 'confirmed'
+                              p.status !== 'confirmed' &&
+                              !dayAssigned.some((s: any) =>
+                                s.date === p.date &&
+                                s.pharmacy_id === p.pharmacy_id &&
+                                s.status === 'confirmed'
+                              )
                             )
                           : [];
                         
