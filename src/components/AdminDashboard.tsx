@@ -3556,12 +3556,32 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           console.log('更新結果:', updateResult);
           
+          // デバッグ情報をモーダルで表示
+          const debugInfo = `=== 募集ステータス更新デバッグ ===
+更新条件:
+- 薬局ID: ${s.pharmacy_id}
+- 日付: ${date}
+
+更新前の募集状態:
+${beforeUpdate ? beforeUpdate.map((p: any, i: number) => 
+  `${i+1}. ID:${p.id}, ステータス:${p.status}, 薬局:${p.pharmacy_id}, 日付:${p.date}`
+).join('\n') : 'データなし'}
+
+更新結果:
+${updateResult ? updateResult.map((p: any, i: number) => 
+  `${i+1}. ID:${p.id}, ステータス:${p.status}, 薬局:${p.pharmacy_id}, 日付:${p.date}`
+).join('\n') : 'データなし'}
+
+エラー情報:
+${postingError ? postingError.message : 'エラーなし'}`;
+          
+          console.log(debugInfo);
+          alert(debugInfo);
+          
           if (postingError) {
             console.error('募集ステータス更新エラー:', postingError);
-            alert(`募集ステータス更新エラー: ${postingError.message}`);
           } else {
             console.log('募集ステータス更新成功:', updateResult);
-            alert(`募集ステータス更新成功: ${updateResult?.length || 0}件更新`);
           }
         }
         console.log('=== 確定取り消し: ステータス更新完了 ===');
