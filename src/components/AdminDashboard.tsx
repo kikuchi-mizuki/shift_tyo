@@ -5196,12 +5196,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                                   </div>
                                   <div className="mt-1 flex space-x-1">
                                     <button
-                                      onClick={() => handleEditShift(shift)}
-                                      className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
-                                    >
-                                      編集
-                                    </button>
-                                    <button
                                       onClick={() => handleCancelSingleConfirmedShift(shift)}
                                       className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
                                     >
@@ -5485,7 +5479,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                                       })()}
                                     </div>
                                     <div className="mt-1 space-x-1">
-                                      <button onClick={() => beginEditPosting(posting)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
                                       <button onClick={() => deletePosting(posting.id)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">削除</button>
                                     </div>
                                   </div>
@@ -5678,7 +5671,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                                     </div>
                                   )}
                                   <div className="mt-1 space-x-1">
-                                    <button onClick={() => beginEditRequest(request)} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">編集</button>
                                     <button onClick={() => deleteRequest(request.id)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">削除</button>
                                   </div>
                                 </div>
