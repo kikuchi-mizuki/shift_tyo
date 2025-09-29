@@ -3345,10 +3345,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             }, userProfiles, ratings);
             
             console.log('AIマッチングエンジン結果:', aiMatches);
-            alert(`AIマッチングエンジン結果: ${aiMatches ? aiMatches.length : 0}件`);
           } catch (error) {
             console.error('AIマッチングエンジンエラー:', error);
-            alert(`AIマッチングエンジンエラー: ${error}`);
             // エラーの場合は簡易AIマッチングにフォールバック
             aiMatches = await executeSimpleAIMatching(dayRequests, availablePostings);
           }
@@ -3376,14 +3374,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           // デバッグ: 利用可能な募集の詳細
           if (availablePostings.length > 0) {
-            const availableInfo = `=== AIマッチング利用可能募集 ===
-利用可能募集数: ${availablePostings.length}件
-
-利用可能募集詳細:
-${availablePostings.map((p, i) => 
-  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 店舗:${p.store_name || 'なし'}, ステータス:${p.status}, 日付:${p.date}`
-).join('\n')}`;
-            alert(availableInfo);
+            const availableInfo = `=== AIマッチング利用可能募集 ===\n利用可能募集数: ${availablePostings.length}件`;
+            console.log(availableInfo);
           }
           
           // デバッグ: 除外された募集の詳細
@@ -3393,16 +3385,9 @@ ${availablePostings.map((p, i) =>
           });
           
           if (excludedPostings.length > 0) {
-            const excludedInfo = `=== AIマッチング除外デバッグ ===
-除外された募集数: ${excludedPostings.length}件
-
-除外された募集詳細:
-${excludedPostings.map((p, i) => 
-  `${i+1}. ID:${p.id}, 薬局:${p.pharmacy_id}, 店舗:${p.store_name || 'なし'}, ステータス:${p.status}, 日付:${p.date}`
-).join('\n')}
-
-確定済み店舗キー:
-${Array.from(confirmedStores).join('\n')}`;
+            console.log('=== AIマッチング除外デバッグ ===');
+            console.log('除外された募集数:', excludedPostings.length);
+            console.log('確定済み店舗キー:', Array.from(confirmedStores));
             console.log('除外された募集:', excludedPostings.map(p => ({
               id: p.id,
               pharmacy_id: p.pharmacy_id,
@@ -3410,7 +3395,6 @@ ${Array.from(confirmedStores).join('\n')}`;
               status: p.status,
               date: p.date
             })));
-            alert(excludedInfo);
           }
           
           aiMatches = await executeSimpleAIMatching(dayRequests, availablePostings);
