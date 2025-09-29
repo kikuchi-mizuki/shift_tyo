@@ -305,7 +305,7 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
               <span className="text-white text-xl font-bold">シ</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900">
-              シフト調整システム
+              AIシフトマネージャー
             </h1>
           </div>
         </div>

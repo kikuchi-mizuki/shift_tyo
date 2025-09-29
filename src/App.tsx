@@ -205,7 +205,7 @@ function AppContent() {
                 <span className="text-white text-sm font-bold">シ</span>
               </div>
               <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                シフト調整システム
+                AIシフトマネージャー
               </h1>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">

@@ -50,7 +50,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-3">
             <Pill className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">シフト調整システム</h1>
+            <h1 className="text-2xl font-bold text-gray-900">AIシフトマネージャー</h1>
           </div>
         </div>
 

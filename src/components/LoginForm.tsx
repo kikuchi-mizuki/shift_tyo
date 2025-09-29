@@ -178,7 +178,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
             <Pill className="w-12 h-12 text-blue-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            シフト調整システム
+            AIシフトマネージャー
           </h1>
           <p className="text-gray-600">
             フリーランス薬剤師と薬局店舗の効率的なシフト管理
