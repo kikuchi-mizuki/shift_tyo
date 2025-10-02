@@ -24,7 +24,16 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
+  const [nearestStationName, setNearestStationName] = useState('');
+  const [nearestStationCode, setNearestStationCode] = useState('');
   const [storeNames, setStoreNames] = useState<string[]>([]);
+  
+  // 店舗毎の最寄駅設定用のstate
+  const [storeStations, setStoreStations] = useState<{[storeName: string]: {
+    nearest_station_name: string;
+    nearest_station_code: string;
+  }}>({});
+  const [editingStoreStation, setEditingStoreStation] = useState<string | null>(null);
   // 募集登録での店舗名は一時保存は残しつつ単一選択へ
   const [singleStoreName, setSingleStoreName] = useState('');
   const [batchStoreNames, setBatchStoreNames] = useState<string[]>([]); // 追加リスト
@@ -609,6 +618,73 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
   const handleRemoveStoreName = (storeNameToRemove: string) => {
     setStoreNames(storeNames.filter(name => name !== storeNameToRemove));
+    // 店舗を削除する際は、その店舗の最寄駅設定も削除
+    const newStoreStations = { ...storeStations };
+    delete newStoreStations[storeNameToRemove];
+    setStoreStations(newStoreStations);
+  };
+
+  // 店舗毎の最寄駅設定を更新
+  const handleStoreStationUpdate = (storeName: string, stationName: string, stationCode: string) => {
+    setStoreStations(prev => ({
+      ...prev,
+      [storeName]: {
+        nearest_station_name: stationName,
+        nearest_station_code: stationCode
+      }
+    }));
+  };
+
+  // 店舗毎の最寄駅設定を保存
+  const handleSaveStoreStations = async () => {
+    try {
+      console.log('=== SAVE STORE STATIONS START ===');
+      console.log('Store stations to save:', storeStations);
+      
+      if (!supabase) {
+        console.error('Supabase client is not available');
+        return;
+      }
+
+      // 既存の店舗駅設定を削除
+      const { error: deleteError } = await supabase
+        .from('store_stations')
+        .delete()
+        .eq('pharmacy_id', user.id);
+
+      if (deleteError) {
+        console.error('Error deleting existing store stations:', deleteError);
+        alert('既存の店舗駅設定の削除に失敗しました');
+        return;
+      }
+
+      // 新しい店舗駅設定を追加
+      const storeStationEntries = Object.entries(storeStations).map(([storeName, station]) => ({
+        pharmacy_id: user.id,
+        store_name: storeName,
+        nearest_station_name: station.nearest_station_name,
+        nearest_station_code: station.nearest_station_code
+      }));
+
+      if (storeStationEntries.length > 0) {
+        const { error: insertError } = await supabase
+          .from('store_stations')
+          .insert(storeStationEntries);
+
+        if (insertError) {
+          console.error('Error inserting store stations:', insertError);
+          alert('店舗駅設定の保存に失敗しました');
+          return;
+        }
+      }
+
+      console.log('Store stations saved successfully');
+      alert('店舗毎の最寄駅設定を保存しました');
+      
+    } catch (error) {
+      console.error('Error saving store stations:', error);
+      alert('店舗駅設定の保存に失敗しました');
+    }
   };
 
 
@@ -1277,6 +1353,28 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
               </div>
+              
+              {/* 最寄駅設定 */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">最寄駅の設定</h3>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={nearestStationName}
+                    onChange={(e) => setNearestStationName(e.target.value)}
+                    placeholder="最寄駅名（例：新宿駅）"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={nearestStationCode}
+                    onChange={(e) => setNearestStationCode(e.target.value)}
+                    placeholder="駅コード（例：JS19）"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  />
+                </div>
+              </div>
+              
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-2">店舗名の管理</h3>
                 <div className="space-y-2">
@@ -1303,14 +1401,40 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                     <p className="text-xs text-gray-600">登録済み店舗名: ({storeNames.length}件)</p>
                     {storeNames.length > 0 ? (
                       storeNames.map((name, index) => (
-                        <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
-                          <span className="text-sm">{name}</span>
-                          <button
-                            onClick={() => handleRemoveStoreName(name)}
-                            className="text-red-600 hover:text-red-800 text-sm"
-                          >
-                            削除
-                          </button>
+                        <div key={index} className="bg-white p-3 rounded border space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{name}</span>
+                            <button
+                              onClick={() => handleRemoveStoreName(name)}
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
+                              削除
+                            </button>
+                          </div>
+                          
+                          {/* 店舗毎の最寄駅設定 */}
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <label className="text-xs text-gray-600">最寄駅:</label>
+                              <input
+                                type="text"
+                                value={storeStations[name]?.nearest_station_name || ''}
+                                onChange={(e) => handleStoreStationUpdate(name, e.target.value, storeStations[name]?.nearest_station_code || '')}
+                                placeholder="最寄駅名（例：新宿駅）"
+                                className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs"
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <label className="text-xs text-gray-600">駅コード:</label>
+                              <input
+                                type="text"
+                                value={storeStations[name]?.nearest_station_code || ''}
+                                onChange={(e) => handleStoreStationUpdate(name, storeStations[name]?.nearest_station_name || '', e.target.value)}
+                                placeholder="駅コード（例：JS19）"
+                                className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs"
+                              />
+                            </div>
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -1319,6 +1443,18 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                       </div>
                     )}
                   </div>
+                  
+                  {/* 店舗駅設定保存ボタン */}
+                  {storeNames.length > 0 && (
+                    <div className="mt-4">
+                      <button
+                        onClick={handleSaveStoreStations}
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                      >
+                        店舗毎の最寄駅設定を保存
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               {/* 管理画面のみ許可: NG設定UIは非表示 */}

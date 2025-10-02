@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../../lib/supabase';
+import { generateDistanceBasedMatches } from './distanceMatching';
 
 export interface AIMatchingRequest {
   date: string;
@@ -77,8 +78,8 @@ export const executeAIMatching = async (request: AIMatchingRequest): Promise<AIM
       successRate = 0.9; // AIベースの成功率
       averageCompatibilityScore = 0.85;
     } else {
-      // ハイブリッドマッチング
-      matches = await executeHybridMatching(request.requests, request.postings);
+      // ハイブリッドマッチング（距離ベースを含む）
+      matches = await executeHybridMatching(request.requests, request.postings, request.userProfiles);
       successRate = 0.85;
       averageCompatibilityScore = 0.8;
     }
@@ -272,17 +273,28 @@ const executeAIBasedMatching = async (requests: any[], postings: any[]): Promise
 /**
  * ハイブリッドマッチング
  */
-const executeHybridMatching = async (requests: any[], postings: any[]): Promise<any[]> => {
+const executeHybridMatching = async (requests: any[], postings: any[], userProfiles?: any): Promise<any[]> => {
   // ルールベースで候補を絞り込み
   const ruleBasedMatches = await executeRuleBasedMatching(requests, postings);
   
   // AIでスコアリング
   const aiScoredMatches = await executeAIBasedMatching(requests, postings);
   
-  // 両方の結果を統合（AIの結果を優先）
-  const combinedMatches = [...aiScoredMatches, ...ruleBasedMatches];
+  // 距離ベースのマッチング
+  let distanceBasedMatches: any[] = [];
+  if (userProfiles) {
+    try {
+      distanceBasedMatches = await generateDistanceBasedMatches(requests, postings, userProfiles);
+      console.log(`Distance-based matches: ${distanceBasedMatches.length}`);
+    } catch (error) {
+      console.warn('Distance-based matching failed:', error);
+    }
+  }
   
-  // 重複を除去
+  // 全ての結果を統合（距離ベースを最優先、次にAI、最後にルールベース）
+  const combinedMatches = [...distanceBasedMatches, ...aiScoredMatches, ...ruleBasedMatches];
+  
+  // 重複を除去（距離ベースの結果を優先）
   const uniqueMatches = combinedMatches.filter((match, index, self) => 
     index === self.findIndex(m => 
       m.pharmacist_id === match.pharmacist_id && 

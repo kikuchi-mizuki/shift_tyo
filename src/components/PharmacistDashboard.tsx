@@ -17,6 +17,13 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [selectedPriority, setSelectedPriority] = useState('medium');
   const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
   const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
+  
+  // プロフィール編集用のstate
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [nearestStationName, setNearestStationName] = useState('');
+  const [nearestStationCode, setNearestStationCode] = useState('');
+  const [maxCommuteTime, setMaxCommuteTime] = useState(60);
 
   // 日付をリストに追加する関数
   const addDateToList = () => {
@@ -58,8 +65,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [myShifts, setMyShifts] = useState<any[]>([]);
   const [myRequests, setMyRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showProfileEdit, setShowProfileEdit] = useState(false);
-  const [profileName, setProfileName] = useState('');
   const [allPharmacies, setAllPharmacies] = useState<any[]>([]);
   // NG設定関連のUIは管理画面のみ。値の読み込みは残すが、編集UIは表示しない。
   const [ngList, setNgList] = useState<string[]>([]);
@@ -439,7 +444,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       
       const updatePayload = {
         name: profileName || user.email || 'Unknown',
-        ng_list: ngList
+        ng_list: ngList,
+        nearest_station_name: nearestStationName,
+        nearest_station_code: nearestStationCode,
+        max_commute_time: maxCommuteTime
       };
       
       console.log('Update payload:', updatePayload);
@@ -912,24 +920,60 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
             
             {/* プロフィール編集フォーム */}
             {showProfileEdit && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">名前の設定</h3>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={profileName}
-                    onChange={(e) => setProfileName(e.target.value)}
-                    placeholder="あなたの名前"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  />
-                  <button
-                    onClick={handleProfileUpdate}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                  >
-                    更新
-                  </button>
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">名前の設定</h3>
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      placeholder="あなたの名前"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                    <button
+                      onClick={handleProfileUpdate}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                    >
+                      更新
+                    </button>
+                  </div>
                 </div>
 
+                {/* 最寄駅設定 */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">最寄駅の設定</h3>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={nearestStationName}
+                      onChange={(e) => setNearestStationName(e.target.value)}
+                      placeholder="最寄駅名（例：新宿駅）"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={nearestStationCode}
+                      onChange={(e) => setNearestStationCode(e.target.value)}
+                      placeholder="駅コード（例：JS19）"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm text-gray-600">最大通勤時間:</label>
+                      <select
+                        value={maxCommuteTime}
+                        onChange={(e) => setMaxCommuteTime(parseInt(e.target.value))}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm"
+                      >
+                        <option value={30}>30分</option>
+                        <option value={45}>45分</option>
+                        <option value={60}>60分</option>
+                        <option value={90}>90分</option>
+                        <option value={120}>120分</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
 
               </div>
             )}

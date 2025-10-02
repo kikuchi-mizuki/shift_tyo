@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import { generateDistanceBasedMatches } from './distanceMatching';
 
 export interface MatchCandidate {
   pharmacist: {
