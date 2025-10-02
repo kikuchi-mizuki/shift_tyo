@@ -25,13 +25,11 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [nearestStationName, setNearestStationName] = useState('');
-  const [nearestStationCode, setNearestStationCode] = useState('');
   const [storeNames, setStoreNames] = useState<string[]>([]);
   
   // 店舗毎の最寄駅設定用のstate
   const [storeStations, setStoreStations] = useState<{[storeName: string]: {
     nearest_station_name: string;
-    nearest_station_code: string;
   }}>({});
   const [editingStoreStation, setEditingStoreStation] = useState<string | null>(null);
   // 募集登録での店舗名は一時保存は残しつつ単一選択へ
@@ -625,12 +623,11 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   };
 
   // 店舗毎の最寄駅設定を更新
-  const handleStoreStationUpdate = (storeName: string, stationName: string, stationCode: string) => {
+  const handleStoreStationUpdate = (storeName: string, stationName: string) => {
     setStoreStations(prev => ({
       ...prev,
       [storeName]: {
-        nearest_station_name: stationName,
-        nearest_station_code: stationCode
+        nearest_station_name: stationName
       }
     }));
   };
@@ -662,8 +659,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       const storeStationEntries = Object.entries(storeStations).map(([storeName, station]) => ({
         pharmacy_id: user.id,
         store_name: storeName,
-        nearest_station_name: station.nearest_station_name,
-        nearest_station_code: station.nearest_station_code
+        nearest_station_name: station.nearest_station_name
       }));
 
       if (storeStationEntries.length > 0) {
@@ -1365,13 +1361,6 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                     placeholder="最寄駅名（例：新宿駅）"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
-                  <input
-                    type="text"
-                    value={nearestStationCode}
-                    onChange={(e) => setNearestStationCode(e.target.value)}
-                    placeholder="駅コード（例：JS19）"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  />
                 </div>
               </div>
               
@@ -1419,18 +1408,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                               <input
                                 type="text"
                                 value={storeStations[name]?.nearest_station_name || ''}
-                                onChange={(e) => handleStoreStationUpdate(name, e.target.value, storeStations[name]?.nearest_station_code || '')}
+                                onChange={(e) => handleStoreStationUpdate(name, e.target.value)}
                                 placeholder="最寄駅名（例：新宿駅）"
-                                className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs"
-                              />
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <label className="text-xs text-gray-600">駅コード:</label>
-                              <input
-                                type="text"
-                                value={storeStations[name]?.nearest_station_code || ''}
-                                onChange={(e) => handleStoreStationUpdate(name, storeStations[name]?.nearest_station_name || '', e.target.value)}
-                                placeholder="駅コード（例：JS19）"
                                 className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs"
                               />
                             </div>

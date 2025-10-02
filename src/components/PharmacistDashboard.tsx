@@ -22,8 +22,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [nearestStationName, setNearestStationName] = useState('');
-  const [nearestStationCode, setNearestStationCode] = useState('');
-  const [maxCommuteTime, setMaxCommuteTime] = useState(60);
 
   // 日付をリストに追加する関数
   const addDateToList = () => {
@@ -445,9 +443,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       const updatePayload = {
         name: profileName || user.email || 'Unknown',
         ng_list: ngList,
-        nearest_station_name: nearestStationName,
-        nearest_station_code: nearestStationCode,
-        max_commute_time: maxCommuteTime
+        nearest_station_name: nearestStationName
       };
       
       console.log('Update payload:', updatePayload);
@@ -951,27 +947,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                       placeholder="最寄駅名（例：新宿駅）"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
-                    <input
-                      type="text"
-                      value={nearestStationCode}
-                      onChange={(e) => setNearestStationCode(e.target.value)}
-                      placeholder="駅コード（例：JS19）"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <label className="text-sm text-gray-600">最大通勤時間:</label>
-                      <select
-                        value={maxCommuteTime}
-                        onChange={(e) => setMaxCommuteTime(parseInt(e.target.value))}
-                        className="px-2 py-1 border border-gray-300 rounded text-sm"
-                      >
-                        <option value={30}>30分</option>
-                        <option value={45}>45分</option>
-                        <option value={60}>60分</option>
-                        <option value={90}>90分</option>
-                        <option value={120}>120分</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
 

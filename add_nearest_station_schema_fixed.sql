@@ -6,11 +6,7 @@
 
 -- user_profilesテーブルに最寄駅関連カラムを追加
 ALTER TABLE user_profiles 
-ADD COLUMN IF NOT EXISTS nearest_station_name text,
-ADD COLUMN IF NOT EXISTS nearest_station_code text,
-ADD COLUMN IF NOT EXISTS location_latitude decimal(10, 8),
-ADD COLUMN IF NOT EXISTS location_longitude decimal(11, 8),
-ADD COLUMN IF NOT EXISTS max_commute_time integer DEFAULT 60; -- 分単位
+ADD COLUMN IF NOT EXISTS nearest_station_name text;
 
 -- 駅情報テーブルを作成
 CREATE TABLE IF NOT EXISTS stations (
@@ -37,10 +33,6 @@ WHERE location_latitude IS NOT NULL AND location_longitude IS NOT NULL;
 
 -- コメントを追加
 COMMENT ON COLUMN user_profiles.nearest_station_name IS '最寄駅名';
-COMMENT ON COLUMN user_profiles.nearest_station_code IS '最寄駅コード';
-COMMENT ON COLUMN user_profiles.location_latitude IS '緯度';
-COMMENT ON COLUMN user_profiles.location_longitude IS '経度';
-COMMENT ON COLUMN user_profiles.max_commute_time IS '最大通勤時間（分）';
 
 -- 距離計算用の関数を作成（ハバサイン公式）
 CREATE OR REPLACE FUNCTION calculate_distance(
