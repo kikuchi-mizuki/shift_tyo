@@ -83,6 +83,10 @@ export const UserTypeSwitcher: React.FC = () => {
                     onClick={() => {
                       removeSession(session.user_type);
                       setIsOpen(false);
+                      // 管理者セッションを削除した場合は管理者ログイン画面にリダイレクト
+                      if (session.user_type === 'admin') {
+                        window.location.href = '/admin-login';
+                      }
                     }}
                     className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                     title="ログアウト"

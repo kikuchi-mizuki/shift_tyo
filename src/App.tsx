@@ -231,7 +231,15 @@ function AppContent() {
                 onClick={async () => {
                   try {
                     await auth.signOut();
-                  } finally {
+                    // 管理者の場合は管理者ログイン画面に、一般ユーザーの場合は一般ログイン画面にリダイレクト
+                    if (effectiveUserType === 'admin') {
+                      window.location.href = '/admin-login';
+                    } else {
+                      window.location.href = '/';
+                    }
+                  } catch (error) {
+                    console.error('Logout error:', error);
+                    // エラーが発生した場合はページをリロード
                     window.location.reload();
                   }
                 }}
