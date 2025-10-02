@@ -57,6 +57,77 @@ serve(async (req) => {
           }
         )
       }
+
+      // 交通機関の所要時間（分）を取得してキャッシュ
+      if (action === 'get_transit_time') {
+        const { origin, destination } = body as { origin: string; destination: string }
+        if (!origin || !destination) {
+          return new Response(
+            JSON.stringify({ error: 'origin and destination are required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // まずキャッシュを参照
+        const { data: cached } = await supabaseClient
+          .from('station_travel_times')
+          .select('id, minutes')
+          .eq('origin_station_name', origin)
+          .eq('dest_station_name', destination)
+          .eq('provider', 'google')
+          .maybeSingle()
+
+        if (cached?.minutes) {
+          // last_used_atを更新（失敗しても無視）
+          await supabaseClient
+            .from('station_travel_times')
+            .update({ last_used_at: new Date().toISOString() })
+            .eq('id', cached.id)
+          return new Response(JSON.stringify({ minutes: cached.minutes, source: 'cache' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        }
+
+        // Google Directions API (Transit) 呼び出し
+        const apiKey = Deno.env.get('GOOGLE_MAPS_API_KEY')
+        if (!apiKey) {
+          return new Response(JSON.stringify({ error: 'GOOGLE_MAPS_API_KEY is not set' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        }
+
+        const params = new URLSearchParams({
+          origin,
+          destination,
+          mode: 'transit',
+          language: 'ja',
+          key: apiKey,
+        })
+        const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`
+        const resp = await fetch(url)
+        const json = await resp.json()
+
+        let minutes: number | null = null
+        try {
+          const route = json.routes?.[0]
+          const leg = route?.legs?.[0]
+          const durationSec = leg?.duration?.value
+          if (typeof durationSec === 'number') minutes = Math.ceil(durationSec / 60)
+        } catch (_) {}
+
+        if (!minutes) {
+          return new Response(JSON.stringify({ error: 'Could not get transit time' }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        }
+
+        // キャッシュに保存（衝突時は更新）
+        await supabaseClient
+          .from('station_travel_times')
+          .upsert({
+            origin_station_name: origin,
+            dest_station_name: destination,
+            provider: 'google',
+            minutes,
+            last_used_at: new Date().toISOString(),
+          }, { onConflict: 'origin_station_name, dest_station_name, provider' })
+
+        return new Response(JSON.stringify({ minutes, source: 'google' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
     }
 
     // Handle GET requests for backward compatibility

@@ -105,46 +105,47 @@ export const calculateDistanceScore = async (
       return 0.5; // デフォルトスコア
     }
 
-    // 距離を計算
-    const distance = calculateDistance(
-      pharmacistStation.latitude, pharmacistStation.longitude,
-      pharmacyStation.latitude, pharmacyStation.longitude
-    );
+    // まず公共交通の所要時間（Edge Function + キャッシュ）を試す
+    let estimatedCommuteTime: number | null = null;
+    try {
+      const resp = await fetch('/api', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get_transit_time',
+          origin: pharmacistStation.station_name,
+          destination: pharmacyStation.station_name
+        })
+      });
+      const json = await resp.json();
+      if (json && typeof json.minutes === 'number') {
+        estimatedCommuteTime = json.minutes;
+      }
+    } catch (_) {}
 
-    // 通勤時間を推定
-    const estimatedCommuteTime = estimateCommuteTime(distance);
+    // 失敗時は直線距離→擬似通勤時間にフォールバック
+    if (!estimatedCommuteTime) {
+      const distance = calculateDistance(
+        pharmacistStation.latitude, pharmacistStation.longitude,
+        pharmacyStation.latitude, pharmacyStation.longitude
+      );
+      estimatedCommuteTime = estimateCommuteTime(distance);
+    }
 
     // 薬剤師の最大通勤時間と比較
     if (estimatedCommuteTime > pharmacist.max_commute_time) {
       return 0.1; // 通勤時間が長すぎる場合は低スコア
     }
 
-    // 距離に基づくスコア計算（0-1の範囲）
-    let distanceScore = 1.0;
-    
-    if (distance <= 1) {
-      distanceScore = 1.0; // 1km以内は最高スコア
-    } else if (distance <= 3) {
-      distanceScore = 0.9; // 3km以内は高スコア
-    } else if (distance <= 5) {
-      distanceScore = 0.8; // 5km以内は良好
-    } else if (distance <= 10) {
-      distanceScore = 0.7; // 10km以内は普通
-    } else if (distance <= 20) {
-      distanceScore = 0.5; // 20km以内は低め
-    } else {
-      distanceScore = 0.3; // 20km以上は低スコア
-    }
-
-    // 通勤時間による調整
-    const commuteTimeScore = Math.max(0.1, 1.0 - (estimatedCommuteTime / pharmacist.max_commute_time));
-    
-    // 最終スコア（距離と通勤時間の重み付き平均）
-    const finalScore = (distanceScore * 0.7) + (commuteTimeScore * 0.3);
+    // 通勤時間に基づくスコア（短いほど高い）
+    // 0〜90分を主レンジとして正規化
+    const normalized = Math.max(0, Math.min(90, estimatedCommuteTime));
+    const timeScore = 1.0 - normalized / 90; // 0〜1
+    const finalScore = Math.max(0.1, timeScore);
     
     console.log(`Distance matching: ${pharmacist.user_id} -> ${pharmacy.user_id}`);
-    console.log(`Distance: ${distance.toFixed(2)}km, Commute time: ${estimatedCommuteTime}min`);
-    console.log(`Distance score: ${distanceScore.toFixed(2)}, Final score: ${finalScore.toFixed(2)}`);
+    console.log(`Commute time (min): ${estimatedCommuteTime}`);
+    console.log(`Final score (time-based): ${finalScore.toFixed(2)}`);
 
     return Math.max(0.1, Math.min(1.0, finalScore));
   } catch (error) {
