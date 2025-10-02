@@ -81,9 +81,6 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
         {/* ヘッダー */}
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-bold">シ</span>
-            </div>
             <h1 className="text-2xl font-bold text-gray-900">AIシフトマネージャー</h1>
           </div>
           <h2 className="text-xl font-semibold text-purple-600 mb-2">管理者ログイン</h2>

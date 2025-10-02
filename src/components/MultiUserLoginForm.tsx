@@ -298,9 +298,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
         {/* ヘッダー */}
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-xl font-bold">シ</span>
-            </div>
             <h1 className="text-2xl font-bold text-gray-900">
               AIシフトマネージャー
             </h1>

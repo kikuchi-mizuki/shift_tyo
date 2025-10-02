@@ -211,9 +211,6 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center py-4 sm:h-16 space-y-2 sm:space-y-0">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-bold">シ</span>
-              </div>
               <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
                 AIシフトマネージャー
               </h1>
