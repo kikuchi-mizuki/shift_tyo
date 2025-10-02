@@ -640,12 +640,19 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       
       // 認証状態の詳細確認
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      console.log('Current authenticated user:', currentUser);
-      console.log('Auth session:', await supabase.auth.getSession());
+      const { data: sessionData } = await supabase.auth.getSession();
       
-      // 追加の認証確認
-      console.log('User from props:', user);
-      console.log('User ID from props:', user?.id);
+      // ログをモーダルで表示
+      const debugInfo = `
+=== デバッグ情報 ===
+Store stations to save: ${JSON.stringify(storeStations, null, 2)}
+Current authenticated user: ${JSON.stringify(currentUser, null, 2)}
+Auth session: ${JSON.stringify(sessionData, null, 2)}
+User from props: ${JSON.stringify(user, null, 2)}
+User ID from props: ${user?.id}
+      `;
+      
+      alert(debugInfo);
       
       if (!currentUser) {
         alert('認証されていません。再度ログインしてください。');
