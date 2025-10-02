@@ -634,6 +634,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
   // 店舗毎の最寄駅設定を保存
   const handleSaveStoreStations = async () => {
+    alert('関数が呼び出されました！');
     try {
       console.log('=== SAVE STORE STATIONS START ===');
       console.log('Store stations to save:', storeStations);
