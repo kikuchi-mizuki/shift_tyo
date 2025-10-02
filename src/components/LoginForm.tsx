@@ -175,7 +175,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         {/* ヘッダー */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <Pill className="w-12 h-12 text-blue-600" />
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Pill className="w-8 h-8 text-white" />
+            </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             AIシフトマネージャー

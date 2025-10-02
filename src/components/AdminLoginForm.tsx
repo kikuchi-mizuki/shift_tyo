@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useMultiUserAuth } from '../contexts/MultiUserAuthContext';
 import { auth, isProduction } from '../lib/supabase';
+import { Shield } from 'lucide-react';
 
 interface AdminLoginFormProps {
   onLoginSuccess: () => void;
@@ -134,6 +135,9 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
         {/* ヘッダー */}
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center shadow-lg">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
             <h1 className="text-2xl font-bold text-gray-900">AIシフトマネージャー</h1>
           </div>
           <h2 className="text-xl font-semibold text-purple-600 mb-2">

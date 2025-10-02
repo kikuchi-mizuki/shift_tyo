@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Component, ReactNode } from 'react';
 import { supabase, auth } from './lib/supabase';
+import { Pill } from 'lucide-react';
 // 遅延読み込みで循環依存や初期化順の問題を回避
 const PharmacistDashboard = React.lazy(() => 
   import('./components/PharmacistDashboard').catch(error => {
@@ -211,6 +212,9 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center py-4 sm:h-16 space-y-2 sm:space-y-0">
             <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Pill className="w-4 h-4 text-white" />
+              </div>
               <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
                 AIシフトマネージャー
               </h1>
