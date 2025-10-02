@@ -673,7 +673,7 @@ User ID from props: ${user?.id}
 
       if (deleteError) {
         console.error('Error deleting existing store stations:', deleteError);
-        alert('既存の店舗駅設定の削除に失敗しました');
+        alert(`既存の店舗駅設定の削除に失敗しました: ${JSON.stringify(deleteError)}`);
         return;
       }
 
@@ -691,7 +691,7 @@ User ID from props: ${user?.id}
 
         if (insertError) {
           console.error('Error inserting store stations:', insertError);
-          alert('店舗駅設定の保存に失敗しました');
+          alert(`店舗駅設定の保存に失敗しました: ${JSON.stringify(insertError)}`);
           return;
         }
       }
@@ -701,7 +701,7 @@ User ID from props: ${user?.id}
       
     } catch (error) {
       console.error('Error saving store stations:', error);
-      alert('店舗駅設定の保存に失敗しました');
+      alert(`店舗駅設定の保存に失敗しました: ${JSON.stringify(error)}`);
     }
   };
 
