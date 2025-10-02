@@ -144,7 +144,7 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
             {isRegistering ? '管理者新規登録' : '管理者ログイン'}
           </h2>
           <p className="text-gray-600">
-            {isRegistering ? '管理者アカウントの新規作成' : 'システム管理用の認証画面'}
+            {isRegistering ? '管理者アカウントの新規作成' : ''}
           </p>
         </div>
 
