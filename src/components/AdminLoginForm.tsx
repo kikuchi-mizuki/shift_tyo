@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useMultiUserAuth } from '../contexts/MultiUserAuthContext';
+import { auth, isProduction } from '../lib/supabase';
 
 interface AdminLoginFormProps {
   onLoginSuccess: () => void;
@@ -11,17 +12,64 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registrationData, setRegistrationData] = useState({
+    name: '',
+    userType: 'admin' as 'pharmacist' | 'pharmacy' | 'admin'
+  });
   const { addSession } = useMultiUserAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('=== ADMIN LOGIN FORM SUBMITTED ===');
-    console.log('Admin login attempt:', { email });
     setLoading(true);
     setError('');
 
     try {
-      // 管理者ログイン処理
+      if (isRegistering) {
+        // パスワード長の検証
+        if (password.length < 6) {
+          setError('パスワードは6文字以上である必要があります。');
+          setLoading(false);
+          return;
+        }
+
+        // 新規登録処理
+        if (!isProduction) {
+          setError('デモ環境では新規登録はできません。管理者アカウントは事前に設定されています。');
+          setLoading(false);
+          return;
+        }
+
+        // 管理者登録の場合はuser_typeを'admin'に固定
+        const userData = {
+          name: registrationData.name,
+          role: 'admin',
+          user_type: 'admin'
+        };
+        
+        console.log('Admin registration:', { email, userType: registrationData.userType, userData });
+        
+        const result = await auth.signUp(email.trim(), password, userData);
+        
+        if (result.error) {
+          if (result.error.message?.includes('User already registered')) {
+            setError('このメールアドレスは既に登録されています。ログインしてください。');
+          } else {
+            setError(result.error.message || '新規登録に失敗しました');
+          }
+        } else {
+          console.log('Admin registration successful');
+          setError('');
+          setIsRegistering(false); // 登録完了後はログイン画面に戻る
+        }
+        setLoading(false);
+        return;
+      }
+      
+      // ログイン処理
+      console.log('=== ADMIN LOGIN FORM SUBMITTED ===');
+      console.log('Admin login attempt:', { email });
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -68,11 +116,16 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
         onLoginSuccess();
       }
     } catch (error) {
-      console.error('Admin login error:', error);
-      setError('ログイン処理中にエラーが発生しました');
+      console.error('Admin login/registration error:', error);
+      setError('処理中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsRegistering(!isRegistering);
+    setError('');
   };
 
   return (
@@ -83,13 +136,17 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
           <div className="flex items-center justify-center space-x-3 mb-4">
             <h1 className="text-2xl font-bold text-gray-900">AIシフトマネージャー</h1>
           </div>
-          <h2 className="text-xl font-semibold text-purple-600 mb-2">管理者ログイン</h2>
-          <p className="text-gray-600">システム管理用の認証画面</p>
+          <h2 className="text-xl font-semibold text-purple-600 mb-2">
+            {isRegistering ? '管理者新規登録' : '管理者ログイン'}
+          </h2>
+          <p className="text-gray-600">
+            {isRegistering ? '管理者アカウントの新規作成' : 'システム管理用の認証画面'}
+          </p>
         </div>
 
         {/* ログインフォーム */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* メールアドレス */}
             <div>
               <label htmlFor="admin-email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -106,6 +163,25 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
                 disabled={loading}
               />
             </div>
+
+            {/* 新規登録時の名前フィールド */}
+            {isRegistering && (
+              <div>
+                <label htmlFor="admin-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  管理者名
+                </label>
+                <input
+                  id="admin-name"
+                  type="text"
+                  required
+                  value={registrationData.name}
+                  onChange={(e) => setRegistrationData({...registrationData, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="管理者名を入力"
+                  disabled={loading}
+                />
+              </div>
+            )}
 
             {/* パスワード */}
             <div>
@@ -141,10 +217,23 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
               <span>
-                {loading ? 'ログイン中...' : '管理者としてログイン'}
+                {loading ? (isRegistering ? '登録中...' : 'ログイン中...') : (isRegistering ? '管理者アカウント作成' : '管理者としてログイン')}
               </span>
             </button>
           </form>
+
+          {/* ログイン/登録切り替え */}
+          {isProduction && (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="text-purple-600 hover:text-purple-800 text-sm underline"
+              >
+                {isRegistering ? 'すでにアカウントをお持ちの方はこちら' : '新規管理者アカウント作成はこちら'}
+              </button>
+            </div>
+          )}
 
           {/* 一般ユーザーログインへのリンク */}
           <div className="mt-6 pt-6 border-t border-gray-200">
