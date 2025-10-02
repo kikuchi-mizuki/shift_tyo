@@ -40,6 +40,7 @@ const UserManagement = React.lazy(() =>
 import { MultiUserIndicator } from './components/MultiUserIndicator';
 import { MultiUserAuthProvider, useMultiUserAuth } from './contexts/MultiUserAuthContext';
 import { MultiUserLoginForm } from './components/MultiUserLoginForm';
+import { AdminLoginForm } from './components/AdminLoginForm';
 import { UserTypeSwitcher } from './components/UserTypeSwitcher';
 
 // エラーバウンダリーコンポーネント
@@ -126,12 +127,16 @@ class ErrorBoundary extends Component<
 function AppContent() {
   const { currentUserType, getCurrentUser, activeSessions } = useMultiUserAuth();
   
+  // URLパスから管理者ログインかどうかを判定
+  const isAdminLoginPath = window.location.pathname === '/admin-login';
+  
   // アプリケーション起動時の診断
   useEffect(() => {
     console.log('=== APP STARTUP DIAGNOSTICS ===');
     console.log('App: Multi-user auth state:', {
       currentUserType,
-      activeSessions: activeSessions.length
+      activeSessions: activeSessions.length,
+      isAdminLoginPath
     });
     
     console.log('App: Environment check:', {
@@ -163,8 +168,13 @@ function AppContent() {
       platform: navigator.platform,
       cookieEnabled: navigator.cookieEnabled
     });
-  }, []);
+  }, [isAdminLoginPath]);
   
+
+  // 管理者ログインパスの場合は専用ログイン画面を表示
+  if (isAdminLoginPath) {
+    return <AdminLoginForm onLoginSuccess={() => window.location.href = '/'} />;
+  }
 
   // アクティブセッションがない場合はマルチユーザーログイン画面を表示
   if (activeSessions.length === 0) {

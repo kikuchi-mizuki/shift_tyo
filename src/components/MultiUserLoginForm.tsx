@@ -489,6 +489,24 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           </div>
         )}
 
+        {/* 管理者ログインへのリンク */}
+        <div className="mt-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
+          <div className="flex items-center space-x-3 mb-3">
+            <Shield className="w-6 h-6 text-purple-600" />
+            <h3 className="text-lg font-semibold text-purple-800">システム管理者の方</h3>
+          </div>
+          <p className="text-sm text-purple-700 mb-4">
+            管理者権限をお持ちの方は、専用のログイン画面をご利用ください。
+          </p>
+          <button
+            onClick={() => window.location.href = '/admin-login'}
+            className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
+          >
+            <Shield className="w-4 h-4" />
+            <span>管理者ログイン画面へ</span>
+          </button>
+        </div>
+
 
       </div>
     </div>
