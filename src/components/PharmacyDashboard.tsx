@@ -683,6 +683,12 @@ User ID from props: ${user?.id}
         store_name: storeName,
         nearest_station_name: station.nearest_station_name
       }));
+      
+      // デバッグ情報を表示
+      alert(`挿入するデータ: ${JSON.stringify(storeStationEntries, null, 2)}`);
+      alert(`認証されたユーザーID: ${currentUser.id}`);
+      alert(`PropsのユーザーID: ${user.id}`);
+      alert(`IDが一致するか: ${currentUser.id === user.id}`);
 
       if (storeStationEntries.length > 0) {
         const { error: insertError } = await supabase
