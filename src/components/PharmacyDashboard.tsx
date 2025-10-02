@@ -643,6 +643,10 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('Current authenticated user:', currentUser);
       console.log('Auth session:', await supabase.auth.getSession());
       
+      // 追加の認証確認
+      console.log('User from props:', user);
+      console.log('User ID from props:', user?.id);
+      
       if (!currentUser) {
         alert('認証されていません。再度ログインしてください。');
         return;
