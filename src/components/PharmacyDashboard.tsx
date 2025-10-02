@@ -638,6 +638,16 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('=== SAVE STORE STATIONS START ===');
       console.log('Store stations to save:', storeStations);
       
+      // 認証状態の詳細確認
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      console.log('Current authenticated user:', currentUser);
+      console.log('Auth session:', await supabase.auth.getSession());
+      
+      if (!currentUser) {
+        alert('認証されていません。再度ログインしてください。');
+        return;
+      }
+      
       if (!supabase) {
         console.error('Supabase client is not available');
         return;
