@@ -10,7 +10,7 @@ interface MultiUserLoginFormProps {
 export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState<'pharmacist' | 'pharmacy' | 'admin'>('pharmacist');
+  const [userType, setUserType] = useState<'pharmacist' | 'pharmacy'>('pharmacist');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
@@ -47,7 +47,7 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
     }
   }, []);
 
-  // デモアカウント（本番環境でも表示）
+  // デモアカウント（一般ユーザーのみ）
   const demoAccounts = [
     { 
       email: 'tanaka@pharmacist.com', 
@@ -64,14 +64,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
       type: 'pharmacy' as const,
       icon: Building,
       color: 'text-blue-600 bg-blue-50 border-blue-200'
-    },
-    { 
-      email: 'admin@system.com', 
-      password: 'admin123', 
-      name: 'システム管理者', 
-      type: 'admin' as const,
-      icon: Shield,
-      color: 'text-purple-600 bg-purple-50 border-purple-200'
     }
   ];
 
@@ -239,6 +231,13 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           console.log('User profile:', profile);
           const actualUserType = profile.user_type as 'pharmacist' | 'pharmacy' | 'admin';
           
+          // 管理者ユーザーの一般ログイン画面でのアクセスを拒否
+          if (actualUserType === 'admin') {
+            setError('管理者アカウントは専用のログイン画面をご利用ください。URL: /admin-login');
+            console.error('Admin user attempted general login:', { actual: actualUserType });
+            return;
+          }
+          
           // 選択されたユーザータイプと実際のユーザータイプが一致するかチェック
           if (actualUserType !== userType) {
             setError(`このアカウントは${getUserTypeLabel(actualUserType)}用です。正しいユーザータイプを選択してください。`);
@@ -279,19 +278,17 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
     }, 0); // setTimeoutの閉じ括弧
   };
 
-  const getUserTypeLabel = (type: 'pharmacist' | 'pharmacy' | 'admin') => {
+  const getUserTypeLabel = (type: 'pharmacist' | 'pharmacy') => {
     switch (type) {
       case 'pharmacist': return '薬剤師';
       case 'pharmacy': return '薬局';
-      case 'admin': return '管理者';
     }
   };
 
-  const getUserTypeIcon = (type: 'pharmacist' | 'pharmacy' | 'admin') => {
+  const getUserTypeIcon = (type: 'pharmacist' | 'pharmacy') => {
     switch (type) {
       case 'pharmacist': return <User className="w-5 h-5" />;
       case 'pharmacy': return <Building className="w-5 h-5" />;
-      case 'admin': return <Shield className="w-5 h-5" />;
     }
   };
 
@@ -338,8 +335,8 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 ユーザータイプ
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['pharmacist', 'pharmacy', 'admin'] as const).map((type) => (
+              <div className="grid grid-cols-2 gap-2">
+                {(['pharmacist', 'pharmacy'] as const).map((type) => (
                   <button
                     key={type}
                     type="button"
@@ -489,23 +486,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
           </div>
         )}
 
-        {/* 管理者ログインへのリンク */}
-        <div className="mt-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
-          <div className="flex items-center space-x-3 mb-3">
-            <Shield className="w-6 h-6 text-purple-600" />
-            <h3 className="text-lg font-semibold text-purple-800">システム管理者の方</h3>
-          </div>
-          <p className="text-sm text-purple-700 mb-4">
-            管理者権限をお持ちの方は、専用のログイン画面をご利用ください。
-          </p>
-          <button
-            onClick={() => window.location.href = '/admin-login'}
-            className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
-          >
-            <Shield className="w-4 h-4" />
-            <span>管理者ログイン画面へ</span>
-          </button>
-        </div>
 
 
       </div>
