@@ -739,6 +739,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
     setAiMatchingLoading(true);
     addLog('🚀 1ヶ月分AIマッチング開始');
+    addLog(`👥 ユーザープロフィール数: ${Object.keys(userProfiles || {}).length}件`);
     try {
       // 既存のマッチング結果をクリア（確定済みマッチは保持）
       setAiMatches([]);
@@ -1201,6 +1202,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
 
       addLog(`AI Matching開始: ${date} - 希望${filteredDayRequests.length}件, 募集${filteredDayPostings.length}件`);
+      addLog(`👥 ユーザープロフィール数: ${Object.keys(userProfiles || {}).length}件`);
       console.log(`AI Matching for ${date}: ${filteredDayRequests.length} requests, ${filteredDayPostings.length} postings`);
 
       let matches = await aiMatchingEngine.executeOptimalMatching(filteredDayRequests, filteredDayPostings, {

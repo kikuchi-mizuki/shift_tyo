@@ -514,6 +514,7 @@ export class AIMatchingEngine {
     
       // 距離ベースのマッチングを実行
       let distanceBasedMatches: any[] = [];
+      console.log(`🔍 userProfiles確認:`, userProfiles ? `存在 (${Object.keys(userProfiles).length}件)` : '存在しない');
       if (userProfiles) {
         try {
           debugInfo += `=== 距離ベースマッチング実行 ===\n`;
