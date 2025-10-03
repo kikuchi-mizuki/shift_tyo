@@ -1005,32 +1005,17 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             });
           }
           
-          // 日付・時間スロットの組み合わせを確認
+          // 日付・時間スロットの組み合わせを確認（月次マッチングの場合は全体データを使用）
           addLog(`🔍 日付・時間スロット確認:`);
-          addLog(`  - 希望シフト: ${filteredDayRequests.length}件`);
-          addLog(`  - 募集シフト: ${filteredDayPostings.length}件`);
           
-          if (filteredDayRequests.length > 0) {
-            const requestDates = [...new Set(filteredDayRequests.map(r => r.date))];
-            const requestTimeSlots = [...new Set(filteredDayRequests.map(r => r.time_slot))];
-            addLog(`  - 希望シフト日付: ${requestDates.join(', ')}`);
-            addLog(`  - 希望シフト時間: ${requestTimeSlots.join(', ')}`);
+          // 月次マッチングの場合は、全体のシフトデータを確認
+          if (monthlyMatches.length > 0) {
+            // 月次マッチングの場合は、全体のシフトデータから情報を取得
+            addLog(`  - 月次マッチング完了: ${monthlyMatches.length}件のマッチ生成`);
+            addLog(`  - 詳細な日付・時間スロット確認は日別マッチングで実行`);
+          } else {
+            addLog(`  - マッチング結果なし`);
           }
-          
-          if (filteredDayPostings.length > 0) {
-            const postingDates = [...new Set(filteredDayPostings.map(p => p.date))];
-            const postingTimeSlots = [...new Set(filteredDayPostings.map(p => p.time_slot))];
-            addLog(`  - 募集シフト日付: ${postingDates.join(', ')}`);
-            addLog(`  - 募集シフト時間: ${postingTimeSlots.join(', ')}`);
-          }
-          
-          // マッチング可能な組み合わせを確認
-          const matchingCombinations = filteredDayRequests.filter(request => 
-            filteredDayPostings.some(posting => 
-              request.date === posting.date && request.time_slot === posting.time_slot
-            )
-          );
-          addLog(`  - マッチング可能組み合わせ: ${matchingCombinations.length}件`);
         }
       }
       
