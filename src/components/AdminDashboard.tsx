@@ -1048,6 +1048,30 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           if (matchingDates.length > 0) {
             addLog(`  - 距離ベースマッチング実行条件: 満たしている`);
+            
+            // 距離ベースマッチングの詳細実行ログを追加
+            addLog(`🔍 距離ベースマッチング実行開始:`);
+            addLog(`  - 希望シフト: ${allRequests.length}件`);
+            addLog(`  - 募集シフト: ${allPostings.length}件`);
+            addLog(`  - 薬剤師位置情報: ${Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.nearest_station_name).length}件`);
+            addLog(`  - 薬局位置情報: ${Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.nearest_station_name && userProfiles[id]?.user_type === 'pharmacy').length}件`);
+            
+            // 実際の距離ベースマッチングを実行してテスト
+            try {
+              const { generateDistanceBasedMatches } = await import('../features/ai-matching/distanceMatching');
+              const testMatches = await generateDistanceBasedMatches(allRequests, allPostings, userProfiles);
+              addLog(`  - テスト距離ベースマッチング結果: ${testMatches.length}件`);
+              
+              if (testMatches.length > 0) {
+                testMatches.forEach((match, index) => {
+                  addLog(`    ${index + 1}. 薬剤師: ${match.pharmacist_id}, 薬局: ${match.pharmacy_id}, スコア: ${match.score?.toFixed(2) || 'N/A'}`);
+                });
+              } else {
+                addLog(`    - 距離ベースマッチング: 条件を満たす組み合わせなし`);
+              }
+            } catch (error) {
+              addLog(`    - 距離ベースマッチング実行エラー: ${error.message}`);
+            }
           } else {
             addLog(`  - 距離ベースマッチング実行条件: 日付が一致しない`);
           }

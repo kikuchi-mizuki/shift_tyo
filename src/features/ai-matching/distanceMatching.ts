@@ -118,16 +118,20 @@ export const calculateDistanceScore = async (
         }
       });
       
+      console.log(`🔍 Edge Function呼び出し結果:`, { data, error });
+      
       if (!error && data && typeof data.minutes === 'number') {
         estimatedCommuteTime = data.minutes;
         console.log(`✅ Edge Function成功: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name} = ${data.minutes} minutes`);
-        console.log(`💾 データベースに保存済み: station_travel_times`);
+        console.log(`💾 データベースに保存済み: station_travel_times (source: ${data.source || 'unknown'})`);
       } else {
         console.warn('❌ Edge Function失敗:', error);
         console.warn('📊 レスポンスデータ:', data);
+        console.warn('📊 データ型:', typeof data, typeof data?.minutes);
       }
     } catch (error) {
       console.warn('❌ Edge Function呼び出しエラー:', error);
+      console.warn('❌ エラー詳細:', error.message, error.stack);
     }
 
     // 失敗時は直線距離→擬似通勤時間にフォールバック
