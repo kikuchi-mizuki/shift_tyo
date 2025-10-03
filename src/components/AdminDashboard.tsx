@@ -69,12 +69,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         
         setAiMatchingEngine(engine);
         setDataCollector(collector);
+        addLog('✅ AI Matching Engine初期化完了');
         
         console.log('✅ AI Matching Engine initialized successfully');
         console.log('Engine instance:', engine);
         console.log('DataCollector instance:', collector);
       } catch (error) {
         console.error('❌ Failed to initialize AI Matching Engine:', error);
+        addLog('❌ AI Matching Engine初期化失敗');
         // 初期化に失敗した場合はAIマッチングを無効にする
         setUseAIMatching(false);
       }
@@ -731,10 +733,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   const executeMonthlyAIMatching = async () => {
     if (!aiMatchingEngine) {
       console.error('AI Matching Engine not initialized');
+      addLog('❌ AI Matching Engine not initialized');
       return;
     }
 
     setAiMatchingLoading(true);
+    addLog('🚀 1ヶ月分AIマッチング開始');
     try {
       // 既存のマッチング結果をクリア（確定済みマッチは保持）
       setAiMatches([]);
@@ -959,6 +963,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       // 1ヶ月分のマッチング実行完了フラグを設定
       setMonthlyMatchingExecuted(true);
+      addLog(`✅ 1ヶ月分AIマッチング完了: 総${monthlyMatches.length}件`);
       console.log('✅ 1ヶ月分マッチング実行完了 - monthlyMatchingExecutedフラグをtrueに設定');
       
       
@@ -1040,6 +1045,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       setAiMatches([]);
     } catch (error) {
       console.error('1ヶ月分のAIマッチングに失敗:', error);
+      addLog(`❌ 1ヶ月分AIマッチングエラー: ${error instanceof Error ? error.message : String(error)}`);
       console.error('1ヶ月分のAIマッチングに失敗しました。');
     } finally {
       setAiMatchingLoading(false);
@@ -1050,10 +1056,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   const executeAIMatching = async (date: string) => {
     if (!aiMatchingEngine) {
       console.error('AI Matching Engine not initialized');
+      addLog('❌ AI Matching Engine not initialized');
       return;
     }
 
     setAiMatchingLoading(true);
+    addLog(`🚀 AIマッチング開始: ${date}`);
     try {
       // 最新の確定シフトを取得してから判定（状態の取りこぼしを防止）
       let freshAssigned: any[] = Array.isArray(assigned) ? (assigned as any[]) : [];
@@ -1220,10 +1228,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
       setAiMatches(matches);
 
+      addLog(`✅ AIマッチング完了: ${matches.length}件のマッチを生成`);
       console.log(`AI Matching completed: ${matches.length} matches found`);
     } catch (error) {
       console.error('AI Matching failed:', error);
-      addLog(`AI Matchingエラー: ${error instanceof Error ? error.message : String(error)}`);
+      addLog(`❌ AIマッチングエラー: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setAiMatchingLoading(false);
     }
