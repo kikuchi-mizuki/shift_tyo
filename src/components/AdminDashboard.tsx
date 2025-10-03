@@ -990,7 +990,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           // 距離ベースマッチングの詳細デバッグ情報を追加
           addLog(`🔍 距離ベースマッチング詳細:`);
-          addLog(`  - 希望シフト数: ${monthlyMatches.length > 0 ? '確認中' : '0件'}`);
+          addLog(`  - 月次マッチング結果: ${monthlyMatches.length}件`);
           addLog(`  - 薬剤師位置情報: ${Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.nearest_station_name).length}件`);
           
           // 薬局の位置情報も確認
@@ -1003,6 +1003,27 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               const pharmacy = userProfiles[id];
               addLog(`    * ${pharmacy.name}: 駅=${pharmacy.nearest_station_name || 'なし'}, 緯度=${pharmacy.location_latitude || 'なし'}, 経度=${pharmacy.location_longitude || 'なし'}`);
             });
+          }
+          
+          // 月次マッチングで使用されたシフトデータを確認
+          addLog(`🔍 月次マッチングシフトデータ:`);
+          addLog(`  - 全体の希望シフト数: ${Object.values(shiftRequests).flat().length}件`);
+          addLog(`  - 全体の募集シフト数: ${Object.values(shiftPostings).flat().length}件`);
+          
+          // 日付別のシフトデータを確認
+          const allRequestDates = [...new Set(Object.values(shiftRequests).flat().map(r => r.date))];
+          const allPostingDates = [...new Set(Object.values(shiftPostings).flat().map(p => p.date))];
+          addLog(`  - 希望シフト日付: ${allRequestDates.join(', ')}`);
+          addLog(`  - 募集シフト日付: ${allPostingDates.join(', ')}`);
+          
+          // マッチング可能な日付を確認
+          const matchingDates = allRequestDates.filter(date => allPostingDates.includes(date));
+          addLog(`  - マッチング可能日付: ${matchingDates.join(', ')}`);
+          
+          if (matchingDates.length > 0) {
+            addLog(`  - 距離ベースマッチング実行条件: 満たしている`);
+          } else {
+            addLog(`  - 距離ベースマッチング実行条件: 日付が一致しない`);
           }
           
           // 日付・時間スロットの組み合わせを確認（月次マッチングの場合は全体データを使用）
