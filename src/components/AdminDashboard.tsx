@@ -1316,6 +1316,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           profileDetails.forEach(profile => {
             addLog(`  - ${profile.name}: 駅=${profile.nearest_station_name || 'なし'}, 緯度=${profile.location_latitude || 'なし'}, 経度=${profile.location_longitude || 'なし'}`);
           });
+          
+          // 距離ベースマッチングの詳細デバッグ情報を追加
+          addLog(`🔍 距離ベースマッチング詳細:`);
+          addLog(`  - 薬剤師位置情報: ${Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.nearest_station_name).length}件`);
+          
+          // 薬局の位置情報も確認
+          const pharmacyProfiles = Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.user_type === 'pharmacy');
+          addLog(`  - 薬局位置情報: ${pharmacyProfiles.filter(id => userProfiles[id]?.nearest_station_name).length}件`);
+          
+          if (pharmacyProfiles.length > 0) {
+            addLog(`  - 薬局詳細:`);
+            pharmacyProfiles.forEach(id => {
+              const pharmacy = userProfiles[id];
+              addLog(`    * ${pharmacy.name}: 駅=${pharmacy.nearest_station_name || 'なし'}, 緯度=${pharmacy.location_latitude || 'なし'}, 経度=${pharmacy.location_longitude || 'なし'}`);
+            });
+          }
         }
       }
 
