@@ -512,20 +512,48 @@ export class AIMatchingEngine {
       // ローカルマッチングを実行
       debugInfo += `=== ローカルマッチング実行 ===\n`;
     
+      // 距離ベースのマッチングを実行
+      let distanceBasedMatches: any[] = [];
+      if (userProfiles) {
+        try {
+          debugInfo += `=== 距離ベースマッチング実行 ===\n`;
+          distanceBasedMatches = await generateDistanceBasedMatches(requests, postings, userProfiles);
+          debugInfo += `距離ベースマッチング結果: ${distanceBasedMatches.length}件\n`;
+          console.log(`Distance-based matches: ${distanceBasedMatches.length}`);
+        } catch (error) {
+          debugInfo += `距離ベースマッチングエラー: ${error}\n`;
+          console.warn('Distance-based matching failed:', error);
+        }
+      }
+    
     const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches);
     console.log(`生成された候補: ${candidates.length}件`);
     
     // 薬局の応募満足度を優先する最適化アルゴリズム
       const result = await this.executePharmacySatisfactionMatching(candidates, requests, postings, options?.priority, ratings);
     console.log('薬局満足度優先マッチング結果:', result);
+    
+    // 距離ベースのマッチング結果を統合
+    const finalResult = [...distanceBasedMatches, ...result];
+    
+    // 重複を除去（距離ベースの結果を優先）
+    const uniqueResult = finalResult.filter((match, index, self) => 
+      index === self.findIndex(m => 
+        m.pharmacist_id === match.pharmacist_id && 
+        m.pharmacy_id === match.pharmacy_id &&
+        m.date === match.date
+      )
+    );
       
       debugInfo += `\n=== 最終結果 ===\n`;
-      debugInfo += `最終マッチング件数: ${result.length}件\n`;
+      debugInfo += `距離ベースマッチング: ${distanceBasedMatches.length}件\n`;
+      debugInfo += `従来マッチング: ${result.length}件\n`;
+      debugInfo += `最終マッチング件数: ${uniqueResult.length}件\n`;
       
       // デバッグ情報をコンソールに出力
       console.log('AIマッチングエンジンデバッグ:', debugInfo);
       
-    return result;
+    return uniqueResult;
       
     } catch (error) {
       debugInfo += `\n=== エラー発生 ===\n`;
