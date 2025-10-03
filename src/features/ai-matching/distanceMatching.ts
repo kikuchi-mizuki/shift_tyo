@@ -105,38 +105,63 @@ export const calculateDistanceScore = async (
       return 0.5; // デフォルトスコア
     }
 
-    // まず公共交通の所要時間（Edge Function + キャッシュ）を試す
+    // まずキャッシュから所要時間を確認
     let estimatedCommuteTime: number | null = null;
     try {
-      console.log(`🚄 Edge Function呼び出し開始: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name}`);
+      console.log(`🔍 キャッシュ確認: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name}`);
       
-      const { data, error } = await supabase.functions.invoke('api', {
-        body: {
-          action: 'get_transit_time',
-          origin: pharmacistStation.station_name,
-          destination: pharmacyStation.station_name
-        }
-      });
+      const { data: cached, error: cacheError } = await supabase
+        .from('station_travel_times')
+        .select('minutes')
+        .eq('origin_station_name', pharmacistStation.station_name)
+        .eq('dest_station_name', pharmacyStation.station_name)
+        .eq('provider', 'google')
+        .maybeSingle();
       
-      console.log(`🔍 Edge Function呼び出し結果:`, { data, error });
-      
-      if (!error && data && typeof data.minutes === 'number') {
-        estimatedCommuteTime = data.minutes;
-        console.log(`✅ Edge Function成功: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name} = ${data.minutes} minutes`);
-        console.log(`💾 データベースに保存済み: station_travel_times (source: ${data.source || 'unknown'})`);
+      if (!cacheError && cached?.minutes) {
+        estimatedCommuteTime = cached.minutes;
+        console.log(`✅ キャッシュから取得: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name} = ${cached.minutes} minutes`);
       } else {
-        console.warn('❌ Edge Function失敗:', error);
-        console.warn('📊 レスポンスデータ:', data);
-        console.warn('📊 データ型:', typeof data, typeof data?.minutes);
+        console.log(`📝 キャッシュなし: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name}`);
+        
+        // キャッシュがない場合は直線距離計算を使用
+        console.log(`🔄 フォールバック: 直線距離計算を使用`);
+        const distance = calculateDistance(
+          pharmacistStation.latitude, pharmacistStation.longitude,
+          pharmacyStation.latitude, pharmacyStation.longitude
+        );
+        estimatedCommuteTime = estimateCommuteTime(distance);
+        console.log(`📏 直線距離: ${distance.toFixed(2)}km, 推定時間: ${estimatedCommuteTime}分`);
+        
+        // 計算結果をデータベースに保存
+        try {
+          const { error: saveError } = await supabase
+            .from('station_travel_times')
+            .upsert({
+              origin_station_name: pharmacistStation.station_name,
+              dest_station_name: pharmacyStation.station_name,
+              provider: 'geodesic',
+              minutes: estimatedCommuteTime,
+              last_used_at: new Date().toISOString(),
+            }, { onConflict: 'origin_station_name, dest_station_name, provider' });
+          
+          if (!saveError) {
+            console.log(`💾 直線距離計算結果をデータベースに保存: ${estimatedCommuteTime}分`);
+          } else {
+            console.warn('❌ データベース保存エラー:', saveError);
+          }
+        } catch (saveError) {
+          console.warn('❌ データベース保存例外:', saveError);
+        }
       }
     } catch (error) {
-      console.warn('❌ Edge Function呼び出しエラー:', error);
+      console.warn('❌ キャッシュ確認エラー:', error);
       console.warn('❌ エラー詳細:', error.message, error.stack);
     }
 
-    // 失敗時は直線距離→擬似通勤時間にフォールバック
+    // 最終フォールバック（上記で既に処理済みの場合はスキップ）
     if (!estimatedCommuteTime) {
-      console.log(`🔄 フォールバック: 直線距離計算を使用`);
+      console.log(`🔄 最終フォールバック: 直線距離計算を使用`);
       const distance = calculateDistance(
         pharmacistStation.latitude, pharmacistStation.longitude,
         pharmacyStation.latitude, pharmacyStation.longitude

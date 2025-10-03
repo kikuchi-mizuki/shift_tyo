@@ -13,16 +13,24 @@ serve(async (req) => {
     }
 
     try {
-    // Create a Supabase client with the Auth context of the function
+    // Create a Supabase client with service role key for database operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
       }
     )
+    
+    console.log('Edge Function started:', {
+      url: Deno.env.get('SUPABASE_URL'),
+      hasServiceKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+      hasAnonKey: !!Deno.env.get('SUPABASE_ANON_KEY'),
+      hasGoogleKey: !!Deno.env.get('GOOGLE_MAPS_API_KEY')
+    })
 
     // Handle POST requests for specific actions
     if (req.method === 'POST') {
@@ -60,13 +68,17 @@ serve(async (req) => {
 
       // 交通機関の所要時間（分）を取得してキャッシュ
       if (action === 'get_transit_time') {
+        console.log('get_transit_time action called:', { body })
         const { origin, destination } = body as { origin: string; destination: string }
         if (!origin || !destination) {
+          console.log('Missing origin or destination:', { origin, destination })
           return new Response(
             JSON.stringify({ error: 'origin and destination are required' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
+        
+        console.log('Processing transit time request:', { origin, destination })
 
         // まずキャッシュを参照
         const { data: cached } = await supabaseClient
