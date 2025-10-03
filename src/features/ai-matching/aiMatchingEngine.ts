@@ -517,13 +517,17 @@ export class AIMatchingEngine {
       if (userProfiles) {
         try {
           debugInfo += `=== 距離ベースマッチング実行 ===\n`;
+          console.log(`🎯 距離ベースマッチング開始: 希望${requests.length}件, 募集${postings.length}件`);
           distanceBasedMatches = await generateDistanceBasedMatches(requests, postings, userProfiles);
           debugInfo += `距離ベースマッチング結果: ${distanceBasedMatches.length}件\n`;
-          console.log(`Distance-based matches: ${distanceBasedMatches.length}`);
+          console.log(`✅ 距離ベースマッチング完了: ${distanceBasedMatches.length}件`);
         } catch (error) {
           debugInfo += `距離ベースマッチングエラー: ${error}\n`;
-          console.warn('Distance-based matching failed:', error);
+          console.warn('❌ 距離ベースマッチング失敗:', error);
         }
+      } else {
+        console.log('⚠️ userProfilesが存在しないため、距離ベースマッチングをスキップ');
+        debugInfo += `userProfilesが存在しないため、距離ベースマッチングをスキップ\n`;
       }
     
     const candidates = await this.generateMatchCandidates(requests, postings, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches);

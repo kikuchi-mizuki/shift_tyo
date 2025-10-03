@@ -200,6 +200,9 @@ export const generateDistanceBasedMatches = async (
   postings: any[],
   userProfiles: any
 ): Promise<any[]> => {
+  console.log(`🎯 距離ベースマッチング開始: 希望${requests.length}件, 募集${postings.length}件`);
+  console.log(`👥 ユーザープロフィール数: ${Object.keys(userProfiles || {}).length}件`);
+  
   const matches: any[] = [];
   const usedPharmacists = new Set<string>();
   const pharmacyUsageCount = new Map<string, number>();
@@ -217,15 +220,28 @@ export const generateDistanceBasedMatches = async (
         longitude: profile.location_longitude,
         max_commute_time: profile.max_commute_time || 60
       });
+      console.log(`📍 薬剤師位置情報: ${profile.name} - ${profile.nearest_station_name}`);
+    } else {
+      console.log(`⚠️ 薬剤師位置情報なし: ${request.pharmacist_id}`);
     }
   }
+  
+  console.log(`📍 位置情報を持つ薬剤師: ${pharmacistLocations.length}件`);
 
   // 距離ベースのスコアを計算してマッチング候補を生成
   const scoredMatches: Array<{ match: any; score: number }> = [];
+  
+  if (pharmacistLocations.length === 0) {
+    console.log(`⚠️ 位置情報を持つ薬剤師が0件のため、距離ベースマッチングをスキップ`);
+    return [];
+  }
 
   for (const request of requests) {
     const pharmacistLocation = pharmacistLocations.find(p => p.user_id === request.pharmacist_id);
-    if (!pharmacistLocation) continue;
+    if (!pharmacistLocation) {
+      console.log(`⚠️ 薬剤師位置情報なし: ${request.pharmacist_id}`);
+      continue;
+    }
 
     for (const posting of postings) {
       // 基本的な互換性チェック
