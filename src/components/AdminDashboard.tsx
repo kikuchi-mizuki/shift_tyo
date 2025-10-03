@@ -1007,11 +1007,18 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           // 月次マッチングで使用されたシフトデータを確認
           addLog(`🔍 月次マッチングシフトデータ:`);
-          addLog(`  - shiftRequests構造: ${JSON.stringify(Object.keys(shiftRequests))}`);
-          addLog(`  - shiftPostings構造: ${JSON.stringify(Object.keys(shiftPostings))}`);
+          addLog(`  - shiftRequests型: ${typeof shiftRequests}`);
+          addLog(`  - shiftPostings型: ${typeof shiftPostings}`);
           
-          const allRequests = Object.values(shiftRequests).flat();
-          const allPostings = Object.values(shiftPostings).flat();
+          // shiftRequestsとshiftPostingsが関数の場合は呼び出し、配列の場合はそのまま使用
+          const requestsData = typeof shiftRequests === 'function' ? shiftRequests() : shiftRequests;
+          const postingsData = typeof shiftPostings === 'function' ? shiftPostings() : shiftPostings;
+          
+          addLog(`  - requestsData型: ${typeof requestsData}`);
+          addLog(`  - postingsData型: ${typeof postingsData}`);
+          
+          const allRequests = Array.isArray(requestsData) ? requestsData : Object.values(requestsData || {}).flat();
+          const allPostings = Array.isArray(postingsData) ? postingsData : Object.values(postingsData || {}).flat();
           addLog(`  - 全体の希望シフト数: ${allRequests.length}件`);
           addLog(`  - 全体の募集シフト数: ${allPostings.length}件`);
           
