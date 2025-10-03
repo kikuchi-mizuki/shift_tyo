@@ -1004,6 +1004,33 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               addLog(`    * ${pharmacy.name}: 駅=${pharmacy.nearest_station_name || 'なし'}, 緯度=${pharmacy.location_latitude || 'なし'}, 経度=${pharmacy.location_longitude || 'なし'}`);
             });
           }
+          
+          // 日付・時間スロットの組み合わせを確認
+          addLog(`🔍 日付・時間スロット確認:`);
+          addLog(`  - 希望シフト: ${filteredDayRequests.length}件`);
+          addLog(`  - 募集シフト: ${filteredDayPostings.length}件`);
+          
+          if (filteredDayRequests.length > 0) {
+            const requestDates = [...new Set(filteredDayRequests.map(r => r.date))];
+            const requestTimeSlots = [...new Set(filteredDayRequests.map(r => r.time_slot))];
+            addLog(`  - 希望シフト日付: ${requestDates.join(', ')}`);
+            addLog(`  - 希望シフト時間: ${requestTimeSlots.join(', ')}`);
+          }
+          
+          if (filteredDayPostings.length > 0) {
+            const postingDates = [...new Set(filteredDayPostings.map(p => p.date))];
+            const postingTimeSlots = [...new Set(filteredDayPostings.map(p => p.time_slot))];
+            addLog(`  - 募集シフト日付: ${postingDates.join(', ')}`);
+            addLog(`  - 募集シフト時間: ${postingTimeSlots.join(', ')}`);
+          }
+          
+          // マッチング可能な組み合わせを確認
+          const matchingCombinations = filteredDayRequests.filter(request => 
+            filteredDayPostings.some(posting => 
+              request.date === posting.date && request.time_slot === posting.time_slot
+            )
+          );
+          addLog(`  - マッチング可能組み合わせ: ${matchingCombinations.length}件`);
         }
       }
       
