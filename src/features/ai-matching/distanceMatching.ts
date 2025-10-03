@@ -243,24 +243,36 @@ export const generateDistanceBasedMatches = async (
     return [];
   }
 
+  console.log(`🔍 距離ベースマッチング詳細開始: 希望${requests.length}件, 募集${postings.length}件`);
+  
   for (const request of requests) {
     const pharmacistLocation = pharmacistLocations.find(p => p.user_id === request.pharmacist_id);
     if (!pharmacistLocation) {
       console.log(`⚠️ 薬剤師位置情報なし: ${request.pharmacist_id}`);
       continue;
     }
+    
+    console.log(`📍 薬剤師処理開始: ${request.pharmacist_id} (${pharmacistLocation.nearest_station_name})`);
 
     for (const posting of postings) {
       // 基本的な互換性チェック
       if (request.date !== posting.date) continue;
       if (request.time_slot !== posting.time_slot) continue;
+      
+      console.log(`🏪 薬局処理開始: ${posting.pharmacy_id} (${posting.store_name || '店舗名なし'})`);
 
       // 店舗毎の最寄駅情報を取得
       const storeStation = await getStoreStationInfo(posting.pharmacy_id, posting.store_name || '');
+      console.log(`🏪 店舗駅情報:`, storeStation ? `取得済み (${storeStation.station_name})` : 'なし');
+      
       if (!storeStation) {
         // 店舗毎の最寄駅情報がない場合は、薬局全体の最寄駅情報を使用
         const profile = userProfiles[posting.pharmacy_id];
-        if (!profile || !profile.nearest_station_name) continue;
+        console.log(`🏥 薬局プロフィール:`, profile ? `取得済み (${profile.nearest_station_name})` : 'なし');
+        if (!profile || !profile.nearest_station_name) {
+          console.log(`⚠️ 薬局位置情報なし: ${posting.pharmacy_id}`);
+          continue;
+        }
         
         const pharmacyLocation: UserLocation = {
           user_id: posting.pharmacy_id,
@@ -272,8 +284,10 @@ export const generateDistanceBasedMatches = async (
         };
         
         const distanceScore = await calculateDistanceScore(pharmacistLocation, pharmacyLocation);
+        console.log(`📊 距離スコア計算: ${distanceScore.toFixed(2)} (閾値: 0.3)`);
         
         if (distanceScore > 0.3) {
+          console.log(`✅ マッチング成立: 薬剤師${request.pharmacist_id} ↔ 薬局${posting.pharmacy_id} (スコア: ${distanceScore.toFixed(2)})`);
           scoredMatches.push({
             match: {
               pharmacist_id: request.pharmacist_id,
@@ -286,10 +300,13 @@ export const generateDistanceBasedMatches = async (
               store_name: posting.store_name || '',
               memo: `Distance-based matching (pharmacy): ${distanceScore.toFixed(2)} score`,
               compatibility_score: distanceScore,
-              distance_score: distanceScore
+              distance_score: distanceScore,
+              algorithm: 'distance_based'
             },
             score: distanceScore
           });
+        } else {
+          console.log(`❌ マッチング不成立: スコアが閾値を下回る (${distanceScore.toFixed(2)} <= 0.3)`);
         }
       } else {
         // 店舗毎の最寄駅情報を使用
