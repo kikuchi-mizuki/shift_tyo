@@ -89,44 +89,64 @@ serve(async (req) => {
         // Google Directions API (Transit) 呼び出し
         const apiKey = Deno.env.get('GOOGLE_MAPS_API_KEY')
         if (!apiKey) {
+          console.error('GOOGLE_MAPS_API_KEY is not set')
           return new Response(JSON.stringify({ error: 'GOOGLE_MAPS_API_KEY is not set' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
         }
 
-        const params = new URLSearchParams({
-          origin,
-          destination,
-          mode: 'transit',
-          language: 'ja',
-          key: apiKey,
-        })
-        const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`
-        const resp = await fetch(url)
-        const json = await resp.json()
-
-        let minutes: number | null = null
         try {
-          const route = json.routes?.[0]
-          const leg = route?.legs?.[0]
-          const durationSec = leg?.duration?.value
-          if (typeof durationSec === 'number') minutes = Math.ceil(durationSec / 60)
-        } catch (_) {}
+          const params = new URLSearchParams({
+            origin,
+            destination,
+            mode: 'transit',
+            language: 'ja',
+            key: apiKey,
+          })
+          const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`
+          console.log('Calling Google Maps API:', url.replace(apiKey, 'API_KEY_HIDDEN'))
+          
+          const resp = await fetch(url)
+          const json = await resp.json()
+          console.log('Google Maps API response status:', resp.status)
 
-        if (!minutes) {
-          return new Response(JSON.stringify({ error: 'Could not get transit time' }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+          let minutes: number | null = null
+          try {
+            const route = json.routes?.[0]
+            const leg = route?.legs?.[0]
+            const durationSec = leg?.duration?.value
+            if (typeof durationSec === 'number') minutes = Math.ceil(durationSec / 60)
+            console.log('Parsed transit time:', { durationSec, minutes })
+          } catch (error) {
+            console.error('Error parsing Google Maps response:', error)
+          }
+
+          if (!minutes) {
+            console.error('Could not get transit time from Google Maps API')
+            return new Response(JSON.stringify({ error: 'Could not get transit time' }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+          }
+
+          // キャッシュに保存（衝突時は更新）
+          console.log('Saving to station_travel_times:', { origin, destination, minutes })
+          const { error: upsertError } = await supabaseClient
+            .from('station_travel_times')
+            .upsert({
+              origin_station_name: origin,
+              dest_station_name: destination,
+              provider: 'google',
+              minutes,
+              last_used_at: new Date().toISOString(),
+            }, { onConflict: 'origin_station_name, dest_station_name, provider' })
+
+          if (upsertError) {
+            console.error('Error saving to station_travel_times:', upsertError)
+            return new Response(JSON.stringify({ error: 'Failed to save travel time' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+          }
+
+          console.log('Successfully saved travel time to database')
+          return new Response(JSON.stringify({ minutes, source: 'google' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        } catch (error) {
+          console.error('Error in get_transit_time:', error)
+          return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
         }
-
-        // キャッシュに保存（衝突時は更新）
-        await supabaseClient
-          .from('station_travel_times')
-          .upsert({
-            origin_station_name: origin,
-            dest_station_name: destination,
-            provider: 'google',
-            minutes,
-            last_used_at: new Date().toISOString(),
-          }, { onConflict: 'origin_station_name, dest_station_name, provider' })
-
-        return new Response(JSON.stringify({ minutes, source: 'google' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
     }
 

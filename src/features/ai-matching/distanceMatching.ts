@@ -108,20 +108,23 @@ export const calculateDistanceScore = async (
     // まず公共交通の所要時間（Edge Function + キャッシュ）を試す
     let estimatedCommuteTime: number | null = null;
     try {
-      const resp = await fetch('/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('api', {
+        body: {
           action: 'get_transit_time',
           origin: pharmacistStation.station_name,
           destination: pharmacyStation.station_name
-        })
+        }
       });
-      const json = await resp.json();
-      if (json && typeof json.minutes === 'number') {
-        estimatedCommuteTime = json.minutes;
+      
+      if (!error && data && typeof data.minutes === 'number') {
+        estimatedCommuteTime = data.minutes;
+        console.log(`Edge Function transit time: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name} = ${data.minutes} minutes`);
+      } else {
+        console.warn('Edge Function failed:', error);
       }
-    } catch (_) {}
+    } catch (error) {
+      console.warn('Edge Function call failed:', error);
+    }
 
     // 失敗時は直線距離→擬似通勤時間にフォールバック
     if (!estimatedCommuteTime) {
