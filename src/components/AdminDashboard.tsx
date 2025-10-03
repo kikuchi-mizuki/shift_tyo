@@ -1007,18 +1007,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           // 月次マッチングで使用されたシフトデータを確認
           addLog(`🔍 月次マッチングシフトデータ:`);
-          addLog(`  - shiftRequests型: ${typeof shiftRequests}`);
-          addLog(`  - shiftPostings型: ${typeof shiftPostings}`);
+          addLog(`  - requests型: ${typeof requests}, 長さ: ${Array.isArray(requests) ? requests.length : 'N/A'}`);
+          addLog(`  - postings型: ${typeof postings}, 長さ: ${Array.isArray(postings) ? postings.length : 'N/A'}`);
           
-          // shiftRequestsとshiftPostingsが関数の場合は呼び出し、配列の場合はそのまま使用
-          const requestsData = typeof shiftRequests === 'function' ? shiftRequests() : shiftRequests;
-          const postingsData = typeof shiftPostings === 'function' ? shiftPostings() : shiftPostings;
-          
-          addLog(`  - requestsData型: ${typeof requestsData}`);
-          addLog(`  - postingsData型: ${typeof postingsData}`);
-          
-          const allRequests = Array.isArray(requestsData) ? requestsData : Object.values(requestsData || {}).flat();
-          const allPostings = Array.isArray(postingsData) ? postingsData : Object.values(postingsData || {}).flat();
+          // 実際の状態変数を使用
+          const allRequests = Array.isArray(requests) ? requests : [];
+          const allPostings = Array.isArray(postings) ? postings : [];
           addLog(`  - 全体の希望シフト数: ${allRequests.length}件`);
           addLog(`  - 全体の募集シフト数: ${allPostings.length}件`);
           
