@@ -48,6 +48,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
   const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
   const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false); // 1ヶ月分マッチング実行フラグ
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [matchingLogs, setMatchingLogs] = useState<string[]>([]);
+
+  // ログを追加する関数
+  const addLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = `[${timestamp}] ${message}`;
+    setMatchingLogs(prev => [...prev, logEntry]);
+    console.log(logEntry);
+  };
 
   // AIマッチングエンジンの初期化
   useEffect(() => {
@@ -1182,6 +1192,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         return;
       }
 
+      addLog(`AI Matching開始: ${date} - 希望${filteredDayRequests.length}件, 募集${filteredDayPostings.length}件`);
       console.log(`AI Matching for ${date}: ${filteredDayRequests.length} requests, ${filteredDayPostings.length} postings`);
 
       let matches = await aiMatchingEngine.executeOptimalMatching(filteredDayRequests, filteredDayPostings, {
@@ -1189,6 +1200,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         algorithm: 'hybrid',
         priority: 'balance'
       }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches as unknown as Set<string>);
+      
+      addLog(`AI Matching完了: ${matches.length}件のマッチを生成`);
 
       // 最終防御: 返ってきた結果からも確定済み薬局/店舗を除外
       try {
@@ -1210,6 +1223,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.log(`AI Matching completed: ${matches.length} matches found`);
     } catch (error) {
       console.error('AI Matching failed:', error);
+      addLog(`AI Matchingエラー: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setAiMatchingLoading(false);
     }
@@ -4594,6 +4608,14 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                     </>
                   )}
                 </button>
+                
+                <button
+                  onClick={() => setShowLogModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>ログを表示</span>
+                </button>
               </div>
             </div>
 
@@ -6217,6 +6239,42 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
           );
         })()}
       </div>
+      
+      {/* ログモーダル */}
+      {showLogModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">AIマッチングログ</h3>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setMatchingLogs([])}
+                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
+                >
+                  ログをクリア
+                </button>
+                <button
+                  onClick={() => setShowLogModal(false)}
+                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-auto">
+                {matchingLogs.length === 0 ? (
+                  <div className="text-gray-500">ログがありません。AIマッチングを実行してください。</div>
+                ) : (
+                  matchingLogs.map((log, index) => (
+                    <div key={index} className="mb-1">{log}</div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

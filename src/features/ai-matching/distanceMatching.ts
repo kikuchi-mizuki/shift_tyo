@@ -108,6 +108,8 @@ export const calculateDistanceScore = async (
     // まず公共交通の所要時間（Edge Function + キャッシュ）を試す
     let estimatedCommuteTime: number | null = null;
     try {
+      console.log(`🚄 Edge Function呼び出し開始: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name}`);
+      
       const { data, error } = await supabase.functions.invoke('api', {
         body: {
           action: 'get_transit_time',
@@ -118,21 +120,25 @@ export const calculateDistanceScore = async (
       
       if (!error && data && typeof data.minutes === 'number') {
         estimatedCommuteTime = data.minutes;
-        console.log(`Edge Function transit time: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name} = ${data.minutes} minutes`);
+        console.log(`✅ Edge Function成功: ${pharmacistStation.station_name} -> ${pharmacyStation.station_name} = ${data.minutes} minutes`);
+        console.log(`💾 データベースに保存済み: station_travel_times`);
       } else {
-        console.warn('Edge Function failed:', error);
+        console.warn('❌ Edge Function失敗:', error);
+        console.warn('📊 レスポンスデータ:', data);
       }
     } catch (error) {
-      console.warn('Edge Function call failed:', error);
+      console.warn('❌ Edge Function呼び出しエラー:', error);
     }
 
     // 失敗時は直線距離→擬似通勤時間にフォールバック
     if (!estimatedCommuteTime) {
+      console.log(`🔄 フォールバック: 直線距離計算を使用`);
       const distance = calculateDistance(
         pharmacistStation.latitude, pharmacistStation.longitude,
         pharmacyStation.latitude, pharmacyStation.longitude
       );
       estimatedCommuteTime = estimateCommuteTime(distance);
+      console.log(`📏 直線距離: ${distance.toFixed(2)}km, 推定時間: ${estimatedCommuteTime}分`);
     }
 
     // 薬剤師の最大通勤時間と比較
@@ -316,6 +322,12 @@ export const generateDistanceBasedMatches = async (
     }
   }
 
-  console.log(`Distance-based matching generated ${matches.length} matches`);
+  console.log(`🎯 距離ベースマッチング完了: ${matches.length}件のマッチを生成`);
+  console.log(`📊 マッチ詳細:`, matches.map(m => ({
+    pharmacist: m.pharmacist_id,
+    pharmacy: m.pharmacy_id,
+    store: m.store_name,
+    score: m.distance_score
+  })));
   return matches;
 };
