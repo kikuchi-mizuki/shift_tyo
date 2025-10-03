@@ -1011,8 +1011,21 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           addLog(`  - 全体の募集シフト数: ${Object.values(shiftPostings).flat().length}件`);
           
           // 日付別のシフトデータを確認
-          const allRequestDates = [...new Set(Object.values(shiftRequests).flat().map(r => r.date))];
-          const allPostingDates = [...new Set(Object.values(shiftPostings).flat().map(p => p.date))];
+          const allRequests = Object.values(shiftRequests).flat();
+          const allPostings = Object.values(shiftPostings).flat();
+          addLog(`  - 希望シフト詳細: ${allRequests.length}件`);
+          allRequests.forEach((req, index) => {
+            addLog(`    ${index + 1}. 日付: ${req.date}, 時間: ${req.time_slot}, 薬剤師: ${req.pharmacist_id}`);
+          });
+          
+          const allPostings = Object.values(shiftPostings).flat();
+          addLog(`  - 募集シフト詳細: ${allPostings.length}件`);
+          allPostings.forEach((post, index) => {
+            addLog(`    ${index + 1}. 日付: ${post.date}, 時間: ${post.time_slot}, 薬局: ${post.pharmacy_id}`);
+          });
+          
+          const allRequestDates = [...new Set(allRequests.map(r => r.date))];
+          const allPostingDates = [...new Set(allPostings.map(p => p.date))];
           addLog(`  - 希望シフト日付: ${allRequestDates.join(', ')}`);
           addLog(`  - 募集シフト日付: ${allPostingDates.join(', ')}`);
           
