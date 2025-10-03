@@ -48,16 +48,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
   const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
   const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false); // 1ヶ月分マッチング実行フラグ
-  const [showLogModal, setShowLogModal] = useState(false);
-  const [matchingLogs, setMatchingLogs] = useState<string[]>([]);
 
-  // ログを追加する関数
-  const addLog = (message: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = `[${timestamp}] ${message}`;
-    setMatchingLogs(prev => [...prev, logEntry]);
-    console.log(logEntry);
-  };
 
   // AIマッチングエンジンの初期化
   useEffect(() => {
@@ -69,14 +60,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         
         setAiMatchingEngine(engine);
         setDataCollector(collector);
-        addLog('✅ AI Matching Engine初期化完了');
         
         console.log('✅ AI Matching Engine initialized successfully');
         console.log('Engine instance:', engine);
         console.log('DataCollector instance:', collector);
       } catch (error) {
         console.error('❌ Failed to initialize AI Matching Engine:', error);
-        addLog('❌ AI Matching Engine初期化失敗');
         // 初期化に失敗した場合はAIマッチングを無効にする
         setUseAIMatching(false);
       }
@@ -733,13 +722,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   const executeMonthlyAIMatching = async () => {
     if (!aiMatchingEngine) {
       console.error('AI Matching Engine not initialized');
-      addLog('❌ AI Matching Engine not initialized');
       return;
     }
 
     setAiMatchingLoading(true);
-    addLog('🚀 1ヶ月分AIマッチング開始');
-    addLog(`👥 ユーザープロフィール数: ${Object.keys(userProfiles || {}).length}件`);
     try {
       // 既存のマッチング結果をクリア（確定済みマッチは保持）
       setAiMatches([]);
@@ -964,142 +950,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       // 1ヶ月分のマッチング実行完了フラグを設定
       setMonthlyMatchingExecuted(true);
-      addLog(`✅ 1ヶ月分AIマッチング完了: 総${monthlyMatches.length}件`);
-      
-      // 距離ベースマッチングの実行状況を確認
-      if (monthlyMatches.length > 0) {
-        const allDistanceBasedMatches = monthlyMatches.filter((match: any) => match.algorithm === 'distance_based');
-        if (allDistanceBasedMatches.length > 0) {
-          addLog(`🎯 距離ベースマッチング: ${allDistanceBasedMatches.length}件生成`);
-        } else {
-          addLog(`⚠️ 距離ベースマッチング: 0件（経路データ保存なし）`);
-          
-          // 薬剤師の位置情報を確認
-          const profileDetails = Object.keys(userProfiles || {}).map(id => ({
-            id,
-            name: userProfiles[id]?.name,
-            nearest_station_name: userProfiles[id]?.nearest_station_name,
-            location_latitude: userProfiles[id]?.location_latitude,
-            location_longitude: userProfiles[id]?.location_longitude
-          }));
-          
-          addLog(`🔍 薬剤師プロフィール詳細:`);
-          profileDetails.forEach(profile => {
-            addLog(`  - ${profile.name}: 駅=${profile.nearest_station_name || 'なし'}, 緯度=${profile.location_latitude || 'なし'}, 経度=${profile.location_longitude || 'なし'}`);
-          });
-          
-          // 距離ベースマッチングの詳細デバッグ情報を追加
-          addLog(`🔍 距離ベースマッチング詳細:`);
-          addLog(`  - 月次マッチング結果: ${monthlyMatches.length}件`);
-          addLog(`  - 薬剤師位置情報: ${Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.nearest_station_name).length}件`);
-          
-          // 薬局の位置情報も確認
-          const pharmacyProfiles = Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.user_type === 'pharmacy');
-          addLog(`  - 薬局位置情報: ${pharmacyProfiles.filter(id => userProfiles[id]?.nearest_station_name).length}件`);
-          
-          if (pharmacyProfiles.length > 0) {
-            addLog(`  - 薬局詳細:`);
-            pharmacyProfiles.forEach(id => {
-              const pharmacy = userProfiles[id];
-              addLog(`    * ${pharmacy.name}: 駅=${pharmacy.nearest_station_name || 'なし'}, 緯度=${pharmacy.location_latitude || 'なし'}, 経度=${pharmacy.location_longitude || 'なし'}`);
-            });
-          }
-          
-          // 月次マッチングで使用されたシフトデータを確認
-          addLog(`🔍 月次マッチングシフトデータ:`);
-          addLog(`  - requests型: ${typeof requests}, 長さ: ${Array.isArray(requests) ? requests.length : 'N/A'}`);
-          addLog(`  - postings型: ${typeof postings}, 長さ: ${Array.isArray(postings) ? postings.length : 'N/A'}`);
-          
-          // 実際の状態変数を使用
-          const allRequests = Array.isArray(requests) ? requests : [];
-          const allPostings = Array.isArray(postings) ? postings : [];
-          addLog(`  - 全体の希望シフト数: ${allRequests.length}件`);
-          addLog(`  - 全体の募集シフト数: ${allPostings.length}件`);
-          
-          // 日付別のシフトデータを確認
-          addLog(`  - 希望シフト詳細: ${allRequests.length}件`);
-          allRequests.forEach((req, index) => {
-            if (req && typeof req === 'object') {
-              addLog(`    ${index + 1}. データ構造: ${JSON.stringify(Object.keys(req))}`);
-              addLog(`    ${index + 1}. 日付: ${req.date || 'undefined'}, 時間: ${req.time_slot || 'undefined'}, 薬剤師: ${req.pharmacist_id || 'undefined'}`);
-            } else {
-              addLog(`    ${index + 1}. 無効なデータ: ${typeof req}`);
-            }
-          });
-          
-          addLog(`  - 募集シフト詳細: ${allPostings.length}件`);
-          allPostings.forEach((post, index) => {
-            if (post && typeof post === 'object') {
-              addLog(`    ${index + 1}. データ構造: ${JSON.stringify(Object.keys(post))}`);
-              addLog(`    ${index + 1}. 日付: ${post.date || 'undefined'}, 時間: ${post.time_slot || 'undefined'}, 薬局: ${post.pharmacy_id || 'undefined'}`);
-            } else {
-              addLog(`    ${index + 1}. 無効なデータ: ${typeof post}`);
-            }
-          });
-          
-          const allRequestDates = [...new Set(allRequests.map(r => r.date))];
-          const allPostingDates = [...new Set(allPostings.map(p => p.date))];
-          addLog(`  - 希望シフト日付: ${allRequestDates.join(', ')}`);
-          addLog(`  - 募集シフト日付: ${allPostingDates.join(', ')}`);
-          
-          // マッチング可能な日付を確認
-          const matchingDates = allRequestDates.filter(date => allPostingDates.includes(date));
-          addLog(`  - マッチング可能日付: ${matchingDates.join(', ')}`);
-          
-          if (matchingDates.length > 0) {
-            addLog(`  - 距離ベースマッチング実行条件: 満たしている`);
-            
-            // 距離ベースマッチングの詳細実行ログを追加
-            addLog(`🔍 距離ベースマッチング実行開始:`);
-            addLog(`  - 希望シフト: ${allRequests.length}件`);
-            addLog(`  - 募集シフト: ${allPostings.length}件`);
-            addLog(`  - 薬剤師位置情報: ${Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.nearest_station_name).length}件`);
-            addLog(`  - 薬局位置情報: ${Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.nearest_station_name && userProfiles[id]?.user_type === 'pharmacy').length}件`);
-            
-            // 実際の距離ベースマッチングを実行してテスト
-            try {
-              const { generateDistanceBasedMatches } = await import('../features/ai-matching/distanceMatching');
-              addLog(`  - 距離ベースマッチング実行中...`);
-              const testMatches = await generateDistanceBasedMatches(allRequests, allPostings, userProfiles);
-              addLog(`  - テスト距離ベースマッチング結果: ${testMatches.length}件`);
-              
-              if (testMatches.length > 0) {
-                testMatches.forEach((match, index) => {
-                  const score = match.distance_score || match.compatibility_score || match.score;
-                  addLog(`    ${index + 1}. 薬剤師: ${match.pharmacist_id}, 薬局: ${match.pharmacy_id}, スコア: ${score?.toFixed(2) || 'N/A'}`);
-                  addLog(`      - アルゴリズム: ${match.algorithm || 'unknown'}`);
-                  addLog(`      - メモ: ${match.memo || 'なし'}`);
-                });
-                
-                // 距離計算の詳細を確認
-                addLog(`  - 距離計算詳細:`);
-                addLog(`    - station_travel_timesテーブルから距離データを取得`);
-                addLog(`    - 直線距離（geodesic）計算を使用`);
-                addLog(`    - 通勤時間に基づくスコア計算（短いほど高スコア）`);
-              } else {
-                addLog(`    - 距離ベースマッチング: 条件を満たす組み合わせなし`);
-                addLog(`    - 可能性: 日付・時間スロット不一致、位置情報不足、スコア閾値未満`);
-              }
-            } catch (error) {
-              addLog(`    - 距離ベースマッチング実行エラー: ${error.message}`);
-            }
-          } else {
-            addLog(`  - 距離ベースマッチング実行条件: 日付が一致しない`);
-          }
-          
-          // 日付・時間スロットの組み合わせを確認（月次マッチングの場合は全体データを使用）
-          addLog(`🔍 日付・時間スロット確認:`);
-          
-          // 月次マッチングの場合は、全体のシフトデータを確認
-          if (monthlyMatches.length > 0) {
-            // 月次マッチングの場合は、全体のシフトデータから情報を取得
-            addLog(`  - 月次マッチング完了: ${monthlyMatches.length}件のマッチ生成`);
-            addLog(`  - 詳細な日付・時間スロット確認は日別マッチングで実行`);
-          } else {
-            addLog(`  - マッチング結果なし`);
-          }
-        }
-      }
       
       console.log('✅ 1ヶ月分マッチング実行完了 - monthlyMatchingExecutedフラグをtrueに設定');
       
@@ -1182,7 +1032,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       setAiMatches([]);
     } catch (error) {
       console.error('1ヶ月分のAIマッチングに失敗:', error);
-      addLog(`❌ 1ヶ月分AIマッチングエラー: ${error instanceof Error ? error.message : String(error)}`);
       console.error('1ヶ月分のAIマッチングに失敗しました。');
     } finally {
       setAiMatchingLoading(false);
@@ -1193,12 +1042,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   const executeAIMatching = async (date: string) => {
     if (!aiMatchingEngine) {
       console.error('AI Matching Engine not initialized');
-      addLog('❌ AI Matching Engine not initialized');
       return;
     }
 
     setAiMatchingLoading(true);
-    addLog(`🚀 AIマッチング開始: ${date}`);
     try {
       // 最新の確定シフトを取得してから判定（状態の取りこぼしを防止）
       let freshAssigned: any[] = Array.isArray(assigned) ? (assigned as any[]) : [];
@@ -1337,35 +1184,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         return;
       }
 
-      addLog(`AI Matching開始: ${date} - 希望${filteredDayRequests.length}件, 募集${filteredDayPostings.length}件`);
-      addLog(`👥 ユーザープロフィール数: ${Object.keys(userProfiles || {}).length}件`);
-      
-      // 日別マッチングの詳細デバッグ情報を追加
-      addLog(`🔍 日別マッチング詳細:`);
-      addLog(`  - 希望シフト: ${filteredDayRequests.length}件`);
-      addLog(`  - 募集シフト: ${filteredDayPostings.length}件`);
-      
-      if (filteredDayRequests.length > 0) {
-        const requestDates = [...new Set(filteredDayRequests.map(r => r.date))];
-        const requestTimeSlots = [...new Set(filteredDayRequests.map(r => r.time_slot))];
-        addLog(`  - 希望シフト日付: ${requestDates.join(', ')}`);
-        addLog(`  - 希望シフト時間: ${requestTimeSlots.join(', ')}`);
-      }
-      
-      if (filteredDayPostings.length > 0) {
-        const postingDates = [...new Set(filteredDayPostings.map(p => p.date))];
-        const postingTimeSlots = [...new Set(filteredDayPostings.map(p => p.time_slot))];
-        addLog(`  - 募集シフト日付: ${postingDates.join(', ')}`);
-        addLog(`  - 募集シフト時間: ${postingTimeSlots.join(', ')}`);
-      }
-      
-      // マッチング可能な組み合わせを確認
-      const matchingCombinations = filteredDayRequests.filter(request => 
-        filteredDayPostings.some(posting => 
-          request.date === posting.date && request.time_slot === posting.time_slot
-        )
-      );
-      addLog(`  - マッチング可能組み合わせ: ${matchingCombinations.length}件`);
       
       console.log(`AI Matching for ${date}: ${filteredDayRequests.length} requests, ${filteredDayPostings.length} postings`);
 
@@ -1375,47 +1193,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         priority: 'balance'
       }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches as unknown as Set<string>);
       
-      addLog(`AI Matching完了: ${matches.length}件のマッチを生成`);
-      
-      // 距離ベースマッチングの実行状況を確認
-      if (matches.length > 0) {
-        const distanceBasedMatches = matches.filter(match => match.algorithm === 'distance_based');
-        if (distanceBasedMatches.length > 0) {
-          addLog(`🎯 距離ベースマッチング: ${distanceBasedMatches.length}件生成`);
-        } else {
-          addLog(`⚠️ 距離ベースマッチング: 0件（経路データ保存なし）`);
-          
-          // 薬剤師の位置情報を確認
-          const profileDetails = Object.keys(userProfiles || {}).map(id => ({
-            id,
-            name: userProfiles[id]?.name,
-            nearest_station_name: userProfiles[id]?.nearest_station_name,
-            location_latitude: userProfiles[id]?.location_latitude,
-            location_longitude: userProfiles[id]?.location_longitude
-          }));
-          
-          addLog(`🔍 薬剤師プロフィール詳細:`);
-          profileDetails.forEach(profile => {
-            addLog(`  - ${profile.name}: 駅=${profile.nearest_station_name || 'なし'}, 緯度=${profile.location_latitude || 'なし'}, 経度=${profile.location_longitude || 'なし'}`);
-          });
-          
-          // 距離ベースマッチングの詳細デバッグ情報を追加
-          addLog(`🔍 距離ベースマッチング詳細:`);
-          addLog(`  - 薬剤師位置情報: ${Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.nearest_station_name).length}件`);
-          
-          // 薬局の位置情報も確認
-          const pharmacyProfiles = Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.user_type === 'pharmacy');
-          addLog(`  - 薬局位置情報: ${pharmacyProfiles.filter(id => userProfiles[id]?.nearest_station_name).length}件`);
-          
-          if (pharmacyProfiles.length > 0) {
-            addLog(`  - 薬局詳細:`);
-            pharmacyProfiles.forEach(id => {
-              const pharmacy = userProfiles[id];
-              addLog(`    * ${pharmacy.name}: 駅=${pharmacy.nearest_station_name || 'なし'}, 緯度=${pharmacy.location_latitude || 'なし'}, 経度=${pharmacy.location_longitude || 'なし'}`);
-            });
-          }
-        }
-      }
 
       // 最終防御: 返ってきた結果からも確定済み薬局/店舗を除外
       try {
@@ -4824,13 +4601,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
                   )}
                 </button>
                 
-                <button
-                  onClick={() => setShowLogModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  <span>ログを表示</span>
-                </button>
               </div>
             </div>
 
@@ -6455,41 +6225,6 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
         })()}
       </div>
       
-      {/* ログモーダル */}
-      {showLogModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-900">AIマッチングログ</h3>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setMatchingLogs([])}
-                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
-                >
-                  ログをクリア
-                </button>
-                <button
-                  onClick={() => setShowLogModal(false)}
-                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
-                >
-                  閉じる
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-auto">
-                {matchingLogs.length === 0 ? (
-                  <div className="text-gray-500">ログがありません。AIマッチングを実行してください。</div>
-                ) : (
-                  matchingLogs.map((log, index) => (
-                    <div key={index} className="mb-1">{log}</div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
