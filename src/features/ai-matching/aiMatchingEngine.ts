@@ -519,6 +519,20 @@ export class AIMatchingEngine {
         try {
           debugInfo += `=== 距離ベースマッチング実行 ===\n`;
           console.log(`🎯 距離ベースマッチング開始: 希望${requests.length}件, 募集${postings.length}件`);
+          
+          // 薬剤師プロフィールの詳細をデバッグ情報に追加
+          const profileDetails = Object.keys(userProfiles).map(id => ({
+            id,
+            name: userProfiles[id]?.name,
+            nearest_station_name: userProfiles[id]?.nearest_station_name,
+            location_latitude: userProfiles[id]?.location_latitude,
+            location_longitude: userProfiles[id]?.location_longitude
+          }));
+          debugInfo += `薬剤師プロフィール詳細:\n`;
+          profileDetails.forEach(profile => {
+            debugInfo += `  - ${profile.name}: 駅=${profile.nearest_station_name || 'なし'}, 緯度=${profile.location_latitude || 'なし'}, 経度=${profile.location_longitude || 'なし'}\n`;
+          });
+          
           distanceBasedMatches = await generateDistanceBasedMatches(requests, postings, userProfiles);
           debugInfo += `距離ベースマッチング結果: ${distanceBasedMatches.length}件\n`;
           console.log(`✅ 距離ベースマッチング完了: ${distanceBasedMatches.length}件`);

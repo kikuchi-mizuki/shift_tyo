@@ -973,6 +973,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           addLog(`🎯 距離ベースマッチング: ${allDistanceBasedMatches.length}件生成`);
         } else {
           addLog(`⚠️ 距離ベースマッチング: 0件（経路データ保存なし）`);
+          
+          // 薬剤師の位置情報を確認
+          const profileDetails = Object.keys(userProfiles || {}).map(id => ({
+            id,
+            name: userProfiles[id]?.name,
+            nearest_station_name: userProfiles[id]?.nearest_station_name,
+            location_latitude: userProfiles[id]?.location_latitude,
+            location_longitude: userProfiles[id]?.location_longitude
+          }));
+          
+          addLog(`🔍 薬剤師プロフィール詳細:`);
+          profileDetails.forEach(profile => {
+            addLog(`  - ${profile.name}: 駅=${profile.nearest_station_name || 'なし'}, 緯度=${profile.location_latitude || 'なし'}, 経度=${profile.location_longitude || 'なし'}`);
+          });
         }
       }
       
@@ -1231,6 +1245,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           addLog(`🎯 距離ベースマッチング: ${distanceBasedMatches.length}件生成`);
         } else {
           addLog(`⚠️ 距離ベースマッチング: 0件（経路データ保存なし）`);
+          
+          // 薬剤師の位置情報を確認
+          const profileDetails = Object.keys(userProfiles || {}).map(id => ({
+            id,
+            name: userProfiles[id]?.name,
+            nearest_station_name: userProfiles[id]?.nearest_station_name,
+            location_latitude: userProfiles[id]?.location_latitude,
+            location_longitude: userProfiles[id]?.location_longitude
+          }));
+          
+          addLog(`🔍 薬剤師プロフィール詳細:`);
+          profileDetails.forEach(profile => {
+            addLog(`  - ${profile.name}: 駅=${profile.nearest_station_name || 'なし'}, 緯度=${profile.location_latitude || 'なし'}, 経度=${profile.location_longitude || 'なし'}`);
+          });
         }
       }
 
