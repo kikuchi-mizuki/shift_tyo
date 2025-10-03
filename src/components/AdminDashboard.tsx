@@ -1007,20 +1007,25 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           
           // 月次マッチングで使用されたシフトデータを確認
           addLog(`🔍 月次マッチングシフトデータ:`);
-          addLog(`  - 全体の希望シフト数: ${Object.values(shiftRequests).flat().length}件`);
-          addLog(`  - 全体の募集シフト数: ${Object.values(shiftPostings).flat().length}件`);
+          addLog(`  - shiftRequests構造: ${JSON.stringify(Object.keys(shiftRequests))}`);
+          addLog(`  - shiftPostings構造: ${JSON.stringify(Object.keys(shiftPostings))}`);
           
-          // 日付別のシフトデータを確認
           const allRequests = Object.values(shiftRequests).flat();
           const allPostings = Object.values(shiftPostings).flat();
+          addLog(`  - 全体の希望シフト数: ${allRequests.length}件`);
+          addLog(`  - 全体の募集シフト数: ${allPostings.length}件`);
+          
+          // 日付別のシフトデータを確認
           addLog(`  - 希望シフト詳細: ${allRequests.length}件`);
           allRequests.forEach((req, index) => {
-            addLog(`    ${index + 1}. 日付: ${req.date}, 時間: ${req.time_slot}, 薬剤師: ${req.pharmacist_id}`);
+            addLog(`    ${index + 1}. データ構造: ${JSON.stringify(Object.keys(req || {}))}`);
+            addLog(`    ${index + 1}. 日付: ${req?.date || 'undefined'}, 時間: ${req?.time_slot || 'undefined'}, 薬剤師: ${req?.pharmacist_id || 'undefined'}`);
           });
           
           addLog(`  - 募集シフト詳細: ${allPostings.length}件`);
           allPostings.forEach((post, index) => {
-            addLog(`    ${index + 1}. 日付: ${post.date}, 時間: ${post.time_slot}, 薬局: ${post.pharmacy_id}`);
+            addLog(`    ${index + 1}. データ構造: ${JSON.stringify(Object.keys(post || {}))}`);
+            addLog(`    ${index + 1}. 日付: ${post?.date || 'undefined'}, 時間: ${post?.time_slot || 'undefined'}, 薬局: ${post?.pharmacy_id || 'undefined'}`);
           });
           
           const allRequestDates = [...new Set(allRequests.map(r => r.date))];
