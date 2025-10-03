@@ -1018,7 +1018,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             addLog(`    ${index + 1}. 日付: ${req.date}, 時間: ${req.time_slot}, 薬剤師: ${req.pharmacist_id}`);
           });
           
-          const allPostings = Object.values(shiftPostings).flat();
           addLog(`  - 募集シフト詳細: ${allPostings.length}件`);
           allPostings.forEach((post, index) => {
             addLog(`    ${index + 1}. 日付: ${post.date}, 時間: ${post.time_slot}, 薬局: ${post.pharmacy_id}`);
