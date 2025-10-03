@@ -1059,15 +1059,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             // 実際の距離ベースマッチングを実行してテスト
             try {
               const { generateDistanceBasedMatches } = await import('../features/ai-matching/distanceMatching');
+              addLog(`  - 距離ベースマッチング実行中...`);
               const testMatches = await generateDistanceBasedMatches(allRequests, allPostings, userProfiles);
               addLog(`  - テスト距離ベースマッチング結果: ${testMatches.length}件`);
               
               if (testMatches.length > 0) {
                 testMatches.forEach((match, index) => {
-                  addLog(`    ${index + 1}. 薬剤師: ${match.pharmacist_id}, 薬局: ${match.pharmacy_id}, スコア: ${match.score?.toFixed(2) || 'N/A'}`);
+                  const score = match.distance_score || match.compatibility_score || match.score;
+                  addLog(`    ${index + 1}. 薬剤師: ${match.pharmacist_id}, 薬局: ${match.pharmacy_id}, スコア: ${score?.toFixed(2) || 'N/A'}`);
+                  addLog(`      - アルゴリズム: ${match.algorithm || 'unknown'}`);
+                  addLog(`      - メモ: ${match.memo || 'なし'}`);
                 });
+                
+                // 距離計算の詳細を確認
+                addLog(`  - 距離計算詳細:`);
+                addLog(`    - station_travel_timesテーブルから距離データを取得`);
+                addLog(`    - 直線距離（geodesic）計算を使用`);
+                addLog(`    - 通勤時間に基づくスコア計算（短いほど高スコア）`);
               } else {
                 addLog(`    - 距離ベースマッチング: 条件を満たす組み合わせなし`);
+                addLog(`    - 可能性: 日付・時間スロット不一致、位置情報不足、スコア閾値未満`);
               }
             } catch (error) {
               addLog(`    - 距離ベースマッチング実行エラー: ${error.message}`);
