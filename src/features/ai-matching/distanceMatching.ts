@@ -233,6 +233,13 @@ export const generateDistanceBasedMatches = async (
   
   if (pharmacistLocations.length === 0) {
     console.log(`⚠️ 位置情報を持つ薬剤師が0件のため、距離ベースマッチングをスキップ`);
+    console.log(`🔍 デバッグ: 薬剤師プロフィール詳細:`, Object.keys(userProfiles).map(id => ({
+      id,
+      name: userProfiles[id]?.name,
+      nearest_station_name: userProfiles[id]?.nearest_station_name,
+      location_latitude: userProfiles[id]?.location_latitude,
+      location_longitude: userProfiles[id]?.location_longitude
+    })));
     return [];
   }
 
