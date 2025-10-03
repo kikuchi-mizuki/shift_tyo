@@ -965,6 +965,17 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       // 1ヶ月分のマッチング実行完了フラグを設定
       setMonthlyMatchingExecuted(true);
       addLog(`✅ 1ヶ月分AIマッチング完了: 総${monthlyMatches.length}件`);
+      
+      // 距離ベースマッチングの実行状況を確認
+      if (monthlyMatches.length > 0) {
+        const allDistanceBasedMatches = monthlyMatches.filter((match: any) => match.algorithm === 'distance_based');
+        if (allDistanceBasedMatches.length > 0) {
+          addLog(`🎯 距離ベースマッチング: ${allDistanceBasedMatches.length}件生成`);
+        } else {
+          addLog(`⚠️ 距離ベースマッチング: 0件（経路データ保存なし）`);
+        }
+      }
+      
       console.log('✅ 1ヶ月分マッチング実行完了 - monthlyMatchingExecutedフラグをtrueに設定');
       
       
@@ -1212,6 +1223,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches as unknown as Set<string>);
       
       addLog(`AI Matching完了: ${matches.length}件のマッチを生成`);
+      
+      // 距離ベースマッチングの実行状況を確認
+      if (matches.length > 0) {
+        const distanceBasedMatches = matches.filter(match => match.algorithm === 'distance_based');
+        if (distanceBasedMatches.length > 0) {
+          addLog(`🎯 距離ベースマッチング: ${distanceBasedMatches.length}件生成`);
+        } else {
+          addLog(`⚠️ 距離ベースマッチング: 0件（経路データ保存なし）`);
+        }
+      }
 
       // 最終防御: 返ってきた結果からも確定済み薬局/店舗を除外
       try {

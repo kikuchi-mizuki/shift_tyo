@@ -522,6 +522,14 @@ export class AIMatchingEngine {
           distanceBasedMatches = await generateDistanceBasedMatches(requests, postings, userProfiles);
           debugInfo += `距離ベースマッチング結果: ${distanceBasedMatches.length}件\n`;
           console.log(`✅ 距離ベースマッチング完了: ${distanceBasedMatches.length}件`);
+          
+          // 距離ベースマッチングの結果をデバッグ情報に追加
+          if (distanceBasedMatches.length > 0) {
+            debugInfo += `距離ベースマッチング詳細:\n`;
+            distanceBasedMatches.forEach((match, index) => {
+              debugInfo += `  ${index + 1}. 薬剤師: ${match.pharmacist_id}, 薬局: ${match.pharmacy_id}, スコア: ${match.score}\n`;
+            });
+          }
         } catch (error) {
           debugInfo += `距離ベースマッチングエラー: ${error}\n`;
           console.warn('❌ 距離ベースマッチング失敗:', error);
