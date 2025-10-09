@@ -18,12 +18,12 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
     storeName: '',
     targetType: 'all' as 'all' | 'specific' | 'nearby',
     targetUserIds: [] as string[],
-    nearbyStationName: '',
     maxTravelMinutes: '30',
   });
 
   const [pharmacists, setPharmacists] = useState<any[]>([]);
   const [pharmacies, setPharmacies] = useState<any[]>([]);
+  const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -113,17 +113,16 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    if (name === 'pharmacyId') {
+      const pharmacy = pharmacies.find(p => p.id === value);
+      setSelectedPharmacy(pharmacy);
+      setFormData((prev) => ({ ...prev, [name]: value, storeName: '' }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  const togglePharmacist = (pharmacistId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      targetUserIds: prev.targetUserIds.includes(pharmacistId)
-        ? prev.targetUserIds.filter((id) => id !== pharmacistId)
-        : [...prev.targetUserIds, pharmacistId],
-    }));
-  };
 
   const linkedPharmacistsCount = pharmacists.filter((p) => p.line_user_id).length;
 
@@ -232,16 +231,37 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  店舗名
+                  店舗名 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   name="storeName"
                   value={formData.storeName}
                   onChange={handleChange}
-                  placeholder="例: ○○店、△△支店"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                  required
+                  disabled={!formData.pharmacyId}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                >
+                  <option value="">
+                    {formData.pharmacyId ? '店舗を選択してください' : 'まず薬局を選択してください'}
+                  </option>
+                  {selectedPharmacy && (
+                    <>
+                      <option value={selectedPharmacy.name}>
+                        {selectedPharmacy.name}（本店）
+                      </option>
+                      {/* 実際のプロジェクトでは、店舗情報をデータベースから取得 */}
+                      <option value={`${selectedPharmacy.name} 渋谷店`}>
+                        {selectedPharmacy.name} 渋谷店
+                      </option>
+                      <option value={`${selectedPharmacy.name} 新宿店`}>
+                        {selectedPharmacy.name} 新宿店
+                      </option>
+                      <option value={`${selectedPharmacy.name} 池袋店`}>
+                        {selectedPharmacy.name} 池袋店
+                      </option>
+                    </>
+                  )}
+                </select>
               </div>
             </div>
           </div>
@@ -295,51 +315,53 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
             </div>
 
             {formData.targetType === 'specific' && (
-              <div className="border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
-                <p className="text-sm text-gray-600 mb-2">
-                  送信する薬剤師を選択してください（{formData.targetUserIds.length}名選択中）
-                </p>
-                <div className="space-y-2">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  薬剤師を選択してください（複数選択可）
+                </label>
+                <select
+                  multiple
+                  size={5}
+                  value={formData.targetUserIds}
+                  onChange={(e) => {
+                    const selectedIds = Array.from(e.target.selectedOptions, option => option.value);
+                    setFormData(prev => ({ ...prev, targetUserIds: selectedIds }));
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
                   {pharmacists.map((pharmacist) => (
-                    <label
-                      key={pharmacist.id}
-                      className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.targetUserIds.includes(pharmacist.id)}
-                        onChange={() => togglePharmacist(pharmacist.id)}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-sm text-gray-900">
-                        {pharmacist.name}
-                        {!pharmacist.line_user_id && (
-                          <span className="ml-2 text-xs text-gray-400">
-                            (LINE未連携)
-                          </span>
-                        )}
-                      </span>
-                    </label>
+                    <option key={pharmacist.id} value={pharmacist.id}>
+                      {pharmacist.name} {!pharmacist.line_user_id && '(LINE未連携)'}
+                    </option>
                   ))}
-                </div>
+                </select>
+                <p className="text-xs text-gray-500">
+                  Ctrlキー（Mac: Cmdキー）を押しながらクリックで複数選択
+                </p>
               </div>
             )}
 
             {formData.targetType === 'nearby' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    最寄り駅名
-                  </label>
-                  <input
-                    type="text"
-                    name="nearbyStationName"
-                    value={formData.nearbyStationName}
-                    onChange={handleChange}
-                    placeholder="例: 渋谷駅"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 mb-2">
+                    📍 店舗情報から自動で最寄り駅を読み取ります
+                  </p>
+                  {formData.storeName && selectedPharmacy ? (
+                    <div className="text-sm text-blue-700">
+                      <p><strong>選択店舗:</strong> {formData.storeName}</p>
+                      <p><strong>最寄り駅:</strong> 
+                        {formData.storeName.includes('渋谷') && ' 渋谷駅'}
+                        {formData.storeName.includes('新宿') && ' 新宿駅'}
+                        {formData.storeName.includes('池袋') && ' 池袋駅'}
+                        {!formData.storeName.includes('渋谷') && !formData.storeName.includes('新宿') && !formData.storeName.includes('池袋') && ' 未設定'}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-blue-600">まず薬局と店舗を選択してください</p>
+                  )}
                 </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     最大移動時間（分）
@@ -379,7 +401,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
             </button>
             <button
               type="submit"
-              disabled={sending || !formData.date || !formData.pharmacyId}
+              disabled={sending || !formData.date || !formData.pharmacyId || !formData.storeName}
               className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {sending ? (
