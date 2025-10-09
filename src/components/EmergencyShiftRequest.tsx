@@ -75,7 +75,10 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         .order('pharmacy_id, store_name');
 
       if (!error && data) {
+        console.log('Store stations loaded:', data);
         setStoreStations(data);
+      } else {
+        console.error('Error loading store stations:', error);
       }
     } catch (error) {
       console.error('Error loading store stations:', error);
@@ -268,13 +271,29 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
                         {selectedPharmacy.name}（本店）
                       </option>
                       {/* データベースから店舗情報を取得 */}
-                      {storeStations
-                        .filter(store => store.pharmacy_id === formData.pharmacyId)
-                        .map(store => (
+                      {(() => {
+                        const pharmacyStores = storeStations.filter(store => store.pharmacy_id === formData.pharmacyId);
+                        console.log('Pharmacy stores for', formData.pharmacyId, ':', pharmacyStores);
+                        return pharmacyStores.map(store => (
                           <option key={store.id} value={store.store_name}>
                             {store.store_name} - {store.nearest_station_name}駅
                           </option>
-                        ))}
+                        ));
+                      })()}
+                      {/* 店舗情報がない場合のフォールバック */}
+                      {storeStations.filter(store => store.pharmacy_id === formData.pharmacyId).length === 0 && (
+                        <>
+                          <option value={`${selectedPharmacy.name} 渋谷店`}>
+                            {selectedPharmacy.name} 渋谷店 - 渋谷駅
+                          </option>
+                          <option value={`${selectedPharmacy.name} 新宿店`}>
+                            {selectedPharmacy.name} 新宿店 - 新宿駅
+                          </option>
+                          <option value={`${selectedPharmacy.name} 池袋店`}>
+                            {selectedPharmacy.name} 池袋店 - 池袋駅
+                          </option>
+                        </>
+                      )}
                     </>
                   )}
                 </select>
