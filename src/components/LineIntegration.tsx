@@ -52,6 +52,12 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
+      console.log('Attempting to insert auth code:', {
+        user_id: userId,
+        auth_code: code,
+        expires_at: expiresAt.toISOString()
+      });
+
       const { error } = await supabase
         .from('line_auth_codes')
         .insert([
@@ -64,15 +70,30 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
 
       if (error) {
         console.error('Error generating auth code:', error);
-        alert('認証コードの生成に失敗しました');
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // テーブルが存在しない場合の特別な処理
+        if (error.code === 'PGRST116' || error.message.includes('relation "line_auth_codes" does not exist')) {
+          alert('データベースの設定が完了していません。管理者にお問い合わせください。\n\nエラー: テーブルが見つかりません');
+        } else if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
+          alert('認証エラーが発生しました。ログインし直してください。');
+        } else {
+          alert(`認証コードの生成に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+        }
         return;
       }
 
+      console.log('Auth code generated successfully:', code);
       setAuthCode(code);
       setShowCode(true);
     } catch (error) {
       console.error('Error:', error);
-      alert('エラーが発生しました');
+      alert('エラーが発生しました。管理者にお問い合わせください。');
     } finally {
       setIsGenerating(false);
     }
