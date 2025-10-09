@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile } from 'lucide-react';
+import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile, Bell, X } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, systemStatus, supabase, storeNgPharmacies } from '../lib/supabase';
+import { LineIntegration } from './LineIntegration';
 
 interface PharmacistDashboardProps {
   user: any;
@@ -64,6 +65,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [myRequests, setMyRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [allPharmacies, setAllPharmacies] = useState<any[]>([]);
+  // LINE連携状態
+  const [isLineLinked, setIsLineLinked] = useState(false);
+  const [showLineSetup, setShowLineSetup] = useState(false);
   // NG設定関連のUIは管理画面のみ。値の読み込みは残すが、編集UIは表示しない。
   const [ngList, setNgList] = useState<string[]>([]);
   const [storeNgLists, setStoreNgLists] = useState<{[pharmacyId: string]: {[storeName: string]: boolean}}>({});
@@ -279,6 +283,8 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');
         setNgList(profileData.ng_list || []);
+        // LINE連携状態をチェック
+        setIsLineLinked(!!profileData.line_user_id);
       }
       
       // 店舗毎NG薬局設定を読み込み
@@ -824,6 +830,64 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           <div>PD debug</div>
           <div>user: {user?.id || 'N/A'}</div>
           <div>confirmed: {myShifts?.length || 0}</div>
+        </div>
+      )}
+      
+      {/* LINE連携バナー */}
+      {!isLineLinked && !showLineSetup && (
+        <div className="mx-2 sm:mx-4 lg:mx-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-4 shadow-md">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3 flex-1">
+              <div className="flex-shrink-0">
+                <Bell className="w-6 h-6 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-gray-900 mb-1">
+                  LINE通知を設定しませんか？
+                </h3>
+                <p className="text-sm text-gray-700 mb-3">
+                  シフト確定の通知や前日リマインドをLINEで受け取れます
+                </p>
+                <button
+                  onClick={() => setShowLineSetup(true)}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Bell className="w-4 h-4 mr-2" />
+                  LINE連携を設定する
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                // バナーを閉じる（セッションストレージに保存して再表示しない）
+                try {
+                  sessionStorage.setItem('hideLineBanner', 'true');
+                } catch {}
+                setIsLineLinked(true); // 一時的に非表示にする
+              }}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 ml-2"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* LINE連携設定画面 */}
+      {showLineSetup && (
+        <div className="mx-2 sm:mx-4 lg:mx-6">
+          <div className="bg-white rounded-lg shadow-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">LINE通知設定</h2>
+              <button
+                onClick={() => setShowLineSetup(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <LineIntegration userId={user.id} />
+          </div>
         </div>
       )}
       
