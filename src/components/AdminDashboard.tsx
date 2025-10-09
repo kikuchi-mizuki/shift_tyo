@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
-import { Calendar, AlertCircle, Star, Brain, Zap } from 'lucide-react';
+import { Calendar, AlertCircle, Star, Brain, Zap, Bell } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
 import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
 import DataCollector from '../features/ai-matching/dataCollector';
 import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
+import { EmergencyShiftRequest } from './EmergencyShiftRequest';
 
 interface AdminDashboardProps {
   user: any;
@@ -4289,6 +4290,20 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
   return (
     <div className="space-y-6">
       
+      {/* 緊急シフトリクエスト機能 */}
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center space-x-3 mb-4">
+          <Bell className="w-6 h-6 text-red-600" />
+          <div>
+            <h3 className="text-lg font-semibold text-red-800">緊急シフトリクエスト</h3>
+            <p className="text-sm text-red-600">
+              LINE通知で薬剤師に緊急シフトを募集できます
+            </p>
+          </div>
+        </div>
+        <EmergencyShiftRequest />
+      </div>
+
       {/* AIマッチングコントロール - 非表示 */}
       {false && (
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">

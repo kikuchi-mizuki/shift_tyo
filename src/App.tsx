@@ -38,6 +38,12 @@ const UserManagement = React.lazy(() =>
     return { default: () => <div className="p-4 text-red-600">UserManagementの読み込みに失敗しました。ページを再読み込みしてください。</div> };
   })
 );
+const SettingsPage = React.lazy(() => 
+  import('./components/SettingsPage').catch(error => {
+    console.error('Failed to load SettingsPage:', error);
+    return { default: () => <div className="p-4 text-red-600">SettingsPageの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+  })
+);
 import { MultiUserIndicator } from './components/MultiUserIndicator';
 import { MultiUserAuthProvider, useMultiUserAuth } from './contexts/MultiUserAuthContext';
 import { MultiUserLoginForm } from './components/MultiUserLoginForm';
