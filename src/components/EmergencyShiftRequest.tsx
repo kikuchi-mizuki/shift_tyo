@@ -71,31 +71,60 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
 
   const loadStoreStations = async () => {
     try {
-      console.log('Loading store stations...');
+      const logMessage = 'Loading store stations...';
+      console.log(logMessage);
+      
+      // ログをデバッグ情報に追加
+      setDebugInfo(prev => ({
+        ...prev,
+        logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
+      }));
       
       const { data, error } = await supabase
         .from('store_stations')
         .select('*')
         .order('pharmacy_id, store_name');
 
-      console.log('Store stations query result:', { data, error });
+      const queryResultLog = `Store stations query result: ${JSON.stringify({ dataCount: data?.length || 0, error: error?.message || null })}`;
+      console.log(queryResultLog);
+      
+      // クエリ結果をデバッグ情報に追加
+      setDebugInfo(prev => ({
+        ...prev,
+        logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: queryResultLog }]
+      }));
 
       if (!error && data) {
-        console.log('Store stations loaded successfully:', data);
-        setStoreStations(data);
-      } else {
-        console.error('Error loading store stations:', error);
-        // エラー情報をデバッグ用に保存
+        const successLog = `Store stations loaded successfully: ${data.length} items`;
+        console.log(successLog);
+        
+        // 成功ログをデバッグ情報に追加
         setDebugInfo(prev => ({
           ...prev,
+          logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: successLog }]
+        }));
+        
+        setStoreStations(data);
+      } else {
+        const errorLog = `Error loading store stations: ${error?.message || 'Unknown error'}`;
+        console.error(errorLog);
+        
+        // エラーログをデバッグ情報に追加
+        setDebugInfo(prev => ({
+          ...prev,
+          logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: errorLog }],
           storeStationsError: error,
           storeStationsData: data
         }));
       }
     } catch (error) {
-      console.error('Exception loading store stations:', error);
+      const exceptionLog = `Exception loading store stations: ${error instanceof Error ? error.message : String(error)}`;
+      console.error(exceptionLog);
+      
+      // 例外ログをデバッグ情報に追加
       setDebugInfo(prev => ({
         ...prev,
+        logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: exceptionLog }],
         storeStationsError: error,
         storeStationsData: null
       }));
@@ -154,6 +183,10 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
     if (name === 'pharmacyId') {
       const pharmacy = pharmacies.find(p => p.id === value);
       
+      // ログを追加
+      const logMessage = `薬局が選択されました: ${pharmacy?.name || 'Unknown'} (ID: ${value})`;
+      console.log(logMessage);
+      
       // デバッグ情報をモーダル用に保存
       const debugData = {
         timestamp: new Date().toLocaleString(),
@@ -161,7 +194,8 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         selectedPharmacy: pharmacy,
         allPharmacies: pharmacies,
         allStoreStations: storeStations,
-        filteredStores: storeStations.filter(store => store.pharmacy_id === value)
+        filteredStores: storeStations.filter(store => store.pharmacy_id === value),
+        logs: [...(debugInfo.logs || []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
       };
       setDebugInfo(debugData);
       
@@ -592,6 +626,23 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
                       <p><strong>総薬剤師数:</strong> {pharmacists.length}名</p>
                       <p><strong>LINE連携済み:</strong> {linkedPharmacistsCount}名</p>
                       <p><strong>LINE連携率:</strong> {pharmacists.length > 0 ? Math.round((linkedPharmacistsCount / pharmacists.length) * 100) : 0}%</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-2">📝 実行ログ</h3>
+                    <div className="text-sm space-y-1 max-h-40 overflow-y-auto">
+                      {debugInfo.logs && debugInfo.logs.length > 0 ? (
+                        debugInfo.logs.map((log: any, index: number) => (
+                          <div key={index} className="bg-white p-2 rounded border text-xs">
+                            <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="bg-white p-2 rounded border text-gray-500">
+                          ログがありません
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
