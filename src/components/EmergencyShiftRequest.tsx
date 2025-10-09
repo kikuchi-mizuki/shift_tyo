@@ -14,10 +14,8 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
     timeSlot: 'fullday',
     startTime: '',
     endTime: '',
+    pharmacyId: '',
     storeName: '',
-    pharmacyName: '',
-    hourlyRate: '',
-    memo: '',
     targetType: 'all' as 'all' | 'specific' | 'nearby',
     targetUserIds: [] as string[],
     nearbyStationName: '',
@@ -25,12 +23,14 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   });
 
   const [pharmacists, setPharmacists] = useState<any[]>([]);
+  const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // 薬剤師リストを取得
+  // 薬剤師リストと薬局リストを取得
   useEffect(() => {
     loadPharmacists();
+    loadPharmacies();
   }, []);
 
   const loadPharmacists = async () => {
@@ -46,6 +46,22 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       }
     } catch (error) {
       console.error('Error loading pharmacists:', error);
+    }
+  };
+
+  const loadPharmacies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, line_user_id')
+        .eq('user_type', 'pharmacy')
+        .order('name');
+
+      if (!error && data) {
+        setPharmacies(data);
+      }
+    } catch (error) {
+      console.error('Error loading pharmacies:', error);
     }
   };
 
@@ -68,7 +84,6 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
           },
           body: JSON.stringify({
             ...formData,
-            hourlyRate: formData.hourlyRate ? parseInt(formData.hourlyRate) : undefined,
             maxTravelMinutes: parseInt(formData.maxTravelMinutes),
           }),
         }
@@ -197,6 +212,26 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  薬局 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="pharmacyId"
+                  value={formData.pharmacyId}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">薬局を選択してください</option>
+                  {pharmacies.map((pharmacy) => (
+                    <option key={pharmacy.id} value={pharmacy.id}>
+                      {pharmacy.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   店舗名
                 </label>
                 <input
@@ -204,38 +239,10 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
                   name="storeName"
                   value={formData.storeName}
                   onChange={handleChange}
-                  placeholder="例: ○○薬局 △△店"
+                  placeholder="例: ○○店、△△支店"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  時給（円）
-                </label>
-                <input
-                  type="number"
-                  name="hourlyRate"
-                  value={formData.hourlyRate}
-                  onChange={handleChange}
-                  placeholder="例: 3500"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                メモ・詳細
-              </label>
-              <textarea
-                name="memo"
-                value={formData.memo}
-                onChange={handleChange}
-                rows={3}
-                placeholder="例: 急な欠員のため募集します。経験者優遇。"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
             </div>
           </div>
 
@@ -372,7 +379,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
             </button>
             <button
               type="submit"
-              disabled={sending || !formData.date}
+              disabled={sending || !formData.date || !formData.pharmacyId}
               className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {sending ? (
