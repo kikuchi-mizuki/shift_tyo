@@ -81,9 +81,20 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         setStoreStations(data);
       } else {
         console.error('Error loading store stations:', error);
+        // エラー情報をデバッグ用に保存
+        setDebugInfo(prev => ({
+          ...prev,
+          storeStationsError: error,
+          storeStationsData: data
+        }));
       }
     } catch (error) {
       console.error('Error loading store stations:', error);
+      setDebugInfo(prev => ({
+        ...prev,
+        storeStationsError: error,
+        storeStationsData: null
+      }));
     }
   };
 
@@ -532,16 +543,28 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
 
                   <div className="bg-green-50 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 mb-2">🏪 全店舗データ ({debugInfo.allStoreStations.length}件)</h3>
-                    <div className="text-sm space-y-2 max-h-40 overflow-y-auto">
-                      {debugInfo.allStoreStations.map((store: any, index: number) => (
-                        <div key={store.id} className="bg-white p-2 rounded border">
-                          <p><strong>店舗{index + 1}:</strong> {store.store_name}</p>
-                          <p><strong>薬局ID:</strong> {store.pharmacy_id}</p>
-                          <p><strong>最寄り駅:</strong> {store.nearest_station_name}</p>
-                          <p><strong>ID一致:</strong> {store.pharmacy_id === debugInfo.selectedPharmacyId ? '✅' : '❌'}</p>
-                        </div>
-                      ))}
-                    </div>
+                    {debugInfo.storeStationsError ? (
+                      <div className="bg-red-100 p-3 rounded border border-red-300">
+                        <p className="text-red-800 font-semibold">❌ エラーが発生しました</p>
+                        <p className="text-red-700 text-sm mt-1">{JSON.stringify(debugInfo.storeStationsError)}</p>
+                      </div>
+                    ) : debugInfo.allStoreStations.length === 0 ? (
+                      <div className="bg-yellow-100 p-3 rounded border border-yellow-300">
+                        <p className="text-yellow-800">⚠️ 店舗データが0件です</p>
+                        <p className="text-yellow-700 text-sm mt-1">データベースのstore_stationsテーブルにデータが存在しません</p>
+                      </div>
+                    ) : (
+                      <div className="text-sm space-y-2 max-h-40 overflow-y-auto">
+                        {debugInfo.allStoreStations.map((store: any, index: number) => (
+                          <div key={store.id} className="bg-white p-2 rounded border">
+                            <p><strong>店舗{index + 1}:</strong> {store.store_name}</p>
+                            <p><strong>薬局ID:</strong> {store.pharmacy_id}</p>
+                            <p><strong>最寄り駅:</strong> {store.nearest_station_name}</p>
+                            <p><strong>ID一致:</strong> {store.pharmacy_id === debugInfo.selectedPharmacyId ? '✅' : '❌'}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-yellow-50 p-4 rounded-lg">
