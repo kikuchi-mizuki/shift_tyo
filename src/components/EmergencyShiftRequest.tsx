@@ -77,7 +77,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       // ログをデバッグ情報に追加
       setDebugInfo(prev => ({
         ...prev,
-        logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
+        logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
       }));
       
       const { data, error } = await supabase
@@ -91,7 +91,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       // クエリ結果をデバッグ情報に追加
       setDebugInfo(prev => ({
         ...prev,
-        logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: queryResultLog }]
+        logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: queryResultLog }]
       }));
 
       if (!error && data) {
@@ -101,7 +101,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         // 成功ログをデバッグ情報に追加
         setDebugInfo(prev => ({
           ...prev,
-          logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: successLog }]
+          logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: successLog }]
         }));
         
         setStoreStations(data);
@@ -112,7 +112,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         // エラーログをデバッグ情報に追加
         setDebugInfo(prev => ({
           ...prev,
-          logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: errorLog }],
+          logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: errorLog }],
           storeStationsError: error,
           storeStationsData: data
         }));
@@ -124,7 +124,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       // 例外ログをデバッグ情報に追加
       setDebugInfo(prev => ({
         ...prev,
-        logs: [...(prev.logs || []), { timestamp: new Date().toLocaleTimeString(), message: exceptionLog }],
+        logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: exceptionLog }],
         storeStationsError: error,
         storeStationsData: null
       }));
@@ -195,7 +195,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         allPharmacies: pharmacies,
         allStoreStations: storeStations,
         filteredStores: storeStations.filter(store => store.pharmacy_id === value),
-        logs: [...(debugInfo.logs || []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
+        logs: [...((debugInfo && debugInfo.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
       };
       setDebugInfo(debugData);
       
