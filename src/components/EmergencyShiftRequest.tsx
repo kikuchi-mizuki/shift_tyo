@@ -145,6 +145,11 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
 
 
   const linkedPharmacistsCount = pharmacists.filter((p) => p.line_user_id).length;
+  
+  // デバッグ情報を追加
+  console.log('Pharmacists loaded:', pharmacists);
+  console.log('Linked pharmacists:', pharmacists.filter((p) => p.line_user_id));
+  console.log('Linked count:', linkedPharmacistsCount);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -283,14 +288,17 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
                       {/* 店舗情報がない場合のフォールバック */}
                       {storeStations.filter(store => store.pharmacy_id === formData.pharmacyId).length === 0 && (
                         <>
+                          <option value="" disabled>
+                            ⚠️ データベースに店舗情報がありません
+                          </option>
                           <option value={`${selectedPharmacy.name} 渋谷店`}>
-                            {selectedPharmacy.name} 渋谷店 - 渋谷駅
+                            {selectedPharmacy.name} 渋谷店 - 渋谷駅 (テスト用)
                           </option>
                           <option value={`${selectedPharmacy.name} 新宿店`}>
-                            {selectedPharmacy.name} 新宿店 - 新宿駅
+                            {selectedPharmacy.name} 新宿店 - 新宿駅 (テスト用)
                           </option>
                           <option value={`${selectedPharmacy.name} 池袋店`}>
-                            {selectedPharmacy.name} 池袋店 - 池袋駅
+                            {selectedPharmacy.name} 池袋店 - 池袋駅 (テスト用)
                           </option>
                         </>
                       )}
