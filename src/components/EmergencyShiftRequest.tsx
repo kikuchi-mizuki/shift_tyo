@@ -71,13 +71,17 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
 
   const loadStoreStations = async () => {
     try {
+      console.log('Loading store stations...');
+      
       const { data, error } = await supabase
         .from('store_stations')
         .select('*')
         .order('pharmacy_id, store_name');
 
+      console.log('Store stations query result:', { data, error });
+
       if (!error && data) {
-        console.log('Store stations loaded:', data);
+        console.log('Store stations loaded successfully:', data);
         setStoreStations(data);
       } else {
         console.error('Error loading store stations:', error);
@@ -89,7 +93,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         }));
       }
     } catch (error) {
-      console.error('Error loading store stations:', error);
+      console.error('Exception loading store stations:', error);
       setDebugInfo(prev => ({
         ...prev,
         storeStationsError: error,
