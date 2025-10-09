@@ -74,11 +74,17 @@ serve(async (req) => {
   }
 
   try {
-    // 環境変数の取得
-    const channelSecret = Deno.env.get("LINE_CHANNEL_SECRET");
-    const channelAccessToken = Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN");
+    // 環境変数の取得（テスト用にフォールバック値を設定）
+    const channelSecret = Deno.env.get("LINE_CHANNEL_SECRET") || "YOUR_CHANNEL_SECRET_HERE";
+    const channelAccessToken = Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN") || "YOUR_CHANNEL_ACCESS_TOKEN_HERE";
 
-    if (!channelSecret || !channelAccessToken) {
+    if (!channelSecret || channelSecret === "YOUR_CHANNEL_SECRET_HERE") {
+      console.error("LINE_CHANNEL_SECRET not configured");
+      throw new Error("LINE credentials not configured");
+    }
+    
+    if (!channelAccessToken || channelAccessToken === "YOUR_CHANNEL_ACCESS_TOKEN_HERE") {
+      console.error("LINE_CHANNEL_ACCESS_TOKEN not configured");
       throw new Error("LINE credentials not configured");
     }
 

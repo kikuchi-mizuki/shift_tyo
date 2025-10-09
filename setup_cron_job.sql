@@ -15,10 +15,10 @@ SELECT cron.schedule(
   $$
   SELECT
     net.http_post(
-      url := current_setting('app.settings.supabase_url') || '/functions/v1/daily-shift-reminder',
+      url := 'https://wjgterfwurmvosawzbjs.supabase.co/functions/v1/daily-shift-reminder',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.settings.supabase_anon_key')
+        'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZ3RlcmZ3dXJtdm9zYXd6YmpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzQ4MDAsImV4cCI6MjA1MDU1MDgwMH0.bDs2CtZ9dJ0eN0vRUPA7CtR6VqYeYW1m747_IUYJxGE'
       ),
       body := '{}'::jsonb
     ) AS request_id;
