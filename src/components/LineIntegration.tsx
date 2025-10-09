@@ -90,8 +90,25 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
       addDebugLog(`生成されたコード: ${code}`);
       addDebugLog(`有効期限: ${expiresAt.toISOString()}`);
 
+      // ユーザープロフィールの存在確認
+      addDebugLog('ユーザープロフィールを確認中...');
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, user_type')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profileError) {
+        addDebugLog(`❌ プロフィール取得エラー: ${profileError.message}`);
+        addDebugLog(`プロフィールエラーコード: ${profileError.code}`);
+      } else {
+        addDebugLog(`✅ プロフィール確認: ${profileData.name || profileData.email}`);
+      }
+
       // 認証ユーザーIDを使用して挿入
       addDebugLog('データベースに挿入中...');
+      addDebugLog(`挿入データ: user_id=${authUser.id}, auth_code=${code}, expires_at=${expiresAt.toISOString()}`);
+      
       const { data, error } = await supabase
         .from('line_auth_codes')
         .insert([
@@ -118,11 +135,17 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
           addDebugLog('❌ テーブルが見つかりません');
           alert('データベースの設定が完了していません。管理者にお問い合わせください。\n\nエラー: テーブルが見つかりません');
         } else if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
-          addDebugLog('❌ 認証エラー');
-          alert('認証エラーが発生しました。ログインし直してください。\n\n詳細: ' + error.message);
+          addDebugLog('❌ RLS認証エラー - RLSポリシーの問題の可能性');
+          addDebugLog('解決方法: fix_line_auth_policies.sqlをSupabaseで実行してください');
+          
+          // RLSポリシーの問題の場合、詳細な情報を提供
+          alert(`認証エラーが発生しました。\n\n考えられる原因:\n1. RLSポリシーの設定問題\n2. ユーザープロフィールの不整合\n\n解決方法:\n1. Supabaseダッシュボードで fix_line_auth_policies.sql を実行\n2. または一時的にRLSを無効化\n\n詳細: ${error.message}`);
         } else if (error.code === '23505' || error.message.includes('duplicate key')) {
           addDebugLog('❌ 認証コード重複');
           alert('認証コードが重複しています。再度お試しください。');
+        } else if (error.code === '23503' || error.message.includes('foreign key')) {
+          addDebugLog('❌ 外部キー制約エラー - ユーザーIDがuser_profilesに存在しない');
+          alert('ユーザー情報に問題があります。管理者にお問い合わせください。\n\n詳細: ' + error.message);
         } else {
           addDebugLog(`❌ その他のエラー: ${error.message}`);
           alert(`認証コードの生成に失敗しました: ${error.message || error.code || 'Unknown error'}\n\n詳細はデバッグモーダルで確認してください。`);
