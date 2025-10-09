@@ -136,6 +136,11 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
     
     if (name === 'pharmacyId') {
       const pharmacy = pharmacies.find(p => p.id === value);
+      console.log('=== 薬局選択デバッグ ===');
+      console.log('選択された薬局ID:', value);
+      console.log('選択された薬局情報:', pharmacy);
+      console.log('全薬局データ:', pharmacies);
+      console.log('=======================');
       setSelectedPharmacy(pharmacy);
       setFormData((prev) => ({ ...prev, [name]: value, storeName: '' }));
     } else {
@@ -277,8 +282,19 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
                       </option>
                       {/* データベースから店舗情報を取得 */}
                       {(() => {
-                        const pharmacyStores = storeStations.filter(store => store.pharmacy_id === formData.pharmacyId);
-                        console.log('Pharmacy stores for', formData.pharmacyId, ':', pharmacyStores);
+                        console.log('=== 店舗情報デバッグ ===');
+                        console.log('選択された薬局ID:', formData.pharmacyId);
+                        console.log('全店舗データ:', storeStations);
+                        console.log('薬局IDの型:', typeof formData.pharmacyId);
+                        
+                        const pharmacyStores = storeStations.filter(store => {
+                          console.log('比較:', store.pharmacy_id, '===', formData.pharmacyId, '結果:', store.pharmacy_id === formData.pharmacyId);
+                          return store.pharmacy_id === formData.pharmacyId;
+                        });
+                        
+                        console.log('フィルタリング後の店舗:', pharmacyStores);
+                        console.log('========================');
+                        
                         return pharmacyStores.map(store => (
                           <option key={store.id} value={store.store_name}>
                             {store.store_name} - {store.nearest_station_name}駅
