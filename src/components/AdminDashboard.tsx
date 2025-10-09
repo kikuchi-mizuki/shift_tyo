@@ -49,6 +49,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
   const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
   const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false); // 1ヶ月分マッチング実行フラグ
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false); // 緊急シフトモーダル表示状態
 
 
   // AIマッチングエンジンの初期化
@@ -4292,16 +4293,24 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
       
       {/* 緊急シフトリクエスト機能 */}
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div className="flex items-center space-x-3 mb-4">
-          <Bell className="w-6 h-6 text-red-600" />
-          <div>
-            <h3 className="text-lg font-semibold text-red-800">緊急シフトリクエスト</h3>
-            <p className="text-sm text-red-600">
-              LINE通知で薬剤師に緊急シフトを募集できます
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Bell className="w-6 h-6 text-red-600" />
+            <div>
+              <h3 className="text-lg font-semibold text-red-800">緊急シフトリクエスト</h3>
+              <p className="text-sm text-red-600">
+                LINE通知で薬剤師に緊急シフトを募集できます
+              </p>
+            </div>
           </div>
+          <button
+            onClick={() => setShowEmergencyModal(true)}
+            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <Bell className="w-4 h-4" />
+            緊急募集を送信
+          </button>
         </div>
-        <EmergencyShiftRequest />
       </div>
 
       {/* AIマッチングコントロール - 非表示 */}
@@ -6239,6 +6248,11 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
           );
         })()}
       </div>
+
+      {/* 緊急シフトモーダル */}
+      {showEmergencyModal && (
+        <EmergencyShiftRequest onClose={() => setShowEmergencyModal(false)} />
+      )}
       
     </div>
   );
