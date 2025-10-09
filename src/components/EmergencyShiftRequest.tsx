@@ -24,6 +24,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   const [pharmacists, setPharmacists] = useState<any[]>([]);
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
+  const [storeStations, setStoreStations] = useState<any[]>([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -31,13 +32,14 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   useEffect(() => {
     loadPharmacists();
     loadPharmacies();
+    loadStoreStations();
   }, []);
 
   const loadPharmacists = async () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('id, name, email, line_user_id, nearest_station')
+        .select('id, name, email, line_user_id, nearest_station_name, line_notification_enabled')
         .eq('user_type', 'pharmacist')
         .order('name');
 
@@ -62,6 +64,21 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       }
     } catch (error) {
       console.error('Error loading pharmacies:', error);
+    }
+  };
+
+  const loadStoreStations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('store_stations')
+        .select('*')
+        .order('pharmacy_id, store_name');
+
+      if (!error && data) {
+        setStoreStations(data);
+      }
+    } catch (error) {
+      console.error('Error loading store stations:', error);
     }
   };
 
@@ -246,19 +263,18 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
                   </option>
                   {selectedPharmacy && (
                     <>
+                      {/* 本店を追加 */}
                       <option value={selectedPharmacy.name}>
                         {selectedPharmacy.name}（本店）
                       </option>
-                      {/* 実際のプロジェクトでは、店舗情報をデータベースから取得 */}
-                      <option value={`${selectedPharmacy.name} 渋谷店`}>
-                        {selectedPharmacy.name} 渋谷店
-                      </option>
-                      <option value={`${selectedPharmacy.name} 新宿店`}>
-                        {selectedPharmacy.name} 新宿店
-                      </option>
-                      <option value={`${selectedPharmacy.name} 池袋店`}>
-                        {selectedPharmacy.name} 池袋店
-                      </option>
+                      {/* データベースから店舗情報を取得 */}
+                      {storeStations
+                        .filter(store => store.pharmacy_id === formData.pharmacyId)
+                        .map(store => (
+                          <option key={store.id} value={store.store_name}>
+                            {store.store_name} - {store.nearest_station_name}駅
+                          </option>
+                        ))}
                     </>
                   )}
                 </select>
@@ -331,7 +347,10 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
                 >
                   {pharmacists.map((pharmacist) => (
                     <option key={pharmacist.id} value={pharmacist.id}>
-                      {pharmacist.name} {!pharmacist.line_user_id && '(LINE未連携)'}
+                      {pharmacist.name} 
+                      {pharmacist.nearest_station_name && ` (${pharmacist.nearest_station_name}駅)`}
+                      {!pharmacist.line_user_id && ' [LINE未連携]'}
+                      {pharmacist.line_notification_enabled === false && ' [通知OFF]'}
                     </option>
                   ))}
                 </select>
@@ -351,10 +370,18 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
                     <div className="text-sm text-blue-700">
                       <p><strong>選択店舗:</strong> {formData.storeName}</p>
                       <p><strong>最寄り駅:</strong> 
-                        {formData.storeName.includes('渋谷') && ' 渋谷駅'}
-                        {formData.storeName.includes('新宿') && ' 新宿駅'}
-                        {formData.storeName.includes('池袋') && ' 池袋駅'}
-                        {!formData.storeName.includes('渋谷') && !formData.storeName.includes('新宿') && !formData.storeName.includes('池袋') && ' 未設定'}
+                        {(() => {
+                          if (formData.storeName === selectedPharmacy.name) {
+                            // 本店の場合、薬局の最寄り駅を使用
+                            return selectedPharmacy.nearest_station_name ? ` ${selectedPharmacy.nearest_station_name}駅` : ' 未設定';
+                          } else {
+                            // 支店の場合、store_stationsから取得
+                            const storeStation = storeStations.find(
+                              store => store.pharmacy_id === formData.pharmacyId && store.store_name === formData.storeName
+                            );
+                            return storeStation ? ` ${storeStation.nearest_station_name}駅` : ' 未設定';
+                          }
+                        })()}
                       </p>
                     </div>
                   ) : (
