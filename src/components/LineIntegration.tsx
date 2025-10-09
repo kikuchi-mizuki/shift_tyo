@@ -43,6 +43,19 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
   const generateAuthCode = async () => {
     setIsGenerating(true);
     try {
+      // 認証状態を確認
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      console.log('=== AUTH CHECK ===');
+      console.log('Auth user:', authUser);
+      console.log('Auth user ID:', authUser?.id);
+      console.log('Props user ID:', userId);
+      console.log('Auth error:', authError);
+
+      if (!authUser) {
+        alert('認証されていません。ログインし直してください。');
+        return;
+      }
+
       // 6桁のランダムな英数字コードを生成
       const code = Array.from({ length: 6 }, () =>
         '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 36)]
@@ -52,21 +65,27 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
+      console.log('=== AUTH CODE GENERATION ===');
       console.log('Attempting to insert auth code:', {
         user_id: userId,
+        auth_user_id: authUser.id,
         auth_code: code,
         expires_at: expiresAt.toISOString()
       });
 
-      const { error } = await supabase
+      // 認証ユーザーIDを使用して挿入
+      const { data, error } = await supabase
         .from('line_auth_codes')
         .insert([
           {
-            user_id: userId,
+            user_id: authUser.id, // 認証ユーザーIDを使用
             auth_code: code,
             expires_at: expiresAt.toISOString(),
           },
-        ]);
+        ])
+        .select(); // 挿入されたデータを返す
+
+      console.log('Insert result:', { data, error });
 
       if (error) {
         console.error('Error generating auth code:', error);
@@ -81,9 +100,11 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
         if (error.code === 'PGRST116' || error.message.includes('relation "line_auth_codes" does not exist')) {
           alert('データベースの設定が完了していません。管理者にお問い合わせください。\n\nエラー: テーブルが見つかりません');
         } else if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
-          alert('認証エラーが発生しました。ログインし直してください。');
+          alert('認証エラーが発生しました。ログインし直してください。\n\n詳細: ' + error.message);
+        } else if (error.code === '23505' || error.message.includes('duplicate key')) {
+          alert('認証コードが重複しています。再度お試しください。');
         } else {
-          alert(`認証コードの生成に失敗しました: ${error.message || error.code || 'Unknown error'}`);
+          alert(`認証コードの生成に失敗しました: ${error.message || error.code || 'Unknown error'}\n\n詳細はブラウザの開発者ツール（F12）のコンソールで確認してください。`);
         }
         return;
       }
@@ -93,7 +114,7 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
       setShowCode(true);
     } catch (error) {
       console.error('Error:', error);
-      alert('エラーが発生しました。管理者にお問い合わせください。');
+      alert('エラーが発生しました。管理者にお問い合わせください。\n\n詳細はブラウザの開発者ツール（F12）のコンソールで確認してください。');
     } finally {
       setIsGenerating(false);
     }
