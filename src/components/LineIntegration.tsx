@@ -313,7 +313,7 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
                 </div>
 
                 <a
-                  href="https://line.me/R/ti/p/@YOUR_LINE_BOT_ID"
+                  href="https://lin.ee/ILWr2G0"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full bg-[#00B900] text-white py-3 px-4 rounded-lg hover:bg-[#00A000] transition-colors font-medium"
