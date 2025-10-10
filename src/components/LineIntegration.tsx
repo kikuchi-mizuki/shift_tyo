@@ -140,6 +140,12 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
           
           // RLSポリシーの問題の場合、詳細な情報を提供
           alert(`認証エラーが発生しました。\n\n考えられる原因:\n1. RLSポリシーの設定問題\n2. ユーザープロフィールの不整合\n\n解決方法:\n1. Supabaseダッシュボードで fix_line_auth_policies.sql を実行\n2. または一時的にRLSを無効化\n\n詳細: ${error.message}`);
+        } else if (error.code === '42501' || error.message.includes('violates row-level security policy')) {
+          addDebugLog('❌ RLSポリシー違反エラー');
+          addDebugLog('原因: ユーザープロフィールが存在しない可能性が高い');
+          addDebugLog('解決方法: fix_missing_user_profile.sqlをSupabaseで実行してください');
+          
+          alert(`データベースの権限エラーが発生しました。\n\n原因:\nユーザープロフィールがデータベースに存在しません\n\n解決方法:\n1. SupabaseダッシュボードのSQL Editorを開く\n2. fix_missing_user_profile.sql の内容を実行\n3. 必要に応じてメールアドレスと名前を修正\n\n詳細: ${error.message}`);
         } else if (error.code === '23505' || error.message.includes('duplicate key')) {
           addDebugLog('❌ 認証コード重複');
           alert('認証コードが重複しています。再度お試しください。');
