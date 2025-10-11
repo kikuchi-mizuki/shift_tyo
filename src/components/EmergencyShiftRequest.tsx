@@ -134,9 +134,22 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('=== HANDLE SUBMIT CALLED ===');
     e.preventDefault();
     console.log('=== Emergency Shift Request Started ===');
     console.log('Form data:', formData);
+    
+    // フォームバリデーション
+    if (!formData.date || !formData.pharmacyId || !formData.storeName) {
+      console.log('Form validation failed:', {
+        date: formData.date,
+        pharmacyId: formData.pharmacyId,
+        storeName: formData.storeName
+      });
+      alert('必須項目を入力してください');
+      return;
+    }
+    
     setSending(true);
     setResult(null);
     
@@ -621,14 +634,25 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
             <button
               type="submit"
               disabled={sending || !formData.date || !formData.pharmacyId || !formData.storeName}
-              onClick={() => {
+              onClick={(e) => {
+                console.log('=== BUTTON CLICKED ===');
                 console.log('Emergency shift button clicked!');
                 console.log('Sending state:', sending);
                 console.log('Form validation:', {
                   date: formData.date,
                   pharmacyId: formData.pharmacyId,
-                  storeName: formData.storeName
+                  storeName: formData.storeName,
+                  disabled: sending || !formData.date || !formData.pharmacyId || !formData.storeName
                 });
+                
+                // フォームが無効な場合は送信を停止
+                if (sending || !formData.date || !formData.pharmacyId || !formData.storeName) {
+                  console.log('Form is invalid, preventing submission');
+                  e.preventDefault();
+                  return;
+                }
+                
+                console.log('Form is valid, proceeding with submission');
               }}
               className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
