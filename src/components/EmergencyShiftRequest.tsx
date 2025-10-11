@@ -37,8 +37,6 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   const [storeStations, setStoreStations] = useState<any[]>([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const [debugInfo, setDebugInfo] = useState<any>({ logs: [] });
-  const [showDebugModal, setShowDebugModal] = useState(false);
 
   // 薬剤師リストと薬局リストを取得
   useEffect(() => {
@@ -311,21 +309,6 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
     if (name === 'pharmacyId') {
       const pharmacy = pharmacies.find(p => p.id === value);
       
-      // ログを追加
-      const logMessage = `薬局が選択されました: ${pharmacy?.name || 'Unknown'} (ID: ${value})`;
-      console.log(logMessage);
-      
-      // デバッグ情報をモーダル用に保存
-      const debugData = {
-        timestamp: new Date().toLocaleString(),
-        selectedPharmacyId: value,
-        selectedPharmacy: pharmacy,
-        allPharmacies: pharmacies,
-        allStoreStations: storeStations,
-        filteredStores: storeStations.filter(store => store.pharmacy_id === value),
-        logs: [...(Array.isArray(debugInfo?.logs) ? debugInfo.logs : []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
-      };
-      setDebugInfo(debugData);
       
       setSelectedPharmacy(pharmacy);
       setFormData((prev) => ({ ...prev, [name]: value, storeName: '' }));
@@ -700,197 +683,9 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
             </button>
           </div>
           
-          {/* デバッグボタン */}
-          <div className="mt-3 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setShowDebugModal(true)}
-              className="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <AlertCircle className="w-4 h-4" />
-              デバッグ情報を表示
-            </button>
-          </div>
         </form>
       </div>
 
-      {/* デバッグモーダル */}
-      {showDebugModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-6 h-6 text-blue-600" />
-                <h2 className="text-xl font-bold text-gray-900">🔍 デバッグ情報</h2>
-              </div>
-              <button
-                onClick={() => setShowDebugModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {debugInfo ? (
-                <div className="space-y-6">
-                  {/* 緊急シフト依頼のデバッグ情報 */}
-                  {debugInfo.request && (
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-gray-900 mb-2">📤 リクエスト情報</h3>
-                      <div className="text-sm space-y-1">
-                        <p><strong>送信時刻:</strong> {debugInfo.requestTime}</p>
-                        <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
-                          {JSON.stringify(debugInfo.request, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-
-                  {debugInfo.response && (
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-gray-900 mb-2">📥 レスポンス情報</h3>
-                      <div className="text-sm space-y-1">
-                        <p><strong>受信時刻:</strong> {debugInfo.responseTime}</p>
-                        <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
-                          {JSON.stringify(debugInfo.response, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-
-                  {debugInfo.error && (
-                    <div className="bg-red-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-gray-900 mb-2">❌ エラー情報</h3>
-                      <div className="text-sm">
-                        <p className="text-red-800">{debugInfo.error}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {debugInfo.logs && Array.isArray(debugInfo.logs) && debugInfo.logs.length > 0 && (
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-gray-900 mb-2">📋 ログ</h3>
-                      <div className="space-y-2">
-                        {(debugInfo.logs || []).map((log: any, index: number) => (
-                          <div key={index} className="bg-white p-2 rounded border text-xs">
-                            <div className="flex justify-between items-start">
-                              <span className="font-mono text-gray-600">{log.timestamp}</span>
-                              <span className="text-gray-800">{log.message}</span>
-                            </div>
-                            {log.data && (
-                              <pre className="mt-1 bg-gray-100 p-1 rounded text-xs overflow-x-auto">
-                                {JSON.stringify(log.data, null, 2)}
-                              </pre>
-                            )}
-                            {log.error && (
-                              <div className="mt-1 text-red-600 text-xs">{log.error}</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">📅 タイムスタンプ</h3>
-                    <p className="text-sm text-gray-600">{debugInfo.timestamp}</p>
-                  </div>
-
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">🏥 選択された薬局情報</h3>
-                    <div className="text-sm space-y-1">
-                      <p><strong>薬局ID:</strong> {debugInfo.selectedPharmacyId}</p>
-                      <p><strong>薬局名:</strong> {debugInfo.selectedPharmacy?.name || '未選択'}</p>
-                      <p><strong>薬局ID型:</strong> {typeof debugInfo.selectedPharmacyId}</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">🏪 全店舗データ ({debugInfo.allStoreStations.length}件)</h3>
-                    {debugInfo.storeStationsError ? (
-                      <div className="bg-red-100 p-3 rounded border border-red-300">
-                        <p className="text-red-800 font-semibold">❌ エラーが発生しました</p>
-                        <p className="text-red-700 text-sm mt-1">{JSON.stringify(debugInfo.storeStationsError)}</p>
-                      </div>
-                    ) : debugInfo.allStoreStations.length === 0 ? (
-                      <div className="bg-yellow-100 p-3 rounded border border-yellow-300">
-                        <p className="text-yellow-800">⚠️ 店舗データが0件です</p>
-                        <p className="text-yellow-700 text-sm mt-1">データベースのstore_stationsテーブルにデータが存在しません</p>
-                      </div>
-                    ) : (
-                      <div className="text-sm space-y-2 max-h-40 overflow-y-auto">
-                        {debugInfo.allStoreStations.map((store: any, index: number) => (
-                          <div key={store.id} className="bg-white p-2 rounded border">
-                            <p><strong>店舗{index + 1}:</strong> {store.store_name}</p>
-                            <p><strong>薬局ID:</strong> {store.pharmacy_id}</p>
-                            <p><strong>最寄り駅:</strong> {store.nearest_station_name}</p>
-                            <p><strong>ID一致:</strong> {store.pharmacy_id === debugInfo.selectedPharmacyId ? '✅' : '❌'}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">🎯 フィルタリング結果 ({debugInfo.filteredStores.length}件)</h3>
-                    <div className="text-sm space-y-2">
-                      {debugInfo.filteredStores.length > 0 ? (
-                        debugInfo.filteredStores.map((store: any, index: number) => (
-                          <div key={store.id} className="bg-white p-2 rounded border">
-                            <p><strong>店舗{index + 1}:</strong> {store.store_name} - {store.nearest_station_name}駅</p>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-red-600">❌ 該当する店舗が見つかりませんでした</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="bg-purple-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">👥 薬剤師情報</h3>
-                    <div className="text-sm space-y-1">
-                      <p><strong>総薬剤師数:</strong> {pharmacists.length}名</p>
-                      <p><strong>LINE連携済み:</strong> {linkedPharmacistsCount}名</p>
-                      <p><strong>LINE連携率:</strong> {pharmacists.length > 0 ? Math.round((linkedPharmacistsCount / pharmacists.length) * 100) : 0}%</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">📝 実行ログ</h3>
-                    <div className="text-sm space-y-1 max-h-40 overflow-y-auto">
-                      {debugInfo.logs && debugInfo.logs.length > 0 ? (
-                        debugInfo.logs.map((log: any, index: number) => (
-                          <div key={index} className="bg-white p-2 rounded border text-xs">
-                            <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="bg-white p-2 rounded border text-gray-500">
-                          ログがありません
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">薬局を選択するとデバッグ情報が表示されます</p>
-                </div>
-              )}
-            </div>
-
-            <div className="sticky bottom-0 bg-white border-t px-6 py-4">
-              <button
-                onClick={() => setShowDebugModal(false)}
-                className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                閉じる
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
