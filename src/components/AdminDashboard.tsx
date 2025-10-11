@@ -47,6 +47,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // 緊急シフトモーダル表示状態
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
+  // 月次マッチング実行状態
+  const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false);
+
   // データ初期化の強制実行（useEffectを最初に配置）
   React.useEffect(() => {
     // データ初期化の確認
@@ -1041,6 +1044,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       resultMessage += `右側のパネルで詳細なマッチング状況を確認できます。`;
       
       console.log('1ヶ月分マッチング結果:', resultMessage);
+      
+      // 月次マッチング実行状態を更新
+      setMonthlyMatchingExecuted(true);
       
       // 1ヶ月分マッチング実行後は、aiMatchesをクリアして日付選択時のみ表示
       setAiMatches([]);
