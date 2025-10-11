@@ -81,16 +81,18 @@ serve(async (req) => {
     let targetUsers: any[] = [];
 
     if (request.targetType === "all") {
-      // 全ての薬剤師
+      // 全ての薬剤師（LINE連携済みのみ）
       const { data, error } = await supabaseClient
         .from("user_profiles")
         .select("id, name, email, line_user_id, line_notification_enabled")
         .eq("user_type", "pharmacist")
-        .eq("line_notification_enabled", true)
-        .not("line_user_id", "is", null);
+        .not("line_user_id", "is", null)
+        .not("line_user_id", "eq", "");
 
       if (error) throw error;
       targetUsers = data || [];
+      
+      console.log(`Found ${targetUsers.length} pharmacists with LINE integration`);
     } else if (request.targetType === "specific" && request.targetUserIds) {
       // 特定のユーザー
       const { data, error } = await supabaseClient
@@ -206,6 +208,7 @@ serve(async (req) => {
         );
 
         const notifyResult = await notifyResponse.json();
+        console.log(`Notification result for user ${user.id} (${user.name}):`, notifyResult);
 
         if (notifyResult.success) {
           if (notifyResult.skipped) {
@@ -214,7 +217,7 @@ serve(async (req) => {
               userId: user.id,
               name: user.name,
               status: "skipped",
-              reason: notifyResult.reason,
+              reason: notifyResult.reason || "Unknown reason",
             });
           } else {
             results.sent++;
@@ -240,7 +243,7 @@ serve(async (req) => {
           userId: user.id,
           name: user.name,
           status: "failed",
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
