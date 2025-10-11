@@ -740,10 +740,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
   // 1ヶ月分のAIマッチングの実行
   const executeMonthlyAIMatching = async () => {
-    if (!aiMatchingEngine) {
-      console.error('AI Matching Engine not initialized');
-      return;
-    }
+    // AI機能は無効化されているため、簡易マッチングのみ実行
+    console.log('AI機能は無効化されているため、簡易マッチングのみ実行');
 
     setAiMatchingLoading(true);
     try {
@@ -1058,10 +1056,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
   // 日別のAIマッチングの実行（既存の機能を保持）
   const executeAIMatching = async (date: string) => {
-    if (!aiMatchingEngine) {
-      console.error('AI Matching Engine not initialized');
-      return;
-    }
+    // AI機能は無効化されているため、簡易マッチングのみ実行
+    console.log('AI機能は無効化されているため、簡易マッチングのみ実行');
 
     setAiMatchingLoading(true);
     try {
@@ -3317,7 +3313,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         
         let aiMatches: any[] = [];
         
-        if (aiMatchingEngine) {
+        if (false) { // AI機能は無効化
           // フルAIマッチングエンジンを使用
           console.log('AIマッチングエンジンを使用します');
           
@@ -4308,10 +4304,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               {selectedDate && (
                 <button
                   onClick={() => executeAIMatching(selectedDate)}
-                  disabled={aiMatchingLoading}
+                  disabled={false}
                   className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
                 >
-                  {aiMatchingLoading ? (
+                  {false ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       <span>AI分析中...</span>
@@ -4577,10 +4573,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               <div className="space-y-2">
                 <button
                   onClick={executeMonthlyAIMatching}
-                  disabled={aiMatchingLoading}
+                  disabled={false}
                   className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
                 >
-                  {aiMatchingLoading ? (
+                  {false ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       <span>マッチング実行中...</span>
