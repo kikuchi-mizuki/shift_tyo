@@ -73,8 +73,8 @@ serve(async (req) => {
         );
       }
 
-      // 緊急通知の場合は通知設定を無視
-      if (body.notificationType !== "emergency" && !userProfile.line_notification_enabled) {
+      // 通知が無効化されている場合はスキップ
+      if (!userProfile.line_notification_enabled) {
         console.log("Notification disabled for user:", body.userId);
         return new Response(
           JSON.stringify({
@@ -90,8 +90,8 @@ serve(async (req) => {
       }
 
       // LINE連携していない場合はスキップ
-      if (!userProfile.line_user_id || userProfile.line_user_id.trim() === '') {
-        console.log("LINE not linked for user:", body.userId, "line_user_id:", userProfile.line_user_id);
+      if (!userProfile.line_user_id) {
+        console.log("LINE not linked for user:", body.userId);
         return new Response(
           JSON.stringify({
             success: true,
@@ -134,7 +134,6 @@ serve(async (req) => {
     console.log("LINE API response:", {
       status: lineResponse.status,
       body: lineResponseData,
-      targetUser: targetLineUserId,
     });
 
     // 通知履歴を記録
@@ -147,12 +146,7 @@ serve(async (req) => {
       error_message: lineResponse.ok ? null : lineResponseData,
     };
 
-    try {
-      await supabaseClient.from("line_notification_logs").insert([logEntry]);
-    } catch (logError) {
-      console.error("Failed to log notification:", logError);
-      // ログ記録の失敗は通知送信の成功/失敗に影響しない
-    }
+    await supabaseClient.from("line_notification_logs").insert([logEntry]);
 
     if (!lineResponse.ok) {
       throw new Error(`LINE API error: ${lineResponseData}`);

@@ -20,8 +20,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   
   // 安全な配列アクセスのためのヘルパー関数
-  const safeArray = (arr: any) => Array.isArray(arr) ? arr : [];
+  const safeArray = (arr: any) => {
+    if (arr === null || arr === undefined) return [];
+    return Array.isArray(arr) ? arr : [];
+  };
   const safeLength = (arr: any) => safeArray(arr).length;
+  
+  // データ初期化の確認
+  const ensureDataInitialized = () => {
+    if (!Array.isArray(requests)) setRequests([]);
+    if (!Array.isArray(postings)) setPostings([]);
+    if (!Array.isArray(assigned)) setAssigned([]);
+    if (typeof userProfiles !== 'object' || userProfiles === null) setUserProfiles({});
+  };
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [userProfiles, setUserProfiles] = useState<any>({});

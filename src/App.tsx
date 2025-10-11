@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Component, ReactNode } from 'react';
 import { supabase, auth } from './lib/supabase';
 import { Pill } from 'lucide-react';
+import ErrorBoundary from './components/ErrorBoundary';
 // 遅延読み込みで循環依存や初期化順の問題を回避
 const PharmacistDashboard = React.lazy(() => 
   import('./components/PharmacistDashboard').catch(error => {
@@ -270,7 +271,9 @@ function AppContent() {
               <PharmacyDashboard user={currentSession} />
             )}
             {effectiveUserType === 'admin' && (
-              <AdminDashboard user={currentSession} />
+              <ErrorBoundary>
+                <AdminDashboard user={currentSession} />
+              </ErrorBoundary>
             )}
           </React.Suspense>
         </ErrorBoundary>
