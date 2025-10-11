@@ -12,10 +12,8 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
-  // エラーハンドリング：コンポーネントの最初に実行
-  try {
-    // 安全な初期値でstateを初期化
-    const [currentDate, setCurrentDate] = useState(new Date());
+  // 安全な初期値でstateを初期化
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
   const [assigned, setAssigned] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
@@ -1036,7 +1034,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       // デバッグ情報をコンソールに出力
       console.log('DEBUG: debugInfo content:', debugInfo);
-      console.log('DEBUG: debugInfo length:', debugInfo.length);
+      console.log('DEBUG: debugInfo length:', debugInfo ? debugInfo.length : 0);
 
       // グローバルなマッチング結果を保存
       setAiMatches(monthlyMatches);
@@ -4755,7 +4753,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                   userProfiles,
                                   userProfilesType: typeof userProfiles,
                                   userProfilesKeys: Object.keys(userProfiles || {}),
-                                  userProfilesLength: Object.keys(userProfiles || {}).length
+                                  userProfilesLength: Object.keys(safeObject(userProfiles || {})).length
                                 });
                                 
                                 const availablePharmacists = Object.values(userProfiles || {}).filter((profile: any) => {
@@ -6258,51 +6256,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
     </div>
   );
-  } catch (error) {
-    console.error('AdminDashboard rendering error:', error);
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
-          <div className="flex items-center mb-4">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-8 w-8 text-red-500" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-lg font-medium text-gray-900">
-                管理画面の読み込みエラー
-              </h3>
-            </div>
-          </div>
-          
-          <div className="mb-4">
-            <p className="text-sm text-gray-600">
-              管理画面の読み込み中にエラーが発生しました。ページを再読み込みしてください。
-            </p>
-          </div>
-
-          <div className="bg-gray-100 rounded-md p-3 mb-4">
-            <details>
-              <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
-                エラー詳細を表示
-              </summary>
-              <pre className="text-xs text-gray-600 whitespace-pre-wrap">
-                {error instanceof Error ? error.message : String(error)}
-              </pre>
-            </details>
-          </div>
-
-          <div className="flex space-x-3">
-            <button
-              onClick={() => window.location.reload()}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              ページを再読み込み
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 };
 
 export default AdminDashboard;
