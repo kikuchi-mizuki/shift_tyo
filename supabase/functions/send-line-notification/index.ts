@@ -180,15 +180,26 @@ serve(async (req) => {
       // ログ記録の失敗は通知送信の成功/失敗に影響しない
     }
 
+    // LINE APIレスポンスの詳細ログ
+    console.log("Final LINE API response check:", {
+      ok: lineResponse.ok,
+      status: lineResponse.status,
+      data: lineResponseData
+    });
+
     if (!lineResponse.ok) {
+      console.error("LINE API failed:", lineResponseData);
       throw new Error(`LINE API error: ${lineResponseData}`);
     }
+
+    console.log("LINE notification sent successfully to:", targetLineUserId);
 
     return new Response(
       JSON.stringify({
         success: true,
         lineUserId: targetLineUserId,
         notificationType: body.notificationType,
+        lineApiResponse: lineResponseData
       }),
       {
         status: 200,
