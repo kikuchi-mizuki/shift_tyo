@@ -249,12 +249,6 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowDebugModal(true)}
-              className="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors"
-            >
-              🔍 デバッグ
-            </button>
-            <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
