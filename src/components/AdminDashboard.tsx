@@ -71,11 +71,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     });
   };
 
-  // データ初期化の強制実行
-  React.useEffect(() => {
-    ensureDataInitialized();
-  }, []);
-
   // 募集状況管理
   const [recruitmentStatus, setRecruitmentStatus] = useState<{
     is_open: boolean;
@@ -97,6 +92,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
   const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false); // 1ヶ月分マッチング実行フラグ
   const [showEmergencyModal, setShowEmergencyModal] = useState(false); // 緊急シフトモーダル表示状態
+
+  // データ初期化の強制実行
+  React.useEffect(() => {
+    ensureDataInitialized();
+  }, []);
 
 
   // AIマッチングエンジンの初期化
