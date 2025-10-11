@@ -1,39 +1,68 @@
--- LINE通知用のCron Job設定
--- このSQLはSupabaseダッシュボードのSQL Editorで実行してください
+-- 定期的なキュー処理の設定
 
--- pg_cronエクステンションが有効になっているか確認
-CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- 1. 手動でキューを処理する関数（既に作成済み）
+-- SELECT send_queued_notifications();
 
--- 既存のCron Jobがあれば削除
-SELECT cron.unschedule('daily-shift-reminder');
+-- 2. キュー処理の統計を確認する関数
+CREATE OR REPLACE FUNCTION get_notification_queue_stats()
+RETURNS TABLE(
+  total_pending INTEGER,
+  total_processing INTEGER,
+  total_success INTEGER,
+  total_failed INTEGER,
+  oldest_pending TIMESTAMPTZ
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    COUNT(*) FILTER (WHERE status = 'pending')::INTEGER as total_pending,
+    COUNT(*) FILTER (WHERE status = 'processing')::INTEGER as total_processing,
+    COUNT(*) FILTER (WHERE status = 'success')::INTEGER as total_success,
+    COUNT(*) FILTER (WHERE status = 'failed')::INTEGER as total_failed,
+    MIN(scheduled_at) FILTER (WHERE status = 'pending') as oldest_pending
+  FROM notification_queue;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 前日リマインダーのCron Job（毎日20:00 JST = 11:00 UTC）
--- 注: Supabaseのデータベースタイムゾーンは通常UTC
-SELECT cron.schedule(
-  'daily-shift-reminder',
-  '0 11 * * *',  -- 毎日11:00 UTC（日本時間20:00）
-  $$
-  SELECT
-    net.http_post(
-      url := 'https://wjgterfwurmvosawzbjs.supabase.co/functions/v1/daily-shift-reminder',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZ3RlcmZ3dXJtdm9zYXd6YmpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzQ4MDAsImV4cCI6MjA1MDU1MDgwMH0.bDs2CtZ9dJ0eN0vRUPA7CtR6VqYeYW1m747_IUYJxGE'
-      ),
-      body := '{}'::jsonb
-    ) AS request_id;
-  $$
-);
+-- 3. 失敗した通知を再処理する関数
+CREATE OR REPLACE FUNCTION retry_failed_notifications()
+RETURNS INTEGER AS $$
+DECLARE
+  retry_count INTEGER;
+BEGIN
+  -- 失敗した通知を再処理可能な状態に戻す
+  UPDATE notification_queue 
+  SET 
+    status = 'pending',
+    retry_count = 0,
+    error_message = NULL,
+    scheduled_at = NOW(),
+    updated_at = NOW()
+  WHERE status = 'failed'
+    AND created_at >= NOW() - INTERVAL '24 hours';  -- 24時間以内の失敗のみ再処理
+  
+  GET DIAGNOSTICS retry_count = ROW_COUNT;
+  RETURN retry_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Cron Jobの確認
-SELECT * FROM cron.job WHERE jobname = 'daily-shift-reminder';
+-- 4. 古い通知ログをクリーンアップする関数
+CREATE OR REPLACE FUNCTION cleanup_old_notifications()
+RETURNS INTEGER AS $$
+DECLARE
+  cleanup_count INTEGER;
+BEGIN
+  -- 7日以上前の成功した通知を削除
+  DELETE FROM notification_queue 
+  WHERE status = 'success' 
+    AND created_at < NOW() - INTERVAL '7 days';
+  
+  GET DIAGNOSTICS cleanup_count = ROW_COUNT;
+  RETURN cleanup_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- スケジュール実行履歴を確認（デバッグ用）
--- SELECT * FROM cron.job_run_details 
--- WHERE jobid = (SELECT jobid FROM cron.job WHERE jobname = 'daily-shift-reminder')
--- ORDER BY start_time DESC 
--- LIMIT 10;
-
--- コメント
-COMMENT ON EXTENSION pg_cron IS 'LINE通知の前日リマインダー等の定期実行用';
-
+-- 5. コメント追加
+COMMENT ON FUNCTION get_notification_queue_stats() IS '通知キューの統計情報を取得する関数';
+COMMENT ON FUNCTION retry_failed_notifications() IS '失敗した通知を再処理する関数';
+COMMENT ON FUNCTION cleanup_old_notifications() IS '古い通知ログをクリーンアップする関数';

@@ -2171,10 +2171,10 @@ User ID from props: ${user?.id}
               console.log('customTimeMode:', customTimeMode);
               console.log('currentTimeSlot:', currentTimeSlot);
               console.log('myShifts:', myShifts);
-              console.log('myShifts length:', myShifts?.length || 0);
+              console.log('myShifts length:', (myShifts && Array.isArray(myShifts)) ? myShifts.length : 0);
               
               // 各myShiftの詳細をログ出力
-              if (myShifts && myShifts.length > 0) {
+              if (myShifts && Array.isArray(myShifts) && myShifts.length > 0) {
                 console.log('=== MYSHIFTS DETAIL ===');
                 myShifts.forEach((shift: any, index: number) => {
                   console.log(`Shift ${index}:`, {
