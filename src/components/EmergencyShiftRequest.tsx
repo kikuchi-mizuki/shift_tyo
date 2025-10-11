@@ -243,6 +243,13 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
           total: totalCount
         });
         
+        // LINE APIが成功している場合、結果を正しく表示
+        if (data.success && sentCount > 0) {
+          console.log('LINE notifications sent successfully');
+        } else if (data.success && failedCount > 0) {
+          console.log('Some LINE notifications failed');
+        }
+        
         // デバッグ情報を更新
         setDebugInfo(prev => ({
           ...prev,
