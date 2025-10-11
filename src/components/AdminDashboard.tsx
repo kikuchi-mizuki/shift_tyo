@@ -31,7 +31,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     pharmacies: false,
     pharmacists: false
   });
-  
+
+  // 募集状況管理
+  const [recruitmentStatus, setRecruitmentStatus] = useState<{
+    is_open: boolean;
+    updated_at: string;
+    updated_by: string | null;
+    notes: string | null;
+  }>({
+    is_open: true,
+    updated_at: '',
+    updated_by: null,
+    notes: null
+  });
+
+  // AI Matching関連の状態
+  const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
+  const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
+  const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
+  const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
+  const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
+  const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false); // 1ヶ月分マッチング実行フラグ
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false); // 緊急シフトモーダル表示状態
+
   // 安全な配列アクセスのためのヘルパー関数
   const safeArray = (arr: any) => {
     if (arr === null || arr === undefined) return [];
@@ -70,28 +92,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       storeNgPharmacies: typeof storeNgPharmacies === 'object' && storeNgPharmacies !== null,
     });
   };
-
-  // 募集状況管理
-  const [recruitmentStatus, setRecruitmentStatus] = useState<{
-    is_open: boolean;
-    updated_at: string;
-    updated_by: string | null;
-    notes: string | null;
-  }>({
-    is_open: true,
-    updated_at: '',
-    updated_by: null,
-    notes: null
-  });
-
-  // AI Matching関連の状態
-  const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
-  const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
-  const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
-  const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
-  const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
-  const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false); // 1ヶ月分マッチング実行フラグ
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false); // 緊急シフトモーダル表示状態
 
   // データ初期化の強制実行
   React.useEffect(() => {
