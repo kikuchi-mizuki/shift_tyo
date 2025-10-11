@@ -79,63 +79,23 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
 
   const loadStoreStations = async () => {
     try {
-      const logMessage = 'Loading store stations...';
-      console.log(logMessage);
-      
-      // ログをデバッグ情報に追加
-      setDebugInfo(prev => ({
-        ...prev,
-        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
-      }));
+      console.log('Loading store stations...');
       
       const { data, error } = await supabase
         .from('store_stations')
         .select('*')
         .order('pharmacy_id, store_name');
 
-      const queryResultLog = `Store stations query result: ${JSON.stringify({ dataCount: data?.length || 0, error: error?.message || null })}`;
-      console.log(queryResultLog);
-      
-      // クエリ結果をデバッグ情報に追加
-      setDebugInfo(prev => ({
-        ...prev,
-        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: queryResultLog }]
-      }));
+      console.log(`Store stations query result: ${JSON.stringify({ dataCount: data?.length || 0, error: error?.message || null })}`);
 
       if (!error && data) {
-        const successLog = `Store stations loaded successfully: ${data.length} items`;
-        console.log(successLog);
-        
-        // 成功ログをデバッグ情報に追加
-        setDebugInfo(prev => ({
-          ...prev,
-          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: successLog }]
-        }));
-        
+        console.log(`Store stations loaded successfully: ${data.length} items`);
         setStoreStations(data);
       } else {
-        const errorLog = `Error loading store stations: ${error?.message || 'Unknown error'}`;
-        console.error(errorLog);
-        
-        // エラーログをデバッグ情報に追加
-        setDebugInfo(prev => ({
-          ...prev,
-          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: errorLog }],
-          storeStationsError: error,
-          storeStationsData: data
-        }));
+        console.error(`Error loading store stations: ${error?.message || 'Unknown error'}`);
       }
     } catch (error) {
-      const exceptionLog = `Exception loading store stations: ${error instanceof Error ? error.message : String(error)}`;
-      console.error(exceptionLog);
-      
-      // 例外ログをデバッグ情報に追加
-      setDebugInfo(prev => ({
-        ...prev,
-        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: exceptionLog }],
-        storeStationsError: error,
-        storeStationsData: null
-      }));
+      console.error(`Exception loading store stations: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
