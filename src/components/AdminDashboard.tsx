@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Calendar, AlertCircle, Star, Brain, Zap, Bell } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
-import { EmergencyShiftRequest } from './EmergencyShiftRequest';
+import EmergencyShiftRequest from './EmergencyShiftRequest';
 
 interface AdminDashboardProps {
   user: any;

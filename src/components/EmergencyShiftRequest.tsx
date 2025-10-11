@@ -6,10 +6,12 @@ interface EmergencyShiftRequestProps {
   onClose: () => void;
 }
 
-export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
+const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   onClose,
 }) => {
-  console.log('EmergencyShiftRequest component initialized');
+  console.log('=== EMERGENCY SHIFT REQUEST COMPONENT INITIALIZED ===');
+  console.log('Component props:', { onClose });
+  console.log('Component is now rendering...');
   
   const [formData, setFormData] = useState({
     date: '',
@@ -321,6 +323,11 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   console.log('Linked pharmacists:', pharmacists.filter((p) => p.line_user_id));
   console.log('Linked count:', linkedPharmacistsCount);
 
+  console.log('=== RENDERING EMERGENCY SHIFT REQUEST MODAL ===');
+  console.log('Form data state:', formData);
+  console.log('Sending state:', sending);
+  console.log('Result state:', result);
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -864,4 +871,6 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
     </div>
   );
 };
+
+export default EmergencyShiftRequest;
 
