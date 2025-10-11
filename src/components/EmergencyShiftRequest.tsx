@@ -187,13 +187,21 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         ]
       }));
       
-      if (response.ok && data.success) {
+      if (response.ok) {
         setResult(data);
         // Edge Functionのレスポンス形式に合わせて修正
         const sentCount = data.sent || 0;
         const skippedCount = data.skipped || 0;
         const failedCount = data.failed || 0;
         const totalCount = data.total || (sentCount + skippedCount + failedCount);
+        
+        console.log('Emergency shift response:', {
+          success: data.success,
+          sent: sentCount,
+          skipped: skippedCount,
+          failed: failedCount,
+          total: totalCount
+        });
         
         // デバッグ情報を更新
         setDebugInfo(prev => ({
@@ -216,14 +224,20 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         );
       } else {
         // エラー情報をデバッグ情報に追加
+        console.error('Emergency shift request failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: data
+        });
+        
         setDebugInfo(prev => ({
           ...prev,
-          error: data.error || '送信に失敗しました',
+          error: data.error || `HTTP ${response.status}: ${response.statusText}`,
           logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
-            { timestamp: new Date().toLocaleTimeString(), message: 'Error occurred', error: data }
+            { timestamp: new Date().toLocaleTimeString(), message: 'Error occurred', error: data, status: response.status }
           ]
         }));
-        throw new Error(data.error || '送信に失敗しました');
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
       // エラー情報をデバッグ情報に追加
