@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 
 import { Calendar, AlertCircle, Star, Brain, Zap, Bell } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
+import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
+import DataCollector from '../features/ai-matching/dataCollector';
+import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 
 interface AdminDashboardProps {
@@ -49,6 +52,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // 月次マッチング実行状態
   const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false);
+
+  // AI Matching関連の状態
+  const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
+  const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
+  const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
+  const [aiMatchesByDate, setAiMatchesByDate] = useState<{[date: string]: MatchCandidate[]}>({});
+  const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
+  const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
+
+  // AIマッチングエンジンの初期化
+  React.useEffect(() => {
+    const initializeAI = async () => {
+      try {
+        console.log('AI Matching Engine initialization started...');
+        const engine = new AIMatchingEngine();
+        const collector = new DataCollector();
+        
+        setAiMatchingEngine(engine);
+        setDataCollector(collector);
+        
+        console.log('✅ AI Matching Engine initialized successfully');
+        console.log('Engine instance:', engine);
+        console.log('DataCollector instance:', collector);
+      } catch (error) {
+        console.error('❌ Failed to initialize AI Matching Engine:', error);
+        // 初期化に失敗した場合はAIマッチングを無効にする
+        setUseAIMatching(false);
+      }
+    };
+
+    initializeAI();
+  }, []);
 
   // データ初期化の強制実行（useEffectを最初に配置）
   React.useEffect(() => {
@@ -349,8 +384,6 @@ ${matches.map((match, index) => `${index + 1}. ${match.pharmacist.name} → ${ma
     return matches;
   };
 
-  // 日付別のAIマッチング結果を保存する状態
-  const [aiMatchesByDate, setAiMatchesByDate] = useState<{ [date: string]: any[] }>({});
   
   // 不足薬局の手動マッチング用の状態
   const [manualMatches, setManualMatches] = useState<{ [pharmacyId: string]: string[] }>({});
@@ -741,16 +774,17 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
   // 1ヶ月分のAIマッチングの実行
   const executeMonthlyAIMatching = async () => {
-    // AI機能は無効化されているため、簡易マッチングのみ実行
-    console.log('AI機能は無効化されているため、簡易マッチングのみ実行');
+    if (!aiMatchingEngine) {
+      console.error('AI Matching Engine not initialized');
+      return;
+    }
 
     setAiMatchingLoading(true);
     try {
-      // 既存のマッチング結果をクリア（確定済みマッチは保持）
+      // 既存のマッチング結果をクリア
       setAiMatches([]);
-      // setAiMatchesByDate({}); // 確定済みマッチを保持するためコメントアウト
-      // マッチング実行フラグをリセット（AI機能は無効化）
-      console.log('既存のマッチング結果をクリアしました（確定済みは保持）');
+      setAiMatchesByDate({});
+      console.log('既存のマッチング結果をクリアしました');
 
       // 現在の月の全ての日付を取得
       const currentMonth = currentDate.getMonth();
@@ -917,11 +951,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         }
         
         try {
-          // 簡易AIマッチングを使用（デバッグモーダル付き）
-          const dayMatches = await executeSimpleAIMatching(dayRequests, dayPostings);
+          const dayMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
+            useAPI: false,
+            algorithm: 'hybrid',
+            priority: 'pharmacy_satisfaction'
+          }, userProfiles, ratings);
           
           matchesByDate[date] = dayMatches;
-          debugInfo += `マッチング成功: ${safeLength(dayMatches)}件\n`;
+          debugInfo += `マッチング成功: ${dayMatches.length}件\n`;
           
           // マッチング詳細を表示
           dayMatches.forEach((match, i) => {
@@ -929,7 +966,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           });
           
         } catch (error) {
-          debugInfo += `エラー: ${error instanceof Error ? error.message : String(error)}\n`;
+          debugInfo += `エラー: ${error.message}\n`;
           matchesByDate[date] = [];
         }
       }
@@ -939,36 +976,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       debugInfo += `\n=== 統合結果 ===\n`;
       debugInfo += `総マッチング件数: ${safeLength(monthlyMatches)}件\n`;
       
-      // 日付別のマッチング結果を保存（確定済みマッチは除外）
-      setAiMatchesByDate(prev => {
-        const newMap = { ...prev };
-        // 新しいマッチング結果を追加（確定済みマッチは除外）
-        Object.keys(matchesByDate).forEach(date => {
-          // 確定済みの薬剤師IDを取得
-          const confirmedPharmacistIds = new Set(
-            (assigned || []).filter((s: any) => s?.date === date && s?.status === 'confirmed')
-              .map((s: any) => s.pharmacist_id)
-          );
-          
-          // 確定済みでないマッチのみを追加
-          const unconfirmedMatches = matchesByDate[date].filter(match => 
-            !confirmedPharmacistIds.has(match.pharmacist.id)
-          );
-          
-          
-          if (safeLength(unconfirmedMatches) > 0) {
-            newMap[date] = unconfirmedMatches;
-          } else {
-            delete newMap[date];
-          }
-        });
-        return newMap;
-      });
+      // 日付別のマッチング結果を保存
+      setAiMatchesByDate(matchesByDate);
       setAiMatches(monthlyMatches);
       
-      // 1ヶ月分のマッチング実行完了フラグを設定
-      // AI機能は無効化されているため、フラグ設定はスキップ
-      console.log('✅ 1ヶ月分マッチング実行完了（AI機能は無効化）');
+      // 月次マッチング実行状態を更新
+      setMonthlyMatchingExecuted(true);
       
       
       console.log('マッチング結果:', monthlyMatches);
@@ -1060,8 +1073,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
   // 日別のAIマッチングの実行（既存の機能を保持）
   const executeAIMatching = async (date: string) => {
-    // AI機能は無効化されているため、簡易マッチングのみ実行
-    console.log('AI機能は無効化されているため、簡易マッチングのみ実行');
+    if (!aiMatchingEngine) {
+      console.error('AI Matching Engine not initialized');
+      return;
+    }
 
     setAiMatchingLoading(true);
     try {
@@ -1229,11 +1244,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
       setAiMatches(matches);
 
-      addLog(`✅ AIマッチング完了: ${safeLength(matches)}件のマッチを生成`);
       console.log(`AI Matching completed: ${safeLength(matches)} matches found`);
     } catch (error) {
       console.error('AI Matching failed:', error);
-      addLog(`❌ AIマッチングエラー: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setAiMatchingLoading(false);
     }
