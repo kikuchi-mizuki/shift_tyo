@@ -163,6 +163,9 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         logs: [{ timestamp: new Date().toLocaleTimeString(), message: 'Sending emergency shift request', data: requestBody }]
       }));
 
+      console.log('Sending request to:', `${supabaseUrl}/functions/v1/send-emergency-shift`);
+      console.log('Request body:', requestBody);
+      
       const response = await fetch(
         `${supabaseUrl}/functions/v1/send-emergency-shift`,
         {
@@ -175,7 +178,11 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         }
       );
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
       const data = await response.json();
+      console.log('Response data:', data);
 
       // レスポンスデータをデバッグ情報に追加
       setDebugInfo(prev => ({

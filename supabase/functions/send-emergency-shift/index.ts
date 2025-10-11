@@ -175,6 +175,9 @@ serve(async (req) => {
       request.hourlyRate ? `時給: ${request.hourlyRate.toLocaleString()}円\n` : ""
     }${request.memo ? `\n${request.memo}\n` : ""}\n詳細・応募はこちら:\n${webAppUrl}\n\nお早めにご確認ください！`;
 
+    console.log(`Target users found: ${targetUsers.length}`);
+    console.log('Target users:', targetUsers.map(u => ({ id: u.id, name: u.name, line_user_id: u.line_user_id })));
+
     // 各ユーザーに通知を送信
     const results = {
       total: targetUsers.length,
@@ -186,6 +189,8 @@ serve(async (req) => {
 
     for (const user of targetUsers) {
       try {
+        console.log(`Sending LINE notification to user: ${user.id} (${user.name})`);
+        
         const notifyResponse = await fetch(
           `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-line-notification`,
           {
@@ -206,6 +211,8 @@ serve(async (req) => {
             }),
           }
         );
+        
+        console.log(`LINE notification response for ${user.id}:`, notifyResponse.status, notifyResponse.ok);
 
         const notifyResult = await notifyResponse.json();
         console.log(`Notification result for user ${user.id} (${user.name}):`, notifyResult);
