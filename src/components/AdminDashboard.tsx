@@ -79,7 +79,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // 簡易AIマッチング関数（従来のロジックを踏襲）
   const executeSimpleAIMatching = async (requests: any[], postings: any[]) => {
-    console.log('簡易AIマッチング開始:', { requests: requests.length, postings: postings.length });
+    console.log('簡易AIマッチング開始:', { requests: (requests && Array.isArray(requests)) ? requests.length : 0, postings: (postings && Array.isArray(postings)) ? postings.length : 0 });
     
     // 確定済み店舗と薬剤師を取得して除外
     const confirmedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s?.status === 'confirmed') : [];
@@ -104,12 +104,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       return !confirmedPharmacists.has(r.pharmacist_id);
     });
     
-    console.log('利用可能な募集数:', availablePostings.length, '(除外:', postings.length - availablePostings.length, '件)');
-    console.log('利用可能な希望数:', availableRequests.length, '(除外:', requests.length - availableRequests.length, '件)');
+    console.log('利用可能な募集数:', availablePostings.length, '(除外:', (postings && Array.isArray(postings) ? postings.length : 0) - availablePostings.length, '件)');
+    console.log('利用可能な希望数:', availableRequests.length, '(除外:', (requests && Array.isArray(requests) ? requests.length : 0) - availableRequests.length, '件)');
     
     const debugInfo = `=== AIマッチング開始 ===
-薬剤師希望数: ${requests.length}件 (利用可能: ${availableRequests.length}件)
-薬局募集数: ${postings.length}件 (利用可能: ${availablePostings.length}件)
+薬剤師希望数: ${(requests && Array.isArray(requests) ? requests.length : 0)}件 (利用可能: ${availableRequests.length}件)
+薬局募集数: ${(postings && Array.isArray(postings) ? postings.length : 0)}件 (利用可能: ${availablePostings.length}件)
 
 利用可能な薬剤師希望詳細:
 ${availableRequests.map(r => `- ID: ${r.pharmacist_id}, 時間: ${r.start_time}-${r.end_time}, 優先度: ${r.priority}`).join('\n')}
@@ -536,7 +536,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     const shortagePharmacies: any[] = [];
     let totalShortage = 0;
     
-    console.log('analyzeMonthlyShortage開始:', { matchesByDate, requests: requests?.length, postings: postings?.length });
+    console.log('analyzeMonthlyShortage開始:', { matchesByDate, requests: (requests && Array.isArray(requests)) ? requests.length : 0, postings: (postings && Array.isArray(postings)) ? postings.length : 0 });
     
     // matchesByDateが空の場合は、全postingsから分析
     const datesToAnalyze = Object.keys(matchesByDate).length > 0 ? Object.keys(matchesByDate) : 
@@ -764,12 +764,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         return postingDate.getMonth() === currentMonth && postingDate.getFullYear() === currentYear;
       }) : [];
 
-      if (monthlyRequests.length === 0 && monthlyPostings.length === 0) {
+      if ((monthlyRequests && Array.isArray(monthlyRequests) ? monthlyRequests.length : 0) === 0 && (monthlyPostings && Array.isArray(monthlyPostings) ? monthlyPostings.length : 0) === 0) {
         alert('今月の希望シフトまたは募集シフトがありません。');
         return;
       }
 
-      console.log(`1ヶ月分のマッチング開始: 希望${monthlyRequests.length}件、募集${monthlyPostings.length}件`);
+      console.log(`1ヶ月分のマッチング開始: 希望${(monthlyRequests && Array.isArray(monthlyRequests)) ? monthlyRequests.length : 0}件、募集${(monthlyPostings && Array.isArray(monthlyPostings)) ? monthlyPostings.length : 0}件`);
       console.log('monthlyRequests (全件):', monthlyRequests);
       console.log('monthlyPostings (全件):', monthlyPostings);
       console.log('userProfiles:', userProfiles);
@@ -779,11 +779,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       // 簡潔なデバッグ情報をモーダルで表示
       let debugInfo = `=== AIマッチング処理デバッグ ===\n`;
-      debugInfo += `シフト希望数: ${monthlyRequests.length}件\n`;
-      debugInfo += `シフト募集数: ${monthlyPostings.length}件\n\n`;
+      debugInfo += `シフト希望数: ${(monthlyRequests && Array.isArray(monthlyRequests)) ? monthlyRequests.length : 0}件\n`;
+      debugInfo += `シフト募集数: ${(monthlyPostings && Array.isArray(monthlyPostings)) ? monthlyPostings.length : 0}件\n\n`;
       
       // サンプルデータを3件まで表示
-      if (monthlyRequests.length > 0) {
+      if ((monthlyRequests && Array.isArray(monthlyRequests)) && monthlyRequests.length > 0) {
         debugInfo += `希望サンプル:\n`;
         (monthlyRequests || []).slice(0, 3).forEach((req, i) => {
           debugInfo += `${i+1}. 日付: ${req.date}, 時間: ${req.start_time}-${req.end_time}\n`;
@@ -791,7 +791,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         debugInfo += `\n`;
       }
       
-      if (monthlyPostings.length > 0) {
+      if ((monthlyPostings && Array.isArray(monthlyPostings)) && monthlyPostings.length > 0) {
         debugInfo += `募集サンプル:\n`;
         (monthlyPostings || []).slice(0, 3).forEach((post, i) => {
           debugInfo += `${i+1}. 日付: ${post.date}, 時間: ${post.start_time}-${post.end_time}\n`;
