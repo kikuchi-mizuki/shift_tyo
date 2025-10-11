@@ -108,12 +108,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       return !confirmedPharmacists.has(r.pharmacist_id);
     });
     
-    console.log('利用可能な募集数:', availablePostings.length, '(除外:', (postings && Array.isArray(postings) ? postings.length : 0) - availablePostings.length, '件)');
-    console.log('利用可能な希望数:', availableRequests.length, '(除外:', (requests && Array.isArray(requests) ? requests.length : 0) - availableRequests.length, '件)');
+    console.log('利用可能な募集数:', safeLength(availablePostings), '(除外:', safeLength(postings) - safeLength(availablePostings), '件)');
+    console.log('利用可能な希望数:', safeLength(availableRequests), '(除外:', safeLength(requests) - safeLength(availableRequests), '件)');
     
     const debugInfo = `=== AIマッチング開始 ===
-薬剤師希望数: ${(requests && Array.isArray(requests) ? requests.length : 0)}件 (利用可能: ${availableRequests.length}件)
-薬局募集数: ${(postings && Array.isArray(postings) ? postings.length : 0)}件 (利用可能: ${availablePostings.length}件)
+薬剤師希望数: ${safeLength(requests)}件 (利用可能: ${safeLength(availableRequests)}件)
+薬局募集数: ${safeLength(postings)}件 (利用可能: ${safeLength(availablePostings)}件)
 
 利用可能な薬剤師希望詳細:
 ${availableRequests.map(r => `- ID: ${r.pharmacist_id}, 時間: ${r.start_time}-${r.end_time}, 優先度: ${r.priority}`).join('\n')}
@@ -220,7 +220,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
     // スコア順でソート（高い順）
     allPossibleMatches.sort((a, b) => b.totalScore - a.totalScore);
     
-    console.log(`可能なマッチング組み合わせ: ${(allPossibleMatches && Array.isArray(allPossibleMatches)) ? allPossibleMatches.length : 0}件`);
+    console.log(`可能なマッチング組み合わせ: ${safeLength(allPossibleMatches)}件`);
     
     // 最適解を構築（薬剤師は1日1つの薬局のみ、全体で不足薬局を最小化）
     // 全探索による真の最適解アルゴリズム
@@ -229,13 +229,13 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
       let bestScore = 0;
       
       console.log('=== 全探索アルゴリズム開始 ===');
-      console.log('可能なマッチング候補:', (possibleMatches && Array.isArray(possibleMatches)) ? possibleMatches.length : 0);
+      console.log('可能なマッチング候補:', safeLength(possibleMatches));
       possibleMatches.forEach((match, index) => {
         console.log(`${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.storeName}) スコア:${match.totalScore}`);
       });
       
       // 全組み合わせを探索（2^Nの組み合わせ）
-      const totalCombinations = Math.pow(2, (possibleMatches && Array.isArray(possibleMatches)) ? possibleMatches.length : 0);
+      const totalCombinations = Math.pow(2, safeLength(possibleMatches));
       console.log(`全探索開始: ${totalCombinations}通りの組み合わせを検証`);
       
       let validCombinations = 0;
@@ -253,7 +253,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
         }
         
         // 現在の組み合わせを構築
-        for (let j = 0; j < ((possibleMatches && Array.isArray(possibleMatches)) ? possibleMatches.length : 0); j++) {
+        for (let j = 0; j < safeLength(possibleMatches); j++) {
           if (i & (1 << j)) { // ビットが立っている場合のみ選択
             const match = possibleMatches[j];
             const key = `${match.pharmacyNeed.pharmacy_id}_${match.pharmacyNeed.store_name || 'default'}`;
@@ -292,18 +292,18 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
         }
         
         // 有効な組み合わせをカウント
-        if ((currentMatches && Array.isArray(currentMatches)) && currentMatches.length > 0) {
+        if (safeLength(currentMatches) > 0) {
           validCombinations++;
-          maxMatchesFound = Math.max(maxMatchesFound, currentMatches.length);
+          maxMatchesFound = Math.max(maxMatchesFound, safeLength(currentMatches));
           
           // 最適解の更新（マッチ数優先、同数の場合はスコア優先）
           const currentScore = currentMatches.reduce((sum, match) => sum + match.compatibilityScore, 0);
-          if (currentMatches.length > ((bestMatches && Array.isArray(bestMatches)) ? bestMatches.length : 0) || 
-              (currentMatches.length === ((bestMatches && Array.isArray(bestMatches)) ? bestMatches.length : 0) && currentScore > bestScore)) {
+          if (safeLength(currentMatches) > safeLength(bestMatches) || 
+              (safeLength(currentMatches) === safeLength(bestMatches) && currentScore > bestScore)) {
             bestMatches = [...currentMatches];
             bestScore = currentScore;
             
-            console.log(`✅ 新しい最適解発見: ${currentMatches.length}件マッチ, スコア: ${currentScore.toFixed(2)}`);
+            console.log(`✅ 新しい最適解発見: ${safeLength(currentMatches)}件マッチ, スコア: ${currentScore.toFixed(2)}`);
             currentMatches.forEach((match, index) => {
               console.log(`  ${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.timeSlot.start}-${match.timeSlot.end})`);
             });
@@ -314,7 +314,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
       console.log(`=== 全探索完了 ===`);
       console.log(`有効な組み合わせ: ${validCombinations}通り`);
       console.log(`最大マッチ数: ${maxMatchesFound}件`);
-      console.log(`最適解: ${(bestMatches && Array.isArray(bestMatches)) ? bestMatches.length : 0}件マッチ`);
+      console.log(`最適解: ${safeLength(bestMatches)}件マッチ`);
       
       return bestMatches;
     };
