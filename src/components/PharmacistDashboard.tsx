@@ -1118,6 +1118,34 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                 </div>
                 <div className="text-xs text-blue-600 mt-1">
                   希望時間: {(() => {
+                    // 選択された日付の既存の希望データを取得
+                    const existingRequest = myRequests.find((req: any) => 
+                      selectedDates.includes(req.date)
+                    );
+                    
+                    // 既存の希望データがある場合は、データベースのstart_timeとend_timeを使用
+                    if (existingRequest) {
+                      if (existingRequest.start_time && existingRequest.end_time) {
+                        return `${existingRequest.start_time.slice(0,5)}-${existingRequest.end_time.slice(0,5)}`;
+                      }
+                      // start_timeとend_timeがない場合はtime_slotから判定
+                      const timeSlot = existingRequest.time_slot;
+                      if (timeSlot === 'morning' || timeSlot === 'am') {
+                        return '9:00-13:00';
+                      }
+                      if (timeSlot === 'afternoon' || timeSlot === 'pm') {
+                        return '13:00-18:00';
+                      }
+                      if (timeSlot === 'full' || timeSlot === 'fullday') {
+                        return '9:00-18:00';
+                      }
+                      if (timeSlot === 'consult' || timeSlot === 'negotiable') {
+                        return '9:00-18:00';
+                      }
+                      return timeSlot || '未設定';
+                    }
+                    
+                    // 新規選択の場合
                     if (!selectedTimeSlot) return '未選択';
                     
                     // カスタム時間モードの場合は実際の時間を表示
