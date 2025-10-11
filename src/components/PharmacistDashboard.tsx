@@ -1132,7 +1132,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                     if (selectedTimeSlot === 'afternoon' || selectedTimeSlot === 'pm') {
                       return '13:00-18:00';
                     }
-                    if (selectedTimeSlot === 'full') {
+                    if (selectedTimeSlot === 'full' || selectedTimeSlot === 'fullday') {
                       return '9:00-18:00';
                     }
                     if (selectedTimeSlot === 'consult' || selectedTimeSlot === 'negotiable') {
