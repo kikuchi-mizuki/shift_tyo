@@ -4267,7 +4267,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             </div>
           </div>
           <button
-            onClick={() => setShowEmergencyModal(true)}
+            onClick={() => {
+              console.error('=== EMERGENCY BUTTON CLICKED ===');
+              console.error('Setting showEmergencyModal to true');
+              setShowEmergencyModal(true);
+            }}
             className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >
             <Bell className="w-4 h-4" />
@@ -6213,7 +6217,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
       {/* 緊急シフトモーダル */}
       {showEmergencyModal && (
-        <EmergencyShiftRequest onClose={() => setShowEmergencyModal(false)} />
+        (() => {
+          console.error('=== RENDERING EMERGENCY MODAL ===');
+          console.error('showEmergencyModal is true, rendering EmergencyShiftRequest');
+          return (
+            <EmergencyShiftRequest onClose={() => {
+              console.error('=== CLOSING EMERGENCY MODAL ===');
+              setShowEmergencyModal(false);
+            }} />
+          );
+        })()
       )}
       
     </div>

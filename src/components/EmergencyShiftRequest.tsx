@@ -9,9 +9,15 @@ interface EmergencyShiftRequestProps {
 const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   onClose,
 }) => {
-  console.log('=== EMERGENCY SHIFT REQUEST COMPONENT INITIALIZED ===');
-  console.log('Component props:', { onClose });
-  console.log('Component is now rendering...');
+  // より確実なログ出力
+  console.error('=== EMERGENCY SHIFT REQUEST COMPONENT INITIALIZED ===');
+  console.error('Component props:', { onClose });
+  console.error('Component is now rendering...');
+  
+  // alertでも確認
+  if (typeof window !== 'undefined') {
+    console.warn('EmergencyShiftRequest component loaded');
+  }
   
   const [formData, setFormData] = useState({
     date: '',
@@ -323,10 +329,14 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   console.log('Linked pharmacists:', pharmacists.filter((p) => p.line_user_id));
   console.log('Linked count:', linkedPharmacistsCount);
 
-  console.log('=== RENDERING EMERGENCY SHIFT REQUEST MODAL ===');
-  console.log('Form data state:', formData);
-  console.log('Sending state:', sending);
-  console.log('Result state:', result);
+  console.error('=== RENDERING EMERGENCY SHIFT REQUEST MODAL ===');
+  console.error('Form data state:', formData);
+  console.error('Sending state:', sending);
+  console.error('Result state:', result);
+  
+  // より目立つログ
+  console.warn('EmergencyShiftRequest is rendering!');
+  console.info('Modal should be visible now');
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
