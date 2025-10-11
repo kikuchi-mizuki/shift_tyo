@@ -8,18 +8,10 @@ const corsHeaders = {
 };
 
 interface EmergencyShiftRequest {
-  targetType: "all" | "specific" | "nearby"; // 全員/特定のユーザー/近隣の薬剤師
-  targetUserIds?: string[]; // specificの場合の対象ユーザーID
   date: string; // シフト日付
   timeSlot: string; // 時間帯
   startTime?: string; // 開始時刻
   endTime?: string; // 終了時刻
-  storeName?: string; // 店舗名
-  pharmacyName?: string; // 薬局名
-  hourlyRate?: number; // 時給
-  memo?: string; // メモ
-  nearbyStationName?: string; // 最寄り駅（nearbyの場合）
-  maxTravelMinutes?: number; // 最大移動時間（nearbyの場合）
 }
 
 // 時間帯の日本語表記
@@ -78,81 +70,24 @@ serve(async (req) => {
     console.log("Emergency shift request received:", JSON.stringify(request, null, 2));
     
     // リクエストの検証
-    if (!request.targetType) {
-      throw new Error("targetType is required");
-    }
     if (!request.date) {
       throw new Error("date is required");
     }
     console.log("Request validation passed");
 
-    // 対象ユーザーを取得
-    let targetUsers: any[] = [];
+    // 全ての薬剤師を対象とする（LINE連携済みのみ）
+    const { data, error } = await supabaseClient
+      .from("user_profiles")
+      .select("id, name, email, line_user_id, line_notification_enabled")
+      .eq("user_type", "pharmacist")
+      .eq("line_notification_enabled", true)
+      .not("line_user_id", "is", null)
+      .not("line_user_id", "eq", "");
 
-    if (request.targetType === "all") {
-      // 全ての薬剤師（LINE連携済みのみ）
-      const { data, error } = await supabaseClient
-        .from("user_profiles")
-        .select("id, name, email, line_user_id, line_notification_enabled")
-        .eq("user_type", "pharmacist")
-        .not("line_user_id", "is", null)
-        .not("line_user_id", "eq", "");
-
-      if (error) throw error;
-      targetUsers = data || [];
-      
-      console.log(`Found ${targetUsers.length} pharmacists with LINE integration`);
-    } else if (request.targetType === "specific" && request.targetUserIds) {
-      // 特定のユーザー
-      const { data, error } = await supabaseClient
-        .from("user_profiles")
-        .select("id, name, email, line_user_id, line_notification_enabled")
-        .in("id", request.targetUserIds)
-        .eq("user_type", "pharmacist")
-        .eq("line_notification_enabled", true)
-        .not("line_user_id", "is", null);
-
-      if (error) throw error;
-      targetUsers = data || [];
-    } else if (request.targetType === "nearby" && request.nearbyStationName) {
-      // 近隣の薬剤師（最寄り駅から一定時間内）
-      // まず全薬剤師を取得
-      const { data: allPharmacists, error: pharmacistsError } =
-        await supabaseClient
-          .from("user_profiles")
-          .select(
-            "id, name, email, line_user_id, line_notification_enabled, nearest_station"
-          )
-          .eq("user_type", "pharmacist")
-          .eq("line_notification_enabled", true)
-          .not("line_user_id", "is", null)
-          .not("nearest_station", "is", null);
-
-      if (pharmacistsError) throw pharmacistsError;
-
-      // 駅間の移動時間を取得して絞り込み
-      const maxMinutes = request.maxTravelMinutes || 30;
-      const nearbyUsers: any[] = [];
-
-      for (const pharmacist of allPharmacists || []) {
-        // 駅間の移動時間を取得
-        const { data: travelTime } = await supabaseClient
-          .from("station_travel_times")
-          .select("minutes")
-          .eq("origin_station_name", pharmacist.nearest_station)
-          .eq("dest_station_name", request.nearbyStationName)
-          .eq("provider", "google")
-          .single();
-
-        if (travelTime && travelTime.minutes <= maxMinutes) {
-          nearbyUsers.push(pharmacist);
-        }
-      }
-
-      targetUsers = nearbyUsers;
-    }
-
-    console.log(`Found ${targetUsers.length} target users`);
+    if (error) throw error;
+    const targetUsers = data || [];
+    
+    console.log(`Found ${targetUsers.length} pharmacists with LINE integration`);
 
     if (targetUsers.length === 0) {
       return new Response(
@@ -178,11 +113,7 @@ serve(async (req) => {
 
     const message = `【🚨 緊急シフト募集】\n\n日時: ${formatDate(
       request.date
-    )}\n時間: ${timeInfo}\n${
-      request.storeName ? `店舗: ${request.storeName}\n` : ""
-    }${request.pharmacyName ? `薬局: ${request.pharmacyName}\n` : ""}${
-      request.hourlyRate ? `時給: ${request.hourlyRate.toLocaleString()}円\n` : ""
-    }${request.memo ? `\n${request.memo}\n` : ""}\n詳細・応募はこちら:\n${webAppUrl}\n\nお早めにご確認ください！`;
+    )}\n時間: ${timeInfo}\n\n詳細・応募はこちら:\n${webAppUrl}\n\nお早めにご確認ください！`;
 
     console.log(`Target users found: ${targetUsers.length}`);
     console.log('Target users:', targetUsers.map(u => ({ id: u.id, name: u.name, line_user_id: u.line_user_id })));
@@ -223,7 +154,6 @@ serve(async (req) => {
           metadata: {
             shiftDate: request.date,
             timeSlot: request.timeSlot,
-            storeName: request.storeName,
           },
         }, null, 2));
         
