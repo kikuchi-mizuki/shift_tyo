@@ -19,6 +19,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [postings, setPostings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // 即座にデータ初期化を実行
+  if (!Array.isArray(requests)) setRequests([]);
+  if (!Array.isArray(postings)) setPostings([]);
+  if (!Array.isArray(assigned)) setAssigned([]);
+  
   // 安全な配列アクセスのためのヘルパー関数
   const safeArray = (arr: any) => {
     if (arr === null || arr === undefined) return [];
@@ -32,6 +37,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     if (!Array.isArray(postings)) setPostings([]);
     if (!Array.isArray(assigned)) setAssigned([]);
     if (typeof userProfiles !== 'object' || userProfiles === null) setUserProfiles({});
+    if (typeof storeNgPharmacists !== 'object' || storeNgPharmacists === null) setStoreNgPharmacists({});
+    if (typeof storeNgPharmacies !== 'object' || storeNgPharmacies === null) setStoreNgPharmacies({});
+    
+    // すべてのstateが配列またはオブジェクトであることを確認
+    console.log('Data initialization check:', {
+      requests: Array.isArray(requests),
+      postings: Array.isArray(postings),
+      assigned: Array.isArray(assigned),
+      userProfiles: typeof userProfiles === 'object' && userProfiles !== null,
+      storeNgPharmacists: typeof storeNgPharmacists === 'object' && storeNgPharmacists !== null,
+      storeNgPharmacies: typeof storeNgPharmacies === 'object' && storeNgPharmacies !== null,
+    });
   };
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -273,7 +290,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
             // 制約チェック
             if (usedPharmacists.has(match.request.pharmacist_id) || remaining <= 0) {
               // 制約違反の場合はこの組み合わせを破棄
-              currentMatches.length = 0;
+              currentMatches = [];
               break;
             }
             
@@ -335,7 +352,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
     matches.push(...optimalMatches);
 
     const finalResult = `=== AIマッチング完了 ===
-マッチ数: ${(matches && Array.isArray(matches)) ? matches.length : 0}件
+マッチ数: ${safeLength(matches)}件
 
 マッチング結果:
 ${matches.map((match, index) => `${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.timeSlot.start}-${match.timeSlot.end})`).join('\n')}`;
@@ -1436,11 +1453,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       });
     } else if (profile.user_type === 'pharmacy') {
       // 薬局の場合はstore_ng_pharmacistsから読み込み
-      const ngPharmacists = storeNgPharmacists[profile.id] || [];
+      const ngPharmacists = safeArray(storeNgPharmacists[profile.id]);
       const pharmacistIds = new Set<string>();
       
       ngPharmacists.forEach((ngPharmacist: any) => {
-        pharmacistIds.add(ngPharmacist.pharmacist_id);
+        if (ngPharmacist && ngPharmacist.pharmacist_id) {
+          pharmacistIds.add(ngPharmacist.pharmacist_id);
+        }
       });
       
       ngList = Array.from(pharmacistIds);
@@ -4085,8 +4104,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         const pharmacistNg = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
         
         // 薬局のNG薬剤師リストを取得（store_ng_pharmacistsテーブルから）
-        const pharmacyNgPharmacists = storeNgPharmacists[pharmacyNeed.pharmacy_id] || [];
-        const pharmacyNg = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
+        const pharmacyNgPharmacists = safeArray(storeNgPharmacists[pharmacyNeed.pharmacy_id]);
+        const pharmacyNg = safeArray(pharmacy?.ng_list);
         
         // 薬剤師が薬局をNGにしているかチェック（店舗名も考慮）
         const blockedByPharmacist = pharmacistNgPharmacies.some((ngPharmacy: any) => 
