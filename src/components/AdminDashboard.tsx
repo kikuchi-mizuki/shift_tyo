@@ -562,7 +562,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               console.error('データベース確認エラー:', checkError);
             } else {
               console.log('希望シフト保存確認:', {
-                insertedCount: insertedData?.length || 0,
+                insertedCount: safeLength(insertedData) || 0,
                 insertedData: insertedData
               });
             }
@@ -4020,7 +4020,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         }
         
         // 既に確定済みの場合はスキップ
-        if (dayAssigned.length > 0) {
+        if (safeLength(dayAssigned) > 0) {
           console.log(`日付 ${date}: 既に確定済みのためスキップ`);
           debugInfo += `→ 既に確定済みのためスキップ\n`;
           continue;
@@ -4045,7 +4045,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.log('更新後のデータ:', { 
         requests: safeLength(requests), 
         postings: safeLength(postings), 
-        assigned: assigned.length 
+        assigned: safeLength(assigned) 
       });
       
       // デバッグ情報をコンソールに出力
@@ -4070,8 +4070,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     const validRequests = Array.isArray(dayRequests) ? dayRequests.filter(r => r.start_time && r.end_time) : [];
     const validPostings = Array.isArray(dayPostings) ? dayPostings.filter(p => p.start_time && p.end_time) : [];
     
-    console.log(`時間範囲がある希望: ${validRequests.length}件`);
-    console.log(`時間範囲がある募集: ${validPostings.length}件`);
+    console.log(`時間範囲がある希望: ${safeLength(validRequests)}件`);
+    console.log(`時間範囲がある募集: ${safeLength(validPostings)}件`);
     console.log(`時間範囲がある希望詳細:`, validRequests.map(r => ({
       id: r.id,
       pharmacist_id: r.pharmacist_id,
@@ -4086,7 +4086,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       required_staff: p.required_staff
     })));
     
-    if (validRequests.length === 0 || validPostings.length === 0) {
+    if (safeLength(validRequests) === 0 || safeLength(validPostings) === 0) {
       console.log(`時間範囲がある希望または募集がないためスキップ`);
       return 0;
       }
@@ -4233,8 +4233,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     }
     
     // 確定シフトをデータベースに保存
-    if (matchedShifts.length > 0) {
-      console.log(`日付 ${date}: ${matchedShifts.length}件の確定シフトを保存`);
+    if (safeLength(matchedShifts) > 0) {
+      console.log(`日付 ${date}: ${safeLength(matchedShifts)}件の確定シフトを保存`);
       console.log('保存する確定シフト詳細:', matchedShifts);
       
       const { data: insertData, error } = await supabase
@@ -4259,14 +4259,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.log(`日付 ${date}: マッチング結果なし`);
     }
     
-    return matchedShifts.length;
+    return safeLength(matchedShifts);
   };
 
   // マッチング処理を手動で実行する関数
   const handleRunMatching = async () => {
     try {
       console.log('=== 手動マッチング実行開始 ===');
-      console.log('現在のデータ:', { requests: requests.length, postings: postings.length, assigned: assigned.length });
+      console.log('現在のデータ:', { requests: safeLength(requests), postings: safeLength(postings), assigned: safeLength(assigned) });
       
       // 実際のマッチング処理を実行
       await executeMatching();
@@ -4407,7 +4407,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               const dayAssignedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s.date === dateStr && s.status === 'confirmed') : [];
               
               // デバッグ用：確定シフトの詳細をログ出力
-              if (dayAssignedShifts.length > 0) {
+              if (safeLength(dayAssignedShifts) > 0) {
                 console.log(`日付 ${dateStr} の確定シフト:`, dayAssignedShifts);
               }
               
@@ -4424,10 +4424,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               // データがある日付のみログを出力（デバッグ用）
               if (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0) {
                 console.log(`🔥🔥🔥 日付 ${dateStr} のデータフィルタリング 🔥🔥🔥`);
-                console.log('全シフト希望:', requests.length);
-                console.log('全シフト募集:', postings.length);
-                console.log('フィルタ後の希望:', dayRequests.length);
-                console.log('フィルタ後の募集:', dayPostings.length);
+                console.log('全シフト希望:', safeLength(requests));
+                console.log('全シフト募集:', safeLength(postings));
+                console.log('フィルタ後の希望:', safeLength(dayRequests));
+                console.log('フィルタ後の募集:', safeLength(dayPostings));
                 console.log('希望の時間帯:', dayRequests.map(r => r.time_slot));
                 console.log('募集の時間帯:', dayPostings.map(p => p.time_slot));
                 console.log('データフィルタリングが実行されました - コンソールを確認してください');
@@ -4445,11 +4445,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 }
 
                 // 確定シフトがあるかチェック
-                if (dayAssignedShifts.length > 0) {
+                if (safeLength(dayAssignedShifts) > 0) {
                   const totalRequired = dayPostings.reduce((sum, posting) => sum + (posting.required_staff || 1), 0);
-                  const totalConfirmed = dayAssignedShifts.length;
+                  const totalConfirmed = safeLength(dayAssignedShifts);
                   const dayMatches = aiMatchesByDate[dateStr] || [];
-                  const totalUnconfirmedMatches = dayMatches.length;
+                  const totalUnconfirmedMatches = safeLength(dayMatches);
                   const totalMatched = totalConfirmed + totalUnconfirmedMatches;
                   const totalShortage = Math.max(0, totalRequired - totalMatched);
                   console.log(`確定シフト存在 [${dateStr}]: 必要=${totalRequired}, 確定=${totalConfirmed}, 未確定マッチ=${totalUnconfirmedMatches}, 合計=${totalMatched}, 不足=${totalShortage}`);
@@ -4465,8 +4465,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 const shortagePharmacies = analyzePharmacyShortage(dateStr);
                 const totalShortage = shortagePharmacies.reduce((sum, pharmacy) => sum + pharmacy.shortage, 0);
                 const dayMatches = aiMatchesByDate[dateStr] || [];
-                const totalMatched = dayMatches.length;
-                const totalAvailable = dayRequests.length;
+                const totalMatched = safeLength(dayMatches);
+                const totalAvailable = safeLength(dayRequests);
                 if (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0) {
                   console.log(`右パネル連携計算 [${dateStr}]: マッチ=${totalMatched}, 不足=${totalShortage}`);
                   console.log(`不足薬局詳細:`, shortagePharmacies);
@@ -4514,10 +4514,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               const dayMatches = aiMatchesByDate[dateStr];
                               
                               
-                              return dayMatches && dayMatches.length > 0 && (
+                              return dayMatches && safeLength(dayMatches) > 0 && (
                                 <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                  <span className="sm:hidden">マ{dayMatches.length}</span>
-                                  <span className="hidden sm:inline">マッチ {dayMatches.length}</span>
+                                  <span className="sm:hidden">マ{safeLength(dayMatches)}</span>
+                                  <span className="hidden sm:inline">マッチ {safeLength(dayMatches)}</span>
                                 </div>
                               );
                             })()}
@@ -4531,10 +4531,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             )}
                             
                             
-                            {dayConsultRequests.length > 0 && (
+                            {safeLength(dayConsultRequests) > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">相{dayConsultRequests.length}</span>
-                                <span className="hidden sm:inline">相談 {dayConsultRequests.length}</span>
+                                <span className="sm:hidden">相{safeLength(dayConsultRequests)}</span>
+                                <span className="hidden sm:inline">相談 {safeLength(dayConsultRequests)}</span>
                               </div>
                             )}
                           </div>
@@ -4548,10 +4548,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         <div className="relative group">
                           <div className="text-[7px] sm:text-[8px] space-y-0.5">
                             {/* マッチ件数（マッチング実行後のみ表示） */}
-                            {aiMatchesByDate[dateStr] && aiMatchesByDate[dateStr].length > 0 && (
+                            {aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">マ{aiMatchesByDate[dateStr].length}</span>
-                                <span className="hidden sm:inline">マッチ {aiMatchesByDate[dateStr].length}</span>
+                                <span className="sm:hidden">マ{safeLength(aiMatchesByDate[dateStr])}</span>
+                                <span className="hidden sm:inline">マッチ {safeLength(aiMatchesByDate[dateStr])}</span>
                               </div>
                             )}
                             
@@ -4577,10 +4577,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             
                             
                             {/* 相談数 */}
-                            {dayConsultRequests.length > 0 && (
+                            {safeLength(dayConsultRequests) > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">相{dayConsultRequests.length}</span>
-                                <span className="hidden sm:inline">相談 {dayConsultRequests.length}</span>
+                                <span className="sm:hidden">相{safeLength(dayConsultRequests)}</span>
+                                <span className="hidden sm:inline">相談 {safeLength(dayConsultRequests)}</span>
                               </div>
                             )}
                           </div>
@@ -4697,14 +4697,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
                   
                   // AIマッチング結果は未確定マッチがある場合に表示
-                  if (dayMatches.length > 0 && selectedDate) {
+                  if (safeLength(dayMatches) > 0 && selectedDate) {
                     return (
                       <div className="p-4 border-b border-gray-200">
                         {/* AIマッチング結果 */}
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
                           <div className="flex items-center space-x-2 mb-2">
                             <Brain className="w-4 h-4 text-purple-600" />
-                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {dayMatches.length}件</h4>
+                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {safeLength(dayMatches)}件</h4>
                           </div>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             {dayMatches.map((match, index) => (
@@ -4742,11 +4742,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         </div>
                         
                         {/* 不足薬局一覧（AIマッチング実行後のみ表示） */}
-                        {monthlyMatchingExecuted && dayShortageAnalysis.length > 0 && (
+                        {monthlyMatchingExecuted && safeLength(dayShortageAnalysis) > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-4 h-4 text-red-600" />
-                              <h4 className="text-sm font-semibold text-red-800">不足薬局 {dayShortageAnalysis.length}薬局</h4>
+                              <h4 className="text-sm font-semibold text-red-800">不足薬局 {safeLength(dayShortageAnalysis)}薬局</h4>
                             </div>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                               {dayShortageAnalysis.map((pharmacy, index) => {
@@ -4770,7 +4770,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                 
                                 console.log('利用可能な薬剤師:', {
                                   availablePharmacists,
-                                  count: availablePharmacists.length
+                                  count: safeLength(availablePharmacists)
                                 });
                                 
                                 return (
@@ -4891,14 +4891,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             }
                             
                             // 手動マッチングで作成された希望シフトを保存
-                            if (manualShiftRequests.length > 0) {
+                            if (safeLength(manualShiftRequests) > 0) {
                               try {
                                 const { error } = await shiftRequests.createRequests(manualShiftRequests);
                                 if (error) {
                                   console.error('手動マッチング希望シフト作成エラー:', error);
                                   return;
                                 }
-                                console.log('手動マッチング希望シフト作成完了:', manualShiftRequests.length, '件');
+                                console.log('手動マッチング希望シフト作成完了:', safeLength(manualShiftRequests), '件');
                               } catch (error) {
                                 console.error('手動マッチング処理エラー:', error);
                                 return;
@@ -4920,7 +4920,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   
                   
                   // 確定シフトがない日で、希望または募集がある場合のみボタンを表示
-                  if (dayAssignedShifts.length === 0 && (dayRequests.length > 0 || dayPostings.length > 0)) {
+                  if (safeLength(dayAssignedShifts) === 0 && (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0)) {
                     // 選択された日付のマッチング結果を取得
                     const allDayMatches = aiMatchesByDate[selectedDate] || [];
                     
@@ -4937,13 +4937,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     return (
                       <div className="p-4 border-b border-gray-200 space-y-3">
                         {/* マッチング結果表示 */}
-                        {dayMatches.length > 0 && (
+                        {safeLength(dayMatches) > 0 && (
                           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <Brain className="w-4 h-4 text-purple-600" />
                               <h4 className="text-sm font-semibold text-gray-800">マッチング結果</h4>
                               <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                                {dayMatches.length}件
+                                {safeLength(dayMatches)}件
                               </span>
                             </div>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -4982,11 +4982,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         )}
 
                         {/* 不足薬局一覧（AIマッチング実行後のみ表示） */}
-                        {monthlyMatchingExecuted && dayShortageAnalysis.length > 0 && (
+                        {monthlyMatchingExecuted && safeLength(dayShortageAnalysis) > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-4 h-4 text-red-600" />
-                              <h4 className="text-sm font-semibold text-red-800">不足薬局 {dayShortageAnalysis.length}薬局</h4>
+                              <h4 className="text-sm font-semibold text-red-800">不足薬局 {safeLength(dayShortageAnalysis)}薬局</h4>
                             </div>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                               {dayShortageAnalysis.map((pharmacy, index) => {
@@ -5012,7 +5012,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     
                                     {/* 手動マッチング選択 */}
-                                    {availablePharmacists.length > 0 && (
+                                    {safeLength(availablePharmacists) > 0 && (
                                       <div className="mt-2 pt-2 border-t border-gray-200">
                                         <div className="text-xs text-gray-600 mb-1">手動マッチング:</div>
                                         <div className="space-y-1">
@@ -5075,18 +5075,18 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   }
                   
                   // 確定済みバッジは右パネルに表示を残す
-                  if (dayAssignedShifts.length > 0) {
+                  if (safeLength(dayAssignedShifts) > 0) {
                   }
                   
                   // 未確定のAIマッチング結果がある場合は表示
-                  if (dayMatches.length > 0) {
+                  if (safeLength(dayMatches) > 0) {
                     return (
                       <div className="p-4 border-b border-gray-200 space-y-3">
                         {/* AIマッチング結果表示 */}
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                           <div className="flex items-center space-x-2 mb-2">
                             <Brain className="w-4 h-4 text-purple-600" />
-                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {dayMatches.length}件</h4>
+                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {safeLength(dayMatches)}件</h4>
                           </div>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             {dayMatches.map((match, index) => (
@@ -5130,13 +5130,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 <div className="p-4 space-y-4">
                   
                   {/* 確定シフト */}
-                  {Array.isArray(assigned) && assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length > 0 && (
+                  {Array.isArray(assigned) && safeLength(assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed')) > 0 && (
                     <div className="bg-green-50 rounded-lg border border-green-200 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
                           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                           <h4 className="text-sm font-semibold text-green-800">
-                            確定シフト ({Array.isArray(assigned) ? assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').length : 0}件)
+                            確定シフト ({Array.isArray(assigned) ? safeLength(assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed')) : 0}件)
                           </h4>
                         </div>
                         <button
@@ -5381,7 +5381,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               : [];
                             
                             
-                            return regularPostings.length;
+                            return safeLength(regularPostings);
                           })()}件)
                         </h4>
                       </div>
@@ -5602,7 +5602,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                 )
                               : [];
                             
-                            return regularRequests.length;
+                            return safeLength(regularRequests);
                           })()}件)
                         </h4>
                       </div>
@@ -5679,7 +5679,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             console.log('薬剤師プロフィールが見つかりません:', {
                               pharmacist_id: request.pharmacist_id,
                               available_user_ids: Object.keys(userProfiles),
-                              userProfiles_count: Object.keys(userProfiles).length
+                              userProfiles_count: Object.keys(safeObject(userProfiles)).length
                             });
                           }
                           
@@ -5784,7 +5784,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     const matchingAnalysis = [{
                       timeSlot: 'time_range',
                       totalRequired: dayPostings.reduce((sum: number, p: any) => sum + (Number(p.required_staff) || 0), 0),
-                      totalAvailable: Array.isArray(dayRequests) ? dayRequests.filter((r: any) => r.start_time && r.end_time).length : 0,
+                      totalAvailable: Array.isArray(dayRequests) ? safeLength(dayRequests.filter((r: any) => r.start_time && r.end_time)) : 0,
                       totalMatched: 0,
                       shortage: 0,
                       requests: Array.isArray(dayRequests) ? dayRequests.filter((r: any) => r.start_time && r.end_time) : [],
@@ -5872,14 +5872,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   {/* 要相談セクション */}
                   {(() => {
                     const dayConsultRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === selectedDate && r.time_slot === 'consult') : [];
-                    if (dayConsultRequests.length === 0) return null;
+                    if (safeLength(dayConsultRequests) === 0) return null;
                     
                     return (
                       <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
                         <div className="flex items-center space-x-2 mb-3">
                           <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                           <h4 className="text-sm font-semibold text-purple-800">
-                            要相談 ({dayConsultRequests.length}件)
+                            要相談 ({safeLength(dayConsultRequests)}件)
                           </h4>
                         </div>
                         <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -5941,7 +5941,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center justify-between"
                 >
                   <span className="font-medium text-gray-800">
-                    薬局一覧 ({pharmacies.length}件)
+                    薬局一覧 ({safeLength(pharmacies)}件)
                   </span>
                   <span className="text-gray-500">
                     {expandedSections.pharmacies ? '▼' : '▶'}
@@ -5950,7 +5950,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 
                 {expandedSections.pharmacies && (
                   <div className="p-4 space-y-3">
-                    {pharmacies.length === 0 ? (
+                    {safeLength(pharmacies) === 0 ? (
                       <div className="text-sm text-gray-500">登録されている薬局はありません</div>
                     ) : (
                       pharmacies.map((pharmacy: any) => (
@@ -5980,7 +5980,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               />
                             ) : (
                               <div className="text-sm">
-                                {pharmacy.store_names && pharmacy.store_names.length > 0 ? (
+                                {pharmacy.store_names && safeLength(pharmacy.store_names) > 0 ? (
                                   <div className="flex flex-wrap gap-1">
                                     {pharmacy.store_names.map((storeName: string, idx: number) => (
                                       <span key={idx} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
@@ -6028,7 +6028,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   className="w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center justify-between"
                 >
                   <span className="font-medium text-gray-800">
-                    薬剤師一覧 ({pharmacists.length}件)
+                    薬剤師一覧 ({safeLength(pharmacists)}件)
                   </span>
                   <span className="text-gray-500">
                     {expandedSections.pharmacists ? '▼' : '▶'}
@@ -6037,7 +6037,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 
                 {expandedSections.pharmacists && (
                   <div className="p-4 space-y-3">
-                    {pharmacists.length === 0 ? (
+                    {safeLength(pharmacists) === 0 ? (
                       <div className="text-sm text-gray-500">登録されている薬剤師はありません</div>
                     ) : (
                       pharmacists.map((pharmacist: any) => (
@@ -6054,8 +6054,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                 <h4 className="font-medium text-gray-800">{pharmacist.name || '名前未設定'}</h4>
                                 {(() => {
                                   const pharmacistRatings = Array.isArray(ratings) ? ratings.filter(r => r.pharmacist_id === pharmacist.id) : [];
-                                  if (pharmacistRatings.length > 0) {
-                                    const average = pharmacistRatings.reduce((sum, r) => sum + r.rating, 0) / pharmacistRatings.length;
+                                  if (safeLength(pharmacistRatings) > 0) {
+                                    const average = pharmacistRatings.reduce((sum, r) => sum + r.rating, 0) / safeLength(pharmacistRatings);
                                     return (
                                       <div className="flex items-center space-x-1">
                                         <div className="flex">
@@ -6071,7 +6071,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                           ))}
                                         </div>
                                         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                          {average.toFixed(1)}/5 ({pharmacistRatings.length}件)
+                                          {average.toFixed(1)}/5 ({safeLength(pharmacistRatings)}件)
                                         </span>
                                       </div>
                                     );
@@ -6198,7 +6198,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     allPharmacistIds: Object.keys(userProfiles || {}).filter(id => userProfiles[id]?.user_type === 'pharmacist')
                                   });
                                   
-                                  if (ngPharmacies.length === 0) {
+                                  if (safeLength(ngPharmacies) === 0) {
                                     return <span className="text-gray-400">NG設定なし</span>;
                                   }
                                   
