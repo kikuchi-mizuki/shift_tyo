@@ -27,7 +27,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   const [storeStations, setStoreStations] = useState<any[]>([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<any>({ logs: [] });
   const [showDebugModal, setShowDebugModal] = useState(false);
 
   // 薬剤師リストと薬局リストを取得
@@ -77,7 +77,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       // ログをデバッグ情報に追加
       setDebugInfo(prev => ({
         ...prev,
-        logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
+        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
       }));
       
       const { data, error } = await supabase
@@ -91,7 +91,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       // クエリ結果をデバッグ情報に追加
       setDebugInfo(prev => ({
         ...prev,
-        logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: queryResultLog }]
+        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: queryResultLog }]
       }));
 
       if (!error && data) {
@@ -101,7 +101,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         // 成功ログをデバッグ情報に追加
         setDebugInfo(prev => ({
           ...prev,
-          logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: successLog }]
+          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: successLog }]
         }));
         
         setStoreStations(data);
@@ -112,7 +112,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         // エラーログをデバッグ情報に追加
         setDebugInfo(prev => ({
           ...prev,
-          logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: errorLog }],
+          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: errorLog }],
           storeStationsError: error,
           storeStationsData: data
         }));
@@ -124,7 +124,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       // 例外ログをデバッグ情報に追加
       setDebugInfo(prev => ({
         ...prev,
-        logs: [...((prev && prev.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: exceptionLog }],
+        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), { timestamp: new Date().toLocaleTimeString(), message: exceptionLog }],
         storeStationsError: error,
         storeStationsData: null
       }));
@@ -182,7 +182,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         ...prev,
         response: data,
         responseTime: new Date().toLocaleTimeString(),
-        logs: [...((prev && prev.logs) || []), 
+        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
           { timestamp: new Date().toLocaleTimeString(), message: 'Emergency shift response received', data: data }
         ]
       }));
@@ -198,7 +198,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         // デバッグ情報を更新
         setDebugInfo(prev => ({
           ...prev,
-          logs: [...((prev && prev.logs) || []), 
+          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
             { timestamp: new Date().toLocaleTimeString(), message: `Response processed: sent=${sentCount}, skipped=${skippedCount}, failed=${failedCount}` }
           ]
         }));
@@ -206,7 +206,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         // デバッグ情報を更新
         setDebugInfo(prev => ({
           ...prev,
-          logs: [...((prev && prev.logs) || []), 
+          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
             { timestamp: new Date().toLocaleTimeString(), message: `Success: ${sentCount} sent, ${skippedCount} skipped, ${failedCount} failed` }
           ]
         }));
@@ -219,7 +219,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         setDebugInfo(prev => ({
           ...prev,
           error: data.error || '送信に失敗しました',
-          logs: [...((prev && prev.logs) || []), 
+          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
             { timestamp: new Date().toLocaleTimeString(), message: 'Error occurred', error: data }
           ]
         }));
@@ -230,7 +230,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       setDebugInfo(prev => ({
         ...prev,
         error: error.message,
-        logs: [...((prev && prev.logs) || []), 
+        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
           { timestamp: new Date().toLocaleTimeString(), message: 'Exception caught', error: error.message }
         ]
       }));
@@ -262,7 +262,7 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         allPharmacies: pharmacies,
         allStoreStations: storeStations,
         filteredStores: storeStations.filter(store => store.pharmacy_id === value),
-        logs: [...((debugInfo && debugInfo.logs) || []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
+        logs: [...(Array.isArray(debugInfo?.logs) ? debugInfo.logs : []), { timestamp: new Date().toLocaleTimeString(), message: logMessage }]
       };
       setDebugInfo(debugData);
       
@@ -678,11 +678,11 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
                     </div>
                   )}
 
-                  {debugInfo.logs && debugInfo.logs.length > 0 && (
+                  {debugInfo.logs && Array.isArray(debugInfo.logs) && debugInfo.logs.length > 0 && (
                     <div className="bg-yellow-50 p-4 rounded-lg">
                       <h3 className="font-semibold text-gray-900 mb-2">📋 ログ</h3>
                       <div className="space-y-2">
-                        {debugInfo.logs.map((log: any, index: number) => (
+                        {(debugInfo.logs || []).map((log: any, index: number) => (
                           <div key={index} className="bg-white p-2 rounded border text-xs">
                             <div className="flex justify-between items-start">
                               <span className="font-mono text-gray-600">{log.timestamp}</span>
