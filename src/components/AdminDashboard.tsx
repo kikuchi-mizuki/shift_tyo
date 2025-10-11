@@ -12,7 +12,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
-  // より安全な初期値でstateを初期化（即座に初期化）
+  // 確実に安全な初期値でstateを初期化
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
   const [assigned, setAssigned] = useState<any[]>([]);
@@ -20,7 +20,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [postings, setPostings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // すべてのstateを安全に初期化（即座に初期化）
+  // すべてのstateを確実に安全に初期化
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [userProfiles, setUserProfiles] = useState<any>({});
@@ -32,24 +32,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     pharmacists: false
   });
 
-  // 即座にデータ初期化を強制実行（useEffectの前に）
-  if (!Array.isArray(requests)) setRequests([]);
-  if (!Array.isArray(postings)) setPostings([]);
-  if (!Array.isArray(assigned)) setAssigned([]);
-  if (!Array.isArray(ratings)) setRatings([]);
-  if (typeof userProfiles !== 'object' || userProfiles === null) setUserProfiles({});
-  if (typeof storeNgPharmacists !== 'object' || storeNgPharmacists === null) setStoreNgPharmacists({});
-  if (typeof storeNgPharmacies !== 'object' || storeNgPharmacies === null) setStoreNgPharmacies({});
-
-  // 追加の安全な初期化
-  if (!Array.isArray(aiMatches)) setAiMatches([]);
-  if (typeof expandedSections !== 'object' || expandedSections === null) setExpandedSections({});
-  if (typeof recruitmentStatus !== 'object' || recruitmentStatus === null) setRecruitmentStatus({
-    is_open: true,
-    updated_at: '',
-    updated_by: null,
-    notes: null
-  });
+  // 初期化チェックは削除（useStateの前に実行できないため）
 
   // 募集状況管理
   const [recruitmentStatus, setRecruitmentStatus] = useState<{
@@ -64,7 +47,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     notes: null
   });
 
-  // AI Matching関連の状態
+  // AI Matching関連の状態（確実に安全な値で初期化）
   const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
   const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
   const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
