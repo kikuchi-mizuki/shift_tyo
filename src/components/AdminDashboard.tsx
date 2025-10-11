@@ -47,6 +47,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // 緊急シフトモーダル表示状態
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
+  // データ初期化の強制実行（useEffectを最初に配置）
+  React.useEffect(() => {
+    // データ初期化の確認
+    if (!Array.isArray(requests)) setRequests([]);
+    if (!Array.isArray(postings)) setPostings([]);
+    if (!Array.isArray(assigned)) setAssigned([]);
+    if (!Array.isArray(ratings)) setRatings([]);
+    if (typeof userProfiles !== 'object' || userProfiles === null) setUserProfiles({});
+    if (typeof storeNgPharmacists !== 'object' || storeNgPharmacists === null) setStoreNgPharmacists({});
+    if (typeof storeNgPharmacies !== 'object' || storeNgPharmacies === null) setStoreNgPharmacies({});
+    
+    // すべてのstateが配列またはオブジェクトであることを確認
+    console.log('Data initialization check:', {
+      requests: Array.isArray(requests),
+      postings: Array.isArray(postings),
+      assigned: Array.isArray(assigned),
+      ratings: Array.isArray(ratings),
+      userProfiles: typeof userProfiles === 'object' && userProfiles !== null,
+      storeNgPharmacists: typeof storeNgPharmacists === 'object' && storeNgPharmacists !== null,
+      storeNgPharmacies: typeof storeNgPharmacies === 'object' && storeNgPharmacies !== null,
+    });
+  }, []);
+
   // 安全な配列アクセスのためのヘルパー関数
   const safeArray = (arr: any) => {
     if (arr === null || arr === undefined) return [];
@@ -65,31 +88,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     if (typeof obj === 'object' && !Array.isArray(obj)) return obj;
     return {};
   };
-  
-  // データ初期化の確認
-  const ensureDataInitialized = () => {
-    if (!Array.isArray(requests)) setRequests([]);
-    if (!Array.isArray(postings)) setPostings([]);
-    if (!Array.isArray(assigned)) setAssigned([]);
-    if (typeof userProfiles !== 'object' || userProfiles === null) setUserProfiles({});
-    if (typeof storeNgPharmacists !== 'object' || storeNgPharmacists === null) setStoreNgPharmacists({});
-    if (typeof storeNgPharmacies !== 'object' || storeNgPharmacies === null) setStoreNgPharmacies({});
-    
-    // すべてのstateが配列またはオブジェクトであることを確認
-    console.log('Data initialization check:', {
-      requests: Array.isArray(requests),
-      postings: Array.isArray(postings),
-      assigned: Array.isArray(assigned),
-      userProfiles: typeof userProfiles === 'object' && userProfiles !== null,
-      storeNgPharmacists: typeof storeNgPharmacists === 'object' && storeNgPharmacists !== null,
-      storeNgPharmacies: typeof storeNgPharmacies === 'object' && storeNgPharmacies !== null,
-    });
-  };
-
-  // データ初期化の強制実行
-  React.useEffect(() => {
-    ensureDataInitialized();
-  }, []);
 
 
   // AI関連の初期化は削除
