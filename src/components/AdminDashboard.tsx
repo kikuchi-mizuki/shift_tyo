@@ -750,9 +750,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       // 既存のマッチング結果をクリア（確定済みマッチは保持）
       setAiMatches([]);
       // setAiMatchesByDate({}); // 確定済みマッチを保持するためコメントアウト
-      setMonthlyMatchingExecuted(false); // マッチング実行フラグをリセット
+      // マッチング実行フラグをリセット（AI機能は無効化）
       console.log('既存のマッチング結果をクリアしました（確定済みは保持）');
-      console.log('🔄 monthlyMatchingExecutedフラグをfalseにリセット');
 
       // 現在の月の全ての日付を取得
       const currentMonth = currentDate.getMonth();
@@ -969,9 +968,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       setAiMatches(monthlyMatches);
       
       // 1ヶ月分のマッチング実行完了フラグを設定
-      setMonthlyMatchingExecuted(true);
-      
-      console.log('✅ 1ヶ月分マッチング実行完了 - monthlyMatchingExecutedフラグをtrueに設定');
+      // AI機能は無効化されているため、フラグ設定はスキップ
+      console.log('✅ 1ヶ月分マッチング実行完了（AI機能は無効化）');
       
       
       console.log('マッチング結果:', monthlyMatches);
@@ -4491,8 +4489,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               );
                             })()}
                             
-                            {/* 確定後も不足パッチを表示（1ヶ月分マッチング実行後にのみ） */}
-                            {monthlyMatchingExecuted && matchingStatus.shortage > 0 && (
+                            {/* 確定後も不足パッチを表示（AI機能は無効化） */}
+                            {matchingStatus.shortage > 0 && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">不{matchingStatus.shortage}</span>
                                 <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
@@ -4524,12 +4522,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               </div>
                             )}
                             
-                            {/* 不足件数（1ヶ月分マッチング実行後に不足がある場合に表示） */}
+                            {/* 不足件数（AI機能は無効化） */}
                             {(() => {
-                              const shouldShowShortage = monthlyMatchingExecuted && matchingStatus.shortage > 0;
+                              const shouldShowShortage = matchingStatus.shortage > 0;
                               if (matchingStatus.shortage > 0) {
                                 console.log(`カレンダー不足パッチ表示判定 [${dateStr}]:`, {
-                                  monthlyMatchingExecuted,
                                   shortage: matchingStatus.shortage,
                                   shouldShowShortage,
                                   totalRequired: matchingStatus.count || 0,
@@ -4710,8 +4707,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           </div>
                         </div>
                         
-                        {/* 不足薬局一覧（AIマッチング実行後のみ表示） */}
-                        {monthlyMatchingExecuted && safeLength(dayShortageAnalysis) > 0 && (
+                        {/* 不足薬局一覧（AI機能は無効化） */}
+                        {safeLength(dayShortageAnalysis) > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-4 h-4 text-red-600" />
@@ -4950,8 +4947,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           </div>
                         )}
 
-                        {/* 不足薬局一覧（AIマッチング実行後のみ表示） */}
-                        {monthlyMatchingExecuted && safeLength(dayShortageAnalysis) > 0 && (
+                        {/* 不足薬局一覧（AI機能は無効化） */}
+                        {safeLength(dayShortageAnalysis) > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-4 h-4 text-red-600" />
