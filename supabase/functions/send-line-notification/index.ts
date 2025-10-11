@@ -28,10 +28,31 @@ serve(async (req) => {
   console.log("Request method:", req.method);
   console.log("Request URL:", req.url);
   
+  // 認証ヘッダーの確認
+  const authHeader = req.headers.get("authorization");
+  console.log("Authorization header exists:", !!authHeader);
+  console.log("Authorization header:", authHeader ? authHeader.substring(0, 20) + "..." : "None");
+  
   // CORS preflight
   if (req.method === "OPTIONS") {
     console.log("OPTIONS request - returning CORS headers");
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // 認証チェック
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.error("No valid authorization header found");
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Unauthorized - No valid Bearer token",
+        authHeader: authHeader || "None"
+      }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {
