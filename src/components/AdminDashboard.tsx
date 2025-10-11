@@ -285,7 +285,7 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
       let maxMatchesFound = 0;
       
       for (let i = 0; i < totalCombinations; i++) {
-        const currentMatches: any[] = [];
+        let currentMatches: any[] = [];
         const usedPharmacists = new Set<string>();
         const pharmacyNeedsMap = new Map<string, number>();
         
