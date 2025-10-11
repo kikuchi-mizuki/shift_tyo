@@ -9,6 +9,8 @@ interface EmergencyShiftRequestProps {
 export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
   onClose,
 }) => {
+  console.log('EmergencyShiftRequest component initialized');
+  
   const [formData, setFormData] = useState({
     date: '',
     timeSlot: 'fullday',
@@ -133,6 +135,8 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('=== Emergency Shift Request Started ===');
+    console.log('Form data:', formData);
     setSending(true);
     setResult(null);
     
@@ -615,6 +619,15 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
             <button
               type="submit"
               disabled={sending || !formData.date || !formData.pharmacyId || !formData.storeName}
+              onClick={() => {
+                console.log('Emergency shift button clicked!');
+                console.log('Sending state:', sending);
+                console.log('Form validation:', {
+                  date: formData.date,
+                  pharmacyId: formData.pharmacyId,
+                  storeName: formData.storeName
+                });
+              }}
               className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {sending ? (
