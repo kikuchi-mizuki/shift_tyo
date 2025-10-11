@@ -1036,7 +1036,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       // デバッグ情報をコンソールに出力
       console.log('DEBUG: debugInfo content:', debugInfo);
-      console.log('DEBUG: debugInfo length:', debugInfo ? debugInfo.length : 0);
+      console.log('DEBUG: debugInfo length:', debugInfo ? (debugInfo.length || 0) : 0);
 
       // グローバルなマッチング結果を保存
       setAiMatches(monthlyMatches);
@@ -1280,11 +1280,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   //       ? (assigned as any[]).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
   //       : [];
       
-  //     if (confirmedShifts.length > 0) {
+  //     if (safeLength(confirmedShifts) > 0) {
   //       console.log('Filtering AI matches to remove confirmed ones', {
   //         selectedDate,
-  //         aiCount: aiMatches?.length || 0,
-  //         confirmedShifts: confirmedShifts.length
+  //         aiCount: safeLength(aiMatches),
+  //         confirmedShifts: safeLength(confirmedShifts)
   //       });
         
   //       // 確定済みシフトの薬剤師IDを取得
@@ -1500,7 +1500,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         updates.store_names = (userEditForm.store_names || '')
           .split(',')
           .map((s: string) => s.trim())
-          .filter((s: string) => s.length > 0);
+          .filter((s: string) => s && s.length > 0);
       }
 
       // 薬剤師の場合、NG薬局設定をstore_ng_pharmaciesテーブルに保存
@@ -1538,7 +1538,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           : String(userEditForm.ng_list || '')
               .split(',')
               .map((s: string) => s.trim())
-              .filter((s: string) => s.length > 0);
+              .filter((s: string) => s && s.length > 0);
 
         if (safeLength(ngList) > 0) {
           // 一時的にRLSを無効化してテスト
@@ -1621,7 +1621,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           : String(userEditForm.ng_list || '')
               .split(',')
               .map((s: string) => s.trim())
-              .filter((s: string) => s.length > 0);
+              .filter((s: string) => s && s.length > 0);
 
         if (safeLength(ngList) > 0) {
           // まず認証状態を確認・リフレッシュ
@@ -1839,7 +1839,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           : String(userEditForm.ng_list || '')
               .split(',')
               .map((s: string) => s.trim())
-              .filter((s: string) => s.length > 0);
+              .filter((s: string) => s && s.length > 0);
       }
 
       const { error } = await supabase
