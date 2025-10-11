@@ -41,6 +41,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   if (typeof storeNgPharmacists !== 'object' || storeNgPharmacists === null) setStoreNgPharmacists({});
   if (typeof storeNgPharmacies !== 'object' || storeNgPharmacies === null) setStoreNgPharmacies({});
 
+  // 追加の安全な初期化
+  if (!Array.isArray(aiMatches)) setAiMatches([]);
+  if (typeof expandedSections !== 'object' || expandedSections === null) setExpandedSections({});
+  if (typeof recruitmentStatus !== 'object' || recruitmentStatus === null) setRecruitmentStatus({
+    is_open: true,
+    updated_at: '',
+    updated_by: null,
+    notes: null
+  });
+
   // 募集状況管理
   const [recruitmentStatus, setRecruitmentStatus] = useState<{
     is_open: boolean;
