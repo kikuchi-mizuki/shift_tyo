@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
+import { EmergencyShiftRequest } from './EmergencyShiftRequest';
 
 interface AdminDashboardProps {
   user: any;
@@ -51,9 +52,12 @@ const AdminDashboardMinimal: React.FC<AdminDashboardProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* 緊急シフトモーダルは一時的に無効化 */}
-      {false && showEmergencyModal && (
-        <div>緊急シフトモーダル</div>
+      {/* 緊急シフトモーダル */}
+      {showEmergencyModal && (
+        <EmergencyShiftRequest
+          user={user}
+          onClose={() => setShowEmergencyModal(false)}
+        />
       )}
     </div>
   );
