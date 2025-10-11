@@ -140,6 +140,13 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wjgterfwurmvosawzbjs.supabase.co';
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZ3RlcmZ3dXJtdm9zYXd6YmpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzQ4MDAsImV4cCI6MjA1MDU1MDgwMH0.bDs2CtZ9dJ0eN0vRUPA7CtR6VqYeYW1m747_IUYJxGE';
 
+      const requestBody = {
+        ...formData,
+        maxTravelMinutes: parseInt(formData.maxTravelMinutes),
+      };
+      
+      console.log('Sending emergency shift request:', requestBody); // リクエスト内容をログ出力
+
       const response = await fetch(
         `${supabaseUrl}/functions/v1/send-emergency-shift`,
         {
@@ -148,21 +155,27 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${supabaseAnonKey}`,
           },
-          body: JSON.stringify({
-            ...formData,
-            maxTravelMinutes: parseInt(formData.maxTravelMinutes),
-          }),
+          body: JSON.stringify(requestBody),
         }
       );
 
       const data = await response.json();
 
+      console.log('Emergency shift response:', data); // デバッグログ追加
+      
       if (response.ok && data.success) {
         setResult(data);
+        // Edge Functionのレスポンス形式に合わせて修正
+        const sentCount = data.sent || 0;
+        const skippedCount = data.skipped || 0;
+        const failedCount = data.failed || 0;
+        const totalCount = data.total || (sentCount + skippedCount + failedCount);
+        
         alert(
-          `緊急シフト依頼を送信しました！\n\n送信成功: ${data.sent}件\nスキップ: ${data.skipped}件\n失敗: ${data.failed}件`
+          `緊急シフト依頼を送信しました！\n\n対象: ${totalCount}名\n送信成功: ${sentCount}件\nスキップ: ${skippedCount}件\n失敗: ${failedCount}件`
         );
       } else {
+        console.error('Emergency shift error:', data); // エラーログ追加
         throw new Error(data.error || '送信に失敗しました');
       }
     } catch (error) {
