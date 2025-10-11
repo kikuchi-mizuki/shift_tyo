@@ -128,9 +128,35 @@ serve(async (req) => {
       console.error("No LINE User ID specified");
       throw new Error("No LINE User ID specified");
     }
+    
+    // LINE User IDの形式を確認
+    console.log("=== LINE USER ID VALIDATION ===");
+    console.log("LINE User ID:", targetLineUserId);
+    console.log("LINE User ID length:", targetLineUserId.length);
+    console.log("LINE User ID starts with 'U':", targetLineUserId.startsWith('U'));
+    console.log("LINE User ID is valid format:", /^U[a-f0-9]{32}$/.test(targetLineUserId));
 
     console.log("Sending LINE notification to:", targetLineUserId);
     console.log("Message content:", body.message);
+    
+    // LINE API呼び出しの詳細ログ
+    console.log("=== LINE API CALL DETAILS ===");
+    console.log("API Endpoint:", LINE_API_ENDPOINT);
+    console.log("Authorization header:", `Bearer ${lineChannelAccessToken?.substring(0, 20)}...`);
+    console.log("Target LINE User ID:", targetLineUserId);
+    console.log("Message to send:", body.message);
+    
+    const requestBody = {
+      to: targetLineUserId,
+      messages: [
+        {
+          type: "text",
+          text: body.message,
+        },
+      ],
+    };
+    
+    console.log("Request body:", JSON.stringify(requestBody, null, 2));
 
     // LINE Push Messageを送信
     const lineResponse = await fetch(LINE_API_ENDPOINT, {
@@ -139,15 +165,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${lineChannelAccessToken}`,
       },
-      body: JSON.stringify({
-        to: targetLineUserId,
-        messages: [
-          {
-            type: "text",
-            text: body.message,
-          },
-        ],
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     console.log("LINE API response status:", lineResponse.status);
