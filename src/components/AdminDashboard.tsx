@@ -1048,7 +1048,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const datesWithMatches = Object.keys(safeObject(matchesByDate)).length;
       
       // 不足薬局の分析
-      console.log('不足薬局分析開始:', { matchesByDate, requests: (requests && Array.isArray(requests)) ? requests.length : 0, postings: (postings && Array.isArray(postings)) ? postings.length : 0 });
+      console.log('不足薬局分析開始:', { matchesByDate, requests: safeLength(requests), postings: safeLength(postings) });
       const shortageAnalysis = analyzeMonthlyShortage(matchesByDate);
       console.log('不足薬局分析結果:', shortageAnalysis);
       
@@ -3244,7 +3244,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         console.log('データベース挿入実行:', {
           table: 'assigned_shifts',
           data: predefinedShifts,
-          dataCount: predefinedShifts.length
+          dataCount: safeLength(predefinedShifts)
         });
         
         const { data: insertResult, error } = await supabase.from('assigned_shifts').insert(predefinedShifts).select();
@@ -3256,10 +3256,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         
         console.log('データベース挿入成功:', {
           insertResult,
-          insertedCount: insertResult?.length || 0
+          insertedCount: safeLength(insertResult) || 0
         });
         
-        console.log(`日付 ${date}: ${predefinedShifts.length}件の事前定義シフトを保存しました`);
+        console.log(`日付 ${date}: ${safeLength(predefinedShifts)}件の事前定義シフトを保存しました`);
         
         // 対応する希望・募集のステータスを'confirmed'に更新
         try {
@@ -3332,7 +3332,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         });
         
         // 他のダッシュボードでも更新されるように、ページリロードを提案
-        alert(`${predefinedShifts.length}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
+        alert(`${safeLength(predefinedShifts)}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
         return;
       }
 
@@ -3343,7 +3343,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.log(`Processing date ${date}:`, { dayRequests, dayPostings });
       
       // 指定日のみを処理
-      if (dayRequests.length > 0 || dayPostings.length > 0) {
+      if (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0) {
         
         // AIマッチングを実行
         console.log('AIマッチングを実行します');
@@ -3367,17 +3367,17 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           });
           
           console.log('AIマッチング対象:', {
-            全募集数: dayPostings.length,
-            利用可能募集数: availablePostings.length,
-            除外数: dayPostings.length - availablePostings.length
+            全募集数: safeLength(dayPostings),
+            利用可能募集数: safeLength(availablePostings),
+            除外数: safeLength(dayPostings) - safeLength(availablePostings)
           });
           
           console.log('AIマッチングエンジン詳細:', {
             engine: aiMatchingEngine,
-            requests: dayRequests.length,
-            postings: availablePostings.length,
-            userProfiles: userProfiles ? Object.keys(userProfiles).length : 0,
-            ratings: ratings ? ratings.length : 0
+            requests: safeLength(dayRequests),
+            postings: safeLength(availablePostings),
+            userProfiles: userProfiles ? Object.keys(safeObject(userProfiles)).length : 0,
+            ratings: ratings ? safeLength(ratings) : 0
           });
           
           try {
@@ -3410,14 +3410,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           });
           
           console.log('簡易AIマッチング対象:', {
-            全募集数: dayPostings.length,
-            利用可能募集数: availablePostings.length,
-            除外数: dayPostings.length - availablePostings.length
+            全募集数: safeLength(dayPostings),
+            利用可能募集数: safeLength(availablePostings),
+            除外数: safeLength(dayPostings) - safeLength(availablePostings)
           });
           
           // デバッグ: 利用可能な募集の詳細
-          if (availablePostings.length > 0) {
-            const availableInfo = `=== AIマッチング利用可能募集 ===\n利用可能募集数: ${availablePostings.length}件`;
+          if (safeLength(availablePostings) > 0) {
+            const availableInfo = `=== AIマッチング利用可能募集 ===\n利用可能募集数: ${safeLength(availablePostings)}件`;
             console.log(availableInfo);
           }
           
@@ -3427,9 +3427,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             return confirmedStores.has(storeKey);
           });
           
-          if (excludedPostings.length > 0) {
+          if (safeLength(excludedPostings) > 0) {
             console.log('=== AIマッチング除外デバッグ ===');
-            console.log('除外された募集数:', excludedPostings.length);
+            console.log('除外された募集数:', safeLength(excludedPostings));
             console.log('確定済み店舗キー:', Array.from(confirmedStores));
             console.log('除外された募集:', excludedPostings.map(p => ({
               id: p.id,
@@ -3443,9 +3443,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           aiMatches = await executeSimpleAIMatching(dayRequests, availablePostings);
         }
         
-        console.log(`AIマッチング結果: ${aiMatches.length}件のマッチが見つかりました`);
+        console.log(`AIマッチング結果: ${safeLength(aiMatches)}件のマッチが見つかりました`);
         
-        if (aiMatches.length > 0) {
+        if (safeLength(aiMatches) > 0) {
           // AIマッチング結果を確定シフトに変換
           const aiShifts = aiMatches.map(match => {
             // 薬局名と店舗名を正しく取得
@@ -3476,7 +3476,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           const { data: insertedAiShifts, error } = await supabase.from('assigned_shifts').insert(aiShifts).select();
           if (error) throw error;
           
-          console.log(`AIマッチング完了: ${aiShifts.length}件のシフトを確定しました`);
+          console.log(`AIマッチング完了: ${safeLength(aiShifts)}件のシフトを確定しました`);
           
           // 対応する希望・募集のステータスを'confirmed'に更新
           try {
@@ -3528,16 +3528,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           });
           
           // 他のダッシュボードでも更新されるように、ページリロードを提案
-          alert(`${aiShifts.length}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
+          alert(`${safeLength(aiShifts)}件のシフトを確定しました。\n\n薬局画面と薬剤師画面を更新して最新の状態を確認してください。`);
           return;
                 } else {
           console.log('AIマッチングでマッチが見つかりませんでした');
-          console.log(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n時間帯やNGリストを確認してください。`);
+          console.log(`マッチングできるシフトがありません。\n\n希望シフト: ${safeLength(dayRequests)}件\n募集シフト: ${safeLength(dayPostings)}件\n\n時間帯やNGリストを確認してください。`);
         return;
       }
       } else {
         console.log('希望シフトまたは募集シフトがありません');
-        console.log(`マッチングできるシフトがありません。\n\n希望シフト: ${dayRequests.length}件\n募集シフト: ${dayPostings.length}件\n\n希望シフトと募集シフトの日付・時間帯が一致するものを確認してください。`);
+        console.log(`マッチングできるシフトがありません。\n\n希望シフト: ${safeLength(dayRequests)}件\n募集シフト: ${safeLength(dayPostings)}件\n\n希望シフトと募集シフトの日付・時間帯が一致するものを確認してください。`);
         return;
       }
     } catch (error) {
@@ -3766,7 +3766,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       } else {
         console.log('募集ステータス更新成功:', updateResult);
         
-        if (updateResult && updateResult.length === 0) {
+        if (updateResult && safeLength(updateResult) === 0) {
           alert('更新対象の募集が見つかりませんでした');
         }
       }
@@ -3825,9 +3825,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
 
       // 2) 対応する希望・募集のステータスを元に戻す
-      if (toCancel && toCancel.length > 0) {
+      if (toCancel && safeLength(toCancel) > 0) {
         console.log('=== 確定取り消し: ステータス更新開始 ===');
-        console.log('取り消すシフト数:', toCancel.length);
+        console.log('取り消すシフト数:', safeLength(toCancel));
         
         for (const s of toCancel) {
           console.log('シフト詳細:', {
@@ -3879,7 +3879,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           } else {
             console.log('募集ステータス更新成功:', updateResult);
             
-            if (updateResult && updateResult.length === 0) {
+            if (updateResult && safeLength(updateResult) === 0) {
               alert('更新対象の募集が見つかりませんでした');
             }
           }
@@ -3980,17 +3980,17 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     try {
       console.log('=== 実際のマッチング処理開始 ===');
       console.log('マッチング前の状態:', { 
-        requests: requests.length, 
-        postings: postings.length, 
-        assigned: assigned.length,
+        requests: safeLength(requests), 
+        postings: safeLength(postings), 
+        assigned: safeLength(assigned),
         assignedDetails: assigned
       });
       
       // デバッグ情報をモーダルで表示
       let debugInfo = `=== マッチング処理デバッグ ===\n`;
-      debugInfo += `シフト希望数: ${requests.length}件\n`;
-      debugInfo += `シフト募集数: ${postings.length}件\n`;
-      debugInfo += `確定済みシフト数: ${assigned.length}件\n\n`;
+      debugInfo += `シフト希望数: ${safeLength(requests)}件\n`;
+      debugInfo += `シフト募集数: ${safeLength(postings)}件\n`;
+      debugInfo += `確定済みシフト数: ${safeLength(assigned)}件\n\n`;
       
       // 日付ごとにマッチング処理を実行
       const dates = [...new Set([...requests.map(r => r.date), ...postings.map(p => p.date)])];
@@ -4010,10 +4010,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         const dayPostings = Array.isArray(postings) ? postings.filter(p => p.date === date && p.time_slot !== 'consult') : [];
         const dayAssigned = Array.isArray(assigned) ? assigned.filter(a => a.date === date && a.status === 'confirmed') : [];
         
-        console.log(`日付 ${date}: 希望${dayRequests.length}件, 募集${dayPostings.length}件, 確定${dayAssigned.length}件`);
-        debugInfo += `希望: ${dayRequests.length}件, 募集: ${dayPostings.length}件, 確定: ${dayAssigned.length}件\n`;
+        console.log(`日付 ${date}: 希望${safeLength(dayRequests)}件, 募集${safeLength(dayPostings)}件, 確定${safeLength(dayAssigned)}件`);
+        debugInfo += `希望: ${safeLength(dayRequests)}件, 募集: ${safeLength(dayPostings)}件, 確定: ${safeLength(dayAssigned)}件\n`;
         
-        if (dayRequests.length === 0 || dayPostings.length === 0) {
+        if (safeLength(dayRequests) === 0 || safeLength(dayPostings) === 0) {
           console.log(`日付 ${date}: 希望または募集がないためスキップ`);
           debugInfo += `→ 希望または募集がないためスキップ\n`;
           continue;
@@ -4043,8 +4043,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       // マッチング結果を確認
       console.log('=== マッチング結果確認 ===');
       console.log('更新後のデータ:', { 
-        requests: requests.length, 
-        postings: postings.length, 
+        requests: safeLength(requests), 
+        postings: safeLength(postings), 
         assigned: assigned.length 
       });
       
@@ -4422,7 +4422,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               );
               
               // データがある日付のみログを出力（デバッグ用）
-              if (dayRequests.length > 0 || dayPostings.length > 0) {
+              if (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0) {
                 console.log(`🔥🔥🔥 日付 ${dateStr} のデータフィルタリング 🔥🔥🔥`);
                 console.log('全シフト希望:', requests.length);
                 console.log('全シフト募集:', postings.length);
@@ -4438,7 +4438,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               
               // マッチング状況を計算（右パネルと同じロジックを使用）
               const calculateMatchingStatus = () => {
-                if (dayRequests.length > 0 || dayPostings.length > 0) {
+                if (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0) {
                   console.log(`=== カレンダーマッチング状況計算開始 (${dateStr}) ===`);
                   console.log('dayRequests:', dayRequests);
                   console.log('dayPostings:', dayPostings);
@@ -4467,7 +4467,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 const dayMatches = aiMatchesByDate[dateStr] || [];
                 const totalMatched = dayMatches.length;
                 const totalAvailable = dayRequests.length;
-                if (dayRequests.length > 0 || dayPostings.length > 0) {
+                if (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0) {
                   console.log(`右パネル連携計算 [${dateStr}]: マッチ=${totalMatched}, 不足=${totalShortage}`);
                   console.log(`不足薬局詳細:`, shortagePharmacies);
                 }
@@ -4478,7 +4478,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   shortage: totalShortage
                 };
 
-                if (dayRequests.length > 0 || dayPostings.length > 0) {
+                if (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0) {
                   console.log(`=== マッチング状況計算完了 (${dateStr}) ===`);
                 }
                 return result;
