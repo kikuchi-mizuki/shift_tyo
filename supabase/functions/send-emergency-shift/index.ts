@@ -75,7 +75,16 @@ serve(async (req) => {
 
     // リクエストボディの解析
     const request: EmergencyShiftRequest = await req.json();
-    console.log("Emergency shift request:", request);
+    console.log("Emergency shift request received:", JSON.stringify(request, null, 2));
+    
+    // リクエストの検証
+    if (!request.targetType) {
+      throw new Error("targetType is required");
+    }
+    if (!request.date) {
+      throw new Error("date is required");
+    }
+    console.log("Request validation passed");
 
     // 対象ユーザーを取得
     let targetUsers: any[] = [];

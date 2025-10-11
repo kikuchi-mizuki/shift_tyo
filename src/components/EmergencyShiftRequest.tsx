@@ -156,8 +156,10 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
 
       const requestBody = {
         ...formData,
-        maxTravelMinutes: parseInt(formData.maxTravelMinutes),
+        maxTravelMinutes: parseInt(formData.maxTravelMinutes) || 30,
       };
+      
+      console.log('Request body before sending:', requestBody);
       
       // リクエスト情報をデバッグ情報に追加
       setDebugInfo(prev => ({
