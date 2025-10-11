@@ -186,6 +186,13 @@ serve(async (req) => {
 
     console.log(`Target users found: ${targetUsers.length}`);
     console.log('Target users:', targetUsers.map(u => ({ id: u.id, name: u.name, line_user_id: u.line_user_id })));
+    
+    // デバッグ: targetUsersの詳細確認
+    console.log('=== TARGET USERS DEBUG ===');
+    console.log('targetUsers type:', typeof targetUsers);
+    console.log('targetUsers is array:', Array.isArray(targetUsers));
+    console.log('targetUsers length:', targetUsers?.length);
+    console.log('targetUsers content:', JSON.stringify(targetUsers, null, 2));
 
     // 各ユーザーに通知を送信
     const results = {
@@ -196,7 +203,11 @@ serve(async (req) => {
       details: [] as any[],
     };
 
+    console.log('=== STARTING NOTIFICATION LOOP ===');
+    console.log('About to iterate over targetUsers:', targetUsers);
+    
     for (const user of targetUsers) {
+      console.log(`=== PROCESSING USER: ${user.id} (${user.name}) ===`);
       try {
         console.log(`Sending LINE notification to user: ${user.id} (${user.name})`);
         console.log(`Using SERVICE_ROLE_KEY for Edge Function call: ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ? "Present" : "Missing"}`);
