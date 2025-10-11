@@ -227,6 +227,28 @@ serve(async (req) => {
           },
         }, null, 2));
         
+        // テスト用：簡単なEdge Functionを呼び出し
+        console.log("=== TESTING SIMPLE Edge Function Call ===");
+        const testResponse = await fetch(
+          `${Deno.env.get("SUPABASE_URL")}/functions/v1/test-simple-call`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            },
+            body: JSON.stringify({
+              test: "simple call test",
+              timestamp: new Date().toISOString()
+            }),
+          }
+        );
+        
+        console.log("Test function response status:", testResponse.status);
+        console.log("Test function response ok:", testResponse.ok);
+        const testResult = await testResponse.json();
+        console.log("Test function result:", testResult);
+        
         const notifyResponse = await fetch(
           `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-line-notification`,
           {
