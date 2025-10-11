@@ -227,83 +227,104 @@ serve(async (req) => {
           },
         }, null, 2));
         
-        // テスト用：簡単なEdge Functionを呼び出し
-        console.log("=== TESTING SIMPLE Edge Function Call ===");
-        const testResponse = await fetch(
-          `${Deno.env.get("SUPABASE_URL")}/functions/v1/test-simple-call`,
-          {
-            method: "POST",
+        // 直接LINE APIを呼び出す方法を試行
+        console.log("=== DIRECT LINE API CALL ===");
+        
+        // ユーザープロフィールを取得
+        const { data: userProfile, error: profileError } = await supabaseClient
+          .from("user_profiles")
+          .select("line_user_id, line_notification_enabled, name")
+          .eq("id", user.id)
+          .single();
+
+        if (profileError || !userProfile) {
+          console.error("User profile not found:", profileError);
+          results.failed++;
+          results.details.push({
+            userId: user.id,
+            name: user.name,
+            status: "failed",
+            error: "User profile not found",
+          });
+          continue;
+        }
+
+        if (!userProfile.line_user_id || userProfile.line_user_id.trim() === '') {
+          console.log("LINE not linked for user:", user.id);
+          results.skipped++;
+          results.details.push({
+            userId: user.id,
+            name: user.name,
+            status: "skipped",
+            reason: "LINE not linked",
+          });
+          continue;
+        }
+
+        // LINE APIを直接呼び出し
+        const lineChannelAccessToken = Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN");
+        console.log("LINE Channel Access Token exists:", !!lineChannelAccessToken);
+        
+        if (!lineChannelAccessToken) {
+          console.error("LINE_CHANNEL_ACCESS_TOKEN is not set");
+          results.failed++;
+          results.details.push({
+            userId: user.id,
+            name: user.name,
+            status: "failed",
+            error: "LINE Channel Access Token not set",
+          });
+          continue;
+        }
+
+        try {
+          const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
+            method: 'POST',
             headers: {
-              "Content-Type": "application/json",
-              // Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${lineChannelAccessToken}`,
             },
             body: JSON.stringify({
-              test: "simple call test",
-              timestamp: new Date().toISOString()
+              to: userProfile.line_user_id,
+              messages: [
+                {
+                  type: 'text',
+                  text: message,
+                },
+              ],
             }),
-          }
-        );
-        
-        console.log("Test function response status:", testResponse.status);
-        console.log("Test function response ok:", testResponse.ok);
-        const testResult = await testResponse.json();
-        console.log("Test function result:", testResult);
-        
-        const notifyResponse = await fetch(
-          `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-line-notification`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              // Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-            },
-            body: JSON.stringify({
-              userId: user.id,
-              message,
-              notificationType: "emergency",
-              metadata: {
-                shiftDate: request.date,
-                timeSlot: request.timeSlot,
-                storeName: request.storeName,
-              },
-            }),
-          }
-        );
-        
-        console.log(`=== send-line-notification Edge Function Response ===`);
-        console.log(`Response status: ${notifyResponse.status}`);
-        console.log(`Response ok: ${notifyResponse.ok}`);
-        console.log(`Response headers:`, Object.fromEntries(notifyResponse.headers.entries()));
-        
-        console.log(`LINE notification response for ${user.id}:`, notifyResponse.status, notifyResponse.ok);
+          });
 
-        const notifyResult = await notifyResponse.json();
-        console.log(`Notification result for user ${user.id} (${user.name}):`, notifyResult);
+          console.log("LINE API response status:", lineResponse.status);
+          console.log("LINE API response ok:", lineResponse.ok);
+          
+          const lineResponseData = await lineResponse.text();
+          console.log("LINE API response body:", lineResponseData);
 
-        if (notifyResult.success) {
-          if (notifyResult.skipped) {
-            results.skipped++;
-            results.details.push({
-              userId: user.id,
-              name: user.name,
-              status: "skipped",
-              reason: notifyResult.reason || "Unknown reason",
-            });
-          } else {
+          if (lineResponse.ok) {
             results.sent++;
             results.details.push({
               userId: user.id,
               name: user.name,
               status: "sent",
             });
+          } else {
+            results.failed++;
+            results.details.push({
+              userId: user.id,
+              name: user.name,
+              status: "failed",
+              error: `LINE API error: ${lineResponseData}`,
+            });
           }
-        } else {
+        } catch (error) {
+          console.error("LINE API call failed:", error);
           results.failed++;
           results.details.push({
             userId: user.id,
             name: user.name,
             status: "failed",
-            error: notifyResult.error,
+            error: error instanceof Error ? error.message : String(error),
           });
         }
       } catch (error) {
