@@ -210,7 +210,7 @@ serve(async (req) => {
       console.log(`=== PROCESSING USER: ${user.id} (${user.name}) ===`);
       try {
         console.log(`Sending LINE notification to user: ${user.id} (${user.name})`);
-        console.log(`Using SERVICE_ROLE_KEY for Edge Function call: ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ? "Present" : "Missing"}`);
+        console.log(`Using ANON_KEY for Edge Function call: ${Deno.env.get("SUPABASE_ANON_KEY") ? "Present" : "Missing"}`);
         
         console.log(`=== CALLING send-line-notification Edge Function ===`);
         console.log(`URL: ${Deno.env.get("SUPABASE_URL")}/functions/v1/send-line-notification`);
