@@ -214,6 +214,8 @@ serve(async (req) => {
         
         console.log(`=== CALLING send-line-notification Edge Function ===`);
         console.log(`URL: ${Deno.env.get("SUPABASE_URL")}/functions/v1/send-line-notification`);
+        console.log(`Using ANON_KEY: ${Deno.env.get("SUPABASE_ANON_KEY") ? "Present" : "Missing"}`);
+        console.log(`ANON_KEY length: ${Deno.env.get("SUPABASE_ANON_KEY")?.length || 0}`);
         console.log(`Request body:`, JSON.stringify({
           userId: user.id,
           message,
@@ -231,7 +233,7 @@ serve(async (req) => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
             },
             body: JSON.stringify({
               userId: user.id,
