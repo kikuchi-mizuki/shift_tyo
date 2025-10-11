@@ -27,9 +27,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // 安全な配列アクセスのためのヘルパー関数
   const safeArray = (arr: any) => {
     if (arr === null || arr === undefined) return [];
-    return Array.isArray(arr) ? arr : [];
+    if (Array.isArray(arr)) return arr;
+    if (typeof arr === 'object' && arr.length !== undefined) return Array.from(arr);
+    return [];
   };
-  const safeLength = (arr: any) => safeArray(arr).length;
+  const safeLength = (arr: any) => {
+    const safe = safeArray(arr);
+    return safe.length;
+  };
+  
+  // 安全なオブジェクトアクセスのためのヘルパー関数
+  const safeObject = (obj: any) => {
+    if (obj === null || obj === undefined) return {};
+    if (typeof obj === 'object' && !Array.isArray(obj)) return obj;
+    return {};
+  };
   
   // データ初期化の確認
   const ensureDataInitialized = () => {
@@ -55,6 +67,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [storeNgPharmacists, setStoreNgPharmacists] = useState<{[pharmacyId: string]: any[]}>({});
   const [storeNgPharmacies, setStoreNgPharmacies] = useState<{[pharmacistId: string]: any[]}>({});
+  
+  // データ初期化の強制実行
+  React.useEffect(() => {
+    ensureDataInitialized();
+  }, []);
   const [ratings, setRatings] = useState<any[]>([]);
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     pharmacies: false,
@@ -1453,11 +1470,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       });
     } else if (profile.user_type === 'pharmacy') {
       // 薬局の場合はstore_ng_pharmacistsから読み込み
-      const ngPharmacists = safeArray(storeNgPharmacists[profile.id]);
+      const storeNgData = safeObject(storeNgPharmacists);
+      const ngPharmacists = safeArray(storeNgData[profile.id]);
       const pharmacistIds = new Set<string>();
       
       ngPharmacists.forEach((ngPharmacist: any) => {
-        if (ngPharmacist && ngPharmacist.pharmacist_id) {
+        if (ngPharmacist && typeof ngPharmacist === 'object' && ngPharmacist.pharmacist_id) {
           pharmacistIds.add(ngPharmacist.pharmacist_id);
         }
       });
@@ -4100,11 +4118,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
           
         // 薬剤師のNG薬局・店舗リストを取得（store_ng_pharmaciesテーブルから）
-        const pharmacistNgPharmacies = storeNgPharmacies[request.pharmacist_id] || [];
-        const pharmacistNg = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
+        const storeNgPharmaciesData = safeObject(storeNgPharmacies);
+        const pharmacistNgPharmacies = safeArray(storeNgPharmaciesData[request.pharmacist_id]);
+        const pharmacistNg = safeArray(pharmacist?.ng_list);
         
         // 薬局のNG薬剤師リストを取得（store_ng_pharmacistsテーブルから）
-        const pharmacyNgPharmacists = safeArray(storeNgPharmacists[pharmacyNeed.pharmacy_id]);
+        const storeNgData = safeObject(storeNgPharmacists);
+        const pharmacyNgPharmacists = safeArray(storeNgData[pharmacyNeed.pharmacy_id]);
         const pharmacyNg = safeArray(pharmacy?.ng_list);
         
         // 薬剤師が薬局をNGにしているかチェック（店舗名も考慮）
