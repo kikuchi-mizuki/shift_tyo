@@ -119,15 +119,6 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
     setSending(true);
     setResult(null);
     
-    // デバッグ情報を初期化
-    setDebugInfo({
-      request: null,
-      response: null,
-      error: null,
-      logs: [],
-      requestTime: null,
-      responseTime: null
-    });
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wjgterfwurmvosawzbjs.supabase.co';
@@ -146,13 +137,6 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       
       console.log('Request body before sending:', requestBody);
       
-      // リクエスト情報をデバッグ情報に追加
-      setDebugInfo(prev => ({
-        ...prev,
-        request: requestBody,
-        requestTime: new Date().toLocaleTimeString(),
-        logs: [{ timestamp: new Date().toLocaleTimeString(), message: 'Sending emergency shift request', data: requestBody }]
-      }));
 
       console.log('Sending request to:', `${supabaseUrl}/functions/v1/send-emergency-shift`);
       console.log('Request body:', requestBody);
@@ -175,15 +159,6 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       const data = await response.json();
       console.log('Response data:', data);
 
-      // レスポンスデータをデバッグ情報に追加
-      setDebugInfo(prev => ({
-        ...prev,
-        response: data,
-        responseTime: new Date().toLocaleTimeString(),
-        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
-          { timestamp: new Date().toLocaleTimeString(), message: 'Emergency shift response received', data: data }
-        ]
-      }));
       
       if (response.ok) {
         setResult(data);
@@ -208,21 +183,6 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
           console.log('Some LINE notifications failed');
         }
         
-        // デバッグ情報を更新
-        setDebugInfo(prev => ({
-          ...prev,
-          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
-            { timestamp: new Date().toLocaleTimeString(), message: `Response processed: sent=${sentCount}, skipped=${skippedCount}, failed=${failedCount}` }
-          ]
-        }));
-        
-        // デバッグ情報を更新
-        setDebugInfo(prev => ({
-          ...prev,
-          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
-            { timestamp: new Date().toLocaleTimeString(), message: `Success: ${sentCount} sent, ${skippedCount} skipped, ${failedCount} failed` }
-          ]
-        }));
         
         alert(
           `緊急シフト依頼を送信しました！\n\n対象: ${totalCount}名\n送信成功: ${sentCount}件\nスキップ: ${skippedCount}件\n失敗: ${failedCount}件`
@@ -235,24 +195,9 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
           data: data
         });
         
-        setDebugInfo(prev => ({
-          ...prev,
-          error: data.error || `HTTP ${response.status}: ${response.statusText}`,
-          logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
-            { timestamp: new Date().toLocaleTimeString(), message: 'Error occurred', error: data, status: response.status }
-          ]
-        }));
         throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      // エラー情報をデバッグ情報に追加
-      setDebugInfo(prev => ({
-        ...prev,
-        error: error.message,
-        logs: [...(Array.isArray(prev?.logs) ? prev.logs : []), 
-          { timestamp: new Date().toLocaleTimeString(), message: 'Exception caught', error: error.message }
-        ]
-      }));
       alert(`エラーが発生しました: ${error.message}`);
     } finally {
       setSending(false);
