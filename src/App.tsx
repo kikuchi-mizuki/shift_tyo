@@ -16,8 +16,8 @@ const PharmacyDashboard = React.lazy(() =>
   })
 );
 const AdminDashboard = React.lazy(() => 
-  import('./components/AdminDashboardMinimal').catch(error => {
-    console.error('Failed to load AdminDashboardMinimal:', error);
+  import('./components/AdminDashboard').catch(error => {
+    console.error('Failed to load AdminDashboard:', error);
     return { default: () => <div className="p-4 text-red-600">AdminDashboardの読み込みに失敗しました。ページを再読み込みしてください。</div> };
   })
 );

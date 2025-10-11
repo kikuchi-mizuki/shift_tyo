@@ -74,7 +74,10 @@ serve(async (req) => {
       }
 
       // 緊急通知の場合は通知設定を無視
-      if (body.notificationType !== "emergency" && !userProfile.line_notification_enabled) {
+      // 緊急通知は常に送信（ユーザーの設定に関係なく）
+      if (body.notificationType === "emergency") {
+        console.log("Emergency notification - bypassing user notification settings");
+      } else if (!userProfile.line_notification_enabled) {
         console.log("Notification disabled for user:", body.userId);
         return new Response(
           JSON.stringify({
