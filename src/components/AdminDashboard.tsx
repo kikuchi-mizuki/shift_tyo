@@ -12,7 +12,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
-  // 安全な初期値でstateを初期化
+  // より安全な初期値でstateを初期化（即座に初期化）
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
   const [assigned, setAssigned] = useState<any[]>([]);
@@ -20,7 +20,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [postings, setPostings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // すべてのstateを安全に初期化
+  // すべてのstateを安全に初期化（即座に初期化）
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [userProfiles, setUserProfiles] = useState<any>({});
@@ -31,6 +31,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     pharmacies: false,
     pharmacists: false
   });
+
+  // 即座にデータ初期化を強制実行（useEffectの前に）
+  if (!Array.isArray(requests)) setRequests([]);
+  if (!Array.isArray(postings)) setPostings([]);
+  if (!Array.isArray(assigned)) setAssigned([]);
+  if (!Array.isArray(ratings)) setRatings([]);
+  if (typeof userProfiles !== 'object' || userProfiles === null) setUserProfiles({});
+  if (typeof storeNgPharmacists !== 'object' || storeNgPharmacists === null) setStoreNgPharmacists({});
+  if (typeof storeNgPharmacies !== 'object' || storeNgPharmacies === null) setStoreNgPharmacies({});
 
   // 募集状況管理
   const [recruitmentStatus, setRecruitmentStatus] = useState<{
