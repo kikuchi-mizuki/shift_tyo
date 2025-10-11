@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, AlertCircle, Star, Brain, Zap, Bell } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { EmergencyShiftRequest } from './EmergencyShiftRequest';
+import { Bell } from 'lucide-react';
 
 interface AdminDashboardProps {
   user: any;
@@ -14,20 +12,7 @@ const AdminDashboardMinimal: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // データ読み込み
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        // 最小限のデータ読み込み
-        console.log('データ読み込み開始');
-        
-      } catch (error) {
-        console.error('データ読み込みエラー:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -66,12 +51,9 @@ const AdminDashboardMinimal: React.FC<AdminDashboardProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* 緊急シフトモーダル */}
-      {showEmergencyModal && (
-        <EmergencyShiftRequest
-          user={user}
-          onClose={() => setShowEmergencyModal(false)}
-        />
+      {/* 緊急シフトモーダルは一時的に無効化 */}
+      {false && showEmergencyModal && (
+        <div>緊急シフトモーダル</div>
       )}
     </div>
   );
