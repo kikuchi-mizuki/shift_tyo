@@ -135,6 +135,16 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
     e.preventDefault();
     setSending(true);
     setResult(null);
+    
+    // デバッグ情報を初期化
+    setDebugInfo({
+      request: null,
+      response: null,
+      error: null,
+      logs: [],
+      requestTime: null,
+      responseTime: null
+    });
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wjgterfwurmvosawzbjs.supabase.co';
@@ -145,7 +155,13 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         maxTravelMinutes: parseInt(formData.maxTravelMinutes),
       };
       
-      console.log('Sending emergency shift request:', requestBody); // リクエスト内容をログ出力
+      // リクエスト情報をデバッグ情報に追加
+      setDebugInfo(prev => ({
+        ...prev,
+        request: requestBody,
+        requestTime: new Date().toLocaleTimeString(),
+        logs: [{ timestamp: new Date().toLocaleTimeString(), message: 'Sending emergency shift request', data: requestBody }]
+      }));
 
       const response = await fetch(
         `${supabaseUrl}/functions/v1/send-emergency-shift`,
@@ -161,7 +177,15 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
 
       const data = await response.json();
 
-      console.log('Emergency shift response:', data); // デバッグログ追加
+      // レスポンスデータをデバッグ情報に追加
+      setDebugInfo(prev => ({
+        ...prev,
+        response: data,
+        responseTime: new Date().toLocaleTimeString(),
+        logs: [...((prev && prev.logs) || []), 
+          { timestamp: new Date().toLocaleTimeString(), message: 'Emergency shift response received', data: data }
+        ]
+      }));
       
       if (response.ok && data.success) {
         setResult(data);
@@ -171,15 +195,37 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         const failedCount = data.failed || 0;
         const totalCount = data.total || (sentCount + skippedCount + failedCount);
         
+        // デバッグ情報を更新
+        setDebugInfo(prev => ({
+          ...prev,
+          logs: [...((prev && prev.logs) || []), 
+            { timestamp: new Date().toLocaleTimeString(), message: `Success: ${sentCount} sent, ${skippedCount} skipped, ${failedCount} failed` }
+          ]
+        }));
+        
         alert(
           `緊急シフト依頼を送信しました！\n\n対象: ${totalCount}名\n送信成功: ${sentCount}件\nスキップ: ${skippedCount}件\n失敗: ${failedCount}件`
         );
       } else {
-        console.error('Emergency shift error:', data); // エラーログ追加
+        // エラー情報をデバッグ情報に追加
+        setDebugInfo(prev => ({
+          ...prev,
+          error: data.error || '送信に失敗しました',
+          logs: [...((prev && prev.logs) || []), 
+            { timestamp: new Date().toLocaleTimeString(), message: 'Error occurred', error: data }
+          ]
+        }));
         throw new Error(data.error || '送信に失敗しました');
       }
     } catch (error) {
-      console.error('Error sending emergency request:', error);
+      // エラー情報をデバッグ情報に追加
+      setDebugInfo(prev => ({
+        ...prev,
+        error: error.message,
+        logs: [...((prev && prev.logs) || []), 
+          { timestamp: new Date().toLocaleTimeString(), message: 'Exception caught', error: error.message }
+        ]
+      }));
       alert(`エラーが発生しました: ${error.message}`);
     } finally {
       setSending(false);
@@ -555,6 +601,18 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
               )}
             </button>
           </div>
+          
+          {/* デバッグボタン */}
+          <div className="mt-3 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setShowDebugModal(true)}
+              className="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <AlertCircle className="w-4 h-4" />
+              デバッグ情報を表示
+            </button>
+          </div>
         </form>
       </div>
 
@@ -578,6 +636,64 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
             <div className="p-6 space-y-4">
               {debugInfo ? (
                 <div className="space-y-6">
+                  {/* 緊急シフト依頼のデバッグ情報 */}
+                  {debugInfo.request && (
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-gray-900 mb-2">📤 リクエスト情報</h3>
+                      <div className="text-sm space-y-1">
+                        <p><strong>送信時刻:</strong> {debugInfo.requestTime}</p>
+                        <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
+                          {JSON.stringify(debugInfo.request, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {debugInfo.response && (
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-gray-900 mb-2">📥 レスポンス情報</h3>
+                      <div className="text-sm space-y-1">
+                        <p><strong>受信時刻:</strong> {debugInfo.responseTime}</p>
+                        <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
+                          {JSON.stringify(debugInfo.response, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {debugInfo.error && (
+                    <div className="bg-red-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-gray-900 mb-2">❌ エラー情報</h3>
+                      <div className="text-sm">
+                        <p className="text-red-800">{debugInfo.error}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {debugInfo.logs && debugInfo.logs.length > 0 && (
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-gray-900 mb-2">📋 ログ</h3>
+                      <div className="space-y-2">
+                        {debugInfo.logs.map((log: any, index: number) => (
+                          <div key={index} className="bg-white p-2 rounded border text-xs">
+                            <div className="flex justify-between items-start">
+                              <span className="font-mono text-gray-600">{log.timestamp}</span>
+                              <span className="text-gray-800">{log.message}</span>
+                            </div>
+                            {log.data && (
+                              <pre className="mt-1 bg-gray-100 p-1 rounded text-xs overflow-x-auto">
+                                {JSON.stringify(log.data, null, 2)}
+                              </pre>
+                            )}
+                            {log.error && (
+                              <div className="mt-1 text-red-600 text-xs">{log.error}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 mb-2">📅 タイムスタンプ</h3>
                     <p className="text-sm text-gray-600">{debugInfo.timestamp}</p>
