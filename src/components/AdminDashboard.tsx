@@ -12,17 +12,27 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // エラーハンドリング：コンポーネントの最初に実行
+  try {
+    // 安全な初期値でstateを初期化
+    const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
   const [assigned, setAssigned] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [postings, setPostings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // 即座にデータ初期化を実行
-  if (!Array.isArray(requests)) setRequests([]);
-  if (!Array.isArray(postings)) setPostings([]);
-  if (!Array.isArray(assigned)) setAssigned([]);
+  // すべてのstateを安全に初期化
+  const [systemStatus, setSystemStatus] = useState('pending');
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [userProfiles, setUserProfiles] = useState<any>({});
+  const [storeNgPharmacists, setStoreNgPharmacists] = useState<{[pharmacyId: string]: any[]}>({});
+  const [storeNgPharmacies, setStoreNgPharmacies] = useState<{[pharmacistId: string]: any[]}>({});
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
+    pharmacies: false,
+    pharmacists: false
+  });
   
   // 安全な配列アクセスのためのヘルパー関数
   const safeArray = (arr: any) => {
@@ -62,21 +72,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       storeNgPharmacies: typeof storeNgPharmacies === 'object' && storeNgPharmacies !== null,
     });
   };
-  const [systemStatus, setSystemStatus] = useState('pending');
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [userProfiles, setUserProfiles] = useState<any>({});
-  const [storeNgPharmacists, setStoreNgPharmacists] = useState<{[pharmacyId: string]: any[]}>({});
-  const [storeNgPharmacies, setStoreNgPharmacies] = useState<{[pharmacistId: string]: any[]}>({});
-  
+
   // データ初期化の強制実行
   React.useEffect(() => {
     ensureDataInitialized();
   }, []);
-  const [ratings, setRatings] = useState<any[]>([]);
-  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
-    pharmacies: false,
-    pharmacists: false
-  });
 
   // 募集状況管理
   const [recruitmentStatus, setRecruitmentStatus] = useState<{
@@ -6254,6 +6254,51 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
     </div>
   );
+  } catch (error) {
+    console.error('AdminDashboard rendering error:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+          <div className="flex items-center mb-4">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-8 w-8 text-red-500" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-lg font-medium text-gray-900">
+                管理画面の読み込みエラー
+              </h3>
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              管理画面の読み込み中にエラーが発生しました。ページを再読み込みしてください。
+            </p>
+          </div>
+
+          <div className="bg-gray-100 rounded-md p-3 mb-4">
+            <details>
+              <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
+                エラー詳細を表示
+              </summary>
+              <pre className="text-xs text-gray-600 whitespace-pre-wrap">
+                {error instanceof Error ? error.message : String(error)}
+              </pre>
+            </details>
+          </div>
+
+          <div className="flex space-x-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              ページを再読み込み
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default AdminDashboard;
