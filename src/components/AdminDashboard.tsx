@@ -18,6 +18,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [requests, setRequests] = useState<any[]>([]);
   const [postings, setPostings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // 安全な配列アクセスのためのヘルパー関数
+  const safeArray = (arr: any) => Array.isArray(arr) ? arr : [];
+  const safeLength = (arr: any) => safeArray(arr).length;
   const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [userProfiles, setUserProfiles] = useState<any>({});
@@ -782,19 +786,19 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       debugInfo += `シフト希望数: ${(monthlyRequests && Array.isArray(monthlyRequests)) ? monthlyRequests.length : 0}件\n`;
       debugInfo += `シフト募集数: ${(monthlyPostings && Array.isArray(monthlyPostings)) ? monthlyPostings.length : 0}件\n\n`;
       
-      // サンプルデータを3件まで表示
-      if ((monthlyRequests && Array.isArray(monthlyRequests)) && monthlyRequests.length > 0) {
+      // サンプルデータを3件まで表示（安全なアクセス）
+      if (monthlyRequests && Array.isArray(monthlyRequests) && monthlyRequests.length > 0) {
         debugInfo += `希望サンプル:\n`;
-        (monthlyRequests || []).slice(0, 3).forEach((req, i) => {
-          debugInfo += `${i+1}. 日付: ${req.date}, 時間: ${req.start_time}-${req.end_time}\n`;
+        monthlyRequests.slice(0, 3).forEach((req, i) => {
+          debugInfo += `${i+1}. 日付: ${req?.date || 'N/A'}, 時間: ${req?.start_time || 'N/A'}-${req?.end_time || 'N/A'}\n`;
         });
         debugInfo += `\n`;
       }
       
-      if ((monthlyPostings && Array.isArray(monthlyPostings)) && monthlyPostings.length > 0) {
+      if (monthlyPostings && Array.isArray(monthlyPostings) && monthlyPostings.length > 0) {
         debugInfo += `募集サンプル:\n`;
-        (monthlyPostings || []).slice(0, 3).forEach((post, i) => {
-          debugInfo += `${i+1}. 日付: ${post.date}, 時間: ${post.start_time}-${post.end_time}\n`;
+        monthlyPostings.slice(0, 3).forEach((post, i) => {
+          debugInfo += `${i+1}. 日付: ${post?.date || 'N/A'}, 時間: ${post?.start_time || 'N/A'}-${post?.end_time || 'N/A'}\n`;
         });
         debugInfo += `\n`;
       }
@@ -974,8 +978,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         debugInfo += `\n=== マッチング失敗の原因分析 ===\n`;
         debugInfo += `1. 時間適合性: 適合あり ${compatibleCount}件, 適合なし ${incompatibleCount}件\n`;
         debugInfo += `2. データ確認:\n`;
-        debugInfo += `   - 希望データ: ${monthlyRequests.length}件\n`;
-        debugInfo += `   - 募集データ: ${monthlyPostings.length}件\n`;
+        debugInfo += `   - 希望データ: ${(monthlyRequests && Array.isArray(monthlyRequests)) ? monthlyRequests.length : 0}件\n`;
+        debugInfo += `   - 募集データ: ${(monthlyPostings && Array.isArray(monthlyPostings)) ? monthlyPostings.length : 0}件\n`;
         debugInfo += `   - ユーザープロフィール: ${Object.keys(userProfiles).length}件\n`;
         debugInfo += `   - 評価データ: ${ratings.length}件\n`;
         debugInfo += `3. 考えられる原因:\n`;
@@ -992,14 +996,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       // グローバルなマッチング結果を保存
       setAiMatches(monthlyMatches);
 
-      console.log(`1ヶ月分のAIマッチング完了: ${monthlyMatches.length}件のマッチ`);
+      console.log(`1ヶ月分のAIマッチング完了: ${(monthlyMatches && Array.isArray(monthlyMatches)) ? monthlyMatches.length : 0}件のマッチ`);
       
       // 詳細な結果分析
-      const totalMatches = monthlyMatches.length;
+      const totalMatches = (monthlyMatches && Array.isArray(monthlyMatches)) ? monthlyMatches.length : 0;
       const datesWithMatches = Object.keys(matchesByDate).length;
       
       // 不足薬局の分析
-      console.log('不足薬局分析開始:', { matchesByDate, requests: requests?.length, postings: postings?.length });
+      console.log('不足薬局分析開始:', { matchesByDate, requests: (requests && Array.isArray(requests)) ? requests.length : 0, postings: (postings && Array.isArray(postings)) ? postings.length : 0 });
       const shortageAnalysis = analyzeMonthlyShortage(matchesByDate);
       console.log('不足薬局分析結果:', shortageAnalysis);
       
@@ -1013,7 +1017,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       if (shortageAnalysis.totalShortage > 0) {
         resultMessage += `=== 不足薬局一覧 ===\n`;
         resultMessage += `不足総数: ${shortageAnalysis.totalShortage}人\n`;
-        resultMessage += `不足薬局数: ${shortageAnalysis.shortagePharmacies.length}薬局\n\n`;
+        resultMessage += `不足薬局数: ${(shortageAnalysis.shortagePharmacies && Array.isArray(shortageAnalysis.shortagePharmacies)) ? shortageAnalysis.shortagePharmacies.length : 0}薬局\n\n`;
         
         shortageAnalysis.shortagePharmacies.forEach((pharmacy, index) => {
           resultMessage += `${index + 1}. ${pharmacy.name}（${pharmacy.store_name || '店舗名なし'}）\n`;
