@@ -212,6 +212,19 @@ serve(async (req) => {
         console.log(`Sending LINE notification to user: ${user.id} (${user.name})`);
         console.log(`Using SERVICE_ROLE_KEY for Edge Function call: ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ? "Present" : "Missing"}`);
         
+        console.log(`=== CALLING send-line-notification Edge Function ===`);
+        console.log(`URL: ${Deno.env.get("SUPABASE_URL")}/functions/v1/send-line-notification`);
+        console.log(`Request body:`, JSON.stringify({
+          userId: user.id,
+          message,
+          notificationType: "emergency",
+          metadata: {
+            shiftDate: request.date,
+            timeSlot: request.timeSlot,
+            storeName: request.storeName,
+          },
+        }, null, 2));
+        
         const notifyResponse = await fetch(
           `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-line-notification`,
           {
@@ -232,6 +245,11 @@ serve(async (req) => {
             }),
           }
         );
+        
+        console.log(`=== send-line-notification Edge Function Response ===`);
+        console.log(`Response status: ${notifyResponse.status}`);
+        console.log(`Response ok: ${notifyResponse.ok}`);
+        console.log(`Response headers:`, Object.fromEntries(notifyResponse.headers.entries()));
         
         console.log(`LINE notification response for ${user.id}:`, notifyResponse.status, notifyResponse.ok);
 

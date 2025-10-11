@@ -24,8 +24,13 @@ interface NotificationRequest {
 }
 
 serve(async (req) => {
+  console.log("=== send-line-notification Edge Function STARTED ===");
+  console.log("Request method:", req.method);
+  console.log("Request URL:", req.url);
+  
   // CORS preflight
   if (req.method === "OPTIONS") {
+    console.log("OPTIONS request - returning CORS headers");
     return new Response("ok", { headers: corsHeaders });
   }
 
@@ -207,10 +212,20 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error("=== send-line-notification Edge Function ERROR ===");
     console.error("Error sending LINE notification:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Error name:", error.name);
+    
     return new Response(
       JSON.stringify({
         error: error.message || "Failed to send notification",
+        success: false,
+        errorDetails: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        }
       }),
       {
         status: 500,
