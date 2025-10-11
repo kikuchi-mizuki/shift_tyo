@@ -199,6 +199,7 @@ serve(async (req) => {
     for (const user of targetUsers) {
       try {
         console.log(`Sending LINE notification to user: ${user.id} (${user.name})`);
+        console.log(`Using SERVICE_ROLE_KEY for Edge Function call: ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ? "Present" : "Missing"}`);
         
         const notifyResponse = await fetch(
           `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-line-notification`,
@@ -206,7 +207,7 @@ serve(async (req) => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
             },
             body: JSON.stringify({
               userId: user.id,
