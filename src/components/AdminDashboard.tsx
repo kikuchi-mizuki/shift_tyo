@@ -925,7 +925,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       // 全マッチング結果を統合
       const monthlyMatches = Object.values(matchesByDate).flat();
       debugInfo += `\n=== 統合結果 ===\n`;
-      debugInfo += `総マッチング件数: ${monthlyMatches.length}件\n`;
+      debugInfo += `総マッチング件数: ${safeLength(monthlyMatches)}件\n`;
       
       // 日付別のマッチング結果を保存（確定済みマッチは除外）
       setAiMatchesByDate(prev => {
@@ -944,7 +944,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           );
           
           
-          if (unconfirmedMatches.length > 0) {
+          if (safeLength(unconfirmedMatches) > 0) {
             newMap[date] = unconfirmedMatches;
           } else {
             delete newMap[date];
@@ -965,9 +965,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       // マッチング結果の詳細分析
       debugInfo += `\n=== マッチング結果詳細 ===\n`;
-      debugInfo += `マッチング件数: ${monthlyMatches.length}件\n`;
+      debugInfo += `マッチング件数: ${safeLength(monthlyMatches)}件\n`;
       
-      if (monthlyMatches.length > 0) {
+      if (safeLength(monthlyMatches) > 0) {
         debugInfo += `マッチング詳細:\n`;
         monthlyMatches.forEach((match, i) => {
           debugInfo += `${i+1}. 薬剤師ID: ${match.pharmacist?.id}, 薬局ID: ${match.pharmacy?.id}\n`;
@@ -981,7 +981,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         debugInfo += `   - 希望データ: ${(monthlyRequests && Array.isArray(monthlyRequests)) ? monthlyRequests.length : 0}件\n`;
         debugInfo += `   - 募集データ: ${(monthlyPostings && Array.isArray(monthlyPostings)) ? monthlyPostings.length : 0}件\n`;
         debugInfo += `   - ユーザープロフィール: ${Object.keys(userProfiles).length}件\n`;
-        debugInfo += `   - 評価データ: ${ratings.length}件\n`;
+        debugInfo += `   - 評価データ: ${safeLength(ratings)}件\n`;
         debugInfo += `3. 考えられる原因:\n`;
         debugInfo += `   - AIマッチングエンジンの候補生成で0件\n`;
         debugInfo += `   - NGリストによるブロック\n`;
@@ -1075,7 +1075,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         ? assigned.filter((s: any) => s.date === date && s.status === 'confirmed')
         : [];
       
-      const totalConfirmedShifts = Math.max(freshAssigned.length, existingAssigned.length);
+      const totalConfirmedShifts = Math.max(safeLength(freshAssigned), safeLength(existingAssigned));
       
       if (totalConfirmedShifts > 0) {
         setAiMatches([]);
@@ -1109,12 +1109,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       console.log('=== AIマッチング用データ取得 ===', {
         date,
-        freshRequests: freshRequests.length,
-        freshPostings: freshPostings.length,
-        filteredRequests: dayRequests.length,
-        filteredPostings: dayPostings.length,
-        confirmedRequests: freshRequests.filter(r => r.status === 'confirmed').length,
-        confirmedPostings: freshPostings.filter(p => p.status === 'confirmed').length
+        freshRequests: safeLength(freshRequests),
+        freshPostings: safeLength(freshPostings),
+        filteredRequests: safeLength(dayRequests),
+        filteredPostings: safeLength(dayPostings),
+        confirmedRequests: safeLength(freshRequests.filter(r => r.status === 'confirmed')),
+        confirmedPostings: safeLength(freshPostings.filter(p => p.status === 'confirmed'))
       });
 
       // 既に確定済みの組み合わせ（薬剤師ID_日付_薬局ID）をセット化
@@ -1147,7 +1147,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             pharmacy_id: p.pharmacy_id,
             store_name: p.store_name,
             status: p.status,
-            excluded: reasons.length > 0,
+            excluded: safeLength(reasons) > 0,
             reasons
           };
         });
@@ -1155,8 +1155,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         const notExcluded = diag.filter(d => !d.excluded);
         console.log('=== AI前自己診断: 当日の募集診断 ===', {
           date,
-          postings_total: (dayPostings || []).length,
-          excluded_count: excluded.length,
+          postings_total: safeLength(dayPostings || []),
+          excluded_count: safeLength(excluded),
           sample_excluded: excluded.slice(0, 5),
           sample_not_excluded: notExcluded.slice(0, 5)
         });
@@ -1177,12 +1177,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
       // 募集/希望が0件なら実行せずに結果をクリア（前回の残像を防止）
-      if (filteredDayPostings.length === 0 || filteredDayRequests.length === 0) {
+      if (safeLength(filteredDayPostings) === 0 || safeLength(filteredDayRequests) === 0) {
         try {
           console.log('AIマッチングをスキップ（募集/希望が0件）', {
             date,
-            requests: filteredDayRequests.length,
-            postings: filteredDayPostings.length
+            requests: safeLength(filteredDayRequests),
+            postings: safeLength(filteredDayPostings)
           });
         } catch {}
         setAiMatches([]);
@@ -1191,7 +1191,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
 
       
-      console.log(`AI Matching for ${date}: ${filteredDayRequests.length} requests, ${filteredDayPostings.length} postings`);
+      console.log(`AI Matching for ${date}: ${safeLength(filteredDayRequests)} requests, ${safeLength(filteredDayPostings)} postings`);
 
       let matches = await aiMatchingEngine.executeOptimalMatching(filteredDayRequests, filteredDayPostings, {
         useAPI: true,
@@ -1217,8 +1217,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
       setAiMatches(matches);
 
-      addLog(`✅ AIマッチング完了: ${matches.length}件のマッチを生成`);
-      console.log(`AI Matching completed: ${matches.length} matches found`);
+      addLog(`✅ AIマッチング完了: ${safeLength(matches)}件のマッチを生成`);
+      console.log(`AI Matching completed: ${safeLength(matches)} matches found`);
     } catch (error) {
       console.error('AI Matching failed:', error);
       addLog(`❌ AIマッチングエラー: ${error instanceof Error ? error.message : String(error)}`);
