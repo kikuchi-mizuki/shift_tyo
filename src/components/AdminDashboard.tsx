@@ -2290,28 +2290,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         console.error('募集状況更新エラー:', error);
         const message = typeof error === 'object' && error !== null ? (error as any).message || (error as any).hint || JSON.stringify(error) : String(error);
         
-        // デバッグ情報をモーダルで表示
-        const debugModal = `
-=== 募集状況更新デバッグ情報 ===
-
-【リクエスト情報】
-- FIXED_ID: ${FIXED_ID}
-- newStatus: ${newStatus}
-- action: ${action}
-- current user: ${currentUserId}
-- timestamp: ${new Date().toLocaleString('ja-JP')}
-
-【エラー詳細】
-- message: ${error.message}
-- code: ${error.code}
-- details: ${error.details || 'なし'}
-- hint: ${error.hint || 'なし'}
-
-【レスポンス】
-- updatedRow: ${JSON.stringify(updatedRow, null, 2)}
-        `;
-        
-        alert(`募集状況の更新に失敗しました:\n\n${message}\n\n${debugModal}`);
+        alert(`募集状況の更新に失敗しました:\n\n${message}`);
         return;
       }
 
@@ -3729,20 +3708,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         console.error('募集ステータス更新エラー:', postingError);
         alert(errorInfo);
       } else {
-        const successInfo = `=== 募集ステータス更新結果 ===
-更新成功: ${updateResult ? updateResult.length : 0}件
-薬局ID: ${shift.pharmacy_id}
-日付: ${shift.date}
-開始時間: ${shift.start_time || '09:00:00'}
-終了時間: ${shift.end_time || '18:00:00'}
-店舗名: ${shift.store_name || 'なし'}
-
-更新されたレコード:
-${updateResult ? updateResult.map((r: any, i: number) => 
-  `${i+1}. ID:${r.id}, ステータス:${r.status}, 薬局:${r.pharmacy_id}, 日付:${r.date}, 開始:${r.start_time}, 終了:${r.end_time}, 店舗:${r.store_name || 'なし'}`
-).join('\n') : 'なし'}`;
         console.log('募集ステータス更新成功:', updateResult);
-        alert(successInfo);
         
         if (updateResult && updateResult.length === 0) {
           alert('更新対象の募集が見つかりませんでした');
@@ -3764,12 +3730,7 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
         return;
       }
 
-      const deleteSuccessInfo = `=== 個別確定シフト削除完了 ===
-シフトID: ${shift.id}
-薬剤師: ${userProfiles[shift.pharmacist_id]?.name || '不明'}
-薬局: ${userProfiles[shift.pharmacy_id]?.name || '不明'}`;
       console.log(`個別シフトを取り消しました: ${shift.id}`);
-      alert(deleteSuccessInfo);
       
       // システム状態を未確定に戻す
       setSystemStatus('pending');
@@ -3860,20 +3821,7 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
             console.error('募集ステータス更新エラー:', postingError);
             alert(errorInfo);
           } else {
-            const successInfo = `=== 募集ステータス更新結果 ===
-更新成功: ${updateResult ? updateResult.length : 0}件
-薬局ID: ${s.pharmacy_id}
-日付: ${date}
-開始時間: ${s.start_time || '09:00:00'}
-終了時間: ${s.end_time || '18:00:00'}
-店舗名: ${s.store_name || 'なし'}
-
-更新されたレコード:
-${updateResult ? updateResult.map((r: any, i: number) => 
-  `${i+1}. ID:${r.id}, ステータス:${r.status}, 薬局:${r.pharmacy_id}, 日付:${r.date}, 開始:${r.start_time}, 終了:${r.end_time}, 店舗:${r.store_name || 'なし'}`
-).join('\n') : 'なし'}`;
             console.log('募集ステータス更新成功:', updateResult);
-            alert(successInfo);
             
             if (updateResult && updateResult.length === 0) {
               alert('更新対象の募集が見つかりませんでした');
@@ -3898,11 +3846,7 @@ ${updateResult ? updateResult.map((r: any, i: number) =>
         return;
       }
 
-      const deleteSuccessInfo = `=== 確定シフト削除完了 ===
-日付: ${date}
-削除された確定シフト数: ${toCancel ? toCancel.length : 0}件`;
       console.log(`${date}の確定シフトを取り消しました`);
-      alert(deleteSuccessInfo);
       
       // システム状態を未確定に戻す
       setSystemStatus('pending');
