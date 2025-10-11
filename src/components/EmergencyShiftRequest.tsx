@@ -199,6 +199,14 @@ export const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
         setDebugInfo(prev => ({
           ...prev,
           logs: [...((prev && prev.logs) || []), 
+            { timestamp: new Date().toLocaleTimeString(), message: `Response processed: sent=${sentCount}, skipped=${skippedCount}, failed=${failedCount}` }
+          ]
+        }));
+        
+        // デバッグ情報を更新
+        setDebugInfo(prev => ({
+          ...prev,
+          logs: [...((prev && prev.logs) || []), 
             { timestamp: new Date().toLocaleTimeString(), message: `Success: ${sentCount} sent, ${skippedCount} skipped, ${failedCount} failed` }
           ]
         }));

@@ -250,7 +250,11 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        ...results,
+        sent: results.sent,
+        skipped: results.skipped,
+        failed: results.failed,
+        total: results.total,
+        details: results.details,
       }),
       {
         status: 200,
