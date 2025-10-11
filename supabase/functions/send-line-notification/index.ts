@@ -44,7 +44,11 @@ serve(async (req) => {
 
     // LINE Channel Access Tokenの取得
     const lineChannelAccessToken = Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN");
+    console.log("LINE Channel Access Token exists:", !!lineChannelAccessToken);
+    console.log("LINE Channel Access Token length:", lineChannelAccessToken?.length || 0);
+    
     if (!lineChannelAccessToken) {
+      console.error("LINE_CHANNEL_ACCESS_TOKEN is not set");
       throw new Error("LINE_CHANNEL_ACCESS_TOKEN is not set");
     }
 
@@ -56,16 +60,20 @@ serve(async (req) => {
 
     // userIdが指定されている場合、LINE User IDを取得
     if (body.userId && !targetLineUserId) {
+      console.log("Fetching user profile for userId:", body.userId);
+      
       const { data: userProfile, error: profileError } = await supabaseClient
         .from("user_profiles")
         .select("line_user_id, line_notification_enabled, user_type, name")
         .eq("id", body.userId)
         .single();
 
+      console.log("User profile query result:", { userProfile, profileError });
+
       if (profileError || !userProfile) {
         console.error("User profile not found:", profileError);
         return new Response(
-          JSON.stringify({ error: "User profile not found" }),
+          JSON.stringify({ error: "User profile not found", details: profileError }),
           {
             status: 404,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -112,8 +120,12 @@ serve(async (req) => {
     }
 
     if (!targetLineUserId) {
+      console.error("No LINE User ID specified");
       throw new Error("No LINE User ID specified");
     }
+
+    console.log("Sending LINE notification to:", targetLineUserId);
+    console.log("Message content:", body.message);
 
     // LINE Push Messageを送信
     const lineResponse = await fetch(LINE_API_ENDPOINT, {
@@ -133,11 +145,23 @@ serve(async (req) => {
       }),
     });
 
+    console.log("LINE API response status:", lineResponse.status);
+    console.log("LINE API response ok:", lineResponse.ok);
+
     const lineResponseData = await lineResponse.text();
     console.log("LINE API response:", {
       status: lineResponse.status,
       body: lineResponseData,
+      ok: lineResponse.ok,
     });
+
+    if (!lineResponse.ok) {
+      console.error("LINE API error:", {
+        status: lineResponse.status,
+        statusText: lineResponse.statusText,
+        body: lineResponseData,
+      });
+    }
 
     // 通知履歴を記録
     const logEntry = {
