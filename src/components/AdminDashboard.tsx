@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 import { Calendar, AlertCircle, Star, Brain, Zap, Bell } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
-import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
-import DataCollector from '../features/ai-matching/dataCollector';
-import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import { EmergencyShiftRequest } from './EmergencyShiftRequest';
 
 interface AdminDashboardProps {
@@ -47,14 +44,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     notes: null
   });
 
-  // AI Matching関連の状態（確実に安全な値で初期化）
-  const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
-  const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
-  const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
-  const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
-  const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
-  const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false); // 1ヶ月分マッチング実行フラグ
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false); // 緊急シフトモーダル表示状態
+  // 緊急シフトモーダル表示状態
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
   // 安全な配列アクセスのためのヘルパー関数
   const safeArray = (arr: any) => {
@@ -101,29 +92,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   }, []);
 
 
-  // AIマッチングエンジンの初期化
-  useEffect(() => {
-    const initializeAI = async () => {
-      try {
-        console.log('AI Matching Engine initialization started...');
-        const engine = new AIMatchingEngine();
-        const collector = new DataCollector();
-        
-        setAiMatchingEngine(engine);
-        setDataCollector(collector);
-        
-        console.log('✅ AI Matching Engine initialized successfully');
-        console.log('Engine instance:', engine);
-        console.log('DataCollector instance:', collector);
-      } catch (error) {
-        console.error('❌ Failed to initialize AI Matching Engine:', error);
-        // 初期化に失敗した場合はAIマッチングを無効にする
-        setUseAIMatching(false);
-      }
-    };
-
-    initializeAI();
-  }, []);
+  // AI関連の初期化は削除
 
 
   // 簡易AIマッチング関数（従来のロジックを踏襲）
