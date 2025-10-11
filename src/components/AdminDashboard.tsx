@@ -843,9 +843,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           return isCompatible;
         });
         
-        if (compatiblePostings.length > 0) {
+        if (safeLength(compatiblePostings) > 0) {
           compatibleCount++;
-          debugInfo += `  → 適合する募集: ${compatiblePostings.length}件\n`;
+          debugInfo += `  → 適合する募集: ${safeLength(compatiblePostings)}件\n`;
         } else {
           incompatibleCount++;
           debugInfo += `  → 適合する募集: 0件\n`;
@@ -860,7 +860,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       debugInfo += `userProfiles利用可能キー: ${Object.keys(userProfiles || {}).join(', ')}\n\n`;
       
       // サンプル募集の薬局名取得状況を確認
-      if (monthlyPostings.length > 0) {
+      if (safeLength(monthlyPostings) > 0) {
         debugInfo += `募集サンプルの薬局名取得状況:\n`;
         (monthlyPostings || []).slice(0, 3).forEach((posting, i) => {
           const pharmacyId = posting.pharmacy_id;
@@ -887,7 +887,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         return `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       });
       
-      debugInfo += `処理対象日付: ${allDates.length}日\n`;
+      debugInfo += `処理対象日付: ${safeLength(allDates)}日\n`;
       
       for (const date of allDates) {
         debugInfo += `\n--- 日付 ${date} のマッチング ---\n`;
@@ -896,9 +896,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         const dayRequests = monthlyRequests.filter((r: any) => r.date === date);
         const dayPostings = monthlyPostings.filter((p: any) => p.date === date);
         
-        debugInfo += `希望: ${dayRequests.length}件, 募集: ${dayPostings.length}件\n`;
+        debugInfo += `希望: ${safeLength(dayRequests)}件, 募集: ${safeLength(dayPostings)}件\n`;
         
-        if (dayRequests.length === 0 || dayPostings.length === 0) {
+        if (safeLength(dayRequests) === 0 || safeLength(dayPostings) === 0) {
           debugInfo += `データ不足のためスキップ\n`;
           matchesByDate[date] = [];
           continue;
@@ -909,7 +909,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           const dayMatches = await executeSimpleAIMatching(dayRequests, dayPostings);
           
           matchesByDate[date] = dayMatches;
-          debugInfo += `マッチング成功: ${dayMatches.length}件\n`;
+          debugInfo += `マッチング成功: ${safeLength(dayMatches)}件\n`;
           
           // マッチング詳細を表示
           dayMatches.forEach((match, i) => {
