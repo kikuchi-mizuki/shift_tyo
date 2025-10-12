@@ -4795,8 +4795,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           </div>
                         </div>
                         
-                        {/* 不足薬局一覧（AI機能は無効化） */}
-                        {safeLength(dayShortageAnalysis) > 0 && (
+                        {/* 不足薬局一覧（マッチング実行後のみ表示） */}
+                        {monthlyMatchingExecuted && safeLength(dayShortageAnalysis) > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-4 h-4 text-red-600" />
@@ -5035,8 +5035,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           </div>
                         )}
 
-                        {/* 不足薬局一覧（AI機能は無効化） */}
-                        {safeLength(dayShortageAnalysis) > 0 && (
+                        {/* 不足薬局一覧（マッチング実行後のみ表示） */}
+                        {monthlyMatchingExecuted && safeLength(dayShortageAnalysis) > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-4 h-4 text-red-600" />
