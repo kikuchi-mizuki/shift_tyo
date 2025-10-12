@@ -4294,7 +4294,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >
             <Bell className="w-4 h-4" />
-            急な人手不足に対応
+            LINEで呼びかける
           </button>
         </div>
       </div>
