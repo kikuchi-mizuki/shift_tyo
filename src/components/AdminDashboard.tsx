@@ -4539,15 +4539,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               </div>
                             )}
                             
-                            {/* 不足件数（AI機能は無効化） */}
+                            {/* 不足件数（マッチング実行後のみ表示） */}
                             {(() => {
-                              const shouldShowShortage = matchingStatus.shortage > 0;
+                              const shouldShowShortage = matchingStatus.shortage > 0 && (aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0);
                               if (matchingStatus.shortage > 0) {
                                 console.log(`カレンダー不足パッチ表示判定 [${dateStr}]:`, {
                                   shortage: matchingStatus.shortage,
                                   shouldShowShortage,
                                   totalRequired: matchingStatus.count || 0,
-                                  totalMatched: matchingStatus.count - matchingStatus.shortage || 0
+                                  totalMatched: matchingStatus.count - matchingStatus.shortage || 0,
+                                  hasMatches: aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0
                                 });
                               }
                               return shouldShowShortage;
