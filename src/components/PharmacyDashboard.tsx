@@ -417,12 +417,14 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       if (!profileError && profileData) {
         console.log('=== PROFILE DATA LOADED ===');
         console.log('Full profile data:', profileData);
+        console.log('Pharmacy name from DB:', profileData.name);
         console.log('store_names from DB:', profileData.store_names);
         console.log('store_names type:', typeof profileData.store_names);
         console.log('store_names is array:', Array.isArray(profileData.store_names));
         
         const storeNamesFromDB = profileData.store_names || [];
         console.log('Setting storeNames to:', storeNamesFromDB);
+        console.log('Setting profileName to:', profileData.name || '');
         setProfileName(profileData.name || '');
         setStoreNames(storeNamesFromDB);
         setNgList(profileData.ng_list || []);
@@ -1429,6 +1431,9 @@ User ID from props: ${user?.id}
               プロフィール編集
             </button>
           </div>
+          <p className="text-sm text-blue-100 mt-1 font-medium">
+            {profileName || '薬局名未設定'}
+          </p>
           <p className="text-xs text-blue-100 mt-1">
             必要な薬剤師の募集条件を設定してください
           </p>
@@ -1629,38 +1634,6 @@ User ID from props: ${user?.id}
               </button>
             </div>
           )}
-          
-          {/* 薬局名の表示 */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">薬局名の設定</h3>
-            <input
-              type="text"
-              value={profileName}
-              onChange={(e) => setProfileName(e.target.value)}
-              placeholder="薬局名"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
-          </div>
-          
-          {/* 最寄駅の表示 */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">最寄駅の設定</h3>
-            <input
-              type="text"
-              value={nearestStationName}
-              onChange={(e) => setNearestStationName(e.target.value)}
-              placeholder="最寄駅名（例：新宿駅）"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
-          </div>
-          
-          {/* 保存ボタン */}
-          <button
-            onClick={handleProfileUpdate}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-          >
-            薬局情報を保存
-          </button>
           
           {/* 確定シフトの詳細表示 */}
           {(() => {
