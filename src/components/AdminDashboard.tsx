@@ -5579,17 +5579,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         <h4 className="text-sm font-semibold text-blue-800">
                           応募している薬剤師 ({(() => {
                             // 通常の希望（確定済みでない）のみをカウント
-                            const dayAssigned = Array.isArray(assigned) ? assigned : [];
+                            // 注意: 薬剤師の希望は確定シフトがあってもカウントする（不足薬局とは異なる）
                             const regularRequests = Array.isArray(requests) 
                               ? requests.filter((r: any) => 
                                   r.date === selectedDate && 
                                   r.time_slot !== 'consult' &&
-                                  r.status !== 'confirmed' &&
-                                  !dayAssigned.some((s: any) =>
-                                    s.date === r.date &&
-                                    s.pharmacist_id === r.pharmacist_id &&
-                                    s.status === 'confirmed'
-                                  )
+                                  r.status !== 'confirmed'
                                 )
                               : [];
                             
@@ -5657,17 +5652,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         });
                         
                         // 通常の希望（確定済みでない）のみを表示
-                        const dayAssigned = Array.isArray(assigned) ? assigned : [];
+                        // 注意: 薬剤師の希望は確定シフトがあっても表示する（不足薬局とは異なる）
                         const regularRequests = Array.isArray(requests) 
                           ? requests.filter((r: any) => 
                               r.date === selectedDate && 
                               r.time_slot !== 'consult' &&
-                              r.status !== 'confirmed' &&
-                              !dayAssigned.some((s: any) =>
-                                s.date === r.date &&
-                                s.pharmacist_id === r.pharmacist_id &&
-                                s.status === 'confirmed'
-                              )
+                              r.status !== 'confirmed'
                             )
                           : [];
                         
@@ -5754,17 +5744,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       
                       {/* 薬剤師の希望が空の場合の表示 */}
                       {(() => {
-                        const dayAssigned = Array.isArray(assigned) ? assigned : [];
+                        // 注意: 薬剤師の希望は確定シフトがあってもカウントする（不足薬局とは異なる）
                         const regularRequests = Array.isArray(requests) 
                           ? requests.filter((r: any) => 
                               r.date === selectedDate && 
                               r.time_slot !== 'consult' &&
-                              r.status !== 'confirmed' &&
-                              !dayAssigned.some((s: any) =>
-                                s.date === r.date &&
-                                s.pharmacist_id === r.pharmacist_id &&
-                                s.status === 'confirmed'
-                              )
+                              r.status !== 'confirmed'
                             )
                           : [];
                         
