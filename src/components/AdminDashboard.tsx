@@ -3906,7 +3906,23 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         }
       }
 
-      // 3) 確定シフトを削除
+      // 3) 薬剤師の希望データのstatusを'confirmed'から'pending'に戻す
+      const { error: requestsUpdateError } = await supabase
+        .from('shift_requests')
+        .update({ status: 'pending' })
+        .eq('date', date)
+        .eq('status', 'confirmed');
+
+      if (requestsUpdateError) {
+        const requestsErrorInfo = `=== 薬剤師希望ステータス更新エラー ===
+エラー: ${requestsUpdateError.message || requestsUpdateError.code || 'Unknown error'}
+日付: ${date}`;
+        console.error('Error updating shift requests status:', requestsUpdateError);
+        alert(requestsErrorInfo);
+        return;
+      }
+
+      // 4) 確定シフトを削除
       const { error } = await supabase
         .from('assigned_shifts')
         .delete()
@@ -5618,12 +5634,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-blue-800">
                           応募している薬剤師 ({(() => {
-                            // 薬剤師の希望カウント（テスト用：条件を緩和）
+                            // 薬剤師の希望カウント（確定取り消し処理修正後）
                             const regularRequests = Array.isArray(requests) 
                               ? requests.filter((r: any) => 
                                   r.date === selectedDate && 
-                                  r.time_slot !== 'consult'
-                                  // 一時的にstatus条件を削除
+                                  r.time_slot !== 'consult' &&
+                                  r.status !== 'confirmed'
                                 )
                               : [];
                             
@@ -5705,13 +5721,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           })));
                         }
                         
-                        // 薬剤師の希望表示（テスト用：条件を緩和）
-                        // 一時的にすべてのデータを表示してテスト
+                        // 薬剤師の希望表示（確定取り消し処理修正後）
+                        // statusが'confirmed'でない希望を表示
                         const regularRequests = Array.isArray(requests) 
                           ? requests.filter((r: any) => 
                               r.date === selectedDate && 
-                              r.time_slot !== 'consult'
-                              // 一時的にstatus条件を削除
+                              r.time_slot !== 'consult' &&
+                              r.status !== 'confirmed'
                             )
                           : [];
                         
@@ -5807,8 +5823,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         const regularRequests = Array.isArray(requests) 
                           ? requests.filter((r: any) => 
                               r.date === selectedDate && 
-                              r.time_slot !== 'consult'
-                              // 一時的にstatus条件を削除
+                              r.time_slot !== 'consult' &&
+                              r.status !== 'confirmed'
                             )
                           : [];
                         
