@@ -4279,9 +4279,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           <div className="flex items-center space-x-3">
             <Bell className="w-6 h-6 text-red-600" />
             <div>
-              <h3 className="text-lg font-semibold text-red-800">緊急シフトリクエスト</h3>
+              <h3 className="text-lg font-semibold text-red-800">急な人手不足に対応</h3>
               <p className="text-sm text-red-600">
-                LINE通知で薬剤師に緊急シフトを募集できます
+                チームみんなで、シフトをスムーズに🌿
               </p>
             </div>
           </div>
@@ -4294,7 +4294,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >
             <Bell className="w-4 h-4" />
-            緊急募集を送信
+            急な人手不足に対応
           </button>
         </div>
       </div>
@@ -4606,7 +4606,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   ) : (
                     <>
                       <Brain className="w-4 h-4" />
-                      <span>1ヶ月分マッチングを実行</span>
+                      <span>1ヶ月分のシフトを自動で組む</span>
                     </>
                   )}
                 </button>
@@ -4624,7 +4624,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
               >
-                {recruitmentStatus.is_open ? '募集を締め切る' : '募集を再開する'}
+                  {recruitmentStatus.is_open ? '✋ 募集を締め切る（応募を終了します）' : '募集を再開する'}
               </button>
             </div>
           </div>
