@@ -3907,11 +3907,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
 
       // 3) 薬剤師の希望データのstatusを'confirmed'から'pending'に戻す
-      const { error: requestsUpdateError } = await supabase
+      console.log('🔄 薬剤師希望ステータス更新開始:', { date });
+      const { error: requestsUpdateError, data: requestsUpdateData } = await supabase
         .from('shift_requests')
         .update({ status: 'pending' })
         .eq('date', date)
-        .eq('status', 'confirmed');
+        .eq('status', 'confirmed')
+        .select('id, pharmacist_id, date, status');
+      
+      console.log('🔄 薬剤師希望ステータス更新結果:', {
+        date,
+        error: requestsUpdateError,
+        updatedData: requestsUpdateData,
+        updatedCount: requestsUpdateData?.length || 0
+      });
 
       if (requestsUpdateError) {
         const requestsErrorInfo = `=== 薬剤師希望ステータス更新エラー ===
@@ -4597,21 +4606,19 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             
                             {/* 不足件数（マッチング実行後のみ表示、確定取り消し後は非表示） */}
                             {(() => {
-                              // 確定シフトがある場合は不足を表示しない
-                              const hasConfirmedShifts = safeLength(dayAssignedShifts) > 0;
-                              const shouldShowShortage = matchingStatus.shortage > 0 && 
-                                (aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0) &&
-                                !hasConfirmedShifts;
+                              // 確定取り消し後は不足薬局を表示しない（monthlyMatchingExecutedがfalseの場合）
+                              const shouldShowShortage = monthlyMatchingExecuted && 
+                                matchingStatus.shortage > 0 && 
+                                (aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0);
                               
                               if (matchingStatus.shortage > 0) {
                                 console.log(`カレンダー不足パッチ表示判定 [${dateStr}]:`, {
                                   shortage: matchingStatus.shortage,
                                   shouldShowShortage,
+                                  monthlyMatchingExecuted,
                                   totalRequired: matchingStatus.count || 0,
                                   totalMatched: matchingStatus.count - matchingStatus.shortage || 0,
-                                  hasMatches: aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0,
-                                  hasConfirmedShifts,
-                                  dayAssignedShifts: safeLength(dayAssignedShifts)
+                                  hasMatches: aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0
                                 });
                               }
                               return shouldShowShortage;
@@ -5742,6 +5749,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             status: r.status
                           }))
                         });
+                        
+                        // デバッグ：選択日付の全データを確認
+                        if (selectedDate === '2025-10-01') {
+                          console.log('🔍 2025-10-01の全データ確認:', {
+                            allRequestsForDate: Array.isArray(requests) ? requests.filter(r => r.date === selectedDate) : [],
+                            allRequestsCount: Array.isArray(requests) ? requests.length : 0,
+                            selectedDate,
+                            requests: requests
+                          });
+                        }
                         
                         return regularRequests.map((request: any, index: number) => {
                           const pharmacistProfile = userProfiles[request.pharmacist_id];
