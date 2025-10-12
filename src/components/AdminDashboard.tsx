@@ -5647,6 +5647,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       )}
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {(() => {
+                        // デバッグログ：薬剤師の希望データの取得状況を確認
+                        console.log('薬剤師の希望データ確認:', {
+                          selectedDate,
+                          allRequests: requests,
+                          requestsCount: Array.isArray(requests) ? requests.length : 0,
+                          assignedShifts: assigned,
+                          assignedCount: Array.isArray(assigned) ? assigned.length : 0
+                        });
+                        
                         // 通常の希望（確定済みでない）のみを表示
                         const dayAssigned = Array.isArray(assigned) ? assigned : [];
                         const regularRequests = Array.isArray(requests) 
@@ -5661,6 +5670,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               )
                             )
                           : [];
+                        
+                        console.log('フィルタ後の薬剤師希望:', {
+                          selectedDate,
+                          regularRequests,
+                          filteredCount: regularRequests.length
+                        });
                         
                         return regularRequests.map((request: any, index: number) => {
                           const pharmacistProfile = userProfiles[request.pharmacist_id];
@@ -5735,6 +5750,30 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           </div>
                           );
                         });
+                      })()}
+                      
+                      {/* 薬剤師の希望が空の場合の表示 */}
+                      {(() => {
+                        const dayAssigned = Array.isArray(assigned) ? assigned : [];
+                        const regularRequests = Array.isArray(requests) 
+                          ? requests.filter((r: any) => 
+                              r.date === selectedDate && 
+                              r.time_slot !== 'consult' &&
+                              r.status !== 'confirmed' &&
+                              !dayAssigned.some((s: any) =>
+                                s.date === r.date &&
+                                s.pharmacist_id === r.pharmacist_id &&
+                                s.status === 'confirmed'
+                              )
+                            )
+                          : [];
+                        
+                        return regularRequests.length === 0 && (
+                          <div className="text-center text-gray-500 py-4">
+                            <div className="text-sm">薬剤師の希望がありません</div>
+                            <div className="text-xs mt-1">薬剤師がシフト希望を登録するとここに表示されます</div>
+                          </div>
+                        );
                       })()}
                       </div>
                     </div>
