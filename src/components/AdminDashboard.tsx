@@ -2969,6 +2969,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
       const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      
+      console.log('🗓️ 日付選択:', {
+        clickedDay: day,
+        currentDate,
+        year,
+        month,
+        formattedDate,
+        previousSelectedDate: selectedDate
+      });
+      
       setSelectedDate(formattedDate);
     }
   };
@@ -5643,28 +5653,65 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {(() => {
                         // デバッグログ：薬剤師の希望データの取得状況を確認
-                        console.log('薬剤師の希望データ確認:', {
+                        console.log('🔍 薬剤師の希望データ確認:', {
                           selectedDate,
                           allRequests: requests,
                           requestsCount: Array.isArray(requests) ? requests.length : 0,
                           assignedShifts: assigned,
-                          assignedCount: Array.isArray(assigned) ? assigned.length : 0
+                          assignedCount: Array.isArray(assigned) ? assigned.length : 0,
+                          selectedDateRequests: Array.isArray(requests) ? requests.filter((r: any) => r.date === selectedDate) : []
                         });
+                        
+                        // 選択日付の希望データの詳細を確認
+                        if (Array.isArray(requests)) {
+                          const selectedDateRequests = requests.filter((r: any) => r.date === selectedDate);
+                          console.log('📅 選択日付の希望データ詳細:', selectedDateRequests.map(r => ({
+                            id: r.id,
+                            pharmacist_id: r.pharmacist_id,
+                            date: r.date,
+                            time_slot: r.time_slot,
+                            status: r.status,
+                            start_time: r.start_time,
+                            end_time: r.end_time
+                          })));
+                        }
                         
                         // 通常の希望（確定済みでない）のみを表示
                         // 注意: 薬剤師の希望は確定シフトがあっても表示する（不足薬局とは異なる）
                         const regularRequests = Array.isArray(requests) 
-                          ? requests.filter((r: any) => 
-                              r.date === selectedDate && 
-                              r.time_slot !== 'consult' &&
-                              r.status !== 'confirmed'
-                            )
+                          ? requests.filter((r: any) => {
+                              const matchesDate = r.date === selectedDate;
+                              const notConsult = r.time_slot !== 'consult';
+                              const notConfirmed = r.status !== 'confirmed';
+                              
+                              console.log('🔍 フィルタリング詳細:', {
+                                requestId: r.id,
+                                pharmacistId: r.pharmacist_id,
+                                date: r.date,
+                                selectedDate,
+                                matchesDate,
+                                timeSlot: r.time_slot,
+                                notConsult,
+                                status: r.status,
+                                notConfirmed,
+                                passesAllFilters: matchesDate && notConsult && notConfirmed
+                              });
+                              
+                              return matchesDate && notConsult && notConfirmed;
+                            })
                           : [];
                         
-                        console.log('フィルタ後の薬剤師希望:', {
+                        console.log('✅ フィルタ後の薬剤師希望:', {
                           selectedDate,
                           regularRequests,
-                          filteredCount: regularRequests.length
+                          filteredCount: regularRequests.length,
+                          regularRequestsDetails: regularRequests.map(r => ({
+                            id: r.id,
+                            pharmacist_id: r.pharmacist_id,
+                            date: r.date,
+                            time_slot: r.time_slot,
+                            status: r.status
+                          }))
                         });
                         
                         return regularRequests.map((request: any, index: number) => {
