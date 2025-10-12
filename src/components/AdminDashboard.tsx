@@ -5618,12 +5618,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-blue-800">
                           応募している薬剤師 ({(() => {
-                            // 薬剤師の希望カウント（元の仕様に戻す）
+                            // 薬剤師の希望カウント（テスト用：条件を緩和）
                             const regularRequests = Array.isArray(requests) 
                               ? requests.filter((r: any) => 
                                   r.date === selectedDate && 
-                                  r.time_slot !== 'consult' &&
-                                  r.status !== 'confirmed'
+                                  r.time_slot !== 'consult'
+                                  // 一時的にstatus条件を削除
                                 )
                               : [];
                             
@@ -5705,13 +5705,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           })));
                         }
                         
-                        // 薬剤師の希望表示（元の仕様に戻す）
-                        // 確定シフトがあっても薬剤師の希望は表示する
+                        // 薬剤師の希望表示（テスト用：条件を緩和）
+                        // 一時的にすべてのデータを表示してテスト
                         const regularRequests = Array.isArray(requests) 
                           ? requests.filter((r: any) => 
                               r.date === selectedDate && 
-                              r.time_slot !== 'consult' &&
-                              r.status !== 'confirmed'
+                              r.time_slot !== 'consult'
+                              // 一時的にstatus条件を削除
                             )
                           : [];
                         
@@ -5807,8 +5807,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         const regularRequests = Array.isArray(requests) 
                           ? requests.filter((r: any) => 
                               r.date === selectedDate && 
-                              r.time_slot !== 'consult' &&
-                              r.status !== 'confirmed'
+                              r.time_slot !== 'consult'
+                              // 一時的にstatus条件を削除
                             )
                           : [];
                         
