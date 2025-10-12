@@ -23,14 +23,14 @@ brew install supabase/tap/supabase
 supabase login
 
 # プロジェクトにリンク
-supabase link --project-ref wjgterfwurmvosawzbjs
+supabase link --project-ref <YOUR_PROJECT_REF>
 ```
 
 ### 3. Edge Function用環境変数設定
 ```bash
 # 必要な環境変数を設定
-supabase functions secrets set SUPABASE_URL=https://wjgterfwurmvosawzbjs.supabase.co
-supabase functions secrets set SUPABASE_SERVICE_ROLE_KEY=<YOUR_ACTUAL_SERVICE_ROLE_KEY>
+supabase functions secrets set SUPABASE_URL=https://<YOUR_PROJECT_REF>.supabase.co
+supabase functions secrets set SUPABASE_SERVICE_ROLE_KEY=<YOUR_SERVICE_ROLE_KEY>
 ```
 
 **重要**: `<YOUR_ACTUAL_SERVICE_ROLE_KEY>`を実際のService Role Keyに置き換えてください。
@@ -47,14 +47,14 @@ supabase functions deploy api
 supabase functions list
 
 # テスト実行
-curl -X GET "https://wjgterfwurmvosawzbjs.supabase.co/functions/v1/api/user_profiles?limit=1" \
-  -H "Authorization: Bearer sb_publishable_nCoPvmldzPho7y_8AwLhXQ_IcLfvRFN"
+curl -X GET "https://<YOUR_PROJECT_REF>.supabase.co/functions/v1/api/user_profiles?limit=1" \
+  -H "Authorization: Bearer <YOUR_ANON_KEY>"
 ```
 
 ## 🔧 Service Role Keyの取得方法
 
 1. [Supabase Dashboard](https://supabase.com/dashboard) にアクセス
-2. プロジェクト `wjgterfwurmvosawzbjs` を選択
+2. プロジェクトを選択
 3. 左サイドバーの **Settings** → **API** をクリック
 4. **Project API keys** セクションの **service_role** キーをコピー
 
@@ -86,5 +86,5 @@ jobs:
       - run: supabase functions deploy api
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID: wjgterfwurmvosawzbjs
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 ```

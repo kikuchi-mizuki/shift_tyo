@@ -19,7 +19,7 @@ npm i -g supabase
 supabase login
 
 # プロジェクトに紐付け
-supabase link --project-ref wjgterfwurmvosawzbjs
+supabase link --project-ref <YOUR_PROJECT_REF>
 ```
 
 ### 3️⃣ Edge Function用シークレット設定（初回のみ）
@@ -28,7 +28,7 @@ supabase link --project-ref wjgterfwurmvosawzbjs
 
 ```bash
 supabase functions secrets set \
-  SUPABASE_URL=https://wjgterfwurmvosawzbjs.supabase.co \
+  SUPABASE_URL=https://<YOUR_PROJECT_REF>.supabase.co \
   SUPABASE_SERVICE_ROLE_KEY=<YOUR_SERVICE_ROLE_KEY>
 ```
 
@@ -41,15 +41,15 @@ supabase functions secrets set \
 
 ```bash
 # "api" という関数名でデプロイ
-supabase functions deploy api --project-ref wjgterfwurmvosawzbjs
+supabase functions deploy api --project-ref <YOUR_PROJECT_REF>
 ```
 
 ### 5️⃣ 動作確認
 
 ```bash
 # user_profiles を1件取得してテスト
-curl -s "https://wjgterfwurmvosawzbjs.supabase.co/functions/v1/api/user_profiles?limit=1" \
-  -H "Authorization: Bearer sb_publishable_nCoPvmldzPho7y_8AwLhXQ_IcLfvRFN"
+curl -s "https://<YOUR_PROJECT_REF>.supabase.co/functions/v1/api/user_profiles?limit=1" \
+  -H "Authorization: Bearer <YOUR_ANON_KEY>"
 ```
 
 **期待される結果**: 200ステータスでJSONデータが返される

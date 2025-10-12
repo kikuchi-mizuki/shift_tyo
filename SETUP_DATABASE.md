@@ -7,7 +7,7 @@
 
 ### 1. Supabaseダッシュボードにアクセス
 1. [Supabase Dashboard](https://supabase.com/dashboard) を開く
-2. あなたのプロジェクト（wjgterfwurmvosawzbjs）を選択
+2. あなたのプロジェクトを選択
 
 ### 2. SQL Editorで最新のマイグレーションを実行
 1. 左サイドバーの **SQL Editor** をクリック

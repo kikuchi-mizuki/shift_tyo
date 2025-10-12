@@ -44,22 +44,42 @@ serve(async (req) => {
   console.log("Auth header received:", authHeader ? "Present" : "Missing");
   console.log("Auth header starts with Bearer:", authHeader?.startsWith("Bearer "));
   
-  // 認証チェックを一時的に無効化（Edge Function間の呼び出しのため）
-  console.log("Auth check temporarily disabled for Edge Function to Edge Function calls");
-  // if (!authHeader || !authHeader.startsWith("Bearer ")) {
-  //   console.error("No valid authorization header found");
-  //   return new Response(
-  //     JSON.stringify({
-  //       success: false,
-  //       error: "Unauthorized - No valid Bearer token",
-  //       authHeader: authHeader || "None"
-  //     }),
-  //     {
-  //       status: 401,
-  //       headers: { ...corsHeaders, "Content-Type": "application/json" },
-  //     }
-  //   );
-  // }
+  // Edge Function間の呼び出しまたは有効なトークンの確認
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.error("No valid authorization header found");
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Unauthorized - No valid Bearer token",
+      }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+  
+  const token = authHeader.replace("Bearer ", "");
+  
+  // Anon KeyまたはService Role Keyでの認証を許可
+  if (token !== anonKey && token !== serviceRoleKey) {
+    console.error("Invalid token");
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Unauthorized - Invalid token",
+      }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+  
+  console.log("✅ Authentication successful");
 
   try {
     // Supabaseクライアント作成

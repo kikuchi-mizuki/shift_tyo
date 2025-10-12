@@ -1,449 +1,189 @@
-import { createClient } from '@supabase/supabase-js';
+# 🏥 薬局シフト管理システム
 
-// 環境変数の取得
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+薬局と薬剤師のシフトマッチングを効率化する統合管理システムです。AIマッチング、LINE通知連携、緊急シフト対応など、現代の薬局運営に必要な機能を網羅しています。
 
-// 本番環境かどうかの判定
-export const isProduction = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key');
+## ✨ 主な機能
 
-// Supabaseクライアントの作成（完全にシングルトン）
-export const supabase = (window as any).supabaseClient
-  ?? ((window as any).supabaseClient = isProduction ? createClient(
-        supabaseUrl!,
-        supabaseAnonKey!,
-        {
-          auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: false, // URLからセッション検出を無効化
-            flowType: 'pkce'
-          },
-          global: {
-            headers: {
-              'X-Client-Info': 'pharmacy-shift-system'
-            }
-          }
-        }
-      ) : null);
+### 🎯 コア機能
+- **マルチユーザー対応**: 薬局、薬剤師、管理者の3種類のユーザータイプ
+- **シフト管理**: 募集、希望提出、マッチング、確定までの一元管理
+- **AIマッチング**: 距離、スキル、NG設定を考慮した自動マッチング
+- **カレンダー表示**: 直感的なUIでシフトの可視化
 
-// 認証関連のヘルパー関数
-export const auth = {
-  // ログイン
-  signIn: async (email: string, password: string) => {
-    if (!supabase) {
-      return { data: null, error: { message: 'Supabaseが設定されていません' } };
-    }
+### 🔔 通知機能
+- **LINE連携**: シフト確定、リマインダー、緊急通知をLINEで送信
+- **緊急シフト対応**: 即座に薬剤師へ通知し、迅速な対応を実現
+- **自動リマインダー**: シフト前日の自動通知
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        console.warn('Auth error:', error);
-        return { data: null, error };
-      }
-      
-      return { data, error: null };
-    } catch (error) {
-      console.error('Auth error:', error);
-      return { data: null, error: { message: 'ログインに失敗しました' } };
-    }
-  },
+### 🛡️ セキュリティ
+- **認証システム**: Supabase Authによる安全な認証
+- **Row Level Security (RLS)**: データベースレベルでのアクセス制御
+- **NG設定**: 薬局と薬剤師の相互NG設定
 
-  // サインアップ
-  signUp: async (email: string, password: string, userData: any) => {
-    if (!supabase) {
-      return { data: null, error: { message: 'Supabaseが設定されていません' } };
-    }
+### 📊 管理機能
+- **募集ステータス管理**: 一括での募集開始・終了
+- **評価システム**: 薬剤師の評価管理
+- **統計表示**: AIマッチング精度などの可視化
 
-    // email/passwordの検証
-    if (!email || !password) {
-      return { data: null, error: { message: 'emailまたはpasswordが空です' } };
-    }
+## 🚀 技術スタック
 
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userData
-        }
-      });
-      
-      if (error) {
-        console.warn('SignUp error:', error);
-        return { data: null, error };
-      }
-      
-      return { data, error: null };
-    } catch (error) {
-      console.error('SignUp error:', error);
-      return { data: null, error: { message: '新規登録に失敗しました' } };
-    }
-  },
+### フロントエンド
+- **React 18** + **TypeScript**
+- **Vite** - 高速なビルドツール
+- **Tailwind CSS** - ユーティリティファーストのCSS
+- **Lucide React** - アイコンライブラリ
 
-  // ログアウト
-  signOut: async () => {
-    if (!supabase) {
-      return { error: null };
-    }
+### バックエンド
+- **Supabase** - PostgreSQLデータベース + Auth + Edge Functions
+- **Deno** - Edge Function実行環境
 
-    try {
-      const { error } = await supabase.auth.signOut();
-      return { error };
-    } catch (error) {
-      console.error('SignOut error:', error);
-      return { error: { message: 'ログアウトに失敗しました' } };
-    }
-  },
+### 外部連携
+- **LINE Messaging API** - 通知配信
 
-  // 現在のユーザー取得
-  getCurrentUser: async () => {
-    if (!supabase) {
-      return { data: { user: null } };
-    }
+## 📦 セットアップ
 
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      
-      // Handle session not found errors
-      if (error && (error.message.includes('session_not_found') || error.message.includes('Session from session_id'))) {
-        console.warn('Stale session detected, clearing auth data');
-        await supabase.auth.signOut();
-        return { data: { user: null }, error: null };
-      }
-      
-      return { data, error };
-    } catch (error) {
-      console.error('Get user error:', error);
-      // If it's a session error, try to clear the session
-      if (error instanceof Error && error.message.includes('session')) {
-        try {
-          await supabase.auth.signOut();
-        } catch (signOutError) {
-          console.warn('Failed to clear stale session:', signOutError);
-        }
-      }
-      return { data: { user: null }, error };
-    }
-  },
+### 前提条件
+- Node.js >= 18.0.0
+- npm >= 8.0.0
+- Supabaseアカウント
+- （オプション）LINE Developersアカウント
 
-  // 認証状態の監視
-  onAuthStateChange: (callback: (event: string, session: any) => void) => {
-    if (!supabase) {
-      return { data: { subscription: { unsubscribe: () => {} } } };
-    }
+### 1. リポジトリのクローン
 
-    return supabase.auth.onAuthStateChange(callback);
-  }
-};
+```bash
+git clone <repository-url>
+cd shift_tyo-main
+```
 
-// ユーザープロファイル関連の関数
-export const userProfiles = {
-  // プロフィール取得（0件でもエラーにしない）
-  getProfile: async (userId: string) => {
-    if (!supabase) {
-      return { data: null, error: { message: 'Supabaseが設定されていません' } };
-    }
+### 2. 依存関係のインストール
 
-    try {
-      // Edge Function経由でデータを取得
-      const apiUrl = `${supabaseUrl}/functions/v1/api/user_profiles`;
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { data: null, error: errorData.error || { message: 'API request failed' } };
-      }
-      
-      const result = await response.json();
-      const data = result.data || [];
-      
-      // 指定されたユーザーIDのプロファイルを検索
-      const userProfile = data.find((profile: any) => profile.id === userId) || null;
-      
-      return { data: userProfile, error: null };
-    } catch (error) {
-      console.error('Get profile error:', error);
-      return { data: null, error };
-    }
-  },
+```bash
+npm install
+```
 
-  // プロフィール作成（存在しない場合）
-  createProfile: async (userId: string, userData: any) => {
-    // Profile creation disabled due to view restrictions
-    console.warn('Profile creation is disabled due to database view restrictions');
-    return { data: null, error: { message: 'Profile creation is disabled due to database view restrictions' } };
-  },
+### 3. 環境変数の設定
 
-  // プロフィール更新
-  updateProfile: async (userId: string, updates: any) => {
-    // Update operations disabled due to view restrictions
-    console.warn('Profile updates are disabled due to database view restrictions');
-    return { data: null, error: { message: 'Profile updates are not supported' } };
-  },
+```bash
+cp env.example .env
+```
 
-  // NGリスト更新
-  updateNGList: async (userId: string, ngList: string[]) => {
-    // Update operations disabled due to view restrictions
-    console.warn('NG list updates are disabled due to database view restrictions');
-    return { data: null, error: { message: 'NG list updates are not supported' } };
-  }
-};
+`.env`ファイルを編集して、Supabaseの認証情報を設定：
 
-// シフト関連の関数
-export const shifts = {
-  // シフト取得
-  getShifts: async (userId?: string, userType?: string) => {
-    if (!supabase) {
-      return { data: [], error: { message: 'Supabaseが設定されていません' } };
-    }
+```env
+VITE_SUPABASE_URL=https://<YOUR_PROJECT_REF>.supabase.co
+VITE_SUPABASE_ANON_KEY=<YOUR_ANON_KEY>
+```
 
-    try {
-      // Edge Function経由でデータを取得
-      const apiUrl = `${supabaseUrl}/functions/v1/api/assigned_shifts`;
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { data: [], error: errorData.error || { message: 'API request failed' } };
-      }
-      
-      const result = await response.json();
-      let data = result.data || [];
-      
-      // ユーザータイプに応じてフィルタリング（クライアント側）
-      if (userId && userType) {
-        if (userType === 'pharmacist') {
-          data = data.filter((shift: any) => shift.pharmacist_id === userId);
-        } else if (userType === 'store' || userType === 'pharmacy') {
-          data = data.filter((shift: any) => shift.pharmacy_id === userId);
-        }
-        // adminの場合はフィルタリングなし
-      }
-      
-      // テーブルが存在しない場合のエラーハンドリング
-      if (result.error && (result.error.code === 'PGRST116' || result.error.code === 'PGRST205')) {
-        console.warn('assigned_shifts table not found, falling back to demo mode');
-        return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
-      }
-      
-      return { data: data || [], error: null };
-    } catch (error) {
-      console.error('Get shifts error:', error);
-      return { data: [], error: { code: 'PGRST205', message: 'Table not found' } };
-    }
-  },
+### 4. データベースのセットアップ
 
-  getShiftsByUser: async (userId: string, userType: string) => {
-    if (!supabase) {
-      return { data: [], error: { message: 'Supabaseが設定されていません' } };
-    }
+詳細は `SETUP_DATABASE.md` を参照してください。
 
-    try {
-      // Edge Function経由でデータを取得
-      const apiUrl = `${supabaseUrl}/functions/v1/api/assigned_shifts`;
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { data: [], error: errorData.error || { message: 'API request failed' } };
-      }
-      
-      const result = await response.json();
-      let data = result.data || [];
-      
-      // ユーザータイプに応じてフィルタリング
-      if (userType === 'pharmacist') {
-        data = data.filter((shift: any) => shift.pharmacist_id === userId);
-      } else if (userType === 'store' || userType === 'pharmacy') {
-        data = data.filter((shift: any) => shift.pharmacy_id === userId);
-      }
-      // adminの場合はフィルタリングなし
-      
-      // テーブルが存在しない場合のエラーハンドリング
-      if (result.error && (result.error.code === 'PGRST116' || result.error.code === 'PGRST205')) {
-        console.warn('assigned_shifts table not found, falling back to demo mode');
-        return { data: [], error: { code: 'PGRST205', message: 'Table not found' } };
-      }
-      
-      return { data: data || [], error: null };
-    } catch (error) {
-      console.error('Get shifts error:', error);
-      return { data: [], error: { code: 'PGRST205', message: 'Table not found' } };
-    }
-  },
+### 5. Edge Functionsのデプロイ
 
-  // シフト作成
-  createShift: async (shiftData: any) => {
-    if (!supabase) {
-      return { data: null, error: { message: 'Supabaseが設定されていません' } };
-    }
+詳細は `DEPLOYMENT_GUIDE.md` を参照してください。
 
-    try {
-      const { data, error } = await supabase
-        .from('assigned_shifts')
-        .insert([shiftData])
-        .select()
-        .single();
-      
-      return { data, error };
-    } catch (error) {
-      console.error('Create shift error:', error);
-      return { data: null, error };
-    }
-  },
+### 6. 開発サーバーの起動
 
-  // シフト更新
-  updateShift: async (shiftId: string, updates: any) => {
-    if (!supabase) {
-      return { data: null, error: { message: 'Supabaseが設定されていません' } };
-    }
+```bash
+npm run dev
+```
 
-    try {
-      const { data, error } = await supabase
-        .from('assigned_shifts')
-        .update(updates)
-        .eq('id', shiftId)
-        .select()
-        .single();
-      
-      return { data, error };
-    } catch (error) {
-      console.error('Update shift error:', error);
-      return { data: null, error };
-    }
-  },
+ブラウザで `http://localhost:5173` を開いてアクセスできます。
 
-  // 複数シフト作成
-  createMultipleShifts: async (shiftsData: any[]) => {
-    if (!supabase) {
-      return { data: [], error: { message: 'Supabaseが設定されていません' } };
-    }
+## 📖 ドキュメント
 
-    try {
-      const { data, error } = await supabase
-        .from('assigned_shifts')
-        .insert(shiftsData)
-        .select();
-      
-      return { data: data || [], error };
-    } catch (error) {
-      console.error('Create multiple shifts error:', error);
-      return { data: [], error };
-    }
-  }
-};
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Edge Functionのデプロイ手順
+- **[SETUP_DATABASE.md](./SETUP_DATABASE.md)** - データベースのセットアップ
+- **[LINE_INTEGRATION_SETUP.md](./LINE_INTEGRATION_SETUP.md)** - LINE連携の設定方法
+- **[USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md)** - 使用例とベストプラクティス
+- **[MULTI_USER_GUIDE.md](./MULTI_USER_GUIDE.md)** - マルチユーザー機能の詳細
 
-// シフト希望関連の関数
-export const shiftRequests = {
-  // シフト希望取得
-  getRequests: async (userId: string, userType: string) => {
-    if (!supabase) {
-      return { data: [], error: { message: 'Supabaseが設定されていません' } };
-    }
+## 🏗️ ビルドとデプロイ
 
-    try {
-      let query = supabase.from('shift_requests').select('*');
-      
-      if (userType === 'pharmacist') {
-        query = query.eq('pharmacist_id', userId);
-      }
-      // pharmacy/adminは全ての希望を閲覧可能
-      
-      const { data, error } = await query;
-      return { data: data || [], error };
-    } catch (error) {
-      console.error('Get requests error:', error);
-      return { data: [], error };
-    }
-  },
+### 本番用ビルド
 
-  // シフト希望作成
-  createRequests: async (requestsData: any[]) => {
-    if (!supabase) {
-      return { data: [], error: { message: 'Supabaseが設定されていません' } };
-    }
+```bash
+npm run build
+```
 
-    try {
-      const { data, error } = await supabase
-        .from('shift_requests')
-        .insert(requestsData)
-        .select();
-      
-      return { data: data || [], error };
-    } catch (error) {
-      console.error('Create requests error:', error);
-      return { data: [], error };
-    }
-  }
-};
+ビルドされたファイルは `dist/` ディレクトリに出力されます。
 
-// シフト募集関連の関数
-export const shiftPostings = {
-  // シフト募集取得
-  getPostings: async (userId: string, userType: string) => {
-    if (!supabase) {
-      return { data: [], error: { message: 'Supabaseが設定されていません' } };
-    }
+### プレビュー
 
-    try {
-      let query = supabase.from('shift_postings').select('*');
-      
-      if (userType === 'store' || userType === 'pharmacy') {
-        query = query.eq('pharmacy_id', userId);
-      }
-      // pharmacist/adminは全ての募集を閲覧可能
-      
-      const { data, error } = await query;
-      
-      // テーブルが存在しない場合のエラーハンドリング
-      if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
-        console.warn('shift_postings table not found, falling back to demo mode');
-        return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
-      }
-      
-      return { data: data || [], error: null };
-    } catch (error) {
-      console.error('Get postings error:', error);
-      return { data: [], error: { code: 'PGRST116', message: 'Table not found' } };
-    }
-  },
+```bash
+npm run preview
+```
 
-  // シフト募集作成
-  createPostings: async (postingsData: any[]) => {
-    if (!supabase) {
-      return { data: [], error: { message: 'Supabaseが設定されていません' } };
-    }
+### Railwayへのデプロイ
 
-    try {
-      const { data, error } = await supabase
-        .from('shift_postings')
-        .insert(postingsData)
-        .select();
-      
-      return { data: data || [], error };
-    } catch (error) {
-      console.error('Create postings error:', error);
-      return { data: [], error };
-    }
-  }
-};
+本プロジェクトはRailwayでのデプロイに最適化されています。
+
+1. Railwayプロジェクトを作成
+2. 環境変数を設定（`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`）
+3. GitHubリポジトリを連携
+4. 自動デプロイが開始されます
+
+## 🧪 開発用ツール
+
+### Lint
+
+```bash
+npm run lint
+```
+
+### 開発用SQLファイル
+
+開発・デバッグ用のSQLファイルは `development/sql/` ディレクトリに格納されています。
+
+## 🔒 セキュリティ
+
+- 環境変数（`.env`）は絶対にコミットしないでください
+- Supabase Service Role Keyは安全に管理してください
+- 本番環境では適切なRLSポリシーを設定してください
+
+## 📄 ライセンス
+
+このプロジェクトはプライベートプロジェクトです。
+
+## 🤝 サポート
+
+問題が発生した場合は、以下のドキュメントを参照してください：
+- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - デプロイ関連
+- [SETUP_DATABASE.md](./SETUP_DATABASE.md) - データベース関連
+- [EMERGENCY_NOTIFICATION_FIX_GUIDE.md](./EMERGENCY_NOTIFICATION_FIX_GUIDE.md) - 通知関連
+
+## 📊 プロジェクト構成
+
+```
+shift_tyo-main/
+├── src/
+│   ├── components/       # Reactコンポーネント
+│   ├── contexts/         # Reactコンテキスト
+│   ├── features/         # 機能別モジュール
+│   │   ├── ai-matching/  # AIマッチングエンジン
+│   │   └── shifts/       # シフト関連API
+│   ├── hooks/            # カスタムフック
+│   ├── lib/              # 共通ライブラリ
+│   ├── types/            # TypeScript型定義
+│   └── utils/            # ユーティリティ関数
+├── supabase/
+│   ├── functions/        # Edge Functions
+│   └── migrations/       # データベースマイグレーション
+├── development/
+│   └── sql/              # 開発用SQLファイル
+└── dist/                 # ビルド出力（gitignore）
+```
+
+## 🎯 今後の改善案
+
+- [ ] AdminDashboard.tsxのリファクタリング（コンポーネント分割）
+- [ ] TypeScriptの型安全性向上（`any`型の削減）
+- [ ] console.logの削除または適切なロガーへの置き換え
+- [ ] パフォーマンスの最適化
+- [ ] ユニットテストの追加
+- [ ] E2Eテストの追加
+
+---
+
+**Version**: 1.0.0  
+**Last Updated**: 2025-10-12

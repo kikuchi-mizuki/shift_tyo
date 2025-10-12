@@ -34,13 +34,13 @@ npm i -g supabase
 supabase login
 
 # プロジェクトにリンク
-supabase link --project-ref wjgterfwurmvosawzbjs
+supabase link --project-ref <YOUR_PROJECT_REF>
 ```
 
 ## 🔑 Step 3: Service Role Key取得
 
 1. [Supabase Dashboard](https://supabase.com/dashboard) を開く
-2. プロジェクト `wjgterfwurmvosawzbjs` を選択
+2. プロジェクトを選択
 3. **Settings** → **API** をクリック
 4. **Project API keys** の **service_role** をコピー
 
@@ -49,19 +49,19 @@ supabase link --project-ref wjgterfwurmvosawzbjs
 ```bash
 # Edge Function用環境変数設定（YOUR_SERVICE_ROLE_KEYを実際の値に置換）
 supabase functions secrets set \
-  SUPABASE_URL=https://wjgterfwurmvosawzbjs.supabase.co \
-  SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+  SUPABASE_URL=https://<YOUR_PROJECT_REF>.supabase.co \
+  SUPABASE_SERVICE_ROLE_KEY=<YOUR_SERVICE_ROLE_KEY>
 
 # Edge Functionデプロイ
-supabase functions deploy api --project-ref wjgterfwurmvosawzbjs
+supabase functions deploy api --project-ref <YOUR_PROJECT_REF>
 ```
 
 ## ✅ Step 5: 動作確認
 
 ```bash
 # API動作テスト
-curl -s "https://wjgterfwurmvosawzbjs.supabase.co/functions/v1/api/user_profiles?limit=1" \
-  -H "Authorization: Bearer sb_publishable_nCoPvmldzPho7y_8AwLhXQ_IcLfvRFN"
+curl -s "https://<YOUR_PROJECT_REF>.supabase.co/functions/v1/api/user_profiles?limit=1" \
+  -H "Authorization: Bearer <YOUR_ANON_KEY>"
 ```
 
 **期待される結果**: 200ステータスでJSONデータが返される
