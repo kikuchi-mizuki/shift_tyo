@@ -4539,16 +4539,23 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               </div>
                             )}
                             
-                            {/* 不足件数（マッチング実行後のみ表示） */}
+                            {/* 不足件数（マッチング実行後のみ表示、確定取り消し後は非表示） */}
                             {(() => {
-                              const shouldShowShortage = matchingStatus.shortage > 0 && (aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0);
+                              // 確定シフトがある場合は不足を表示しない
+                              const hasConfirmedShifts = safeLength(dayAssignedShifts) > 0;
+                              const shouldShowShortage = matchingStatus.shortage > 0 && 
+                                (aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0) &&
+                                !hasConfirmedShifts;
+                              
                               if (matchingStatus.shortage > 0) {
                                 console.log(`カレンダー不足パッチ表示判定 [${dateStr}]:`, {
                                   shortage: matchingStatus.shortage,
                                   shouldShowShortage,
                                   totalRequired: matchingStatus.count || 0,
                                   totalMatched: matchingStatus.count - matchingStatus.shortage || 0,
-                                  hasMatches: aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0
+                                  hasMatches: aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0,
+                                  hasConfirmedShifts,
+                                  dayAssignedShifts: safeLength(dayAssignedShifts)
                                 });
                               }
                               return shouldShowShortage;
