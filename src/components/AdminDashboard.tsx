@@ -5588,8 +5588,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <h4 className="text-sm font-semibold text-blue-800">
                           応募している薬剤師 ({(() => {
-                            // 通常の希望（確定済みでない）のみをカウント
-                            // 注意: 薬剤師の希望は確定シフトがあってもカウントする（不足薬局とは異なる）
+                            // 薬剤師の希望カウント（元の仕様に戻す）
                             const regularRequests = Array.isArray(requests) 
                               ? requests.filter((r: any) => 
                                   r.date === selectedDate && 
@@ -5676,36 +5675,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           })));
                         }
                         
-                        // 通常の希望（確定済みでない）のみを表示
-                        // 注意: 薬剤師の希望は確定シフトがあっても表示する（不足薬局とは異なる）
+                        // 薬剤師の希望表示（元の仕様に戻す）
+                        // 確定シフトがあっても薬剤師の希望は表示する
                         const regularRequests = Array.isArray(requests) 
-                          ? requests.filter((r: any) => {
-                              const matchesDate = r.date === selectedDate;
-                              const notConsult = r.time_slot !== 'consult';
-                              const notConfirmed = r.status !== 'confirmed';
-                              
-                              console.log('🔍 フィルタリング詳細:', {
-                                requestId: r.id,
-                                pharmacistId: r.pharmacist_id,
-                                date: r.date,
-                                selectedDate,
-                                matchesDate,
-                                timeSlot: r.time_slot,
-                                notConsult,
-                                status: r.status,
-                                notConfirmed,
-                                passesAllFilters: matchesDate && notConsult && notConfirmed
-                              });
-                              
-                              return matchesDate && notConsult && notConfirmed;
-                            })
+                          ? requests.filter((r: any) => 
+                              r.date === selectedDate && 
+                              r.time_slot !== 'consult' &&
+                              r.status !== 'confirmed'
+                            )
                           : [];
                         
-                        console.log('✅ フィルタ後の薬剤師希望:', {
+                        console.log('✅ 薬剤師の希望表示:', {
                           selectedDate,
-                          regularRequests,
-                          filteredCount: regularRequests.length,
-                          regularRequestsDetails: regularRequests.map(r => ({
+                          regularRequestsCount: regularRequests.length,
+                          regularRequests: regularRequests.map(r => ({
                             id: r.id,
                             pharmacist_id: r.pharmacist_id,
                             date: r.date,
@@ -5791,7 +5774,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       
                       {/* 薬剤師の希望が空の場合の表示 */}
                       {(() => {
-                        // 注意: 薬剤師の希望は確定シフトがあってもカウントする（不足薬局とは異なる）
                         const regularRequests = Array.isArray(requests) 
                           ? requests.filter((r: any) => 
                               r.date === selectedDate && 
