@@ -5835,23 +5835,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         });
                       })()}
                       
-                      {/* 薬剤師の希望が空の場合の表示 */}
-                      {(() => {
-                        const regularRequests = Array.isArray(requests) 
-                          ? requests.filter((r: any) => 
-                              r.date === selectedDate && 
-                              r.time_slot !== 'consult' &&
-                              r.status !== 'confirmed'
-                            )
-                          : [];
-                        
-                        return regularRequests.length === 0 && (
-                          <div className="text-center text-gray-500 py-4">
-                            <div className="text-sm">薬剤師の希望がありません</div>
-                            <div className="text-xs mt-1">薬剤師がシフト希望を登録するとここに表示されます</div>
-                          </div>
-                        );
-                      })()}
                       </div>
                     </div>
                   )}
