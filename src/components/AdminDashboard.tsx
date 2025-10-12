@@ -2447,7 +2447,37 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         setAssigned(assignedData || []);
       }
       
-      const { data: r } = await shiftRequests.getRequests('', 'admin' as any);
+      console.log('🔍 薬剤師の希望データ取得開始...');
+      console.log('🔍 現在のユーザー情報:', {
+        userId: user?.id,
+        userEmail: user?.email,
+        userType: user?.user_metadata?.user_type
+      });
+      
+      const { data: r, error: requestsError } = await shiftRequests.getRequests('', 'admin' as any);
+      
+      console.log('📊 薬剤師の希望データ取得結果:', {
+        data: r,
+        error: requestsError,
+        dataCount: Array.isArray(r) ? r.length : 0,
+        isArray: Array.isArray(r),
+        dataType: typeof r,
+        errorCode: requestsError?.code,
+        errorMessage: requestsError?.message,
+        errorDetails: requestsError?.details,
+        errorHint: requestsError?.hint
+      });
+      
+      if (requestsError) {
+        console.error('❌ 薬剤師の希望データ取得エラー:', requestsError);
+        console.error('❌ エラー詳細:', {
+          code: requestsError.code,
+          message: requestsError.message,
+          details: requestsError.details,
+          hint: requestsError.hint
+        });
+      }
+      
       setRequests(r || []);
       
       console.log('=== シフト希望データ読み込み完了 ===');
