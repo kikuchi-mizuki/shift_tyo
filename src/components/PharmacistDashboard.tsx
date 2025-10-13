@@ -274,11 +274,22 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       }
       
       // ユーザープロフィールを取得
+      console.log('=== PHARMACIST PROFILE FETCH ===');
+      console.log('Auth user:', authUser);
+      console.log('User ID to use:', userIdToUse);
+      console.log('Auth user ID:', authUser?.id);
+      console.log('User ID from props:', user.id);
+      console.log('IDs match:', authUser?.id === user.id);
+      
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userIdToUse)
         .single();
+      
+      console.log('Pharmacist profile query result:');
+      console.log('- Data:', profileData);
+      console.log('- Error:', profileError);
       
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');

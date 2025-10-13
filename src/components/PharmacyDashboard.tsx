@@ -416,6 +416,11 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       // 薬剤師画面と同じロジックを使用（既存のuserIdToUseを使用）
       console.log('Auth user:', authUser);
       console.log('User ID to use:', userIdToUse);
+      console.log('Auth user ID:', authUser?.id);
+      console.log('User ID from props:', user.id);
+      console.log('IDs match:', authUser?.id === user.id);
+      console.log('Auth user email:', authUser?.email);
+      console.log('User email from props:', user.email);
       
       console.log('Executing profile query with userIdToUse:', userIdToUse);
       
@@ -479,6 +484,18 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             profileData = currentUserProfile;
             profileError = null;
           }
+        }
+        
+        // 直接的なクエリも試す（RLSバイパス）
+        console.log('=== TRYING DIRECT QUERY ===');
+        const { data: directData, error: directError } = await supabase
+          .rpc('get_user_profile', { user_uuid: userIdToUse });
+        console.log('Direct query result:', { data: directData, error: directError });
+        
+        if (directData && !directError) {
+          console.log('Direct query successful, using this data');
+          profileData = directData;
+          profileError = null;
         }
       } catch (error) {
         console.error('RLS test error:', error);
