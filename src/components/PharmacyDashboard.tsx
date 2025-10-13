@@ -418,11 +418,39 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('User ID to use:', userIdToUse);
       
       console.log('Executing profile query with userIdToUse:', userIdToUse);
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userIdToUse)
-        .single();
+      
+      // より安全なクエリ方法を試す
+      let profileData = null;
+      let profileError = null;
+      
+      try {
+        // まず単純なクエリを試す
+        const result = await supabase
+          .from('user_profiles')
+          .select('id, name, email, user_type, store_names, ng_list, nearest_station_name, line_user_id')
+          .eq('id', userIdToUse);
+        
+        profileData = result.data?.[0] || null;
+        profileError = result.error;
+        
+        console.log('Simple query result:', result);
+        
+        // 単純なクエリが失敗した場合、別の方法を試す
+        if (profileError || !profileData) {
+          console.log('Simple query failed, trying alternative method...');
+          const altResult = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', userIdToUse);
+          
+          profileData = altResult.data?.[0] || null;
+          profileError = altResult.error;
+          console.log('Alternative query result:', altResult);
+        }
+      } catch (error) {
+        console.error('Query execution error:', error);
+        profileError = error;
+      }
       
       console.log('Profile query result:');
       console.log('- Data:', profileData);
@@ -435,11 +463,26 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       
       // RLSの状況を確認するため、全ユーザーのデータを試してみる
       console.log('=== TESTING RLS ACCESS ===');
-      const { data: allProfiles, error: allProfilesError } = await supabase
-        .from('user_profiles')
-        .select('id, name, email')
-        .limit(5);
-      console.log('All profiles test:', { data: allProfiles, error: allProfilesError });
+      try {
+        const { data: allProfiles, error: allProfilesError } = await supabase
+          .from('user_profiles')
+          .select('id, name, email')
+          .limit(5);
+        console.log('All profiles test:', { data: allProfiles, error: allProfilesError });
+        
+        // 現在のユーザーのデータが含まれているかチェック
+        if (allProfiles && allProfiles.length > 0) {
+          const currentUserProfile = allProfiles.find(p => p.id === userIdToUse);
+          console.log('Current user profile in all profiles:', currentUserProfile);
+          if (currentUserProfile) {
+            console.log('Found current user in all profiles, using this data');
+            profileData = currentUserProfile;
+            profileError = null;
+          }
+        }
+      } catch (error) {
+        console.error('RLS test error:', error);
+      }
       
       if (!profileError && profileData) {
         console.log('=== PROFILE DATA LOADED ===');
@@ -513,7 +556,15 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         
         // エラーの場合は、デフォルト値を設定
         console.log('Setting default values due to error');
-        const defaultName = user.email?.split('@')[0] || '薬局名未設定';
+        console.log('Error details:', {
+          code: profileError?.code,
+          message: profileError?.message,
+          details: profileError?.details,
+          hint: profileError?.hint
+        });
+        
+        // ユーザーに適切なメッセージを表示
+        const defaultName = '薬局名未設定（データベース接続エラー）';
         setProfileName(defaultName);
         setStoreNames([]);
         setNgList([]);
