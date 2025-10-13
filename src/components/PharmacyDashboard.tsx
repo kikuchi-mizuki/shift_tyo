@@ -417,6 +417,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('Auth user:', authUser);
       console.log('User ID to use:', userIdToUse);
       
+      console.log('Executing profile query with userIdToUse:', userIdToUse);
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
@@ -428,6 +429,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('- Error:', profileError);
       console.log('- Data type:', typeof profileData);
       console.log('- Data keys:', profileData ? Object.keys(profileData) : 'No data');
+      console.log('- Raw name value:', profileData?.name);
+      console.log('- Name value type:', typeof profileData?.name);
+      console.log('- Name value length:', profileData?.name?.length);
       
       // RLSの状況を確認するため、全ユーザーのデータを試してみる
       console.log('=== TESTING RLS ACCESS ===');
@@ -441,30 +445,26 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         console.log('=== PROFILE DATA LOADED ===');
         console.log('Full profile data:', profileData);
         console.log('Pharmacy name from DB:', profileData.name);
+        console.log('Pharmacy name type:', typeof profileData.name);
+        console.log('Pharmacy name length:', profileData.name?.length);
+        console.log('Pharmacy name is empty:', !profileData.name);
+        console.log('User email:', user.email);
         console.log('store_names from DB:', profileData.store_names);
         console.log('store_names type:', typeof profileData.store_names);
         console.log('store_names is array:', Array.isArray(profileData.store_names));
         
         const storeNamesFromDB = profileData.store_names || [];
         console.log('Setting storeNames to:', storeNamesFromDB);
-        console.log('Setting profileName to:', profileData.name || '');
-        // 薬局名が空の場合は、ユーザーのemailから生成するか、デフォルト値を設定
-        const pharmacyName = profileData.name || user.email?.split('@')[0] || '薬局名未設定';
-        console.log('Final pharmacy name:', pharmacyName);
+        
+        // データベースの薬局名を優先的に使用
+        const pharmacyName = profileData.name || '薬局名未設定';
+        console.log('Final pharmacy name (from DB):', pharmacyName);
         setProfileName(pharmacyName);
         
-        // 薬局名が空の場合は、データベースに保存
-        if (!profileData.name && pharmacyName !== '薬局名未設定') {
-          console.log('Saving generated pharmacy name to database:', pharmacyName);
-          try {
-            await supabase
-              .from('user_profiles')
-              .update({ name: pharmacyName })
-              .eq('id', userIdToUse);
-            console.log('Pharmacy name saved successfully');
-          } catch (error) {
-            console.error('Error saving pharmacy name:', error);
-          }
+        // 薬局名が空の場合のみ、デフォルト値を設定（自動保存は行わない）
+        if (!profileData.name) {
+          console.log('Pharmacy name is empty in database, using default value');
+          console.log('User should set pharmacy name manually in profile edit');
         }
         setStoreNames(storeNamesFromDB);
         setNgList(profileData.ng_list || []);
