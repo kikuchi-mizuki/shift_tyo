@@ -426,7 +426,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('Executing profile query with userIdToUse:', userIdToUse);
       
       // 薬剤師画面と全く同じクエリを使用
-      const { data: profileData, error: profileError } = await supabase
+      let { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userIdToUse)
@@ -435,11 +435,42 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('Profile query result:');
       console.log('- Data:', profileData);
       console.log('- Error:', profileError);
-      console.log('- Data type:', typeof profileData);
-      console.log('- Data keys:', profileData ? Object.keys(profileData) : 'No data');
-      console.log('- Raw name value:', profileData?.name);
-      console.log('- Name value type:', typeof profileData?.name);
-      console.log('- Name value length:', profileData?.name?.length);
+      console.log('- Error code:', profileError?.code);
+      console.log('- Error message:', profileError?.message);
+      
+      // プロフィールレコードが存在しない場合（PGRST116エラー）は作成する
+      if (profileError?.code === 'PGRST116') {
+        console.log('Profile record does not exist, creating one...');
+        try {
+          const newProfileData = {
+            id: userIdToUse,
+            name: user.email?.split('@')[0] || '薬局名未設定',
+            email: user.email || '',
+            user_type: 'pharmacy'
+          };
+          
+          console.log('Creating profile with data:', newProfileData);
+          
+          const { data: createdProfile, error: createError } = await supabase
+            .from('user_profiles')
+            .insert(newProfileData)
+            .select()
+            .single();
+          
+          if (createError) {
+            console.error('Failed to create profile:', createError);
+            profileData = null;
+            profileError = createError;
+          } else {
+            console.log('Profile created successfully:', createdProfile);
+            profileData = createdProfile;
+            profileError = null;
+          }
+        } catch (error) {
+          console.error('Error creating profile:', error);
+          profileError = error;
+        }
+      }
       
       // 薬剤師画面と同じシンプルな実装
       

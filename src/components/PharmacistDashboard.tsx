@@ -281,7 +281,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       console.log('User ID from props:', user.id);
       console.log('IDs match:', authUser?.id === user.id);
       
-      const { data: profileData, error: profileError } = await supabase
+      let { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userIdToUse)
@@ -290,6 +290,41 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       console.log('Pharmacist profile query result:');
       console.log('- Data:', profileData);
       console.log('- Error:', profileError);
+      console.log('- Error code:', profileError?.code);
+      
+      // プロフィールレコードが存在しない場合（PGRST116エラー）は作成する
+      if (profileError?.code === 'PGRST116') {
+        console.log('Pharmacist profile record does not exist, creating one...');
+        try {
+          const newProfileData = {
+            id: userIdToUse,
+            name: user.email?.split('@')[0] || '薬剤師名未設定',
+            email: user.email || '',
+            user_type: 'pharmacist'
+          };
+          
+          console.log('Creating pharmacist profile with data:', newProfileData);
+          
+          const { data: createdProfile, error: createError } = await supabase
+            .from('user_profiles')
+            .insert(newProfileData)
+            .select()
+            .single();
+          
+          if (createError) {
+            console.error('Failed to create pharmacist profile:', createError);
+            profileData = null;
+            profileError = createError;
+          } else {
+            console.log('Pharmacist profile created successfully:', createdProfile);
+            profileData = createdProfile;
+            profileError = null;
+          }
+        } catch (error) {
+          console.error('Error creating pharmacist profile:', error);
+          profileError = error;
+        }
+      }
       
       if (!profileError && profileData) {
         setProfileName(profileData.name || '');
