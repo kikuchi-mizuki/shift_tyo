@@ -413,9 +413,10 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('User object:', user);
       console.log('Supabase instance:', !!supabase);
       
-      // 薬剤師画面と同じロジックを使用（既存のuserIdToUseを使用）
-      console.log('Auth user:', authUser);
-      console.log('User ID to use:', userIdToUse);
+      // 薬剤師画面と同じロジックを使用（loadData関数内で取得したauthUserとuserIdToUseを使用）
+      console.log('=== PROFILE SECTION AUTH CHECK ===');
+      console.log('Auth user (from loadData):', authUser);
+      console.log('User ID to use (from loadData):', userIdToUse);
       console.log('Auth user ID:', authUser?.id);
       console.log('User ID from props:', user.id);
       console.log('IDs match:', authUser?.id === user.id);
@@ -424,38 +425,12 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       
       console.log('Executing profile query with userIdToUse:', userIdToUse);
       
-      // より安全なクエリ方法を試す
-      let profileData = null;
-      let profileError = null;
-      
-      try {
-        // まず単純なクエリを試す
-        const result = await supabase
-          .from('user_profiles')
-          .select('id, name, email, user_type, store_names, ng_list, nearest_station_name, line_user_id')
-          .eq('id', userIdToUse);
-        
-        profileData = result.data?.[0] || null;
-        profileError = result.error;
-        
-        console.log('Simple query result:', result);
-        
-        // 単純なクエリが失敗した場合、別の方法を試す
-        if (profileError || !profileData) {
-          console.log('Simple query failed, trying alternative method...');
-          const altResult = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', userIdToUse);
-          
-          profileData = altResult.data?.[0] || null;
-          profileError = altResult.error;
-          console.log('Alternative query result:', altResult);
-        }
-      } catch (error) {
-        console.error('Query execution error:', error);
-        profileError = error;
-      }
+      // 薬剤師画面と全く同じクエリを使用
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userIdToUse)
+        .single();
       
       console.log('Profile query result:');
       console.log('- Data:', profileData);
@@ -466,40 +441,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('- Name value type:', typeof profileData?.name);
       console.log('- Name value length:', profileData?.name?.length);
       
-      // RLSの状況を確認するため、全ユーザーのデータを試してみる
-      console.log('=== TESTING RLS ACCESS ===');
-      try {
-        const { data: allProfiles, error: allProfilesError } = await supabase
-          .from('user_profiles')
-          .select('id, name, email')
-          .limit(5);
-        console.log('All profiles test:', { data: allProfiles, error: allProfilesError });
-        
-        // 現在のユーザーのデータが含まれているかチェック
-        if (allProfiles && allProfiles.length > 0) {
-          const currentUserProfile = allProfiles.find(p => p.id === userIdToUse);
-          console.log('Current user profile in all profiles:', currentUserProfile);
-          if (currentUserProfile) {
-            console.log('Found current user in all profiles, using this data');
-            profileData = currentUserProfile;
-            profileError = null;
-          }
-        }
-        
-        // 直接的なクエリも試す（RLSバイパス）
-        console.log('=== TRYING DIRECT QUERY ===');
-        const { data: directData, error: directError } = await supabase
-          .rpc('get_user_profile', { user_uuid: userIdToUse });
-        console.log('Direct query result:', { data: directData, error: directError });
-        
-        if (directData && !directError) {
-          console.log('Direct query successful, using this data');
-          profileData = directData;
-          profileError = null;
-        }
-      } catch (error) {
-        console.error('RLS test error:', error);
-      }
+      // 薬剤師画面と同じシンプルな実装
       
       if (!profileError && profileData) {
         console.log('=== PROFILE DATA LOADED ===');
