@@ -1503,7 +1503,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             </button>
           </div>
           <p className="text-sm text-blue-100 mt-1 font-medium">
-            {profileName || '薬局名未設定'} (v2.0)
+            {profileName || '薬局名未設定'}
           </p>
           <p className="text-xs text-blue-100 mt-1">
             必要な薬剤師の募集条件を設定してください
