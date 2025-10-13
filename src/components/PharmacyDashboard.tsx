@@ -408,11 +408,36 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('=== RECRUITMENT VS CONFIRMED ANALYSIS END ===');
       
       // ユーザープロフィールを取得
+      console.log('=== FETCHING USER PROFILE ===');
+      console.log('User ID:', user.id);
+      console.log('User object:', user);
+      console.log('Supabase instance:', !!supabase);
+      
+      // 薬剤師画面と同じロジックを使用
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const userIdToUse = authUser?.id || user.id;
+      console.log('Auth user:', authUser);
+      console.log('User ID to use:', userIdToUse);
+      
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userIdToUse)
         .single();
+      
+      console.log('Profile query result:');
+      console.log('- Data:', profileData);
+      console.log('- Error:', profileError);
+      console.log('- Data type:', typeof profileData);
+      console.log('- Data keys:', profileData ? Object.keys(profileData) : 'No data');
+      
+      // RLSの状況を確認するため、全ユーザーのデータを試してみる
+      console.log('=== TESTING RLS ACCESS ===');
+      const { data: allProfiles, error: allProfilesError } = await supabase
+        .from('user_profiles')
+        .select('id, name, email')
+        .limit(5);
+      console.log('All profiles test:', { data: allProfiles, error: allProfilesError });
       
       if (!profileError && profileData) {
         console.log('=== PROFILE DATA LOADED ===');
@@ -425,7 +450,24 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         const storeNamesFromDB = profileData.store_names || [];
         console.log('Setting storeNames to:', storeNamesFromDB);
         console.log('Setting profileName to:', profileData.name || '');
-        setProfileName(profileData.name || '');
+        // 薬局名が空の場合は、ユーザーのemailから生成するか、デフォルト値を設定
+        const pharmacyName = profileData.name || user.email?.split('@')[0] || '薬局名未設定';
+        console.log('Final pharmacy name:', pharmacyName);
+        setProfileName(pharmacyName);
+        
+        // 薬局名が空の場合は、データベースに保存
+        if (!profileData.name && pharmacyName !== '薬局名未設定') {
+          console.log('Saving generated pharmacy name to database:', pharmacyName);
+          try {
+            await supabase
+              .from('user_profiles')
+              .update({ name: pharmacyName })
+              .eq('id', userIdToUse);
+            console.log('Pharmacy name saved successfully');
+          } catch (error) {
+            console.error('Error saving pharmacy name:', error);
+          }
+        }
         setStoreNames(storeNamesFromDB);
         setNgList(profileData.ng_list || []);
         setNearestStationName(profileData.nearest_station_name || '');
@@ -463,8 +505,21 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         
         console.log('=== PROFILE DATA LOADED END ===');
       } else {
-        console.log('Profile data load error:', profileError);
+        console.log('=== PROFILE DATA ERROR ===');
+        console.log('Profile error:', profileError);
         console.log('Profile data:', profileData);
+        console.log('Error code:', profileError?.code);
+        console.log('Error message:', profileError?.message);
+        console.log('Error details:', profileError?.details);
+        console.log('Error hint:', profileError?.hint);
+        
+        // エラーの場合は、デフォルト値を設定
+        console.log('Setting default values due to error');
+        const defaultName = user.email?.split('@')[0] || '薬局名未設定';
+        setProfileName(defaultName);
+        setStoreNames([]);
+        setNgList([]);
+        setNearestStationName('');
       }
       
       // シフトに関連する薬剤師のプロフィールを取得
