@@ -737,26 +737,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
   // 店舗毎の最寄駅設定を保存
   const handleSaveStoreStations = async () => {
-    alert('関数が呼び出されました！');
     try {
-      console.log('=== SAVE STORE STATIONS START ===');
-      console.log('Store stations to save:', storeStations);
-      
-      // 認証状態の詳細確認
+      // 認証状態の確認
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      // ログをモーダルで表示
-      const debugInfo = `
-=== デバッグ情報 ===
-Store stations to save: ${JSON.stringify(storeStations, null, 2)}
-Current authenticated user: ${JSON.stringify(currentUser, null, 2)}
-Auth session: ${JSON.stringify(sessionData, null, 2)}
-User from props: ${JSON.stringify(user, null, 2)}
-User ID from props: ${user?.id}
-      `;
-      
-      alert(debugInfo);
       
       if (!currentUser) {
         alert('認証されていません。再度ログインしてください。');
@@ -786,12 +769,6 @@ User ID from props: ${user?.id}
         store_name: storeName,
         nearest_station_name: station.nearest_station_name
       }));
-      
-      // デバッグ情報を表示
-      alert(`挿入するデータ: ${JSON.stringify(storeStationEntries, null, 2)}`);
-      alert(`認証されたユーザーID: ${currentUser.id}`);
-      alert(`PropsのユーザーID: ${user.id}`);
-      alert(`IDが一致するか: ${currentUser.id === user.id}`);
 
       if (storeStationEntries.length > 0) {
         // 一時的にRLSを回避するため、直接SQLを実行
