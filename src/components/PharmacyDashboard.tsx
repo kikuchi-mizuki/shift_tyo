@@ -413,9 +413,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('User object:', user);
       console.log('Supabase instance:', !!supabase);
       
-      // 薬剤師画面と同じロジックを使用
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      const userIdToUse = authUser?.id || user.id;
+      // 薬剤師画面と同じロジックを使用（既存のuserIdToUseを使用）
       console.log('Auth user:', authUser);
       console.log('User ID to use:', userIdToUse);
       
