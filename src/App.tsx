@@ -54,11 +54,11 @@ import { UserTypeSwitcher } from './components/UserTypeSwitcher';
 // エラーバウンダリーコンポーネント
 class AppErrorBoundary extends Component<
   { children: ReactNode },
-  { hasError: boolean; error?: Error }
+  { hasError: boolean; error?: Error; retryKey: number }
 > {
   constructor(props: { children: ReactNode }) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, retryKey: 0 };
   }
 
   static getDerivedStateFromError(error: Error) {
@@ -86,7 +86,11 @@ class AppErrorBoundary extends Component<
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: undefined });
+    this.setState((s) => ({
+      hasError: false,
+      error: undefined,
+      retryKey: s.retryKey + 1,
+    }));
   };
 
   render() {
@@ -128,15 +132,19 @@ class AppErrorBoundary extends Component<
       );
     }
 
-    return this.props.children;
+    // retryKey が変わると子が再マウントされる
+    return <div key={this.state.retryKey}>{this.props.children}</div>;
   }
 }
 
 function AppContent() {
   const { currentUserType, getCurrentUser, activeSessions } = useMultiUserAuth();
   
-  // URLパスから管理者ログインかどうかを判定
-  const isAdminLoginPath = window.location.pathname === '/admin-login';
+  // URLパスから管理者ログインかどうかを判定（SSRガード付き）
+  const isAdminLoginPath =
+    typeof window !== 'undefined' &&
+    (window.location?.pathname === '/admin-login' ||
+     window.location?.pathname?.startsWith('/admin-login/'));
   
   // アプリケーション起動時の診断
   useEffect(() => {
@@ -166,17 +174,26 @@ function AppContent() {
       console.error('Failed to check error report:', e);
     }
 
-    // ブラウザ機能の確認
+    // ブラウザ機能の確認（安全な機能判定）
+    const canUseLocalStorage = (() => {
+      try {
+        const k = '__ls_test__';
+        localStorage.setItem(k, '1');
+        localStorage.removeItem(k);
+        return true;
+      } catch { return false; }
+    })();
+    
     console.log('Browser capabilities:', {
-      localStorage: typeof(Storage) !== "undefined",
-      sessionStorage: typeof(Storage) !== "undefined",
-      fetch: typeof(fetch) !== "undefined",
-      Promise: typeof(Promise) !== "undefined",
-      userAgent: navigator.userAgent,
-      platform: navigator.platform,
-      cookieEnabled: navigator.cookieEnabled
+      localStorage: canUseLocalStorage,
+      sessionStorage: typeof sessionStorage !== 'undefined',
+      fetch: typeof fetch !== 'undefined',
+      Promise: typeof Promise !== 'undefined',
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
+      platform: typeof navigator !== 'undefined' ? navigator.platform : 'N/A',
+      cookieEnabled: typeof navigator !== 'undefined' ? navigator.cookieEnabled : false
     });
-  }, [isAdminLoginPath]);
+  }, [isAdminLoginPath, currentUserType, activeSessions.length]);
   
 
   // 管理者ログインパスの場合は専用ログイン画面を表示
@@ -263,7 +280,13 @@ function AppContent() {
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         <AppErrorBoundary>
-          <React.Suspense fallback={<div className="p-6 text-gray-600">読み込み中...</div>}>
+          <React.Suspense fallback={
+            <div className="p-6">
+              <div className="h-4 w-40 bg-gray-200 rounded animate-pulse mb-3" />
+              <div className="h-3 w-full bg-gray-200 rounded animate-pulse mb-2" />
+              <div className="h-3 w-5/6 bg-gray-200 rounded animate-pulse" />
+            </div>
+          }>
             {effectiveUserType === 'pharmacist' && (
               <PharmacistDashboard user={currentSession} />
             )}
