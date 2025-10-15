@@ -1,7 +1,6 @@
-import React, { useState, useEffect, Component, ReactNode } from 'react';
-import { supabase, auth } from './lib/supabase';
+import React, { useEffect, Component, ReactNode } from 'react';
+import { auth } from './lib/supabase';
 import { Pill } from 'lucide-react';
-import ErrorBoundary from './components/ErrorBoundary';
 // 遅延読み込みで循環依存や初期化順の問題を回避
 const PharmacistDashboard = React.lazy(() => 
   import('./components/PharmacistDashboard').catch(error => {
@@ -21,30 +20,31 @@ const AdminDashboard = React.lazy(() =>
     return { default: () => <div className="p-4 text-red-600">AdminDashboardの読み込みに失敗しました。ページを再読み込みしてください。</div> };
   })
 );
-const AdminPanel = React.lazy(() => 
-  import('./components/AdminPanel').catch(error => {
-    console.error('Failed to load AdminPanel:', error);
-    return { default: () => <div className="p-4 text-red-600">AdminPanelの読み込みに失敗しました。ページを再読み込みしてください。</div> };
-  })
-);
-const AdminMatchingPanel = React.lazy(() => 
-  import('./components/AdminMatchingPanel').catch(error => {
-    console.error('Failed to load AdminMatchingPanel:', error);
-    return { default: () => <div className="p-4 text-red-600">AdminMatchingPanelの読み込みに失敗しました。ページを再読み込みしてください。</div> };
-  })
-);
-const UserManagement = React.lazy(() => 
-  import('./components/UserManagement').catch(error => {
-    console.error('Failed to load UserManagement:', error);
-    return { default: () => <div className="p-4 text-red-600">UserManagementの読み込みに失敗しました。ページを再読み込みしてください。</div> };
-  })
-);
-const SettingsPage = React.lazy(() => 
-  import('./components/SettingsPage').catch(error => {
-    console.error('Failed to load SettingsPage:', error);
-    return { default: () => <div className="p-4 text-red-600">SettingsPageの読み込みに失敗しました。ページを再読み込みしてください。</div> };
-  })
-);
+// TODO: enable when route added
+// const AdminPanel = React.lazy(() => 
+//   import('./components/AdminPanel').catch(error => {
+//     console.error('Failed to load AdminPanel:', error);
+//     return { default: () => <div className="p-4 text-red-600">AdminPanelの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+//   })
+// );
+// const AdminMatchingPanel = React.lazy(() => 
+//   import('./components/AdminMatchingPanel').catch(error => {
+//     console.error('Failed to load AdminMatchingPanel:', error);
+//     return { default: () => <div className="p-4 text-red-600">AdminMatchingPanelの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+//   })
+// );
+// const UserManagement = React.lazy(() => 
+//   import('./components/UserManagement').catch(error => {
+//     console.error('Failed to load UserManagement:', error);
+//     return { default: () => <div className="p-4 text-red-600">UserManagementの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+//   })
+// );
+// const SettingsPage = React.lazy(() => 
+//   import('./components/SettingsPage').catch(error => {
+//     console.error('Failed to load SettingsPage:', error);
+//     return { default: () => <div className="p-4 text-red-600">SettingsPageの読み込みに失敗しました。ページを再読み込みしてください。</div> };
+//   })
+// );
 import { MultiUserIndicator } from './components/MultiUserIndicator';
 import { MultiUserAuthProvider, useMultiUserAuth } from './contexts/MultiUserAuthContext';
 import { MultiUserLoginForm } from './components/MultiUserLoginForm';
@@ -52,7 +52,7 @@ import { AdminLoginForm } from './components/AdminLoginForm';
 import { UserTypeSwitcher } from './components/UserTypeSwitcher';
 
 // エラーバウンダリーコンポーネント
-class ErrorBoundary extends Component<
+class AppErrorBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean; error?: Error }
 > {
@@ -262,7 +262,7 @@ function AppContent() {
 
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
-        <ErrorBoundary>
+        <AppErrorBoundary>
           <React.Suspense fallback={<div className="p-6 text-gray-600">読み込み中...</div>}>
             {effectiveUserType === 'pharmacist' && (
               <PharmacistDashboard user={currentSession} />
@@ -271,12 +271,12 @@ function AppContent() {
               <PharmacyDashboard user={currentSession} />
             )}
             {effectiveUserType === 'admin' && (
-              <ErrorBoundary>
+              <AppErrorBoundary>
                 <AdminDashboard user={currentSession} />
-              </ErrorBoundary>
+              </AppErrorBoundary>
             )}
           </React.Suspense>
-        </ErrorBoundary>
+        </AppErrorBoundary>
       </main>
     </div>
   );
