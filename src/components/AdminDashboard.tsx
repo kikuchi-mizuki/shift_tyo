@@ -944,6 +944,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
     // マッチ数を集計（店舗ごとに個別）
     // 1. AIマッチング結果から
+    console.log('=== AIマッチング結果の集計 ===', {
+      dayMatches: safeLength(dayMatches),
+      dayMatchesData: dayMatches
+    });
+    
     dayMatches.forEach(match => {
       const pharmacyId = match.pharmacy.id;
       // 店舗名は元の募集データから取得する必要がある
@@ -956,11 +961,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         pharmacyId,
         storeName,
         uniqueKey,
-        foundInNeeds: !!pharmacyNeeds[uniqueKey]
+        foundInNeeds: !!pharmacyNeeds[uniqueKey],
+        pharmacistName: match.pharmacist?.name || 'Unknown'
       });
       
       if (pharmacyNeeds[uniqueKey]) {
         pharmacyNeeds[uniqueKey].matched++;
+        console.log(`マッチング結果を追加: ${uniqueKey} (現在のマッチ数: ${pharmacyNeeds[uniqueKey].matched})`);
       }
     });
     
@@ -995,7 +1002,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       totalMatched: Object.values(pharmacyNeeds).reduce((sum, p) => sum + p.matched, 0),
       totalShortage: Object.values(pharmacyNeeds).reduce((sum, p) => sum + p.shortage, 0),
       shortagePharmacies: shortagePharmacies.length,
-      dayMatches: safeLength(dayMatches)
+      dayMatches: safeLength(dayMatches),
+      confirmedShifts: safeLength(confirmedShifts),
+      pharmacyDetails: Object.values(pharmacyNeeds).map(p => ({
+        key: `${p.id}_${p.store_name}`,
+        name: p.name,
+        store_name: p.store_name,
+        required: p.required,
+        matched: p.matched,
+        shortage: p.shortage
+      }))
     });
     
     return shortagePharmacies;
@@ -4706,7 +4722,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   }
                   
                   const totalMatched = totalConfirmed + totalUnconfirmedMatches;
-                  const totalShortage = Math.max(0, totalRequired - totalMatched);
+                  
+                  // 確定シフトとマッチング結果を考慮した不足計算
+                  const shortagePharmacies = analyzePharmacyShortageWithMatches(dateStr, dayMatches);
+                  const totalShortage = shortagePharmacies.reduce((sum, pharmacy) => sum + pharmacy.shortage, 0);
                   
                   console.log(`確定シフト存在 [${dateStr}]: 必要=${totalRequired}, 確定=${totalConfirmed}, 未確定マッチ=${totalUnconfirmedMatches}, 合計=${totalMatched}, 不足=${totalShortage}`);
                   console.log(`確定シフト詳細 [${dateStr}]:`, {
@@ -4724,13 +4743,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   };
                 }
 
-                // 右パネルと同じロジックで不足を計算
-                const shortagePharmacies = analyzePharmacyShortage(dateStr);
-                let totalShortage = shortagePharmacies.reduce((sum, pharmacy) => sum + pharmacy.shortage, 0);
-                
                 // 実際のマッチング分析結果を使用（aiMatchesByDateが空の場合のフォールバック）
                 let dayMatches = aiMatchesByDate[dateStr] || [];
                 let totalMatched = safeLength(dayMatches);
+                
+                // 右パネルと同じロジックで不足を計算（マッチング結果を考慮）
+                const shortagePharmacies = analyzePharmacyShortageWithMatches(dateStr, dayMatches);
+                let totalShortage = shortagePharmacies.reduce((sum, pharmacy) => sum + pharmacy.shortage, 0);
                 
                 console.log(`カレンダー表示用マッチング状況 [${dateStr}]:`, {
                   aiMatchesByDateKeys: Object.keys(aiMatchesByDate),
