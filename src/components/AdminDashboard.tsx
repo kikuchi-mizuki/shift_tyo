@@ -3198,7 +3198,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       };
       
       const { data: insertedData, error } = await supabase.from('assigned_shifts').insert([shift]).select();
-      if (error) throw error;
+      if (error) {
+        console.error('assigned_shifts挿入エラー:', error);
+        throw new Error(`シフト挿入に失敗しました: ${error.message}`);
+      }
+      
+      console.log('assigned_shifts挿入成功:', insertedData);
       
       // 挿入されたデータのIDを取得
       const insertedShift = insertedData?.[0];
@@ -3285,6 +3290,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
       
       console.log('個別マッチ確定完了:', shift);
+      
+      // 確定処理の成功確認
+      console.log('=== 確定処理成功確認 ===');
+      console.log('挿入されたシフト:', insertedShift);
+      console.log('更新された希望ステータス:', requestTimeSlot);
+      console.log('更新された募集ステータス:', postingTimeSlot);
       
       // データを再読み込み（AIマッチング結果を保持するため、loadAssignedShiftsは呼ばない）
       // await loadAssignedShifts();
