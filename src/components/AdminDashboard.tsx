@@ -794,8 +794,35 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const currentMonth = currentDate.getMonth();
       const currentYear = currentDate.getFullYear();
       
-      // 確定済みシフトの薬剤師IDと日付の組み合わせを取得（重複マッチングを防ぐため）
-      const confirmedMatches = new Set();
+      // 1ヶ月分の日付リストを生成
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const monthlyDates: string[] = [];
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentYear, currentMonth, day);
+        monthlyDates.push(date.toISOString().split('T')[0]);
+      }
+      
+      console.log(`1ヶ月分のAIマッチング開始: ${monthlyDates.length}日分`);
+      
+      // 各日付に対してAIマッチングを実行
+      for (const date of monthlyDates) {
+        console.log(`AIマッチング実行中: ${date}`);
+        await executeAIMatching(date);
+      }
+      
+      console.log('1ヶ月分のAIマッチング完了');
+      setMonthlyMatchingExecuted(true);
+      
+    } catch (error) {
+      console.error('1ヶ月分のAIマッチングエラー:', error);
+      alert('1ヶ月分のAIマッチングでエラーが発生しました。');
+    } finally {
+      setAiMatchingLoading(false);
+    }
+  };
+
+  // 日別のAIマッチングの実行（既存の機能を保持）
+  const executeAIMatching = async (date: string) => {
       if (Array.isArray(assigned)) {
         assigned.forEach((shift: any) => {
           if (shift.status === 'confirmed') {
