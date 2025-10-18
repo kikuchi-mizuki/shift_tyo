@@ -4632,11 +4632,27 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 if (safeLength(dayAssignedShifts) > 0) {
                   const totalRequired = dayPostings.reduce((sum, posting) => sum + (posting.required_staff || 1), 0);
                   const totalConfirmed = safeLength(dayAssignedShifts);
-                  const dayMatches = aiMatchesByDate[dateStr] || [];
-                  const totalUnconfirmedMatches = safeLength(dayMatches);
+                  let dayMatches = aiMatchesByDate[dateStr] || [];
+                  let totalUnconfirmedMatches = safeLength(dayMatches);
+                  
+                  // aiMatchesByDateが空の場合は、マッチング分析を実行
+                  if (totalUnconfirmedMatches === 0 && safeLength(dayRequests) > 0 && safeLength(dayPostings) > 0) {
+                    console.log(`確定シフト存在時のマッチング分析実行 [${dateStr}]`);
+                    const matchingResult = performMatchingAnalysis(dayRequests, dayPostings, dateStr);
+                    dayMatches = matchingResult.matches;
+                    totalUnconfirmedMatches = safeLength(dayMatches);
+                  }
+                  
                   const totalMatched = totalConfirmed + totalUnconfirmedMatches;
                   const totalShortage = Math.max(0, totalRequired - totalMatched);
+                  
                   console.log(`確定シフト存在 [${dateStr}]: 必要=${totalRequired}, 確定=${totalConfirmed}, 未確定マッチ=${totalUnconfirmedMatches}, 合計=${totalMatched}, 不足=${totalShortage}`);
+                  console.log(`確定シフト詳細 [${dateStr}]:`, {
+                    dayAssignedShifts,
+                    aiMatchesByDateKeys: Object.keys(aiMatchesByDate),
+                    dayMatches,
+                    totalUnconfirmedMatches
+                  });
 
                   return {
                     type: 'confirmed',
