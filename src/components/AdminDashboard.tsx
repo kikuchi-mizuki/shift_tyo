@@ -6042,7 +6042,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       remaining: Number(p.required_staff) || 0
                     }));
                     
-                    // 優先順位順に薬剤師をマッチング
+                    // 全薬剤師と薬局の組み合わせをスコア付きで収集
+                    const allMatchCandidates: any[] = [];
+                    
                     sortedRequests.forEach((request: any) => {
                       const pharmacist = userProfiles[request.pharmacist_id];
                       const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
@@ -6057,17 +6059,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
                         const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
                             
-                            // 時間範囲互換性をチェック
-                            const rs = request?.start_time;
-                            const re = request?.end_time;
+                        // 時間範囲互換性をチェック
+                        const rs = request?.start_time;
+                        const re = request?.end_time;
                         const ps = pharmacyNeed?.start_time;
                         const pe = pharmacyNeed?.end_time;
                         
                         // 薬局の募集時間帯に入れる薬剤師は全員マッチング対象
                         let isCompatible = false;
-                            if (rs && re && ps && pe) {
+                        if (rs && re && ps && pe) {
                           // 薬剤師の希望時間が薬局の募集時間帯に含まれるかチェック（境界を含む）
-                          // 薬剤師の開始時間が薬局の時間帯内、または薬剤師の終了時間が薬局の時間帯内
                           isCompatible = (rs >= ps && rs < pe) || (re >= ps && re <= pe) || (rs <= ps && re >= pe);
                         }
                         
@@ -6081,7 +6082,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           const totalScore = (distanceScore * 0.4) + (requestCountScore * 0.3) + (ratingScore * 0.3);
                           
                           // マッチング候補をスコア付きで保存
-                          const matchCandidate = {
+                          allMatchCandidates.push({
                             request,
                             pharmacyNeed,
                             pharmacist,
@@ -6090,22 +6091,49 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             requestCountScore,
                             ratingScore,
                             totalScore
-                          };
-                          
-                          // 右側パネル用のマッチングログ
-                          console.log(`✅ 優先順位マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time} [距離:${distanceScore.toFixed(2)}, 希望回数:${requestCountScore.toFixed(2)}, 評価:${ratingScore.toFixed(2)}, 総合:${totalScore.toFixed(2)}]`);
-                          
-                          // スコア順にソートして最適なマッチングを選択
-                          if (!matchedPharmacists.some(mp => mp.pharmacist_id === request.pharmacist_id)) {
-                            matchedCount++;
-                            matchedPharmacists.push(request);
-                            matchedPharmacies.push(pharmacyNeed);
-                            pharmacyNeed.remaining--;
-                            break; // この薬剤師はマッチング済みなので、次の薬剤師へ
-                          }
-                          }
+                          });
                         }
+                      }
                     });
+                    
+                    // スコア順にソート（高いスコア順）
+                    allMatchCandidates.sort((a, b) => b.totalScore - a.totalScore);
+                    
+                    // 薬局ごとに募集人数分の薬剤師をマッチング
+                    const usedPharmacists = new Set<string>();
+                    const pharmacyMatches = new Map<string, any[]>();
+                    
+                    // 薬局ごとのマッチング候補を整理
+                    for (const candidate of allMatchCandidates) {
+                      const pharmacyKey = candidate.pharmacyNeed.pharmacy_id;
+                      if (!pharmacyMatches.has(pharmacyKey)) {
+                        pharmacyMatches.set(pharmacyKey, []);
+                      }
+                      pharmacyMatches.get(pharmacyKey)!.push(candidate);
+                    }
+                    
+                    // 各薬局について、募集人数分の薬剤師をマッチング
+                    for (const [pharmacyId, candidates] of pharmacyMatches) {
+                      const pharmacyNeed = candidates[0].pharmacyNeed;
+                      const requiredStaff = pharmacyNeed.required_staff || 1;
+                      let matchedForPharmacy = 0;
+                      
+                      console.log(`薬局 ${pharmacyId} の募集人数: ${requiredStaff}人`);
+                      
+                      for (const candidate of candidates) {
+                        if (matchedForPharmacy >= requiredStaff) break;
+                        if (usedPharmacists.has(candidate.request.pharmacist_id)) continue;
+                        
+                        // マッチング実行
+                        matchedCount++;
+                        matchedPharmacists.push(candidate.request);
+                        matchedPharmacies.push(candidate.pharmacyNeed);
+                        matchedForPharmacy++;
+                        usedPharmacists.add(candidate.request.pharmacist_id);
+                        
+                        console.log(`✅ 薬局募集人数マッチング (${matchedForPharmacy}/${requiredStaff}): 薬剤師(${candidate.pharmacist?.name}) ${candidate.request.start_time}-${candidate.request.end_time} → 薬局(${candidate.pharmacy?.name}) ${candidate.pharmacyNeed.start_time}-${candidate.pharmacyNeed.end_time} [距離:${candidate.distanceScore.toFixed(2)}, 希望回数:${candidate.requestCountScore.toFixed(2)}, 評価:${candidate.ratingScore.toFixed(2)}, 総合:${candidate.totalScore.toFixed(2)}]`);
+                      }
+                    }
                     
                     // 結果を更新
                     matchingAnalysis[0].totalMatched = matchedCount;
