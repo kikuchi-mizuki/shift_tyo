@@ -1132,12 +1132,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       const totalConfirmedShifts = Math.max(safeLength(freshAssigned), safeLength(existingAssigned));
       
-      if (totalConfirmedShifts > 0) {
-        setAiMatches([]);
-        setAiMatchingLoading(false);
-        alert('この日は既に確定シフトがあります。AIマッチングは実行しません。');
-        return;
-      }
+      // 確定シフトがある場合でも、マッチング分析は実行する（画面表示時と同じロジック）
+      console.log(`確定シフト確認 [${date}]: ${totalConfirmedShifts}件`);
       // 最新のデータを再取得してからフィルタリング
       let freshRequests: any[] = [];
       let freshPostings: any[] = [];
@@ -1248,11 +1244,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       console.log(`AI Matching for ${date}: ${safeLength(filteredDayRequests)} requests, ${safeLength(filteredDayPostings)} postings`);
 
-      let matches = await aiMatchingEngine.executeOptimalMatching(filteredDayRequests, filteredDayPostings, {
-        useAPI: true,
-        algorithm: 'hybrid',
-        priority: 'balance'
-      }, userProfiles, ratings, storeNgPharmacies, storeNgPharmacists, confirmedMatches as unknown as Set<string>);
+      // 画面表示時と同じマッチング分析ロジックを使用
+      const matchingResult = performMatchingAnalysis(filteredDayRequests, filteredDayPostings, date);
+      let matches = matchingResult.matches;
       
 
       // 最終防御: 返ってきた結果からも確定済み薬局/店舗を除外
