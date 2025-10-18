@@ -1918,7 +1918,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
   // 希望回数スコア計算（多いほど高いスコア）
   const calculateRequestCountScore = (pharmacistId: string) => {
-    const requestCount = shiftRequests.filter(r => r.pharmacist_id === pharmacistId).length;
+    const requestCount = Array.isArray(shiftRequests) ? shiftRequests.filter(r => r.pharmacist_id === pharmacistId).length : 0;
     // 希望回数に基づくスコア（0-1の範囲）
     return Math.min(requestCount / 10, 1); // 10回以上は1.0
   };
