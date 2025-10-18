@@ -702,13 +702,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     // 確定済みを除外したデータでマッチング分析
     const filteredRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
     const filteredPostings = dayPostings.filter((p: any) => {
-      // 確定済み店舗のみを除外（薬局全体の確定は考慮しない）
-      const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
-      if (confirmedStoreKeys.has(key)) return false;
-      return true;
+      // 店舗ごとの確定人数をカウント
+      const storeKey = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
+      const confirmedCountForStore = Array.from(confirmedStoreKeys).filter(key => key === storeKey).length;
+      const requiredStaff = Number(p.required_staff) || 1;
+      
+      // 確定人数が募集人数に達していない場合のみマッチング対象
+      const stillNeedsStaff = confirmedCountForStore < requiredStaff;
+      
+      console.log(`performMatchingAnalysis 店舗マッチング判定 [${storeKey}]: 必要=${requiredStaff}, 確定=${confirmedCountForStore}, マッチング対象=${stillNeedsStaff}`);
+      
+      return stillNeedsStaff;
     });
     
-    console.log('=== performMatchingAnalysis 確定済み除外（店舗単位除外） ===', {
+    console.log('=== performMatchingAnalysis 確定済み除外（募集人数ベース除外） ===', {
       date,
       originalRequests: safeLength(dayRequests),
       originalPostings: safeLength(dayPostings),
@@ -716,7 +723,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       filteredPostings: safeLength(filteredPostings),
       confirmedPharmacists: Array.from(confirmedPharmacists),
       confirmedStoreKeys: Array.from(confirmedStoreKeys),
-      note: '薬局全体の確定は考慮せず、確定済み店舗のみを除外'
+      note: '募集人数と確定人数を比較して、まだ募集が必要な店舗のみをマッチング対象にする'
     });
     
     // 薬剤師を距離・希望回数・評価の優先順位でソート
@@ -1250,18 +1257,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
 
       // 薬局側も「未確定のみ」でマッチング（open/recruitingに限定）
-      // 確定済み店舗のみを除外（薬局全体ではなく店舗単位で判定）
+      // 募集人数と確定人数を比較して、まだ募集が必要な店舗のみをマッチング対象にする
       const allowedPostingStatuses = new Set(['open', 'recruiting']);
       const filteredDayPostings = dayPostings.filter((p: any) => {
         if (!allowedPostingStatuses.has((p.status || '').toLowerCase())) return false;
-        // 確定済み店舗のみを除外（薬局全体の確定は考慮しない）
-        const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
-        if ((confirmedStoreKeys as Set<string>).has(key)) return false;
-        return true;
+        
+        // 店舗ごとの確定人数をカウント
+        const storeKey = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
+        const confirmedCountForStore = Array.from(confirmedStoreKeys).filter(key => key === storeKey).length;
+        const requiredStaff = Number(p.required_staff) || 1;
+        
+        // 確定人数が募集人数に達していない場合のみマッチング対象
+        const stillNeedsStaff = confirmedCountForStore < requiredStaff;
+        
+        console.log(`店舗マッチング判定 [${storeKey}]: 必要=${requiredStaff}, 確定=${confirmedCountForStore}, マッチング対象=${stillNeedsStaff}`);
+        
+        return stillNeedsStaff;
       });
       const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
-      console.log('=== 確定済み除外ロジック詳細（店舗単位除外） ===', {
+      console.log('=== 確定済み除外ロジック詳細（募集人数ベース除外） ===', {
         date,
         confirmedPharmacists: Array.from(confirmedPharmacists),
         confirmedStoreKeys: Array.from(confirmedStoreKeys),
@@ -1271,7 +1286,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         filteredPostings: safeLength(filteredDayPostings),
         excludedRequests: safeLength(dayRequests) - safeLength(filteredDayRequests),
         excludedPostings: safeLength(dayPostings) - safeLength(filteredDayPostings),
-        note: '薬局全体の確定は考慮せず、確定済み店舗のみを除外'
+        note: '募集人数と確定人数を比較して、まだ募集が必要な店舗のみをマッチング対象にする'
       });
 
       // 募集/希望が0件の場合も結果を保存する
