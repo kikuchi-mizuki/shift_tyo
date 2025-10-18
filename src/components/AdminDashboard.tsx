@@ -4752,14 +4752,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             </div>
 
             {/* パスワード変更 */}
-            <div className="bg-white rounded-lg shadow p-4 mb-4">
-              <button
-                onClick={() => setShowPasswordChangeModal(true)}
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1 text-left"
-              >
-                <Lock className="w-3 h-3" />
-                <span>パスワード変更</span>
-              </button>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowPasswordChangeModal(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+                >
+                  <Lock className="w-3 h-3" />
+                  <span>パスワード変更</span>
+                </button>
+              </div>
             </div>
           </div>
 
