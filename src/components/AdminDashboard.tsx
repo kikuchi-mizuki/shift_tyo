@@ -882,11 +882,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           const postingStart = timeToMinutes(ps);
           const postingEnd = timeToMinutes(pe);
 
-          // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-          const isCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
+          // 部分適合を許可（手動マッチングと同じロジック）
+          const isCompatible = (requestStart >= postingStart && requestStart < postingEnd) || 
+                             (requestEnd > postingStart && requestEnd <= postingEnd) || 
+                             (requestStart <= postingStart && requestEnd >= postingEnd);
           
           // デバッグ: 時間比較の詳細
-          debugInfo += `    [DEBUG] 薬剤師: ${rs}(${requestStart}分) <= ${ps}(${postingStart}分) = ${requestStart <= postingStart}, ${re}(${requestEnd}分) >= ${pe}(${postingEnd}分) = ${requestEnd >= postingEnd}\n`;
+          debugInfo += `    [DEBUG] 薬剤師: ${rs}(${requestStart}分) vs 薬局: ${ps}(${postingStart}分)-${pe}(${postingEnd}分)\n`;
+          debugInfo += `    [DEBUG] 部分適合: (${requestStart} >= ${postingStart} && ${requestStart} < ${postingEnd}) || (${requestEnd} > ${postingStart} && ${requestEnd} <= ${postingEnd}) || (${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd})\n`;
           
           debugInfo += `  - 募集 ${posting.id}: 薬局ID ${posting.pharmacy_id}, 時間 ${ps}-${pe}, 適合: ${isCompatible ? 'YES' : 'NO'}\n`;
           
@@ -6260,27 +6263,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       </div>
                     );
                   })()}
-                  
-                  {/* AIマッチング実行ボタン */}
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <button
-                      onClick={() => executeAIMatching(selectedDate)}
-                      disabled={aiMatchingLoading}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {aiMatchingLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          <span>AI分析中...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Brain className="w-4 h-4" />
-                          <span>AIマッチング結果を表示する</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
