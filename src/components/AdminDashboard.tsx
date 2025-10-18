@@ -4454,8 +4454,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         </button>
       </div>
 
-      {/* AIマッチングコントロール - 非表示 */}
-      {false && (
+      {/* AIマッチングコントロール */}
+      {selectedDate && (
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -4480,10 +4480,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               {selectedDate && (
                 <button
                   onClick={() => executeAIMatching(selectedDate)}
-                  disabled={false}
+                  disabled={aiMatchingLoading}
                   className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
                 >
-                  {false ? (
+                  {aiMatchingLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       <span>AI分析中...</span>
@@ -6260,6 +6260,27 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       </div>
                     );
                   })()}
+                  
+                  {/* AIマッチング実行ボタン */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={() => executeAIMatching(selectedDate)}
+                      disabled={aiMatchingLoading}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {aiMatchingLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>AI分析中...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="w-4 h-4" />
+                          <span>AIマッチング結果を表示する</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
