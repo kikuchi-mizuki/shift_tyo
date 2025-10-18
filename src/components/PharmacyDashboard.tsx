@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Plus, Sun, Users, Star, Bell, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Sun, Users, Star, Bell, X, Lock } from 'lucide-react';
 import { shifts, shiftPostings, systemStatus, storeNgPharmacists, supabase, pharmacistRatings } from '../lib/supabase';
 import { LineIntegration } from './LineIntegration';
+import PasswordChangeModal from './PasswordChangeModal';
 
 // デバッグ: インポートの確認
 console.log('PharmacyDashboard imports:', { shifts, shiftPostings });
@@ -39,6 +40,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
   const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
   // quick add input removed per request
+
+  // パスワード変更モーダル表示状態
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
 
   // 日付をリストに追加する関数
   const addDateToList = () => {
@@ -1495,12 +1499,21 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                 薬剤師募集登録
               </h2>
             </div>
-            <button
-              onClick={() => setShowProfileEdit(!showProfileEdit)}
-              className="text-sm text-blue-100 hover:text-white"
-            >
-              プロフィール編集
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowProfileEdit(!showProfileEdit)}
+                className="text-sm text-blue-100 hover:text-white"
+              >
+                プロフィール編集
+              </button>
+              <button
+                onClick={() => setShowPasswordChangeModal(true)}
+                className="text-sm text-blue-100 hover:text-white flex items-center space-x-1"
+              >
+                <Lock className="w-3 h-3" />
+                <span>パスワード変更</span>
+              </button>
+            </div>
           </div>
           <p className="text-sm text-blue-100 mt-1 font-medium">
             {profileName || '薬局名未設定'}
@@ -2502,6 +2515,16 @@ const renderStarRating = (rating: number, onRatingChange?: (rating: number) => v
           />
         </button>
       ))}
+    </div>
+  );
+};
+
+      {/* パスワード変更モーダル */}
+      <PasswordChangeModal
+        isOpen={showPasswordChangeModal}
+        onClose={() => setShowPasswordChangeModal(false)}
+        user={user}
+      />
     </div>
   );
 };

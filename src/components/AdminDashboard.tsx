@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-import { Calendar, AlertCircle, Star, Brain, Zap, Bell } from 'lucide-react';
+import { Calendar, AlertCircle, Star, Brain, Zap, Bell, Lock } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
 import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
 import DataCollector from '../features/ai-matching/dataCollector';
 import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
+import PasswordChangeModal from './PasswordChangeModal';
 
 interface AdminDashboardProps {
   user: any;
@@ -49,6 +50,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // 緊急シフトモーダル表示状態
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+
+  // パスワード変更モーダル表示状態
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
 
   // 月次マッチング実行状態
   const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false);
@@ -4697,6 +4701,17 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   {recruitmentStatus.is_open ? '✋ 募集を締め切る（応募を終了します）' : '募集を再開する'}
               </button>
             </div>
+
+            {/* パスワード変更 */}
+            <div className="bg-white rounded-lg shadow p-4 mb-4">
+              <button
+                onClick={() => setShowPasswordChangeModal(true)}
+                className="w-full py-2 px-4 rounded-lg font-medium text-sm bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center space-x-2"
+              >
+                <Lock className="w-4 h-4" />
+                <span>パスワードを変更</span>
+              </button>
+            </div>
           </div>
 
           {/* スクロール可能な詳細エリア */}
@@ -6354,6 +6369,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           );
         })()
       )}
+
+      {/* パスワード変更モーダル */}
+      <PasswordChangeModal
+        isOpen={showPasswordChangeModal}
+        onClose={() => setShowPasswordChangeModal(false)}
+        user={user}
+      />
       
     </div>
   );

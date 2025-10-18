@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile, Bell, X } from 'lucide-react';
+import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile, Bell, X, Lock } from 'lucide-react';
 import { shifts, shiftRequests, shiftPostings, systemStatus, supabase, storeNgPharmacies } from '../lib/supabase';
 import { LineIntegration } from './LineIntegration';
+import PasswordChangeModal from './PasswordChangeModal';
 
 interface PharmacistDashboardProps {
   user: any;
@@ -23,6 +24,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [nearestStationName, setNearestStationName] = useState('');
+
+  // パスワード変更モーダル表示状態
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
 
   // 日付をリストに追加する関数
   const addDateToList = () => {
@@ -1016,12 +1020,21 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               <h2 className="text-lg font-semibold">
                 シフト希望登録
               </h2>
-              <button
-                onClick={() => setShowProfileEdit(!showProfileEdit)}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                プロフィール編集
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowProfileEdit(!showProfileEdit)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  プロフィール編集
+                </button>
+                <button
+                  onClick={() => setShowPasswordChangeModal(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+                >
+                  <Lock className="w-3 h-3" />
+                  <span>パスワード変更</span>
+                </button>
+              </div>
             </div>
             
             {/* プロフィール編集フォーム */}
@@ -1446,6 +1459,13 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           </div>
         </div>
       </div>
+
+      {/* パスワード変更モーダル */}
+      <PasswordChangeModal
+        isOpen={showPasswordChangeModal}
+        onClose={() => setShowPasswordChangeModal(false)}
+        user={user}
+      />
     </div>
   );
 };
