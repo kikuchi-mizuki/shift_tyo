@@ -6187,7 +6187,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             ) : (
                               <h4 className="font-medium text-gray-800">{pharmacy.name || '名前未設定'}</h4>
                             )}
-                            <span className="text-xs text-gray-500">{pharmacy.email}</span>
+                            <div className="text-xs text-gray-500">
+                              <div>{pharmacy.email}</div>
+                              <div className="text-gray-400">パスワード: {pharmacy.password || '未設定'}</div>
+                            </div>
                           </div>
                           
                           {/* 店舗名 */}
@@ -6306,7 +6309,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                 })()}
                               </div>
                             )}
-                            <span className="text-xs text-gray-500">{pharmacist.email}</span>
+                            <div className="text-xs text-gray-500">
+                              <div>{pharmacist.email}</div>
+                              <div className="text-gray-400">パスワード: {pharmacist.password || '未設定'}</div>
+                            </div>
                           </div>
                           
                           {/* NG薬局・店舗リスト */}
