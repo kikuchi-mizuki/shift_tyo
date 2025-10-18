@@ -905,8 +905,18 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     // 1. AIマッチング結果から
     dayMatches.forEach(match => {
       const pharmacyId = match.pharmacy.id;
-      const storeName = match.pharmacy.name || '店舗名なし';
+      // 店舗名は元の募集データから取得する必要がある
+      // まず、該当する薬局の募集データを探す
+      const matchingPosting = dayPostings.find(p => p.pharmacy_id === pharmacyId);
+      const storeName = matchingPosting?.store_name || '店舗名なし';
       const uniqueKey = `${pharmacyId}_${storeName}`;
+      
+      console.log('マッチング結果の薬局分析:', {
+        pharmacyId,
+        storeName,
+        uniqueKey,
+        foundInNeeds: !!pharmacyNeeds[uniqueKey]
+      });
       
       if (pharmacyNeeds[uniqueKey]) {
         pharmacyNeeds[uniqueKey].matched++;
