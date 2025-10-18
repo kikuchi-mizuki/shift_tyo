@@ -4403,7 +4403,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     <div className="space-y-6">
       
       {/* 緊急シフトリクエスト機能 */}
-      <div className="flex justify-center">
+      <div className="flex justify-end">
         <button
           onClick={() => {
             console.error('=== EMERGENCY BUTTON CLICKED ===');
