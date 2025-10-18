@@ -685,8 +685,41 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   const performMatchingAnalysis = (dayRequests: any[], dayPostings: any[], date: string) => {
     console.log(`マッチング分析実行 [${date}]: 希望=${safeLength(dayRequests)}, 募集=${safeLength(dayPostings)}`);
     
+    // 確定済みの薬剤師・薬局を除外
+    const confirmedPharmacists = new Set<string>();
+    const confirmedPharmacies = new Set<string>();
+    const confirmedStoreKeys = new Set<string>();
+    
+    if (Array.isArray(assigned)) {
+      assigned.filter((s: any) => s?.date === date && s?.status === 'confirmed').forEach((s: any) => {
+        confirmedPharmacists.add(s.pharmacist_id);
+        confirmedPharmacies.add(s.pharmacy_id);
+        const storeKey = `${s.pharmacy_id}_${(s.store_name || '').trim()}`;
+        confirmedStoreKeys.add(storeKey);
+      });
+    }
+    
+    // 確定済みを除外したデータでマッチング分析
+    const filteredRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
+    const filteredPostings = dayPostings.filter((p: any) => {
+      if (confirmedPharmacies.has(p.pharmacy_id)) return false;
+      const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
+      if (confirmedStoreKeys.has(key)) return false;
+      return true;
+    });
+    
+    console.log('=== performMatchingAnalysis 確定済み除外 ===', {
+      date,
+      originalRequests: safeLength(dayRequests),
+      originalPostings: safeLength(dayPostings),
+      filteredRequests: safeLength(filteredRequests),
+      filteredPostings: safeLength(filteredPostings),
+      confirmedPharmacists: Array.from(confirmedPharmacists),
+      confirmedPharmacies: Array.from(confirmedPharmacies)
+    });
+    
     // 薬剤師を距離・希望回数・評価の優先順位でソート
-    const sortedRequests = dayRequests
+    const sortedRequests = filteredRequests
       .filter((r: any) => r.start_time && r.end_time)
       .sort((a: any, b: any) => {
         const aPharmacist = userProfiles[a.pharmacist_id];
@@ -713,7 +746,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       });
     
     // 各薬局の必要人数を管理
-    const pharmacyNeeds = dayPostings.map((p: any) => ({
+    const pharmacyNeeds = filteredPostings.map((p: any) => ({
       ...p,
       remaining: Number(p.required_staff) || 0
     }));
@@ -1226,6 +1259,19 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         return true;
       });
       const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
+
+      console.log('=== 確定済み除外ロジック詳細 ===', {
+        date,
+        confirmedPharmacists: Array.from(confirmedPharmacists),
+        confirmedPharmacies: Array.from(confirmedPharmacies),
+        confirmedStoreKeys: Array.from(confirmedStoreKeys),
+        originalRequests: safeLength(dayRequests),
+        originalPostings: safeLength(dayPostings),
+        filteredRequests: safeLength(filteredDayRequests),
+        filteredPostings: safeLength(filteredDayPostings),
+        excludedRequests: safeLength(dayRequests) - safeLength(filteredDayRequests),
+        excludedPostings: safeLength(dayPostings) - safeLength(filteredDayPostings)
+      });
 
       // 募集/希望が0件の場合も結果を保存する
       if (safeLength(filteredDayPostings) === 0 || safeLength(filteredDayRequests) === 0) {
