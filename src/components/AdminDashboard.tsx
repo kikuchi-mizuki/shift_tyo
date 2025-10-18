@@ -823,15 +823,158 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
   // 日別のAIマッチングの実行（既存の機能を保持）
   const executeAIMatching = async (date: string) => {
-      if (Array.isArray(assigned)) {
-        assigned.forEach((shift: any) => {
-          if (shift.status === 'confirmed') {
-            // 薬剤師ID + 日付 + 薬局ID の組み合わせでユニークキーを作成
-            const matchKey = `${shift.pharmacist_id}_${shift.date}_${shift.pharmacy_id}`;
-            confirmedMatches.add(matchKey);
+    if (!aiMatchingEngine) {
+      console.error('AI Matching Engine not initialized');
+      return;
+    }
+
+    setAiMatchingLoading(true);
+    try {
+      // 最新の確定シフトを取得してから判定（状態の取りこぼしを防止）
+      let freshAssigned: any[] = Array.isArray(assigned) ? (assigned as any[]) : [];
+      try {
+        if (supabase) {
+          const { data: fresh, error: freshErr } = await supabase
+            .from('assigned_shifts')
+            .select('pharmacist_id, pharmacy_id, date, status, store_name')
+            .eq('date', date)
+            .eq('status', 'confirmed');
+          if (!freshErr && Array.isArray(fresh)) {
+            freshAssigned = fresh;
+          }
+        }
+      } catch (e) {
+        console.warn('最新の確定シフト取得に失敗しました（フォールバック: 既存stateを使用）:', e);
+      }
+      // 当日に確定シフトが1件でもある場合はAIマッチングを実行しない
+      // より確実にチェックするため、既存のassigned stateも確認
+      const existingAssigned = Array.isArray(assigned) 
+        ? assigned.filter((s: any) => s.date === date && s.status === 'confirmed')
+        : [];
+      
+      const totalConfirmedShifts = Math.max(safeLength(freshAssigned), safeLength(existingAssigned));
+      
+      if (totalConfirmedShifts > 0) {
+        setAiMatches([]);
+        setAiMatchingLoading(false);
+        alert('この日は既に確定シフトがあります。AIマッチングは実行しません。');
+        return;
+      }
+      // 最新のデータを再取得してからフィルタリング
+      let freshRequests: any[] = [];
+      let freshPostings: any[] = [];
+      
+      if (supabase) {
+        // 最新の希望データを取得
+        const { data: requestsData } = await supabase
+          .from('shift_requests')
+          .select('*')
+          .eq('date', date);
+        if (requestsData) freshRequests = requestsData;
+        
+        // 最新の募集データを取得
+        const { data: postingsData } = await supabase
+          .from('shift_postings')
+          .select('*')
+          .eq('date', date);
+        if (postingsData) freshPostings = postingsData;
+      }
+      
+      // 未確定のみ抽出（最新データから）
+      const dayRequests = freshRequests.filter((r: any) => r.status !== 'confirmed');
+      const dayPostings = freshPostings.filter((p: any) => p.status !== 'confirmed');
+      
+      console.log('=== AIマッチング用データ取得 ===', {
+        date,
+        freshRequests: safeLength(freshRequests),
+        freshPostings: safeLength(freshPostings),
+        filteredRequests: safeLength(dayRequests),
+        filteredPostings: safeLength(dayPostings),
+        confirmedRequests: safeLength(freshRequests.filter(r => r.status === 'confirmed')),
+        confirmedPostings: safeLength(freshPostings.filter(p => p.status === 'confirmed'))
+      });
+
+      // 既に確定済みの組み合わせ（薬剤師ID_日付_薬局ID）をセット化
+      const confirmedMatches = new Set<string>();
+      const confirmedPharmacies = new Set<string>();
+      const confirmedPharmacists = new Set<string>();
+      const confirmedStoreKeys = new Set<string>(); // pharmacy_id + store_name 単位
+      if (Array.isArray(freshAssigned)) {
+        (freshAssigned as any[]).forEach((s: any) => {
+          if (s?.status === 'confirmed' && s?.date === date) {
+            confirmedMatches.add(`${s.pharmacist_id}_${s.date}_${s.pharmacy_id}`);
+            confirmedPharmacies.add(s.pharmacy_id);
+            confirmedPharmacists.add(s.pharmacist_id);
+            const storeKey = `${s.pharmacy_id}_${(s.store_name || '').trim()}`;
+            confirmedStoreKeys.add(storeKey);
           }
         });
       }
+
+      // 自動自己診断: なぜ除外されないのかを可視化
+      try {
+        const diag = (dayPostings || []).map((p: any) => {
+          const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
+          const reasons: string[] = [];
+          if (p.status === 'confirmed') reasons.push('posting.status=confirmed');
+          if (confirmedPharmacies.has(p.pharmacy_id)) reasons.push('pharmacy_id confirmed on date');
+          if (confirmedStoreKeys.has(key)) reasons.push('pharmacy_id+store_name confirmed on date');
+          return {
+            posting_id: p.id,
+            pharmacy_id: p.pharmacy_id,
+            store_name: p.store_name,
+            key,
+            reasons,
+            excluded: reasons.length > 0
+          };
+        });
+        
+        console.log('募集除外診断:', diag);
+      } catch (diagError) {
+        console.warn('除外診断エラー:', diagError);
+      }
+
+      // フィルタリング後のデータを確認
+      console.log('フィルタリング後のデータ:', {
+        dayRequests: safeLength(dayRequests),
+        dayPostings: safeLength(dayPostings),
+        confirmedMatches: confirmedMatches.size,
+        confirmedPharmacies: confirmedPharmacies.size,
+        confirmedPharmacists: confirmedPharmacists.size,
+        confirmedStoreKeys: confirmedStoreKeys.size
+      });
+
+      if (safeLength(dayRequests) === 0 || safeLength(dayPostings) === 0) {
+        console.log('データ不足のためAIマッチングをスキップします');
+        setAiMatches([]);
+        setAiMatchingLoading(false);
+        return;
+      }
+
+      // AIマッチングエンジンでマッチング実行
+      const matches = await aiMatchingEngine.executeOptimalMatching(dayRequests, dayPostings, {
+        useAPI: false,
+        algorithm: 'hybrid',
+        priority: 'pharmacy_satisfaction'
+      }, userProfiles, ratings);
+
+      console.log('AIマッチング結果:', matches);
+
+      // 結果を日付別に保存
+      setAiMatchesByDate(prev => ({
+        ...prev,
+        [date]: matches
+      }));
+
+      // 1ヶ月分マッチング実行後は、aiMatchesをクリアして日付選択時のみ表示
+      setAiMatches([]);
+    } catch (error) {
+      console.error('1ヶ月分のAIマッチングに失敗:', error);
+      console.error('1ヶ月分のAIマッチングに失敗しました。');
+    } finally {
+      setAiMatchingLoading(false);
+    }
+  };
       
       console.log('確定済みマッチング数:', confirmedMatches.size);
       
