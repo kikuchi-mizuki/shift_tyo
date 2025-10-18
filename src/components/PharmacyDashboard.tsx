@@ -1535,20 +1535,6 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                 />
               </div>
               
-              {/* 最寄駅設定 */}
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">最寄駅の設定</h3>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={nearestStationName}
-                    onChange={(e) => setNearestStationName(e.target.value)}
-                    placeholder="最寄駅名（例：新宿駅）"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  />
-                </div>
-              </div>
-              
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-2">店舗名の管理</h3>
                 <div className="space-y-2">
