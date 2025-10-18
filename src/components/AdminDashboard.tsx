@@ -4755,10 +4755,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             <div className="bg-white rounded-lg shadow p-4 mb-4">
               <button
                 onClick={() => setShowPasswordChangeModal(true)}
-                className="w-full py-2 px-4 rounded-lg font-medium text-sm bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center space-x-2"
+                className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1 text-left"
               >
-                <Lock className="w-4 h-4" />
-                <span>パスワードを変更</span>
+                <Lock className="w-3 h-3" />
+                <span>パスワード変更</span>
               </button>
             </div>
           </div>
