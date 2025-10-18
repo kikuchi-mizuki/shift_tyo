@@ -4709,7 +4709,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         {/* right panel */}
         <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
           <div className="bg-purple-600 text-white p-4 rounded-t-lg flex-shrink-0">
-            <h2 className="text-xl font-semibold">管理者パネル</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">管理者パネル</h2>
+              <button
+                onClick={() => setShowPasswordChangeModal(true)}
+                className="text-sm text-blue-100 hover:text-white flex items-center space-x-1"
+              >
+                <Lock className="w-3 h-3" />
+                <span>パスワード変更</span>
+              </button>
+            </div>
           </div>
           
           {/* マッチング */}
@@ -4751,18 +4760,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               </button>
             </div>
 
-            {/* パスワード変更 */}
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowPasswordChangeModal(true)}
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-                >
-                  <Lock className="w-3 h-3" />
-                  <span>パスワード変更</span>
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* スクロール可能な詳細エリア */}
