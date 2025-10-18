@@ -1492,30 +1492,28 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       {/* 右: シフト募集フォーム */}
       <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow">
         <div className="bg-blue-600 text-white p-4 rounded-t-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Plus className="w-5 h-5" />
-              <h2 className="text-xl font-semibold">
-                薬剤師募集登録
-              </h2>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setShowProfileEdit(!showProfileEdit)}
-                className="text-sm text-blue-100 hover:text-white"
-              >
-                プロフィール編集
-              </button>
-              <button
-                onClick={() => setShowPasswordChangeModal(true)}
-                className="text-sm text-blue-100 hover:text-white flex items-center space-x-1"
-              >
-                <Lock className="w-3 h-3" />
-                <span>パスワード変更</span>
-              </button>
-            </div>
+          <div className="flex items-center space-x-2 mb-3">
+            <Plus className="w-5 h-5" />
+            <h2 className="text-xl font-semibold">
+              薬剤師募集登録
+            </h2>
           </div>
-          <p className="text-sm text-blue-100 mt-1 font-medium">
+          <div className="flex flex-col space-y-2 mb-3">
+            <button
+              onClick={() => setShowProfileEdit(!showProfileEdit)}
+              className="text-sm text-blue-100 hover:text-white text-left"
+            >
+              プロフィール編集
+            </button>
+            <button
+              onClick={() => setShowPasswordChangeModal(true)}
+              className="text-sm text-blue-100 hover:text-white flex items-center space-x-1 text-left"
+            >
+              <Lock className="w-3 h-3" />
+              <span>パスワード変更</span>
+            </button>
+          </div>
+          <p className="text-sm text-blue-100 font-medium">
             {profileName || '薬局名未設定'}
           </p>
           <p className="text-xs text-blue-100 mt-1">
