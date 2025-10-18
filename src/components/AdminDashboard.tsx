@@ -6068,8 +6068,21 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         // 薬局の募集時間帯に入れる薬剤師は全員マッチング対象
                         let isCompatible = false;
                         if (rs && re && ps && pe) {
+                          // 時間を数値に変換して比較
+                          const timeToMinutes = (timeStr: string) => {
+                            const [hours, minutes] = timeStr.split(':').map(Number);
+                            return hours * 60 + minutes;
+                          };
+                          
+                          const requestStart = timeToMinutes(rs);
+                          const requestEnd = timeToMinutes(re);
+                          const postingStart = timeToMinutes(ps);
+                          const postingEnd = timeToMinutes(pe);
+                          
                           // 薬剤師の希望時間が薬局の募集時間帯に含まれるかチェック（境界を含む）
-                          isCompatible = (rs >= ps && rs < pe) || (re >= ps && re <= pe) || (rs <= ps && re >= pe);
+                          isCompatible = (requestStart >= postingStart && requestStart < postingEnd) || 
+                                        (requestEnd >= postingStart && requestEnd <= postingEnd) || 
+                                        (requestStart <= postingStart && requestEnd >= postingEnd);
                         }
                         
                         if (!blockedByPharmacist && !blockedByPharmacy && isCompatible) {
