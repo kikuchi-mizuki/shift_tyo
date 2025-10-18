@@ -247,14 +247,14 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
           
           const storeName = getStoreNameFromPosting(pharmacyNeed);
           
-          // スコア計算（薬剤師評価 + 優先度 + 薬局の必要人数）
+          // スコア計算（距離: 60%, 希望回数: 30%, 評価: 10%）
+          const distanceScore = calculateDistanceScore(pharmacist, pharmacy);
+          const requestCountScore = calculateRequestCountScore(request.pharmacist_id);
           const pharmacistRating = getPharmacistRating(request.pharmacist_id);
-          const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-          const priorityScore = priorityOrder[request.priority] || 1;
-          const requiredStaff = Number(pharmacyNeed.required_staff) || 1;
+          const ratingScore = pharmacistRating / 5; // 0-1に正規化
           
-          // 総合スコア（高いほど良い）
-          const totalScore = pharmacistRating * 1000 + priorityScore * 100 + requiredStaff;
+          // 総合スコア（距離が最重要、希望回数が2番目、評価が3番目）
+          const totalScore = (distanceScore * 0.6) + (requestCountScore * 0.3) + (ratingScore * 0.1);
           
           allPossibleMatches.push({
             request,
@@ -262,9 +262,9 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
             pharmacist,
             pharmacy,
             storeName,
-            pharmacistRating,
-            priority: request.priority,
-            requiredStaff,
+            distanceScore,
+            requestCountScore,
+            ratingScore,
             totalScore
           });
         }
@@ -1913,9 +1913,28 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
   // 距離スコア計算（近いほど高いスコア）
   const calculateDistanceScore = (pharmacist: any, pharmacy: any) => {
+    // 住所情報から距離を計算（簡易実装）
+    const pharmacistAddress = pharmacist?.address || '';
+    const pharmacyAddress = pharmacy?.address || '';
+    
+    if (!pharmacistAddress || !pharmacyAddress) {
+      // 住所情報がない場合は中程度のスコア
+      return 0.5;
+    }
+    
     // 簡易的な距離計算（実際の実装では住所から距離を計算）
-    // デフォルトスコア（距離情報がない場合）
-    return 0.8; // 0-1の範囲で、1に近いほど良い
+    // 同じ市区町村なら高スコア、異なる都道府県なら低スコア
+    const pharmacistCity = pharmacistAddress.split(' ')[0] || '';
+    const pharmacyCity = pharmacyAddress.split(' ')[0] || '';
+    
+    if (pharmacistCity === pharmacyCity) {
+      return 0.9; // 同じ市区町村
+    } else if (pharmacistAddress.includes(pharmacyAddress.split(' ')[0]) || 
+               pharmacyAddress.includes(pharmacistAddress.split(' ')[0])) {
+      return 0.7; // 近い地域
+    } else {
+      return 0.3; // 遠い地域
+    }
   };
 
   // 希望回数スコア計算（多いほど高いスコア）
@@ -6093,8 +6112,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           const requestCountScore = calculateRequestCountScore(request.pharmacist_id);
                           const ratingScore = getPharmacistRating(request.pharmacist_id) / 5; // 0-1に正規化
                           
-                          // 総合スコア（距離: 40%, 希望回数: 30%, 評価: 30%）
-                          const totalScore = (distanceScore * 0.4) + (requestCountScore * 0.3) + (ratingScore * 0.3);
+                          // 総合スコア（距離: 60%, 希望回数: 30%, 評価: 10%）
+                          // 距離が最重要、希望回数が2番目、評価が3番目
+                          const totalScore = (distanceScore * 0.6) + (requestCountScore * 0.3) + (ratingScore * 0.1);
                           
                           // マッチング候補をスコア付きで保存
                           allMatchCandidates.push({
