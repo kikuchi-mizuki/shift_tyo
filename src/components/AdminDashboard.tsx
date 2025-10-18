@@ -1345,13 +1345,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       result: requestStart <= postingStart && requestEnd >= postingEnd
     });
 
-    // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-    const isFullyCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
+    // 部分適合を許可（手動マッチングと同じロジック）
+    const isFullyCompatible = (requestStart >= postingStart && requestStart < postingEnd) || 
+                             (requestEnd > postingStart && requestEnd <= postingEnd) || 
+                             (requestStart <= postingStart && requestEnd >= postingEnd);
     
     console.log('時間適合性詳細:', {
       request: { start: rs, end: re, startMin: requestStart, endMin: requestEnd },
       posting: { start: ps, end: pe, startMin: postingStart, endMin: postingEnd },
-      condition: `${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd}`,
+      condition: `部分適合: (${requestStart} >= ${postingStart} && ${requestStart} < ${postingEnd}) || (${requestEnd} > ${postingStart} && ${requestEnd} <= ${postingEnd}) || (${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd})`,
       result: isFullyCompatible
     });
     
