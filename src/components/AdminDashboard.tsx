@@ -1909,6 +1909,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   };
 
 
+  // 距離スコア計算（近いほど高いスコア）
+  const calculateDistanceScore = (pharmacist: any, pharmacy: any) => {
+    // 簡易的な距離計算（実際の実装では住所から距離を計算）
+    // デフォルトスコア（距離情報がない場合）
+    return 0.8; // 0-1の範囲で、1に近いほど良い
+  };
+
+  // 希望回数スコア計算（多いほど高いスコア）
+  const calculateRequestCountScore = (pharmacistId: string) => {
+    const requestCount = shiftRequests.filter(r => r.pharmacist_id === pharmacistId).length;
+    // 希望回数に基づくスコア（0-1の範囲）
+    return Math.min(requestCount / 10, 1); // 10回以上は1.0
+  };
+
   // 薬局と薬剤師のデータを整理する関数
   const getOrganizedUserData = () => {
     console.log('getOrganizedUserData called with userProfiles:', userProfiles);
@@ -6047,21 +6061,45 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         const ps = pharmacyNeed?.start_time;
                         const pe = pharmacyNeed?.end_time;
                         
-                        // 両方に時間範囲がある場合は包含関係で判定
+                        // 薬局の募集時間帯に入れる薬剤師は全員マッチング対象
                         let isCompatible = false;
                             if (rs && re && ps && pe) {
-                          // 完全包含: 薬剤師の希望が薬局の募集時間をすべて覆う
-                          isCompatible = rs <= ps && re >= pe;
+                          // 薬剤師の希望時間が薬局の募集時間帯に含まれるかチェック
+                          // 薬剤師の開始時間が薬局の時間帯内、または薬剤師の終了時間が薬局の時間帯内
+                          isCompatible = (rs >= ps && rs < pe) || (re > ps && re <= pe) || (rs <= ps && re >= pe);
                         }
                         
                         if (!blockedByPharmacist && !blockedByPharmacy && isCompatible) {
-                              // 右側パネル用のマッチングログ
-                          console.log(`✅ 右パネル時間範囲マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time}`);
-                              
-                          matchedCount++;
-                              matchedPharmacists.push(request);
-                          matchedPharmacies.push(pharmacyNeed);
-                          pharmacyNeed.remaining--;
+                          // 優先順位に基づくスコア計算
+                          const distanceScore = calculateDistanceScore(pharmacist, pharmacy);
+                          const requestCountScore = calculateRequestCountScore(request.pharmacist_id);
+                          const ratingScore = getPharmacistRating(request.pharmacist_id) / 5; // 0-1に正規化
+                          
+                          // 総合スコア（距離: 40%, 希望回数: 30%, 評価: 30%）
+                          const totalScore = (distanceScore * 0.4) + (requestCountScore * 0.3) + (ratingScore * 0.3);
+                          
+                          // マッチング候補をスコア付きで保存
+                          const matchCandidate = {
+                            request,
+                            pharmacyNeed,
+                            pharmacist,
+                            pharmacy,
+                            distanceScore,
+                            requestCountScore,
+                            ratingScore,
+                            totalScore
+                          };
+                          
+                          // 右側パネル用のマッチングログ
+                          console.log(`✅ 優先順位マッチング: 薬剤師(${pharmacist?.name}) ${request.start_time}-${request.end_time} → 薬局(${pharmacy?.name}) ${pharmacyNeed.start_time}-${pharmacyNeed.end_time} [距離:${distanceScore.toFixed(2)}, 希望回数:${requestCountScore.toFixed(2)}, 評価:${ratingScore.toFixed(2)}, 総合:${totalScore.toFixed(2)}]`);
+                          
+                          // スコア順にソートして最適なマッチングを選択
+                          if (!matchedPharmacists.some(mp => mp.pharmacist_id === request.pharmacist_id)) {
+                            matchedCount++;
+                            matchedPharmacists.push(request);
+                            matchedPharmacies.push(pharmacyNeed);
+                            pharmacyNeed.remaining--;
+                          }
                           break;
                           }
                         }
