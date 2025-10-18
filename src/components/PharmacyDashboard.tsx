@@ -2409,6 +2409,13 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         </div>
       </div>
       </div>
+
+      {/* パスワード変更モーダル */}
+      <PasswordChangeModal
+        isOpen={showPasswordChangeModal}
+        onClose={() => setShowPasswordChangeModal(false)}
+        user={user}
+      />
     </div>
   );
 };
@@ -2515,16 +2522,6 @@ const renderStarRating = (rating: number, onRatingChange?: (rating: number) => v
           />
         </button>
       ))}
-    </div>
-  );
-};
-
-      {/* パスワード変更モーダル */}
-      <PasswordChangeModal
-        isOpen={showPasswordChangeModal}
-        onClose={() => setShowPasswordChangeModal(false)}
-        user={user}
-      />
     </div>
   );
 };
