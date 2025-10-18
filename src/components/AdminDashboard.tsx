@@ -4730,53 +4730,55 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   // 日毎の不足薬局分析
                   const dayShortageAnalysis = analyzePharmacyShortage(selectedDate);
                   
-                  // AIマッチング結果は未確定マッチがある場合に表示
-                  if (safeLength(dayMatches) > 0 && selectedDate) {
+                  // 日付が選択されている場合に詳細を表示
+                  if (selectedDate) {
                     return (
                       <div className="p-4 border-b border-gray-200">
-                        {/* AIマッチング結果 */}
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <Brain className="w-4 h-4 text-purple-600" />
-                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {safeLength(dayMatches)}件</h4>
-                          </div>
-                          <div className="space-y-2 max-h-48 overflow-y-auto">
-                            {dayMatches.map((match, index) => (
-                              <div key={index} className="bg-white rounded border p-2 text-xs">
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <div className="font-medium text-gray-800">
-                                      {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
+                        {/* AIマッチング結果（マッチがある場合のみ表示） */}
+                        {safeLength(dayMatches) > 0 && (
+                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Brain className="w-4 h-4 text-purple-600" />
+                              <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {safeLength(dayMatches)}件</h4>
+                            </div>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {dayMatches.map((match, index) => (
+                                <div key={index} className="bg-white rounded border p-2 text-xs">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-800">
+                                        {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
+                                      </div>
+                                      <div className="text-gray-600">
+                                        店舗: {match.pharmacy.name || '店舗名なし'}
+                                      </div>
+                                      <div className="text-gray-600">
+                                        {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
+                                      </div>
                                     </div>
-                                    <div className="text-gray-600">
-                                      店舗: {match.pharmacy.name || '店舗名なし'}
+                                    <div className="text-right ml-2">
+                                      <div className="text-purple-600 font-medium mb-1">
+                                        {Math.round(match.compatibilityScore * 100)}%
+                                      </div>
+                                      <div className="text-xs text-gray-500 mb-1">
+                                        {(match.reasons || []).slice(0, 2).join(', ')}
+                                      </div>
+                                      <button
+                                        onClick={() => handleConfirmSingleMatch(match, selectedDate)}
+                                        className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
+                                      >
+                                        確定
+                                      </button>
                                     </div>
-                                    <div className="text-gray-600">
-                                      {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
-                                    </div>
-                                  </div>
-                                  <div className="text-right ml-2">
-                                    <div className="text-purple-600 font-medium mb-1">
-                                      {Math.round(match.compatibilityScore * 100)}%
-                                    </div>
-                                    <div className="text-xs text-gray-500 mb-1">
-                                      {(match.reasons || []).slice(0, 2).join(', ')}
-                                    </div>
-                                    <button
-                                      onClick={() => handleConfirmSingleMatch(match, selectedDate)}
-                                      className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
-                                    >
-                                      確定
-                                    </button>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
                         
-                        {/* 不足薬局一覧（マッチング実行後のみ表示） */}
-                        {monthlyMatchingExecuted && safeLength(dayShortageAnalysis) > 0 && (
+                        {/* 不足薬局一覧（不足がある場合のみ表示） */}
+                        {safeLength(dayShortageAnalysis) > 0 && (
                           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-4 h-4 text-red-600" />
