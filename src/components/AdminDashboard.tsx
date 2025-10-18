@@ -2602,6 +2602,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         });
       }
       
+      // シフト募集データからもユーザーIDを収集
+      if (p && Array.isArray(p)) {
+        p.forEach((posting: any) => {
+          if (posting.pharmacy_id) {
+            userIds.add(posting.pharmacy_id);
+          }
+        });
+      }
+      
       logToRailway('User IDs from shifts and requests:', Array.from(userIds));
       
                    // 直接Supabaseからプロフィールを取得（管理者用）
@@ -2797,6 +2806,18 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             email: profile.email
           }));
           console.log('薬剤師名一覧:', pharmacistNames);
+          
+          // 薬局のプロフィールも確認
+          const pharmacyProfiles = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacy');
+          console.log('薬局プロフィール数:', pharmacyProfiles.length);
+          console.log('薬局プロフィール詳細:', pharmacyProfiles);
+          
+          const pharmacyNames = pharmacyProfiles.map((profile: any) => ({
+            id: profile.id,
+            name: profile.name,
+            email: profile.email
+          }));
+          console.log('薬局名一覧:', pharmacyNames);
 
           // 評価データを取得
           logToRailway('Fetching pharmacist ratings...');
@@ -5397,7 +5418,36 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                         return `薬剤師未設定 (ID: ${pharmacistId})`;
                                       }
                                     })()}</div>
-                                    <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || `薬局${shift.pharmacy_id ? shift.pharmacy_id.slice(-4) : 'unknown'}`}</div>
+                                    <div>薬局: {(() => {
+                                      // 薬局名の取得を改善
+                                      const pharmacyId = shift.pharmacy_id;
+                                      const profile = userProfiles[pharmacyId];
+                                      
+                                      // デバッグ情報を追加
+                                      console.log('薬局名表示デバッグ:', {
+                                        pharmacyId,
+                                        profile,
+                                        userProfilesKeys: Object.keys(userProfiles || {}),
+                                        userProfilesCount: Object.keys(userProfiles || {}).length,
+                                        allPharmacyProfiles: Object.values(userProfiles || {}).filter((p: any) => p.user_type === 'pharmacy')
+                                      });
+                                      
+                                      if (profile?.name && profile.name.trim()) {
+                                        return profile.name.trim();
+                                      } else if (profile?.email) {
+                                        return profile.email;
+                                      } else {
+                                        // フォールバック: 全薬局プロフィールから検索
+                                        const allPharmacyProfiles = Object.values(userProfiles || {}).filter((p: any) => p.user_type === 'pharmacy');
+                                        const foundProfile = allPharmacyProfiles.find((p: any) => p.id === pharmacyId);
+                                        if (foundProfile?.name && foundProfile.name.trim()) {
+                                          return foundProfile.name.trim();
+                                        } else if (foundProfile?.email) {
+                                          return foundProfile.email;
+                                        }
+                                        return `薬局未設定 (ID: ${pharmacyId})`;
+                                      }
+                                    })()}</div>
                                     <div>店舗: {getStoreName(shift)}</div>
                                     
                                     {/* 評価情報表示 */}
