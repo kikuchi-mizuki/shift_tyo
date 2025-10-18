@@ -702,20 +702,21 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     // 確定済みを除外したデータでマッチング分析
     const filteredRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
     const filteredPostings = dayPostings.filter((p: any) => {
-      if (confirmedPharmacies.has(p.pharmacy_id)) return false;
+      // 確定済み店舗のみを除外（薬局全体の確定は考慮しない）
       const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
       if (confirmedStoreKeys.has(key)) return false;
       return true;
     });
     
-    console.log('=== performMatchingAnalysis 確定済み除外 ===', {
+    console.log('=== performMatchingAnalysis 確定済み除外（店舗単位除外） ===', {
       date,
       originalRequests: safeLength(dayRequests),
       originalPostings: safeLength(dayPostings),
       filteredRequests: safeLength(filteredRequests),
       filteredPostings: safeLength(filteredPostings),
       confirmedPharmacists: Array.from(confirmedPharmacists),
-      confirmedPharmacies: Array.from(confirmedPharmacies)
+      confirmedStoreKeys: Array.from(confirmedStoreKeys),
+      note: '薬局全体の確定は考慮せず、確定済み店舗のみを除外'
     });
     
     // 薬剤師を距離・希望回数・評価の優先順位でソート
@@ -1249,28 +1250,28 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
 
       // 薬局側も「未確定のみ」でマッチング（open/recruitingに限定）
-      // かつ、当日に確定がある薬局（および店舗）は除外
+      // 確定済み店舗のみを除外（薬局全体ではなく店舗単位で判定）
       const allowedPostingStatuses = new Set(['open', 'recruiting']);
       const filteredDayPostings = dayPostings.filter((p: any) => {
         if (!allowedPostingStatuses.has((p.status || '').toLowerCase())) return false;
-        if (confirmedPharmacies.has(p.pharmacy_id)) return false;
+        // 確定済み店舗のみを除外（薬局全体の確定は考慮しない）
         const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
         if ((confirmedStoreKeys as Set<string>).has(key)) return false;
         return true;
       });
       const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
-      console.log('=== 確定済み除外ロジック詳細 ===', {
+      console.log('=== 確定済み除外ロジック詳細（店舗単位除外） ===', {
         date,
         confirmedPharmacists: Array.from(confirmedPharmacists),
-        confirmedPharmacies: Array.from(confirmedPharmacies),
         confirmedStoreKeys: Array.from(confirmedStoreKeys),
         originalRequests: safeLength(dayRequests),
         originalPostings: safeLength(dayPostings),
         filteredRequests: safeLength(filteredDayRequests),
         filteredPostings: safeLength(filteredDayPostings),
         excludedRequests: safeLength(dayRequests) - safeLength(filteredDayRequests),
-        excludedPostings: safeLength(dayPostings) - safeLength(filteredDayPostings)
+        excludedPostings: safeLength(dayPostings) - safeLength(filteredDayPostings),
+        note: '薬局全体の確定は考慮せず、確定済み店舗のみを除外'
       });
 
       // 募集/希望が0件の場合も結果を保存する
