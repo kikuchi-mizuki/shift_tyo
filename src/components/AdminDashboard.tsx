@@ -3212,8 +3212,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
       
       // マッチングデータから正確なtime_slotを取得（スコープを外に移動）
-      const requestTimeSlot = match.request?.time_slot || 'negotiable';
-      const postingTimeSlot = match.posting?.time_slot || 'negotiable';
+        const requestTimeSlot = match.request?.time_slot || 'negotiable';
+        const postingTimeSlot = match.posting?.time_slot || 'negotiable';
       
       // 対応する希望・募集のステータスを'confirmed'に更新
       try {
@@ -4654,7 +4654,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   return {
                     type: 'confirmed',
                     count: totalConfirmed,
-                    shortage: totalShortage
+                    shortage: totalShortage,
+                    unconfirmedMatches: totalUnconfirmedMatches
                   };
                 }
 
@@ -4885,17 +4886,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             </div>
                             
                             {/* 未確定マッチを表示 */}
-                            {(() => {
-                              const dayMatches = aiMatchesByDate[dateStr];
-                              
-                              
-                              return dayMatches && safeLength(dayMatches) > 0 && (
-                                <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                  <span className="sm:hidden">マ{safeLength(dayMatches)}</span>
-                                  <span className="hidden sm:inline">マッチ {safeLength(dayMatches)}</span>
-                                </div>
-                              );
-                            })()}
+                            {matchingStatus.unconfirmedMatches > 0 && (
+                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
+                                <span className="sm:hidden">マ{matchingStatus.unconfirmedMatches}</span>
+                                <span className="hidden sm:inline">マッチ {matchingStatus.unconfirmedMatches}</span>
+                              </div>
+                            )}
                             
                             {/* 確定後も不足パッチを表示（AI機能は無効化） */}
                             {matchingStatus.shortage > 0 && (
@@ -4988,23 +4984,23 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
             {/* 1ヶ月分のシフト自動組み */}
             <div className="bg-white rounded-lg shadow p-4 mb-4">
-              <button
-                onClick={executeMonthlyAIMatching}
+                <button
+                  onClick={executeMonthlyAIMatching}
                 disabled={aiMatchingLoading}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-              >
+                >
                 {aiMatchingLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     <span>AI分析中...</span>
-                  </>
-                ) : (
-                  <>
+                    </>
+                  ) : (
+                    <>
                     <Zap className="w-4 h-4" />
-                    <span>1ヶ月分のシフトを自動で組む</span>
-                  </>
-                )}
-              </button>
+                      <span>1ヶ月分のシフトを自動で組む</span>
+                    </>
+                  )}
+                </button>
             </div>
 
             {/* 募集管理 */}
@@ -5073,14 +5069,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   
                   if (safeLength(allDayMatches) > 0) {
                     // aiMatchesByDateにデータがある場合はそれを使用
-                    const confirmedPharmacistIds = new Set(
-                      (assigned || []).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
-                        .map((s: any) => s.pharmacist_id)
-                    );
-                    
+                  const confirmedPharmacistIds = new Set(
+                    (assigned || []).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
+                      .map((s: any) => s.pharmacist_id)
+                  );
+                  
                     dayMatches = allDayMatches.filter(match => 
-                      !confirmedPharmacistIds.has(match.pharmacist.id)
-                    );
+                    !confirmedPharmacistIds.has(match.pharmacist.id)
+                  );
                   } else if (safeLength(dayRequests) > 0 && safeLength(dayPostings) > 0) {
                     // aiMatchesByDateが空の場合は、カレンダーと同じロジックでマッチング分析を実行
                     console.log('aiMatchesByDateが空のため、カレンダーと同じロジックでマッチング分析を実行');
@@ -5104,45 +5100,45 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       <div className="p-4 border-b border-gray-200">
                         {/* AIマッチング結果（マッチがある場合のみ表示） */}
                         {safeLength(dayMatches) > 0 && (
-                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Brain className="w-4 h-4 text-purple-600" />
-                              <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {safeLength(dayMatches)}件</h4>
-                            </div>
-                            <div className="space-y-2 max-h-48 overflow-y-auto">
-                              {dayMatches.map((match, index) => (
-                                <div key={index} className="bg-white rounded border p-2 text-xs">
-                                  <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                      <div className="font-medium text-gray-800">
-                                        {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
-                                      </div>
-                                      <div className="text-gray-600">
-                                        店舗: {match.pharmacy.name || '店舗名なし'}
-                                      </div>
-                                      <div className="text-gray-600">
-                                        {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
-                                      </div>
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Brain className="w-4 h-4 text-purple-600" />
+                            <h4 className="text-sm font-semibold text-purple-800">AIマッチング結果 {safeLength(dayMatches)}件</h4>
+                          </div>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {dayMatches.map((match, index) => (
+                              <div key={index} className="bg-white rounded border p-2 text-xs">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="font-medium text-gray-800">
+                                      {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
                                     </div>
-                                    <div className="text-right ml-2">
-                                      <div className="text-purple-600 font-medium mb-1">
-                                        {Math.round(match.compatibilityScore * 100)}%
-                                      </div>
-                                      <div className="text-xs text-gray-500 mb-1">
-                                        {(match.reasons || []).slice(0, 2).join(', ')}
-                                      </div>
-                                      <button
-                                        onClick={() => handleConfirmSingleMatch(match, selectedDate)}
-                                        className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
-                                      >
-                                        確定
-                                      </button>
+                                    <div className="text-gray-600">
+                                      店舗: {match.pharmacy.name || '店舗名なし'}
+                                    </div>
+                                    <div className="text-gray-600">
+                                      {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
                                     </div>
                                   </div>
+                                  <div className="text-right ml-2">
+                                    <div className="text-purple-600 font-medium mb-1">
+                                      {Math.round(match.compatibilityScore * 100)}%
+                                    </div>
+                                    <div className="text-xs text-gray-500 mb-1">
+                                      {(match.reasons || []).slice(0, 2).join(', ')}
+                                    </div>
+                                    <button
+                                      onClick={() => handleConfirmSingleMatch(match, selectedDate)}
+                                      className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
+                                    >
+                                      確定
+                                    </button>
+                                  </div>
                                 </div>
-                              ))}
-                            </div>
+                              </div>
+                            ))}
                           </div>
+                        </div>
                         )}
                         
                         {/* 不足薬局一覧（不足がある場合のみ表示） */}
