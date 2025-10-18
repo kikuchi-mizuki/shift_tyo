@@ -1016,20 +1016,20 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         {/* 右側: シフト希望登録フォーム */}
         <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow mb-8">
                       <div className="p-4 lg:p-6 pb-20">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold mb-3">
                 シフト希望登録
               </h2>
-              <div className="flex space-x-2">
+              <div className="flex flex-col space-y-2">
                 <button
                   onClick={() => setShowProfileEdit(!showProfileEdit)}
-                  className="text-sm text-blue-600 hover:text-blue-800"
+                  className="text-sm text-blue-600 hover:text-blue-800 text-left"
                 >
                   プロフィール編集
                 </button>
                 <button
                   onClick={() => setShowPasswordChangeModal(true)}
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1 text-left"
                 >
                   <Lock className="w-3 h-3" />
                   <span>パスワード変更</span>
