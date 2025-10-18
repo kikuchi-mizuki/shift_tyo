@@ -993,6 +993,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
       setAiMatches(matches);
 
+      // 結果を日付別に保存
+      setAiMatchesByDate(prev => ({
+        ...prev,
+        [date]: matches
+      }));
+
       console.log(`AI Matching completed: ${safeLength(matches)} matches found`);
     } catch (error) {
       console.error('AI Matching failed:', error);
