@@ -4444,21 +4444,21 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       {/* 緊急シフトリクエスト機能 */}
       <div className="flex justify-end">
-        <button
-          onClick={() => {
-            console.error('=== EMERGENCY BUTTON CLICKED ===');
-            console.error('Setting showEmergencyModal to true');
-            setShowEmergencyModal(true);
-          }}
+          <button
+            onClick={() => {
+              console.error('=== EMERGENCY BUTTON CLICKED ===');
+              console.error('Setting showEmergencyModal to true');
+              setShowEmergencyModal(true);
+            }}
           className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
-        >
+          >
           <Bell className="w-5 h-5" />
-          LINEで呼びかける
-        </button>
+            LINEで呼びかける
+          </button>
       </div>
 
-      {/* AIマッチングコントロール - 非表示 */}
-      {false && (
+      {/* AIマッチングコントロール */}
+      {true && (
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -4480,13 +4480,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 />
                 <span className="text-sm font-medium text-purple-700">AIマッチング</span>
               </label>
-              {selectedDate && (
                 <button
-                  onClick={() => executeAIMatching(selectedDate)}
-                  disabled={aiMatchingLoading}
+                onClick={executeMonthlyAIMatching}
+                disabled={aiMatchingLoading}
                   className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
                 >
-                  {aiMatchingLoading ? (
+                {aiMatchingLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       <span>AI分析中...</span>
@@ -4494,11 +4493,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   ) : (
                     <>
                       <Zap className="w-4 h-4" />
-                      <span>AIマッチング実行</span>
+                    <span>1ヶ月分のシフトを自動で組む</span>
                     </>
                   )}
                 </button>
-              )}
             </div>
           </div>
         </div>
@@ -4903,7 +4901,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
           <div className="bg-purple-600 text-white p-4 rounded-t-lg flex-shrink-0">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">管理者パネル</h2>
+            <h2 className="text-xl font-semibold">管理者パネル</h2>
               <button
                 onClick={() => setShowPasswordChangeModal(true)}
                 className="text-sm text-blue-100 hover:text-white flex items-center space-x-1"
@@ -4918,23 +4916,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
             <div className="bg-white rounded-lg shadow p-4 mb-4">
               <div className="space-y-2">
-                <button
-                  onClick={executeMonthlyAIMatching}
-                  disabled={false}
-                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
-                >
-                  {false ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>マッチング実行中...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="w-4 h-4" />
-                      <span>1ヶ月分のシフトを自動で組む</span>
-                    </>
-                  )}
-                </button>
+                {/* このボタンはAIマッチングシステムに統合されました */}
                 
               </div>
             </div>
@@ -6225,8 +6207,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         if (aRating !== bRating) return bRating - aRating;
                         
                         // 優先度（high > medium > low）
-                        const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-                        return priorityOrder[b.priority] - priorityOrder[a.priority];
+                      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+                      return priorityOrder[b.priority] - priorityOrder[a.priority];
                     }) : [];
                     
                     // 各薬局の必要人数を管理
@@ -6252,15 +6234,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
                         const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
                             
-                        // 時間範囲互換性をチェック
-                        const rs = request?.start_time;
-                        const re = request?.end_time;
+                            // 時間範囲互換性をチェック
+                            const rs = request?.start_time;
+                            const re = request?.end_time;
                         const ps = pharmacyNeed?.start_time;
                         const pe = pharmacyNeed?.end_time;
                         
                         // 薬局の募集時間帯に入れる薬剤師は全員マッチング対象
                         let isCompatible = false;
-                        if (rs && re && ps && pe) {
+                            if (rs && re && ps && pe) {
                           // 時間を数値に変換して比較
                           const timeToMinutes = (timeStr: string) => {
                             const [hours, minutes] = timeStr.split(':').map(Number);
@@ -6299,8 +6281,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             ratingScore,
                             totalScore
                           });
+                          }
                         }
-                      }
                     });
                     
                     // スコア順にソート（高いスコア順）
