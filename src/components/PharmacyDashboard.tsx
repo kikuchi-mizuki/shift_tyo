@@ -537,6 +537,31 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           setStoreNgLists(groupedData);
           console.log('Grouped store NG data:', groupedData);
         }
+
+        // 店舗毎の最寄駅設定を取得
+        console.log('Loading store stations...');
+        const { data: storeStationData, error: storeStationError } = await supabase
+          .from('store_stations')
+          .select('*')
+          .eq('pharmacy_id', user.id);
+        
+        if (storeStationError) {
+          console.error('Error loading store stations:', storeStationError);
+          setStoreStations({});
+        } else {
+          console.log('Store stations loaded:', storeStationData);
+          // データを店舗名ごとにグループ化
+          const stationData: {[storeName: string]: {nearest_station_name: string}} = {};
+          if (storeStationData) {
+            storeStationData.forEach((item: any) => {
+              stationData[item.store_name] = {
+                nearest_station_name: item.nearest_station_name
+              };
+            });
+          }
+          setStoreStations(stationData);
+          console.log('Grouped store station data:', stationData);
+        }
         
         console.log('=== PROFILE DATA LOADED END ===');
       } else {
