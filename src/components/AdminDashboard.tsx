@@ -4403,29 +4403,18 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     <div className="space-y-6">
       
       {/* 緊急シフトリクエスト機能 */}
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Bell className="w-6 h-6 text-red-600" />
-            <div>
-              <h3 className="text-lg font-semibold text-red-800">急な人手不足に対応</h3>
-              <p className="text-sm text-red-600">
-                チームみんなで、シフトをスムーズに🌿
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              console.error('=== EMERGENCY BUTTON CLICKED ===');
-              console.error('Setting showEmergencyModal to true');
-              setShowEmergencyModal(true);
-            }}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-          >
-            <Bell className="w-4 h-4" />
-            LINEで呼びかける
-          </button>
-        </div>
+      <div className="flex justify-center">
+        <button
+          onClick={() => {
+            console.error('=== EMERGENCY BUTTON CLICKED ===');
+            console.error('Setting showEmergencyModal to true');
+            setShowEmergencyModal(true);
+          }}
+          className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+        >
+          <Bell className="w-5 h-5" />
+          LINEで呼びかける
+        </button>
       </div>
 
       {/* AIマッチングコントロール - 非表示 */}
