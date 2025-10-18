@@ -1042,21 +1042,13 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-4">
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2">名前の設定</h3>
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={profileName}
-                      onChange={(e) => setProfileName(e.target.value)}
-                      placeholder="あなたの名前"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
-                    <button
-                      onClick={handleProfileUpdate}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                    >
-                      更新
-                    </button>
-                  </div>
+                  <input
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    placeholder="あなたの名前"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  />
                 </div>
 
                 {/* 最寄駅設定 */}
@@ -1071,6 +1063,16 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
                   </div>
+                </div>
+
+                {/* 更新ボタン */}
+                <div className="pt-2">
+                  <button
+                    onClick={handleProfileUpdate}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                  >
+                    更新
+                  </button>
                 </div>
 
               </div>
