@@ -4309,13 +4309,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           const postingStart = timeToMinutes(ps);
           const postingEnd = timeToMinutes(pe);
 
-          // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-          const isFullyCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
+          // 薬剤師の希望時間が薬局の募集時間帯に含まれるかチェック（部分適合を許可、境界を含む）
+          const isFullyCompatible = (requestStart >= postingStart && requestStart < postingEnd) || 
+                                   (requestEnd >= postingStart && requestEnd <= postingEnd) || 
+                                   (requestStart <= postingStart && requestEnd >= postingEnd);
           
           console.log('時間適合性詳細:', {
             request: { start: rs, end: re, startMin: requestStart, endMin: requestEnd },
             posting: { start: ps, end: pe, startMin: postingStart, endMin: postingEnd },
-            condition: `${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd}`,
+            condition: `部分適合: (${requestStart} >= ${postingStart} && ${requestStart} < ${postingEnd}) || (${requestEnd} > ${postingStart} && ${requestEnd} <= ${postingEnd}) || (${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd})`,
             result: isFullyCompatible
           });
           
@@ -4341,7 +4343,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             console.log('作成する確定シフト:', confirmedShift);
             matchedShifts.push(confirmedShift);
             pharmacyNeed.remaining--;
-            break;
+            break; // この薬剤師はマッチング済みなので、次の薬剤師へ
           } else {
             // マッチング失敗の理由をログ出力
             if (blockedByPharmacist) {
@@ -6064,9 +6066,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         // 薬局の募集時間帯に入れる薬剤師は全員マッチング対象
                         let isCompatible = false;
                             if (rs && re && ps && pe) {
-                          // 薬剤師の希望時間が薬局の募集時間帯に含まれるかチェック
+                          // 薬剤師の希望時間が薬局の募集時間帯に含まれるかチェック（境界を含む）
                           // 薬剤師の開始時間が薬局の時間帯内、または薬剤師の終了時間が薬局の時間帯内
-                          isCompatible = (rs >= ps && rs < pe) || (re > ps && re <= pe) || (rs <= ps && re >= pe);
+                          isCompatible = (rs >= ps && rs < pe) || (re >= ps && re <= pe) || (rs <= ps && re >= pe);
                         }
                         
                         if (!blockedByPharmacist && !blockedByPharmacy && isCompatible) {
@@ -6099,8 +6101,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             matchedPharmacists.push(request);
                             matchedPharmacies.push(pharmacyNeed);
                             pharmacyNeed.remaining--;
+                            break; // この薬剤師はマッチング済みなので、次の薬剤師へ
                           }
-                          break;
                           }
                         }
                     });
