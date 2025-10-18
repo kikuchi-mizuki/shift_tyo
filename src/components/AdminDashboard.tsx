@@ -4929,7 +4929,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                           {Array.from({ length: pharmacy.shortage }, (_, index) => (
                                             <div key={index} className="flex items-center space-x-2">
                                               <span className="text-xs text-gray-500 w-8">
-                                                {index + 1}人目:
+                                                {index + 1}:
                                               </span>
                                               <select
                                                 id={`pharmacist-select-${pharmacy.id}-${index}`}
@@ -5148,7 +5148,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                           {Array.from({ length: pharmacy.shortage }).map((_, shortageIndex) => (
                                             <div key={shortageIndex} className="flex items-center space-x-2">
                                               <span className="text-xs text-gray-500 w-12">
-                                                {shortageIndex + 1}人目:
+                                                {shortageIndex + 1}:
                                               </span>
                                               <select
                                                 value={manualMatches[pharmacy.id]?.[shortageIndex] || ''}
