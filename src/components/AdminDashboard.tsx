@@ -1908,6 +1908,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     }));
   };
 
+
   // 薬局と薬剤師のデータを整理する関数
   const getOrganizedUserData = () => {
     console.log('getOrganizedUserData called with userProfiles:', userProfiles);
@@ -6187,10 +6188,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             ) : (
                               <h4 className="font-medium text-gray-800">{pharmacy.name || '名前未設定'}</h4>
                             )}
-                            <div className="text-xs text-gray-500">
-                              <div>{pharmacy.email}</div>
-                              <div className="text-gray-400">パスワード: {pharmacy.password || '未設定'}</div>
-                            </div>
+                            <span className="text-xs text-gray-500">{pharmacy.email}</span>
                           </div>
                           
                           {/* 店舗名 */}
@@ -6309,10 +6307,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                 })()}
                               </div>
                             )}
-                            <div className="text-xs text-gray-500">
-                              <div>{pharmacist.email}</div>
-                              <div className="text-gray-400">パスワード: {pharmacist.password || '未設定'}</div>
-                            </div>
+                            <span className="text-xs text-gray-500">{pharmacist.email}</span>
                           </div>
                           
                           {/* NG薬局・店舗リスト */}
