@@ -1228,7 +1228,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       });
       const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
-      // 募集/希望が0件なら実行せずに結果をクリア（前回の残像を防止）
+      // 募集/希望が0件の場合も結果を保存する
       if (safeLength(filteredDayPostings) === 0 || safeLength(filteredDayRequests) === 0) {
         try {
           console.log('AIマッチングをスキップ（募集/希望が0件）', {
@@ -1237,7 +1237,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             postings: safeLength(filteredDayPostings)
           });
         } catch {}
+        
+        // 0件の場合でも結果を保存
         setAiMatches([]);
+        setAiMatchesByDate(prev => {
+          const newMatchesByDate = {
+            ...prev,
+            [date]: []
+          };
+          console.log(`setAiMatchesByDate called for ${date} (0件):`, {
+            date,
+            matchesCount: 0,
+            newMatchesByDate
+          });
+          return newMatchesByDate;
+        });
+        
         setAiMatchingLoading(false);
         return;
       }
