@@ -2593,7 +2593,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         });
       }
       
-      logToRailway('User IDs from shifts:', Array.from(userIds));
+      // 薬剤師の希望データからもユーザーIDを収集
+      if (r && Array.isArray(r)) {
+        r.forEach((request: any) => {
+          if (request.pharmacist_id) {
+            userIds.add(request.pharmacist_id);
+          }
+        });
+      }
+      
+      logToRailway('User IDs from shifts and requests:', Array.from(userIds));
       
                    // 直接Supabaseからプロフィールを取得（管理者用）
              logToRailway('Fetching user profiles directly...');
@@ -2602,6 +2611,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
              const { data: allProfilesData, error: allProfilesError } = await supabase
                .from('user_profiles')
                .select('*');
+             
+             // 薬剤師のプロフィールを確実に取得するための追加処理
+             if (userIds.size > 0) {
+               logToRailway('Fetching specific user profiles for collected IDs...');
+               const { data: specificProfilesData, error: specificProfilesError } = await supabase
+                 .from('user_profiles')
+                 .select('*')
+                 .in('id', Array.from(userIds));
+               
+               if (specificProfilesError) {
+                 logToRailway('Error fetching specific user profiles:', specificProfilesError);
+               } else {
+                 logToRailway('Successfully fetched specific user profiles:', specificProfilesData);
+                 console.log('特定ユーザーのプロフィール:', specificProfilesData);
+               }
+             }
              
              // user_profilesが存在しない場合はapp_usersを試す
              if (allProfilesError && allProfilesError.message.includes('does not exist')) {
@@ -2752,6 +2777,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           console.log('=== userProfiles更新前のデバッグ ===');
           console.log('更新前のuserProfiles:', userProfiles);
           console.log('新しいprofilesMap:', profilesMap);
+          // 薬剤師のプロフィールを確実に含めるための追加処理
+          const pharmacistProfiles = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacist');
+          console.log('薬剤師プロフィール数:', pharmacistProfiles.length);
+          console.log('薬剤師プロフィール詳細:', pharmacistProfiles);
+          
           setUserProfiles(profilesMap);
           console.log('=== userProfiles更新完了 ===');
           
@@ -2759,6 +2789,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           console.log('読み込まれたユーザー数:', Object.keys(safeObject(profilesMap)).length);
           console.log('ユーザーID一覧:', Object.keys(profilesMap));
           console.log('ユーザープロフィール詳細:', profilesMap);
+          
+          // 薬剤師の名前が正しく取得できているかデバッグ
+          const pharmacistNames = pharmacistProfiles.map((profile: any) => ({
+            id: profile.id,
+            name: profile.name,
+            email: profile.email
+          }));
+          console.log('薬剤師名一覧:', pharmacistNames);
 
           // 評価データを取得
           logToRailway('Fetching pharmacist ratings...');
@@ -5329,7 +5367,36 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 pr-2">
                                   <div className="text-xs text-gray-800 leading-snug break-words">
-                                    <div>薬剤師: {pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師未設定'}</div>
+                                    <div>薬剤師: {(() => {
+                                      // 薬剤師名の取得を改善
+                                      const pharmacistId = shift.pharmacist_id;
+                                      const profile = userProfiles[pharmacistId];
+                                      
+                                      // デバッグ情報を追加
+                                      console.log('薬剤師名表示デバッグ:', {
+                                        pharmacistId,
+                                        profile,
+                                        userProfilesKeys: Object.keys(userProfiles || {}),
+                                        userProfilesCount: Object.keys(userProfiles || {}).length,
+                                        allPharmacistProfiles: Object.values(userProfiles || {}).filter((p: any) => p.user_type === 'pharmacist')
+                                      });
+                                      
+                                      if (profile?.name && profile.name.trim()) {
+                                        return profile.name.trim();
+                                      } else if (profile?.email) {
+                                        return profile.email;
+                                      } else {
+                                        // フォールバック: 全薬剤師プロフィールから検索
+                                        const allPharmacistProfiles = Object.values(userProfiles || {}).filter((p: any) => p.user_type === 'pharmacist');
+                                        const foundProfile = allPharmacistProfiles.find((p: any) => p.id === pharmacistId);
+                                        if (foundProfile?.name && foundProfile.name.trim()) {
+                                          return foundProfile.name.trim();
+                                        } else if (foundProfile?.email) {
+                                          return foundProfile.email;
+                                        }
+                                        return `薬剤師未設定 (ID: ${pharmacistId})`;
+                                      }
+                                    })()}</div>
                                     <div>薬局: {pharmacyProfile?.name || pharmacyProfile?.email || `薬局${shift.pharmacy_id ? shift.pharmacy_id.slice(-4) : 'unknown'}`}</div>
                                     <div>店舗: {getStoreName(shift)}</div>
                                     
