@@ -6046,15 +6046,31 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     const matchedPharmacists = [] as any[];
                     const matchedPharmacies = [] as any[];
                     
-                    // 薬剤師を評価順にソート
+                    // 薬剤師を距離・希望回数・評価の優先順位でソート
                     const sortedRequests = Array.isArray(dayRequests) ? dayRequests
                       .filter((r: any) => r.start_time && r.end_time)
                       .sort((a: any, b: any) => {
+                        const aPharmacist = userProfiles[a.pharmacist_id];
+                        const bPharmacist = userProfiles[b.pharmacist_id];
+                        
+                        // 距離スコア（近いほど高い）- 薬局情報がない場合は中程度のスコア
+                        const aDistanceScore = aPharmacist ? calculateDistanceScore(aPharmacist, {}) : 0.5;
+                        const bDistanceScore = bPharmacist ? calculateDistanceScore(bPharmacist, {}) : 0.5;
+                        if (aDistanceScore !== bDistanceScore) return bDistanceScore - aDistanceScore;
+                        
+                        // 希望回数スコア（多いほど高い）
+                        const aRequestCountScore = calculateRequestCountScore(a.pharmacist_id);
+                        const bRequestCountScore = calculateRequestCountScore(b.pharmacist_id);
+                        if (aRequestCountScore !== bRequestCountScore) return bRequestCountScore - aRequestCountScore;
+                        
+                        // 評価スコア（高いほど高い）
                         const aRating = getPharmacistRating(a.pharmacist_id);
                         const bRating = getPharmacistRating(b.pharmacist_id);
                         if (aRating !== bRating) return bRating - aRating;
-                      const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
-                      return priorityOrder[b.priority] - priorityOrder[a.priority];
+                        
+                        // 優先度（high > medium > low）
+                        const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+                        return priorityOrder[b.priority] - priorityOrder[a.priority];
                     }) : [];
                     
                     // 各薬局の必要人数を管理
@@ -6138,6 +6154,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     const usedPharmacists = new Set<string>();
                     const pharmacyMatches = new Map<string, any[]>();
                     
+                    console.log(`=== マッチング候補詳細 ===`);
+                    console.log(`全候補数: ${allMatchCandidates.length}件`);
+                    allMatchCandidates.forEach((candidate, index) => {
+                      console.log(`候補${index + 1}: 薬剤師(${candidate.pharmacist?.name}) → 薬局(${candidate.pharmacy?.name}) [距離:${candidate.distanceScore.toFixed(2)}, 希望回数:${candidate.requestCountScore.toFixed(2)}, 評価:${candidate.ratingScore.toFixed(2)}, 総合:${candidate.totalScore.toFixed(2)}]`);
+                    });
+                    
                     // 薬局ごとのマッチング候補を整理
                     for (const candidate of allMatchCandidates) {
                       const pharmacyKey = candidate.pharmacyNeed.pharmacy_id;
@@ -6148,16 +6170,24 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     }
                     
                     // 各薬局について、募集人数分の薬剤師をマッチング
+                    console.log(`=== 薬局別マッチング開始 ===`);
                     for (const [pharmacyId, candidates] of pharmacyMatches) {
                       const pharmacyNeed = candidates[0].pharmacyNeed;
                       const requiredStaff = pharmacyNeed.required_staff || 1;
                       let matchedForPharmacy = 0;
                       
-                      console.log(`薬局 ${pharmacyId} の募集人数: ${requiredStaff}人`);
+                      console.log(`\n薬局 ${pharmacyId} (${pharmacyNeed.store_name || '店舗名なし'}) の募集人数: ${requiredStaff}人`);
+                      console.log(`候補数: ${candidates.length}件`);
                       
                       for (const candidate of candidates) {
-                        if (matchedForPharmacy >= requiredStaff) break;
-                        if (usedPharmacists.has(candidate.request.pharmacist_id)) continue;
+                        if (matchedForPharmacy >= requiredStaff) {
+                          console.log(`❌ 募集人数に達したため、残りの候補をスキップ`);
+                          break;
+                        }
+                        if (usedPharmacists.has(candidate.request.pharmacist_id)) {
+                          console.log(`❌ 薬剤師(${candidate.pharmacist?.name})は既に他の薬局にマッチング済み`);
+                          continue;
+                        }
                         
                         // マッチング実行
                         matchedCount++;
@@ -6167,6 +6197,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         usedPharmacists.add(candidate.request.pharmacist_id);
                         
                         console.log(`✅ 薬局募集人数マッチング (${matchedForPharmacy}/${requiredStaff}): 薬剤師(${candidate.pharmacist?.name}) ${candidate.request.start_time}-${candidate.request.end_time} → 薬局(${candidate.pharmacy?.name}) ${candidate.pharmacyNeed.start_time}-${candidate.pharmacyNeed.end_time} [距離:${candidate.distanceScore.toFixed(2)}, 希望回数:${candidate.requestCountScore.toFixed(2)}, 評価:${candidate.ratingScore.toFixed(2)}, 総合:${candidate.totalScore.toFixed(2)}]`);
+                      }
+                      
+                      if (matchedForPharmacy < requiredStaff) {
+                        console.log(`⚠️ 薬局 ${pharmacyId} の募集人数不足: ${matchedForPharmacy}/${requiredStaff}人`);
                       }
                     }
                     
