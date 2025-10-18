@@ -3211,11 +3211,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         shift.id = insertedShift.id;
       }
       
+      // マッチングデータから正確なtime_slotを取得（スコープを外に移動）
+      const requestTimeSlot = match.request?.time_slot || 'negotiable';
+      const postingTimeSlot = match.posting?.time_slot || 'negotiable';
+      
       // 対応する希望・募集のステータスを'confirmed'に更新
       try {
-        // マッチングデータから正確なtime_slotを取得
-        const requestTimeSlot = match.request?.time_slot || 'negotiable';
-        const postingTimeSlot = match.posting?.time_slot || 'negotiable';
         
         console.log('ステータス更新用のtime_slot:', {
           requestTimeSlot,
