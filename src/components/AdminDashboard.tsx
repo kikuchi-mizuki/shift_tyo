@@ -4603,13 +4603,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   };
                 }
 
-                // 右パネルと同じロジックで不足を計算
-                const shortagePharmacies = analyzePharmacyShortage(dateStr);
-                let totalShortage = shortagePharmacies.reduce((sum, pharmacy) => sum + pharmacy.shortage, 0);
-                
                 // 実際のマッチング分析結果を使用（aiMatchesByDateが空の場合のフォールバック）
                 let dayMatches = aiMatchesByDate[dateStr] || [];
                 let totalMatched = safeLength(dayMatches);
+                let totalShortage = 0;
                 
                 // aiMatchesByDateが空の場合は、実際のマッチング分析を実行
                 if (totalMatched === 0 && safeLength(dayRequests) > 0 && safeLength(dayPostings) > 0) {
@@ -4770,19 +4767,18 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   
                   // 結果を更新
                   matchingAnalysis[0].totalMatched = matchedCount;
-                  matchingAnalysis[0].shortage = Math.max(0, matchingAnalysis[0].totalRequired - matchedCount);
                   matchingAnalysis[0].matchedPharmacists = matchedPharmacists;
                   matchingAnalysis[0].matchedPharmacies = matchedPharmacies;
                   
                   totalMatched = matchedCount;
-                  totalShortage = matchingAnalysis[0].shortage;
-                  console.log(`カレンダー表示用マッチング結果 [${dateStr}]: マッチ=${totalMatched}, 不足=${totalShortage}`);
+                  // 不足数は、各薬局の必要人数から実際にマッチした人数を引いた合計
+                  totalShortage = Math.max(0, matchingAnalysis[0].totalRequired - matchedCount);
+                  console.log(`カレンダー表示用マッチング結果 [${dateStr}]: マッチ=${totalMatched}, 不足=${totalShortage}, 必要=${matchingAnalysis[0].totalRequired}`);
                 }
                 
                 const totalAvailable = safeLength(dayRequests);
                 if (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0) {
                   console.log(`右パネル連携計算 [${dateStr}]: マッチ=${totalMatched}, 不足=${totalShortage}`);
-                  console.log(`不足薬局詳細:`, shortagePharmacies);
                 }
 
                 const result = {
@@ -4868,23 +4864,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               </div>
                             )}
                             
-                            {/* 不足件数（マッチング実行後のみ表示、確定取り消し後は非表示） */}
-                            {(() => {
-                              // 不足薬局を表示（マッチング分析結果に基づく）
-                              const shouldShowShortage = matchingStatus.shortage > 0;
-                              
-                              if (matchingStatus.shortage > 0) {
-                                console.log(`カレンダー不足パッチ表示判定 [${dateStr}]:`, {
-                                  shortage: matchingStatus.shortage,
-                                  shouldShowShortage,
-                                  monthlyMatchingExecuted,
-                                  totalRequired: matchingStatus.count || 0,
-                                  totalMatched: matchingStatus.count - matchingStatus.shortage || 0,
-                                  hasMatches: aiMatchesByDate[dateStr] && safeLength(aiMatchesByDate[dateStr]) > 0
-                                });
-                              }
-                              return shouldShowShortage;
-                            })() && (
+                            {/* 不足件数（マッチング分析結果に基づく） */}
+                            {matchingStatus.shortage > 0 && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">不{matchingStatus.shortage}</span>
                                 <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
