@@ -1090,6 +1090,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
       
       console.log('1ヶ月分のAIマッチング完了');
+      console.log('aiMatchesByDateの内容:', aiMatchesByDate);
       setMonthlyMatchingExecuted(true);
       
     } catch (error) {
@@ -1267,10 +1268,18 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       setAiMatches(matches);
 
       // 結果を日付別に保存
-      setAiMatchesByDate(prev => ({
-        ...prev,
-        [date]: matches
-      }));
+      setAiMatchesByDate(prev => {
+        const newMatchesByDate = {
+          ...prev,
+          [date]: matches
+        };
+        console.log(`setAiMatchesByDate called for ${date}:`, {
+          date,
+          matchesCount: safeLength(matches),
+          newMatchesByDate
+        });
+        return newMatchesByDate;
+      });
 
       console.log(`AI Matching completed: ${safeLength(matches)} matches found`);
     } catch (error) {
@@ -4629,6 +4638,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 // 実際のマッチング分析結果を使用（aiMatchesByDateが空の場合のフォールバック）
                 let dayMatches = aiMatchesByDate[dateStr] || [];
                 let totalMatched = safeLength(dayMatches);
+                
+                console.log(`カレンダー表示用マッチング状況 [${dateStr}]:`, {
+                  aiMatchesByDateKeys: Object.keys(aiMatchesByDate),
+                  dayMatches: dayMatches,
+                  totalMatched: totalMatched,
+                  dayRequests: safeLength(dayRequests),
+                  dayPostings: safeLength(dayPostings)
+                });
                 
                 // aiMatchesByDateが空の場合は、実際のマッチング分析を実行
                 if (totalMatched === 0 && safeLength(dayRequests) > 0 && safeLength(dayPostings) > 0) {
