@@ -331,7 +331,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       }
       
       if (!profileError && profileData) {
-        setProfileName(profileData.name || '');
+        // プロフィール更新中でない場合のみ名前を設定
+        if (!showProfileEdit) {
+          setProfileName(profileData.name || '');
+        }
         setNgList(profileData.ng_list || []);
         // LINE連携状態をチェック
         setIsLineLinked(!!profileData.line_user_id);
@@ -344,7 +347,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
             .update({ name: user.user_metadata.name })
             .eq('id', userIdToUse);
           
-          if (!updateError) {
+          if (!updateError && !showProfileEdit) {
             setProfileName(user.user_metadata.name);
           }
         }
@@ -586,12 +589,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           console.log('Store NG pharmacies update failed, but profile update succeeded');
         }
         
-        setShowProfileEdit(false);
-        // 成功時はローカルキャッシュも更新
-        try {
-          localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(ngList));
-        } catch {}
-        
         // 更新されたプロフィールデータを再取得してstateを更新
         console.log('Fetching updated profile data from DB...');
         const { data: updatedProfile, error: fetchError } = await supabase
@@ -608,6 +605,12 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           console.log('Profile state updated with fresh data');
           console.log('Profile name state after update:', updatedProfile.name);
         }
+        
+        setShowProfileEdit(false);
+        // 成功時はローカルキャッシュも更新
+        try {
+          localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(ngList));
+        } catch {}
         
         // プロフィール更新後にデータを再読み込み
         console.log('Reloading profile data after update...');

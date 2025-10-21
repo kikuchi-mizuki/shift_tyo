@@ -510,7 +510,10 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         }
         
         console.log('Final pharmacy name (from DB):', pharmacyName);
-        setProfileName(pharmacyName);
+        // プロフィール更新中でない場合のみ名前を設定
+        if (!showProfileEdit) {
+          setProfileName(pharmacyName);
+        }
         
         // 薬局名が空の場合のみ、デフォルト値を設定（自動保存は行わない）
         if (!profileData.name) {
@@ -1009,12 +1012,6 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           console.log('Updated store_names length:', updateResult[0].store_names?.length);
         }
         
-        setShowProfileEdit(false);
-        // 成功時はローカルキャッシュも更新
-        try {
-          localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
-        } catch {}
-        
         // 更新されたプロフィールデータを再取得してstateを更新
         console.log('Fetching updated profile data from DB...');
         const { data: updatedProfile, error: fetchError } = await supabase
@@ -1032,6 +1029,12 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           console.log('Profile state updated with fresh data');
           console.log('Profile name state after update:', updatedProfile.name);
         }
+        
+        setShowProfileEdit(false);
+        // 成功時はローカルキャッシュも更新
+        try {
+          localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
+        } catch {}
         
         // プロフィール更新後にデータを再読み込み
         console.log('Reloading profile data after update...');
