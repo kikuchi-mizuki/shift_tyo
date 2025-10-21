@@ -511,9 +511,13 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       
       const updatePayload = {
         name: profileName || user.email || 'Unknown',
-        ng_list: ngList,
-        nearest_station_name: nearestStationName
+        ng_list: ngList
       };
+      
+      // nearest_station_nameが設定されている場合のみ追加
+      if (nearestStationName && nearestStationName.trim()) {
+        updatePayload.nearest_station_name = nearestStationName;
+      }
       
       console.log('Update payload:', updatePayload);
       
@@ -550,11 +554,19 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           console.log('Updated ng_list:', updateResult[0].ng_list);
         }
         
-        // 店舗毎NG薬局設定を保存
-        const { error: storeNgError } = await storeNgPharmacies.updateStoreNgPharmacies(userIdToUse, storeNgLists);
-        if (storeNgError) {
-          console.error('Error updating store NG pharmacies:', storeNgError);
-          alert('店舗毎NG薬局設定の保存に失敗しました');
+        // 店舗毎NG薬局設定を保存（エラーが発生してもプロフィール更新は成功とする）
+        try {
+          const { error: storeNgError } = await storeNgPharmacies.updateStoreNgPharmacies(userIdToUse, storeNgLists);
+          if (storeNgError) {
+            console.error('Error updating store NG pharmacies:', storeNgError);
+            console.log('Store NG pharmacies update failed, but profile update succeeded');
+            // エラーが発生してもプロフィール更新は成功とする
+          } else {
+            console.log('Store NG pharmacies updated successfully');
+          }
+        } catch (storeNgException) {
+          console.error('Exception updating store NG pharmacies:', storeNgException);
+          console.log('Store NG pharmacies update failed, but profile update succeeded');
         }
         
         setShowProfileEdit(false);
@@ -562,6 +574,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         try {
           localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(ngList));
         } catch {}
+        
+        // プロフィール更新後にデータを再読み込み
+        console.log('Reloading profile data after update...');
+        await loadShifts();
       }
       
       console.log('=== PHARMACIST PROFILE UPDATE END ===');
