@@ -2849,7 +2849,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                      };
                    });
                    
-                   // 次に、v_user_profilesのデータでuser_typeを設定
+                   // 次に、v_user_profilesのデータでuser_typeを設定（名前は上書きしない）
                    vUserProfilesData?.forEach((user: any) => {
                      // user_typeが設定されている場合はそれを使用、ない場合はemailから推測
                      let userType = user.user_type;
@@ -2861,9 +2861,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                  name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'pharmacy' : 'pharmacist';
                      }
                      
-                     // 既存のプロファイルにuser_typeを追加
+                     // 既存のプロファイルにuser_typeのみ追加（名前は上書きしない）
                      if (profilesMap[user.id]) {
                        profilesMap[user.id].user_type = userType;
+                       console.log(`user_type設定: ${user.id} -> ${userType} (名前は保持: ${profilesMap[user.id].name})`);
                      } else {
                        // v_user_profilesにのみ存在する場合は新規追加
                        profilesMap[user.id] = {
@@ -2874,11 +2875,21 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                          ng_list: [],
                          store_names: []
                        };
+                       console.log(`新規追加: ${user.id} -> ${user.name} (${userType})`);
                      }
                    });
                    
                    console.log('最終的なprofilesMap:', profilesMap);
                    console.log('対象IDの最終データ:', profilesMap['89077960-0074-4b50-8d47-1f08b222db1b']);
+                   
+                   // 薬剤師の名前が正しく取得されているかデバッグ
+                   const pharmacistProfiles = Object.values(profilesMap).filter((p: any) => p.user_type === 'pharmacist');
+                   console.log('薬剤師プロフィール詳細:', pharmacistProfiles.map((p: any) => ({
+                     id: p.id,
+                     name: p.name,
+                     email: p.email,
+                     user_type: p.user_type
+                   })));
                    
                    setUserProfiles(profilesMap);
                    return;
@@ -2908,6 +2919,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                      user_type: userType
                    };
                  });
+                 
+                 // 薬剤師の名前が正しく取得されているかデバッグ
+                 const pharmacistProfiles = Object.values(profilesMap).filter((p: any) => p.user_type === 'pharmacist');
+                 console.log('app_users薬剤師プロフィール詳細:', pharmacistProfiles.map((p: any) => ({
+                   id: p.id,
+                   name: p.name,
+                   email: p.email,
+                   user_type: p.user_type
+                 })));
+                 
                  setUserProfiles(profilesMap);
                  return;
                }
