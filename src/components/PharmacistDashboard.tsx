@@ -548,6 +548,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         .select('*');
       
       console.log('Update result:', { data: updateResult, error });
+      console.log('Update result data:', updateResult);
+      console.log('Update result error:', error);
+      console.log('Update result length:', updateResult?.length);
       
       if (error) {
         console.error('Error updating profile:', error);
@@ -597,13 +600,24 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           .eq('id', userIdToUse)
           .single();
         
+        console.log('Re-fetch result:', { data: updatedProfile, error: fetchError });
+        console.log('Re-fetch data:', updatedProfile);
+        console.log('Re-fetch error:', fetchError);
+        
         if (!fetchError && updatedProfile) {
           console.log('Updated profile data from DB:', updatedProfile);
           console.log('Updated name from DB:', updatedProfile.name);
+          console.log('Name comparison - sent vs received:', {
+            sent: updatePayload.name,
+            received: updatedProfile.name,
+            match: updatePayload.name === updatedProfile.name
+          });
           setProfileName(updatedProfile.name || '');
           setNgList(updatedProfile.ng_list || []);
           console.log('Profile state updated with fresh data');
           console.log('Profile name state after update:', updatedProfile.name);
+        } else {
+          console.error('Failed to re-fetch updated profile:', fetchError);
         }
         
         setShowProfileEdit(false);
@@ -611,6 +625,31 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         try {
           localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(ngList));
         } catch {}
+        
+        // データベースの永続化を確認するため、少し時間を置いてから再度取得
+        console.log('Waiting 2 seconds to verify database persistence...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        console.log('Verifying database persistence...');
+        const { data: persistenceCheck, error: persistenceError } = await supabase
+          .from('user_profiles')
+          .select('name, ng_list')
+          .eq('id', userIdToUse)
+          .single();
+        
+        console.log('Persistence check result:', { data: persistenceCheck, error: persistenceError });
+        console.log('Persistence check data:', persistenceCheck);
+        console.log('Persistence check error:', persistenceError);
+        
+        if (!persistenceError && persistenceCheck) {
+          console.log('Database persistence verified:', {
+            name: persistenceCheck.name,
+            expected: updatePayload.name,
+            match: persistenceCheck.name === updatePayload.name
+          });
+        } else {
+          console.error('Database persistence check failed:', persistenceError);
+        }
         
         // プロフィール更新後にデータを再読み込み
         console.log('Reloading profile data after update...');
