@@ -2070,6 +2070,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   // 薬局と薬剤師のデータを整理する関数
   const getOrganizedUserData = () => {
     console.log('getOrganizedUserData called with userProfiles:', userProfiles);
+    console.log('userProfiles keys:', Object.keys(userProfiles));
+    console.log('userProfiles values:', Object.values(userProfiles));
+    
     const pharmacies: any[] = [];
     const pharmacists: any[] = [];
 
@@ -2079,10 +2082,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         pharmacies.push(profile);
       } else if (profile.user_type === 'pharmacist') {
         pharmacists.push(profile);
+        console.log('Added pharmacist:', profile.id, profile.name, profile.email);
       }
     });
 
     console.log('Organized data - pharmacies:', safeLength(pharmacies), 'pharmacists:', safeLength(pharmacists));
+    console.log('Pharmacists details:', pharmacists.map(p => ({ id: p.id, name: p.name, email: p.email })));
     return { pharmacies, pharmacists };
   };
 
@@ -2941,8 +2946,19 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         logToRailway('Loaded all user profiles:', allProfilesData);
         
         if (allProfilesData && safeLength(allProfilesData) > 0) {
+          console.log('=== user_profilesテーブルから取得したデータ ===');
+          console.log('取得件数:', safeLength(allProfilesData));
+          console.log('全データ:', allProfilesData);
+          
           const profilesMap: any = {};
           allProfilesData.forEach((profile: any) => {
+            console.log('処理中のプロファイル:', {
+              id: profile.id,
+              name: profile.name,
+              email: profile.email,
+              user_type: profile.user_type,
+              rawData: profile
+            });
             // user_typeが設定されている場合はそれを使用、ない場合はemailから推測
             let userType = profile.user_type;
             if (!userType) {
@@ -2960,6 +2976,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               ...profile,
               user_type: userType
             };
+            
+            console.log(`profilesMapに設定: ${profile.id}`, {
+              name: profilesMap[profile.id].name,
+              email: profilesMap[profile.id].email,
+              user_type: profilesMap[profile.id].user_type
+            });
           });
           logToRailway('User profiles map:', profilesMap);
           console.log('=== userProfiles更新前のデバッグ ===');
