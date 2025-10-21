@@ -6662,7 +6662,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     {safeLength(pharmacies) === 0 ? (
                       <div className="text-sm text-gray-500">登録されている薬局はありません</div>
                     ) : (
-                      pharmacies.map((pharmacy: any) => (
+                      pharmacies.map((pharmacy: any) => {
+                        console.log('薬局表示デバッグ:', {
+                          pharmacyId: pharmacy.id,
+                          pharmacyName: pharmacy.name,
+                          pharmacyEmail: pharmacy.email,
+                          pharmacyData: pharmacy
+                        });
+                        
+                        return (
                         <div key={pharmacy.id} className="bg-white border border-gray-200 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
                             {editingUserId === pharmacy.id ? (
@@ -6672,7 +6680,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                 onChange={(e) => setUserEditForm({ ...userEditForm, name: e.target.value })}
                               />
                             ) : (
-                              <h4 className="font-medium text-gray-800">{pharmacy.name || '名前未設定'}</h4>
+                              <h4 className="font-medium text-gray-800">{pharmacy.name || pharmacy.email || '名前未設定'}</h4>
                             )}
                             <span className="text-xs text-gray-500">{pharmacy.email}</span>
                           </div>
@@ -6724,7 +6732,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             )}
                           </div>
                         </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 )}
