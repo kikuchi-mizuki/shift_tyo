@@ -2860,6 +2860,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                    // まず、user_profilesの全データをマップに追加
                    userProfilesData?.forEach((profile: any) => {
                      console.log('user_profilesから追加:', profile.id, profile.name, profile.email);
+                     console.log('user_profiles詳細:', {
+                       id: profile.id,
+                       name: profile.name,
+                       email: profile.email,
+                       user_type: profile.user_type,
+                       hasName: !!profile.name,
+                       nameLength: profile.name?.length || 0
+                     });
                      profilesMap[profile.id] = {
                        id: profile.id,
                        name: profile.name,
@@ -2874,6 +2882,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                    // 次に、v_user_profilesのデータでuser_typeを設定（名前は上書きしない）
                    vUserProfilesData?.forEach((user: any) => {
                      console.log('v_user_profilesから処理:', user.id, user.name, user.email, user.user_type);
+                     console.log('v_user_profiles詳細:', {
+                       id: user.id,
+                       name: user.name,
+                       email: user.email,
+                       user_type: user.user_type,
+                       hasName: !!user.name,
+                       nameLength: user.name?.length || 0
+                     });
                      // user_typeが設定されている場合はそれを使用、ない場合はemailから推測
                      let userType = user.user_type;
                      if (!userType) {
@@ -2883,6 +2899,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                        userType = email.includes('store') || email.includes('pharmacy') || email.includes('sampley2') || 
                                  name.includes('store') || name.includes('pharmacy') || name.includes('sampley2') ? 'pharmacy' : 'pharmacist';
                      }
+                     
+                     console.log(`user_type判定: ${user.id} -> ${userType} (元のuser_type: ${user.user_type})`);
                      
                      // 既存のプロファイルにuser_typeのみ追加（名前は上書きしない）
                      if (profilesMap[user.id]) {
@@ -2904,6 +2922,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                    
                    console.log('最終的なprofilesMap:', profilesMap);
                    console.log('対象IDの最終データ:', profilesMap['89077960-0074-4b50-8d47-1f08b222db1b']);
+                   
+                   // 薬剤師のデータを詳しく確認
+                   const allPharmacists = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacist');
+                   console.log('=== 薬剤師データ詳細確認 ===');
+                   console.log('薬剤師数:', allPharmacists.length);
+                   allPharmacists.forEach((pharmacist: any, index: number) => {
+                     console.log(`薬剤師${index + 1}:`, {
+                       id: pharmacist.id,
+                       name: pharmacist.name,
+                       email: pharmacist.email,
+                       user_type: pharmacist.user_type,
+                       hasName: !!pharmacist.name,
+                       nameIsEmpty: !pharmacist.name || pharmacist.name.trim() === '',
+                       nameIsEmail: pharmacist.name === pharmacist.email?.split('@')[0]
+                     });
+                   });
                    
                    // 薬剤師の名前が正しく取得されているかデバッグ
                    const pharmacistProfiles = Object.values(profilesMap).filter((p: any) => p.user_type === 'pharmacist');
