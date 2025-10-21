@@ -578,6 +578,24 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         // プロフィール更新後にデータを再読み込み
         console.log('Reloading profile data after update...');
         await loadShifts();
+        
+        // 更新されたプロフィール名を確認
+        console.log('Profile name after update:', profileName);
+        console.log('Profile name state updated');
+        
+        // 更新されたプロフィールデータを再取得してstateを更新
+        const { data: updatedProfile, error: fetchError } = await supabase
+          .from('user_profiles')
+          .select('name, ng_list')
+          .eq('id', user.id)
+          .single();
+        
+        if (!fetchError && updatedProfile) {
+          console.log('Updated profile data from DB:', updatedProfile);
+          setProfileName(updatedProfile.name || '');
+          setNgList(updatedProfile.ng_list || []);
+          console.log('Profile state updated with fresh data');
+        }
       }
       
       console.log('=== PHARMACIST PROFILE UPDATE END ===');
