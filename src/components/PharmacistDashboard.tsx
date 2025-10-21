@@ -501,6 +501,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       console.log('NG list type:', typeof ngList);
       console.log('NG list length:', ngList.length);
       
+      // 認証ユーザーIDを取得
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const userIdToUse = authUser?.id || user.id;
+      
       // 更新前のデータベース状態を確認
       console.log('=== 更新前のデータベース状態確認 ===');
       const { data: beforeUpdate, error: beforeError } = await supabase
@@ -511,10 +515,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       
       console.log('更新前のデータ:', beforeUpdate);
       console.log('更新前のエラー:', beforeError);
-      
-      // 認証ユーザーIDを取得
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      const userIdToUse = authUser?.id || user.id;
       
       // ユーザーIDの確認
       if (!userIdToUse) {

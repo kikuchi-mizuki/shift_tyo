@@ -2594,8 +2594,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       // データベース接続の確認
       console.log('=== データベース接続確認 ===');
       console.log('Supabase client:', supabase);
-      console.log('Supabase URL:', supabase?.supabaseUrl);
+      console.log('Supabase URL:', supabase?.supabaseUrl || '未設定');
       console.log('Supabase Key:', supabase?.supabaseKey ? '設定済み' : '未設定');
+      
+      // 認証状態の確認
+      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+      console.log('現在の認証ユーザー:', currentUser);
+      console.log('認証エラー:', authError);
       
       // テーブルの存在確認
       console.log('=== テーブル存在確認 ===');
