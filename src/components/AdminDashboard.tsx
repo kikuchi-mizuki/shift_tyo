@@ -2613,6 +2613,33 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       } catch (error) {
         console.error('テーブル一覧確認エラー:', error);
       }
+      
+      // user_profilesテーブルの状態を詳しく確認
+      console.log('=== user_profilesテーブル状態確認 ===');
+      try {
+        const { data: userProfilesStatus, error: statusError } = await supabase
+          .from('user_profiles')
+          .select('id, name, email, user_type, created_at, updated_at')
+          .order('created_at', { ascending: false });
+        
+        if (statusError) {
+          console.error('user_profiles状態確認エラー:', statusError);
+        } else {
+          console.log('user_profiles現在の状態:', userProfilesStatus);
+          console.log('user_profiles総件数:', userProfilesStatus?.length);
+          
+          const pharmacistCount = userProfilesStatus?.filter(p => p.user_type === 'pharmacist').length || 0;
+          console.log('薬剤師の件数:', pharmacistCount);
+          
+          if (pharmacistCount > 0) {
+            console.log('薬剤師データ:', userProfilesStatus?.filter(p => p.user_type === 'pharmacist'));
+          } else {
+            console.warn('⚠️ 薬剤師データが見つかりません！');
+          }
+        }
+      } catch (error) {
+        console.error('user_profiles状態確認エラー:', error);
+      }
       // Railwayログに出力
       const logToRailway = (message: string, data?: any) => {
         console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');

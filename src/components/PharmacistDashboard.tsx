@@ -501,6 +501,17 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       console.log('NG list type:', typeof ngList);
       console.log('NG list length:', ngList.length);
       
+      // 更新前のデータベース状態を確認
+      console.log('=== 更新前のデータベース状態確認 ===');
+      const { data: beforeUpdate, error: beforeError } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, user_type, created_at, updated_at')
+        .eq('id', userIdToUse)
+        .single();
+      
+      console.log('更新前のデータ:', beforeUpdate);
+      console.log('更新前のエラー:', beforeError);
+      
       // 認証ユーザーIDを取得
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       const userIdToUse = authUser?.id || user.id;
@@ -654,6 +665,23 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         // プロフィール更新後にデータを再読み込み
         console.log('Reloading profile data after update...');
         await loadShifts();
+        
+        // 最終的なデータベース状態を確認
+        console.log('=== 最終的なデータベース状態確認 ===');
+        const { data: finalCheck, error: finalError } = await supabase
+          .from('user_profiles')
+          .select('id, name, email, user_type, created_at, updated_at')
+          .eq('id', userIdToUse)
+          .single();
+        
+        console.log('最終的なデータ:', finalCheck);
+        console.log('最終的なエラー:', finalError);
+        
+        if (finalCheck) {
+          console.log('✅ データベースに正常に保存されました');
+        } else {
+          console.error('❌ データベースからデータが消失しています！');
+        }
       }
       
       console.log('=== PHARMACIST PROFILE UPDATE END ===');
