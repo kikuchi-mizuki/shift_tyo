@@ -1156,7 +1156,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       setAiMatchingLoading(false);
     }
   };
-
   const executeAIMatching = async (date: string) => {
     if (!aiMatchingEngine) {
       console.error('AI Matching Engine not initialized');
@@ -1603,7 +1602,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       ng_list: ngList
     });
   };
-
   const saveEditUser = async (profile: any) => {
     try {
       const updates: any = { name: userEditForm.name };
@@ -2385,7 +2383,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.error('クリーンアップエラー:', error);
     }
   };
-
   // 募集状況を読み込む関数
   const loadRecruitmentStatus = async () => {
     try {
@@ -3950,7 +3947,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     setEditingRequestId(null);
     loadAll();
   };
-
   // 個別確定シフトの取り消し
   const handleCancelSingleConfirmedShift = async (shift: any) => {
     if (!confirm(`このシフトを取り消しますか？\n薬剤師: ${userProfiles[shift.pharmacist_id]?.name || '不明'}\n薬局: ${userProfiles[shift.pharmacy_id]?.name || '不明'}\n店舗: ${shift.store_name || '未設定'}`)) {
@@ -4560,7 +4556,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       </div>
     );
   }
-
   return (
     <div className="space-y-6">
       
@@ -5098,7 +5093,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
               >
-                  {recruitmentStatus.is_open ? '✋ 募集を締め切る（応募を終了します）' : '募集を再開する'}
+                  {recruitmentStatus.is_open ? '✋ 募集を締め切る' : '募集を再開する'}
               </button>
             </div>
 
@@ -6138,7 +6133,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       </div>
                     </div>
                   )}
-                  
                   {/* シフト希望 */}
                   {(
                     <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
@@ -6616,7 +6610,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           </div>
         </div>
       </div>
-
       {/* ユーザー一覧セクション */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">ユーザー管理</h2>
