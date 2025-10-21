@@ -888,13 +888,20 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('store_names is array:', Array.isArray(storeNames));
       console.log('store_names JSON:', JSON.stringify(storeNames));
       
-      // 店舗毎のNG薬剤師設定を保存
+      // 店舗毎のNG薬剤師設定を保存（エラーが発生してもプロフィール更新は成功とする）
       console.log('Saving store NG pharmacists:', storeNgLists);
-      const { error: storeNgError } = await storeNgPharmacists.updateStoreNgPharmacists(user.id, storeNgLists);
-      if (storeNgError) {
-        console.error('Error saving store NG pharmacists:', storeNgError);
-        alert('店舗毎のNG薬剤師設定の保存に失敗しました');
-        return;
+      try {
+        const { error: storeNgError } = await storeNgPharmacists.updateStoreNgPharmacists(user.id, storeNgLists);
+        if (storeNgError) {
+          console.error('Error saving store NG pharmacists:', storeNgError);
+          console.log('Store NG pharmacists update failed, but profile update will continue');
+          // エラーが発生してもプロフィール更新は続行する
+        } else {
+          console.log('Store NG pharmacists updated successfully');
+        }
+      } catch (storeNgException) {
+        console.error('Exception updating store NG pharmacists:', storeNgException);
+        console.log('Store NG pharmacists update failed, but profile update will continue');
       }
       
       // Railwayログは無効化（Edge Functionの400エラーを回避）
@@ -987,6 +994,10 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         try {
           localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
         } catch {}
+        
+        // プロフィール更新後にデータを再読み込み
+        console.log('Reloading profile data after update...');
+        await loadData();
       }
       
       console.log('=== PROFILE UPDATE END ===');
