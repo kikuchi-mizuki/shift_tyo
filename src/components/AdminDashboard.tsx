@@ -6728,7 +6728,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     {safeLength(pharmacists) === 0 ? (
                       <div className="text-sm text-gray-500">登録されている薬剤師はありません</div>
                     ) : (
-                      pharmacists.map((pharmacist: any) => (
+                      pharmacists.map((pharmacist: any) => {
+                        console.log('薬剤師表示デバッグ:', {
+                          pharmacistId: pharmacist.id,
+                          pharmacistName: pharmacist.name,
+                          pharmacistEmail: pharmacist.email,
+                          pharmacistData: pharmacist
+                        });
+                        
+                        return (
                         <div key={pharmacist.id} className="bg-white border border-gray-200 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
                             {editingUserId === pharmacist.id ? (
@@ -6739,7 +6747,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               />
                             ) : (
                               <div className="flex items-center space-x-2">
-                                <h4 className="font-medium text-gray-800">{pharmacist.name || '名前未設定'}</h4>
+                                <h4 className="font-medium text-gray-800">{pharmacist.name || pharmacist.email || '名前未設定'}</h4>
                                 {(() => {
                                   const pharmacistRatings = Array.isArray(ratings) ? ratings.filter(r => r.pharmacist_id === pharmacist.id) : [];
                                   if (safeLength(pharmacistRatings) > 0) {
@@ -6928,7 +6936,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             )}
                           </div>
                         </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 )}
