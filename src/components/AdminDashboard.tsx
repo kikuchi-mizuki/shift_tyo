@@ -2574,6 +2574,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.log('=== loadAll started - データ読み込み開始 ===');
       console.log('現在の日時:', new Date().toISOString());
       console.log('loadAll関数が実行されました - コンソールを確認してください');
+      console.log('=== 薬剤師3の表示問題デバッグ開始 ===');
       // Railwayログに出力
       const logToRailway = (message: string, data?: any) => {
         console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
@@ -2991,6 +2992,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           const pharmacistProfiles = Object.values(profilesMap).filter((profile: any) => profile.user_type === 'pharmacist');
           console.log('薬剤師プロフィール数:', pharmacistProfiles.length);
           console.log('薬剤師プロフィール詳細:', pharmacistProfiles);
+          console.log('薬剤師ID一覧:', pharmacistProfiles.map(p => p.id));
+          console.log('薬剤師名一覧:', pharmacistProfiles.map(p => p.name));
+          console.log('薬剤師メール一覧:', pharmacistProfiles.map(p => p.email));
           
           setUserProfiles(profilesMap);
           console.log('=== userProfiles更新完了 ===');
