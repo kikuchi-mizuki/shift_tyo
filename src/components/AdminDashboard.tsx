@@ -3363,15 +3363,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       setLoading(false);
       console.log('=== LOADALL END ===');
       
-      // データ読み込み完了後に自動クリーンアップを実行（初回のみ）
-      if (!(window as any).cleanupExecuted) {
-        console.log('loadAll完了後、初回クリーンアップを開始します');
-        (window as any).cleanupExecuted = true;
-        await cleanupUndefinedData();
-        console.log('初回クリーンアップ処理が完了しました');
-      } else {
-        console.log('クリーンアップは既に実行済みです');
-      }
+      // データ読み込み完了後の自動クリーンアップを無効化
+      console.log('自動クリーンアップを無効化しました');
+      // if (!(window as any).cleanupExecuted) {
+      //   console.log('loadAll完了後、初回クリーンアップを開始します');
+      //   (window as any).cleanupExecuted = true;
+      //   await cleanupUndefinedData();
+      //   console.log('初回クリーンアップ処理が完了しました');
+      // } else {
+      //   console.log('クリーンアップは既に実行済みです');
+      // }
       
       // DISABLED: データ読み込み完了後の自動マッチング実行を無効化
       // ユーザーが手動で「① 1ヶ月分マッチングを実行」ボタンを押した時のみ実行
