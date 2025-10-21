@@ -448,7 +448,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         try {
           const newProfileData = {
             id: userIdToUse,
-            name: user.email?.split('@')[0] || '薬局名未設定',
+            name: user.user_metadata?.name || user.email?.split('@')[0] || '薬局名未設定',
             email: user.email || '',
             user_type: 'pharmacy'
           };
@@ -494,7 +494,21 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         console.log('Setting storeNames to:', storeNamesFromDB);
         
         // データベースの薬局名を優先的に使用
-        const pharmacyName = profileData.name || '薬局名未設定';
+        let pharmacyName = profileData.name || '薬局名未設定';
+        
+        // 名前がメールアドレスの@より前の部分の場合は、user_metadataから正しい名前を取得
+        if (profileData.name === user.email?.split('@')[0] && user.user_metadata?.name) {
+          console.log('薬局名をuser_metadataから更新:', user.user_metadata.name);
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({ name: user.user_metadata.name })
+            .eq('id', userIdToUse);
+          
+          if (!updateError) {
+            pharmacyName = user.user_metadata.name;
+          }
+        }
+        
         console.log('Final pharmacy name (from DB):', pharmacyName);
         setProfileName(pharmacyName);
         

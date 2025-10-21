@@ -302,7 +302,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         try {
           const newProfileData = {
             id: userIdToUse,
-            name: user.email?.split('@')[0] || '薬剤師名未設定',
+            name: user.user_metadata?.name || user.email?.split('@')[0] || '薬剤師名未設定',
             email: user.email || '',
             user_type: 'pharmacist'
           };
@@ -335,6 +335,19 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         setNgList(profileData.ng_list || []);
         // LINE連携状態をチェック
         setIsLineLinked(!!profileData.line_user_id);
+        
+        // 名前がメールアドレスの@より前の部分の場合は、user_metadataから正しい名前を取得
+        if (profileData.name === user.email?.split('@')[0] && user.user_metadata?.name) {
+          console.log('名前をuser_metadataから更新:', user.user_metadata.name);
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({ name: user.user_metadata.name })
+            .eq('id', userIdToUse);
+          
+          if (!updateError) {
+            setProfileName(user.user_metadata.name);
+          }
+        }
       }
       
       // 店舗毎NG薬局設定を読み込み
