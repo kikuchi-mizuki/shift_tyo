@@ -592,19 +592,12 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(ngList));
         } catch {}
         
-        // プロフィール更新後にデータを再読み込み
-        console.log('Reloading profile data after update...');
-        await loadShifts();
-        
-        // 更新されたプロフィール名を確認
-        console.log('Profile name after update:', profileName);
-        console.log('Profile name state updated');
-        
         // 更新されたプロフィールデータを再取得してstateを更新
+        console.log('Fetching updated profile data from DB...');
         const { data: updatedProfile, error: fetchError } = await supabase
           .from('user_profiles')
           .select('name, ng_list')
-          .eq('id', user.id)
+          .eq('id', userIdToUse)
           .single();
         
         if (!fetchError && updatedProfile) {
@@ -615,6 +608,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           console.log('Profile state updated with fresh data');
           console.log('Profile name state after update:', updatedProfile.name);
         }
+        
+        // プロフィール更新後にデータを再読み込み
+        console.log('Reloading profile data after update...');
+        await loadShifts();
       }
       
       console.log('=== PHARMACIST PROFILE UPDATE END ===');

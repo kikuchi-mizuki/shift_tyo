@@ -1015,15 +1015,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
         } catch {}
         
-        // プロフィール更新後にデータを再読み込み
-        console.log('Reloading profile data after update...');
-        await loadData();
-        
-        // 更新されたプロフィール名を確認
-        console.log('Profile name after update:', profileName);
-        console.log('Profile name state updated');
-        
         // 更新されたプロフィールデータを再取得してstateを更新
+        console.log('Fetching updated profile data from DB...');
         const { data: updatedProfile, error: fetchError } = await supabase
           .from('user_profiles')
           .select('name, store_names, ng_list')
@@ -1039,6 +1032,10 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           console.log('Profile state updated with fresh data');
           console.log('Profile name state after update:', updatedProfile.name);
         }
+        
+        // プロフィール更新後にデータを再読み込み
+        console.log('Reloading profile data after update...');
+        await loadData();
       }
       
       console.log('=== PROFILE UPDATE END ===');
