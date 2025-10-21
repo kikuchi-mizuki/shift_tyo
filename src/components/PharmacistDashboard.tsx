@@ -509,15 +509,29 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         return;
       }
       
+      // 現在のプロフィールデータを取得して、既存のデータを保持
+      const { data: currentProfileData, error: currentProfileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userIdToUse)
+        .single();
+      
+      if (currentProfileError) {
+        console.error('Error fetching current profile:', currentProfileError);
+        alert('現在のプロフィールデータの取得に失敗しました');
+        return;
+      }
+      
+      console.log('Current profile data:', currentProfileData);
+      
       const updatePayload = {
         name: profileName || user.email || 'Unknown',
-        ng_list: ngList
+        ng_list: ngList,
+        // 既存のnearest_station_nameを保持し、新しい値がある場合のみ更新
+        nearest_station_name: nearestStationName && nearestStationName.trim() 
+          ? nearestStationName 
+          : (currentProfileData.nearest_station_name || null)
       };
-      
-      // nearest_station_nameが設定されている場合のみ追加
-      if (nearestStationName && nearestStationName.trim()) {
-        updatePayload.nearest_station_name = nearestStationName;
-      }
       
       console.log('Update payload:', updatePayload);
       

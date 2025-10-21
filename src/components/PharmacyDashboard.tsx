@@ -917,11 +917,29 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.error('JSON:', JSON.stringify(storeNames));
       
       
+      // 現在のプロフィールデータを取得して、既存のデータを保持
+      const { data: currentProfileData, error: currentProfileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (currentProfileError) {
+        console.error('Error fetching current profile:', currentProfileError);
+        alert('現在のプロフィールデータの取得に失敗しました');
+        return;
+      }
+      
+      console.log('Current profile data:', currentProfileData);
+      
       const updatePayload = {
         name: profileName,
         ng_list: ngList,
         store_names: storeNames,
-        nearest_station_name: nearestStationName
+        // 既存のnearest_station_nameを保持し、新しい値がある場合のみ更新
+        nearest_station_name: nearestStationName && nearestStationName.trim() 
+          ? nearestStationName 
+          : (currentProfileData.nearest_station_name || null)
       };
       
       console.log('Update payload:', updatePayload);
