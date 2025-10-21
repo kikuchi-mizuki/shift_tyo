@@ -2844,6 +2844,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                    
                    // まず、user_profilesの全データをマップに追加
                    userProfilesData?.forEach((profile: any) => {
+                     console.log('user_profilesから追加:', profile.id, profile.name, profile.email);
                      profilesMap[profile.id] = {
                        id: profile.id,
                        name: profile.name,
@@ -2857,6 +2858,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                    
                    // 次に、v_user_profilesのデータでuser_typeを設定（名前は上書きしない）
                    vUserProfilesData?.forEach((user: any) => {
+                     console.log('v_user_profilesから処理:', user.id, user.name, user.email, user.user_type);
                      // user_typeが設定されている場合はそれを使用、ない場合はemailから推測
                      let userType = user.user_type;
                      if (!userType) {
