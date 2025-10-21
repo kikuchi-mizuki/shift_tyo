@@ -2078,11 +2078,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
     Object.values(userProfiles).forEach((profile: any) => {
       console.log('Processing profile:', profile.id, profile.name, profile.user_type, 'ng_list:', profile.ng_list);
+      console.log('Profile details:', {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        user_type: profile.user_type,
+        hasName: !!profile.name,
+        nameLength: profile.name?.length || 0
+      });
       if (profile.user_type === 'pharmacy') {
         pharmacies.push(profile);
       } else if (profile.user_type === 'pharmacist') {
         pharmacists.push(profile);
         console.log('Added pharmacist:', profile.id, profile.name, profile.email);
+        console.log('Pharmacist name check:', {
+          id: profile.id,
+          name: profile.name,
+          hasName: !!profile.name,
+          nameIsEmpty: !profile.name || profile.name.trim() === '',
+          nameIsEmail: profile.name === profile.email?.split('@')[0]
+        });
       }
     });
 
@@ -6793,6 +6808,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           pharmacistEmail: pharmacist.email,
                           pharmacistData: pharmacist
                         });
+                        console.log('薬剤師名前詳細:', {
+                          id: pharmacist.id,
+                          name: pharmacist.name,
+                          email: pharmacist.email,
+                          hasName: !!pharmacist.name,
+                          nameIsEmpty: !pharmacist.name || pharmacist.name.trim() === '',
+                          nameIsEmail: pharmacist.name === pharmacist.email?.split('@')[0],
+                          displayName: pharmacist.name || pharmacist.email || '名前未設定'
+                        });
                         
                         return (
                         <div key={pharmacist.id} className="bg-white border border-gray-200 rounded-lg p-3">
@@ -6805,7 +6829,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               />
                             ) : (
                               <div className="flex items-center space-x-2">
-                                <h4 className="font-medium text-gray-800">{pharmacist.name || pharmacist.email || '名前未設定'}</h4>
+                                <h4 className="font-medium text-gray-800">
+                                  {pharmacist.name && pharmacist.name.trim() !== '' 
+                                    ? pharmacist.name 
+                                    : pharmacist.email || '名前未設定'
+                                  }
+                                </h4>
                                 {(() => {
                                   const pharmacistRatings = Array.isArray(ratings) ? ratings.filter(r => r.pharmacist_id === pharmacist.id) : [];
                                   if (safeLength(pharmacistRatings) > 0) {
