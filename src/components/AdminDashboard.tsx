@@ -2590,6 +2590,29 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.log('現在の日時:', new Date().toISOString());
       console.log('loadAll関数が実行されました - コンソールを確認してください');
       console.log('=== 薬剤師3の表示問題デバッグ開始 ===');
+      
+      // データベース接続の確認
+      console.log('=== データベース接続確認 ===');
+      console.log('Supabase client:', supabase);
+      console.log('Supabase URL:', supabase?.supabaseUrl);
+      console.log('Supabase Key:', supabase?.supabaseKey ? '設定済み' : '未設定');
+      
+      // テーブルの存在確認
+      console.log('=== テーブル存在確認 ===');
+      try {
+        const { data: tablesData, error: tablesError } = await supabase
+          .from('information_schema.tables')
+          .select('table_name')
+          .eq('table_schema', 'public');
+        
+        if (tablesError) {
+          console.error('テーブル一覧取得エラー:', tablesError);
+        } else {
+          console.log('利用可能なテーブル:', tablesData?.map(t => t.table_name));
+        }
+      } catch (error) {
+        console.error('テーブル一覧確認エラー:', error);
+      }
       // Railwayログに出力
       const logToRailway = (message: string, data?: any) => {
         console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
@@ -2829,23 +2852,58 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                  logToRailway('Trying other possible table names...');
                  
                  // v_user_profilesを試す
+                 console.log('=== v_user_profilesテーブルからデータ取得開始 ===');
                  const { data: vUserProfilesData, error: vUserProfilesError } = await supabase
                    .from('v_user_profiles')
                    .select('*');
                  
+                 console.log('v_user_profiles取得結果:', {
+                   data: vUserProfilesData,
+                   error: vUserProfilesError,
+                   dataLength: safeLength(vUserProfilesData),
+                   hasError: !!vUserProfilesError
+                 });
+                 
                  if (vUserProfilesError) {
                    logToRailway('Error loading v_user_profiles:', vUserProfilesError);
+                   console.error('v_user_profilesエラー詳細:', {
+                     code: vUserProfilesError.code,
+                     message: vUserProfilesError.message,
+                     details: vUserProfilesError.details,
+                     hint: vUserProfilesError.hint
+                   });
                    setUserProfiles({});
                  } else {
                    logToRailway('Loaded v_user_profiles:', vUserProfilesData);
+                   console.log('v_user_profilesデータ取得成功:', vUserProfilesData);
+                   console.log('v_user_profilesデータ件数:', safeLength(vUserProfilesData));
+                   
+                   // 薬剤師のデータを確認
+                   const pharmacistData = vUserProfilesData?.filter(p => p.user_type === 'pharmacist');
+                   console.log('v_user_profiles内の薬剤師データ:', pharmacistData);
+                   console.log('薬剤師データ件数:', safeLength(pharmacistData));
                    
                    // user_profilesテーブルから詳細情報を取得
+                   console.log('=== user_profilesテーブルからデータ取得開始 ===');
                    const { data: userProfilesData, error: userProfilesError } = await supabase
                      .from('user_profiles')
                      .select('*');
                    
+                   console.log('user_profiles取得結果:', {
+                     data: userProfilesData,
+                     error: userProfilesError,
+                     dataLength: safeLength(userProfilesData),
+                     hasError: !!userProfilesError
+                   });
+                   
                    if (userProfilesError) {
                      logToRailway('Error loading user_profiles:', userProfilesError);
+                     console.error('user_profilesエラー詳細:', {
+                       code: userProfilesError.code,
+                       message: userProfilesError.message,
+                       details: userProfilesError.details,
+                       hint: userProfilesError.hint
+                     });
                    } else {
                      console.log('user_profilesデータ取得成功:', userProfilesData);
                      console.log('user_profilesデータ件数:', safeLength(userProfilesData));
@@ -2853,6 +2911,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                      const targetId = '89077960-0074-4b50-8d47-1f08b222db1b';
                      const targetProfile = userProfilesData?.find(p => p.id === targetId);
                      console.log('対象IDのプロファイル:', targetProfile);
+                     
+                     // 薬剤師のデータを確認
+                     const pharmacistData = userProfilesData?.filter(p => p.user_type === 'pharmacist');
+                     console.log('user_profiles内の薬剤師データ:', pharmacistData);
+                     console.log('薬剤師データ件数:', safeLength(pharmacistData));
                    }
                    
                    const profilesMap: any = {};
