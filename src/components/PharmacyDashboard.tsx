@@ -944,6 +944,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       
       console.log('Update payload:', updatePayload);
       console.log('Update payload JSON:', JSON.stringify(updatePayload));
+      console.log('Profile name being sent:', profileName);
+      console.log('Final name value:', updatePayload.name);
       
       const { data: updateResult, error } = await supabase
         .from('user_profiles')
@@ -1030,10 +1032,12 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         
         if (!fetchError && updatedProfile) {
           console.log('Updated profile data from DB:', updatedProfile);
+          console.log('Updated name from DB:', updatedProfile.name);
           setProfileName(updatedProfile.name || '');
           setStoreNames(updatedProfile.store_names || []);
           setNgList(updatedProfile.ng_list || []);
           console.log('Profile state updated with fresh data');
+          console.log('Profile name state after update:', updatedProfile.name);
         }
       }
       
