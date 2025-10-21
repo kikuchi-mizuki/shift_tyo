@@ -637,30 +637,55 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(ngList));
         } catch {}
         
-        // データベースの永続化を確認するため、少し時間を置いてから再度取得
-        console.log('Waiting 2 seconds to verify database persistence...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        console.log('Verifying database persistence...');
-        const { data: persistenceCheck, error: persistenceError } = await supabase
-          .from('user_profiles')
-          .select('name, ng_list')
-          .eq('id', userIdToUse)
-          .single();
-        
-        console.log('Persistence check result:', { data: persistenceCheck, error: persistenceError });
-        console.log('Persistence check data:', persistenceCheck);
-        console.log('Persistence check error:', persistenceError);
-        
-        if (!persistenceError && persistenceCheck) {
-          console.log('Database persistence verified:', {
-            name: persistenceCheck.name,
-            expected: updatePayload.name,
-            match: persistenceCheck.name === updatePayload.name
-          });
-        } else {
-          console.error('Database persistence check failed:', persistenceError);
-        }
+      // データベースの永続化を確認するため、少し時間を置いてから再度取得
+      console.log('Waiting 2 seconds to verify database persistence...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      console.log('Verifying database persistence...');
+      const { data: persistenceCheck, error: persistenceError } = await supabase
+        .from('user_profiles')
+        .select('name, ng_list')
+        .eq('id', userIdToUse)
+        .single();
+      
+      console.log('Persistence check result:', { data: persistenceCheck, error: persistenceError });
+      console.log('Persistence check data:', persistenceCheck);
+      console.log('Persistence check error:', persistenceError);
+      
+      if (!persistenceError && persistenceCheck) {
+        console.log('Database persistence verified:', {
+          name: persistenceCheck.name,
+          expected: updatePayload.name,
+          match: persistenceCheck.name === updatePayload.name
+        });
+      } else {
+        console.error('Database persistence check failed:', persistenceError);
+      }
+      
+      // 追加の永続化確認：5秒後に再度チェック
+      console.log('Waiting 5 seconds for additional persistence check...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      const { data: finalPersistenceCheck, error: finalPersistenceError } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, user_type, created_at, updated_at')
+        .eq('id', userIdToUse)
+        .single();
+      
+      console.log('Final persistence check result:', { data: finalPersistenceCheck, error: finalPersistenceError });
+      
+      if (!finalPersistenceError && finalPersistenceCheck) {
+        console.log('✅ Final database persistence verified:', {
+          id: finalPersistenceCheck.id,
+          name: finalPersistenceCheck.name,
+          email: finalPersistenceCheck.email,
+          user_type: finalPersistenceCheck.user_type,
+          created_at: finalPersistenceCheck.created_at,
+          updated_at: finalPersistenceCheck.updated_at
+        });
+      } else {
+        console.error('❌ Final database persistence check failed:', finalPersistenceError);
+      }
         
         // プロフィール更新後にデータを再読み込み
         console.log('Reloading profile data after update...');

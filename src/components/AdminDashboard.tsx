@@ -2645,6 +2645,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       } catch (error) {
         console.error('user_profiles状態確認エラー:', error);
       }
+      
+      // 追加のデバッグ：特定の薬剤師IDで直接確認
+      console.log('=== 特定薬剤師IDでの直接確認 ===');
+      try {
+        // 最近更新された薬剤師を確認
+        const { data: recentPharmacists, error: recentError } = await supabase
+          .from('user_profiles')
+          .select('id, name, email, user_type, created_at, updated_at')
+          .eq('user_type', 'pharmacist')
+          .order('updated_at', { ascending: false })
+          .limit(5);
+        
+        if (recentError) {
+          console.error('最近の薬剤師データ取得エラー:', recentError);
+        } else {
+          console.log('最近更新された薬剤師:', recentPharmacists);
+        }
+      } catch (error) {
+        console.error('最近の薬剤師データ確認エラー:', error);
+      }
       // Railwayログに出力
       const logToRailway = (message: string, data?: any) => {
         console.log(`[RAILWAY_LOG] ${message}`, data ? JSON.stringify(data) : '');
