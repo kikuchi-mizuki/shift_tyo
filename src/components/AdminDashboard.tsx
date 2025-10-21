@@ -4723,9 +4723,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   
                   const totalMatched = totalConfirmed + totalUnconfirmedMatches;
                   
-                  // 確定シフトとマッチング結果を考慮した不足計算
-                  const shortagePharmacies = analyzePharmacyShortageWithMatches(dateStr, dayMatches);
-                  const totalShortage = shortagePharmacies.reduce((sum, pharmacy) => sum + pharmacy.shortage, 0);
+                  // 簡易不足計算：募集総数 - 確定数 - マッチ数
+                  const totalShortage = Math.max(0, totalRequired - totalMatched);
+                  
+                  console.log(`簡易不足計算 [${dateStr}]: 必要=${totalRequired}, 確定=${totalConfirmed}, マッチ=${totalUnconfirmedMatches}, 合計=${totalMatched}, 不足=${totalShortage}`);
                   
                   console.log(`確定シフト存在 [${dateStr}]: 必要=${totalRequired}, 確定=${totalConfirmed}, 未確定マッチ=${totalUnconfirmedMatches}, 合計=${totalMatched}, 不足=${totalShortage}`);
                   console.log(`確定シフト詳細 [${dateStr}]:`, {
@@ -4971,10 +4972,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             
                             {/* 未確定マッチを表示 */}
                             {matchingStatus.unconfirmedMatches > 0 && (
-                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
+                                <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
                                 <span className="sm:hidden">マ{matchingStatus.unconfirmedMatches}</span>
                                 <span className="hidden sm:inline">マッチ {matchingStatus.unconfirmedMatches}</span>
-                              </div>
+                                </div>
                             )}
                             
                             {/* 確定後も不足パッチを表示（AI機能は無効化） */}
@@ -5068,23 +5069,23 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
 
             {/* 1ヶ月分のシフト自動組み */}
             <div className="bg-white rounded-lg shadow p-4 mb-4">
-              <button
-                onClick={executeMonthlyAIMatching}
+                <button
+                  onClick={executeMonthlyAIMatching}
                 disabled={aiMatchingLoading}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-              >
+                >
                 {aiMatchingLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     <span>AI分析中...</span>
-                  </>
-                ) : (
-                  <>
+                    </>
+                  ) : (
+                    <>
                     <Zap className="w-4 h-4" />
-                    <span>1ヶ月分のシフトを自動で組む</span>
-                  </>
-                )}
-              </button>
+                      <span>1ヶ月分のシフトを自動で組む</span>
+                    </>
+                  )}
+                </button>
             </div>
 
             {/* 募集管理 */}
@@ -5175,8 +5176,24 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     dayMatchesData: dayMatches
                   });
                   
-                  // 日毎の不足薬局分析（マッチング結果を考慮）
-                  const dayShortageAnalysis = analyzePharmacyShortageWithMatches(selectedDate, dayMatches);
+                  // カレンダーと同じ簡易不足計算を使用
+                  const allDayPostingsForShortage = (postings || []).filter((p: any) => p.date === selectedDate);
+                  const totalRequired = allDayPostingsForShortage.reduce((sum, posting) => sum + (posting.required_staff || 1), 0);
+                  const totalConfirmed = safeLength(dayAssignedShifts);
+                  const totalMatched = totalConfirmed + safeLength(dayMatches);
+                  const totalShortage = Math.max(0, totalRequired - totalMatched);
+                  
+                  console.log(`詳細表示用簡易不足計算 [${selectedDate}]: 必要=${totalRequired}, 確定=${totalConfirmed}, マッチ=${safeLength(dayMatches)}, 合計=${totalMatched}, 不足=${totalShortage}`);
+                  
+                  // 不足がある場合のみ不足薬局を表示
+                  const dayShortageAnalysis = totalShortage > 0 ? [{
+                    id: 'shortage',
+                    name: '不足薬局',
+                    store_name: '',
+                    start_time: '09:00',
+                    end_time: '18:00',
+                    shortage: totalShortage
+                  }] : [];
                   
                   // 日付が選択されている場合に詳細を表示
                   if (selectedDate) {
