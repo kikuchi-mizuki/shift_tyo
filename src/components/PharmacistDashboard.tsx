@@ -552,6 +552,24 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       console.log('User email fallback:', user.email);
       console.log('Final name value:', updatePayload.name);
       
+      // 更新処理の前に、レコードが存在することを確認
+      console.log('=== 更新前のレコード存在確認 ===');
+      const { data: existenceCheck, error: existenceError } = await supabase
+        .from('user_profiles')
+        .select('id, name, email, user_type')
+        .eq('id', userIdToUse)
+        .single();
+      
+      console.log('Existence check result:', { data: existenceCheck, error: existenceError });
+      
+      if (existenceError) {
+        console.error('❌ レコードが存在しません！', existenceError);
+        alert('プロフィールレコードが見つかりません。データが削除されている可能性があります。');
+        return;
+      }
+      
+      console.log('✅ レコードが存在します:', existenceCheck);
+      
       const { data: updateResult, error } = await supabase
         .from('user_profiles')
         .update(updatePayload)

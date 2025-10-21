@@ -2593,7 +2593,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       // データベース接続の確認
       console.log('=== データベース接続確認 ===');
-      console.log('Supabase client:', supabase);
+      console.log('=== データベース接続確認 ===Supabase client:', supabase);
       console.log('Supabase URL:', supabase?.supabaseUrl || '未設定');
       console.log('Supabase Key:', supabase?.supabaseKey ? '設定済み' : '未設定');
       
@@ -2602,22 +2602,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.log('現在の認証ユーザー:', currentUser);
       console.log('認証エラー:', authError);
       
-      // テーブルの存在確認
-      console.log('=== テーブル存在確認 ===');
-      try {
-        const { data: tablesData, error: tablesError } = await supabase
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_schema', 'public');
-        
-        if (tablesError) {
-          console.error('テーブル一覧取得エラー:', tablesError);
-        } else {
-          console.log('利用可能なテーブル:', tablesData?.map(t => t.table_name));
-        }
-      } catch (error) {
-        console.error('テーブル一覧確認エラー:', error);
-      }
+      // テーブルの存在確認（information_schema.tablesへのアクセスを削除）
+      console.log('=== テーブル存在確認（スキップ） ===');
+      console.log('information_schema.tablesへのアクセスをスキップします');
       
       // user_profilesテーブルの状態を詳しく確認
       console.log('=== user_profilesテーブル状態確認 ===');
