@@ -18,23 +18,21 @@ SELECT
   name,
   email,
   user_type,
-  created_at,
-  updated_at
+  created_at
 FROM v_user_profiles 
 WHERE user_type = 'pharmacist'
-ORDER BY updated_at DESC;
+ORDER BY created_at DESC;
 
 -- 3. app_usersテーブルの薬剤師データを確認
 SELECT 
   id,
   email,
-  created_at,
-  updated_at
+  created_at
 FROM app_users 
 WHERE id IN (
   SELECT id FROM user_profiles WHERE user_type = 'pharmacist'
 )
-ORDER BY updated_at DESC;
+ORDER BY created_at DESC;
 
 -- 4. 薬剤師のシフト希望データを確認
 SELECT 
@@ -63,4 +61,4 @@ FROM assigned_shifts as_shift
 LEFT JOIN user_profiles up_pharmacist ON as_shift.pharmacist_id = up_pharmacist.id
 LEFT JOIN user_profiles up_pharmacy ON as_shift.pharmacy_id = up_pharmacy.id
 WHERE up_pharmacist.user_type = 'pharmacist'
-ORDER BY as_shift.date DESC, as_shift.created_at DESC;
+ORDER BY as_shift.date DESC;
