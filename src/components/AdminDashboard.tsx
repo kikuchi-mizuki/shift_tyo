@@ -256,6 +256,20 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
           // 総合スコア（距離が最重要、希望回数が2番目、評価が3番目）
           const totalScore = (distanceScore * 0.6) + (requestCountScore * 0.3) + (ratingScore * 0.1);
           
+          // デバッグ: pharmacyNeedの内容を確認
+          console.log('pharmacyNeed詳細:', {
+            id: pharmacyNeed.id,
+            start_time: pharmacyNeed.start_time,
+            end_time: pharmacyNeed.end_time,
+            pharmacy_id: pharmacyNeed.pharmacy_id
+          });
+          console.log('request詳細:', {
+            id: request.id,
+            start_time: request.start_time,
+            end_time: request.end_time,
+            pharmacist_id: request.pharmacist_id
+          });
+          
           allPossibleMatches.push({
             request,
             pharmacyNeed,
