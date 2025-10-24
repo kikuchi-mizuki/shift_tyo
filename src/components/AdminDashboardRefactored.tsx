@@ -8,7 +8,6 @@ import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
 import UnifiedCalendar from './UnifiedCalendar';
-import AIMatchingPanel from './AIMatchingPanel';
 import { getMonthName, getDaysInMonth, formatDateString, getPreviousMonth, getNextMonth, safeLength } from '../utils/calendarUtils';
 
 interface AdminDashboardProps {
@@ -5330,19 +5329,35 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             </div>
           </div>
           
-          {/* AIマッチングパネル */}
+          {/* マッチング */}
           <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
-            <AIMatchingPanel
-              requests={requests}
-              postings={postings}
-              assigned={assigned}
-              userProfiles={userProfiles}
-              ratings={ratings}
-              onExecuteMatching={executeMonthlyAIMatching}
-              onExecuteMonthlyMatching={executeMonthlyAIMatching}
-              selectedDate={selectedDate}
-              loading={aiMatchingLoading}
-            />
+            <div className="bg-white rounded-lg shadow p-4 mb-4">
+              <div className="space-y-2">
+                {/* このボタンはAIマッチングシステムに統合されました */}
+                
+              </div>
+            </div>
+
+            {/* 1ヶ月分のシフト自動組み */}
+            <div className="bg-white rounded-lg shadow p-4 mb-4">
+                <button
+                  onClick={executeMonthlyAIMatching}
+                disabled={aiMatchingLoading}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                {aiMatchingLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>AI分析中...</span>
+                    </>
+                  ) : (
+                    <>
+                    <Zap className="w-4 h-4" />
+                      <span>1ヶ月分のシフトを自動で組む</span>
+                    </>
+                  )}
+                </button>
+            </div>
 
             {/* 募集管理 */}
             <div className="bg-white rounded-lg shadow p-4 mb-4">
