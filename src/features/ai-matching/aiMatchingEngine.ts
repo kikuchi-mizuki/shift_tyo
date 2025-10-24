@@ -397,15 +397,26 @@ export class AIMatchingEngine {
     const postingStart = timeToMinutes(ps);
     const postingEnd = timeToMinutes(pe);
 
+    // 薬剤師が薬局の希望時間を完全に満たしているかチェック
+    const canCoverPharmacyTime = requestStart <= postingStart && requestEnd >= postingEnd;
+
     console.log('時間適合性チェック:', {
       request: { start: rs, end: re, startMin: requestStart, endMin: requestEnd },
       posting: { start: ps, end: pe, startMin: postingStart, endMin: postingEnd },
       condition: `${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd}`,
-      result: requestStart <= postingStart && requestEnd >= postingEnd
+      result: canCoverPharmacyTime,
+      coverageDetails: {
+        requestStart,
+        requestEnd,
+        postingStart,
+        postingEnd,
+        canCoverStart: requestStart <= postingStart,
+        canCoverEnd: requestEnd >= postingEnd,
+        coverageDuration: postingEnd - postingStart
+      }
     });
 
-    // 薬剤師が薬局の希望時間を完全に満たしているかチェック
-    return requestStart <= postingStart && requestEnd >= postingEnd;
+    return canCoverPharmacyTime;
   }
 
   /**
