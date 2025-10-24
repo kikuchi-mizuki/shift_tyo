@@ -895,15 +895,19 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           // 薬剤師の開始時間 <= 薬局の開始時間 かつ 薬剤師の終了時間 >= 薬局の終了時間
           isCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
           
-          console.log('時間互換性チェック:', {
-            pharmacist: `${rs}-${re}`,
-            pharmacy: `${ps}-${pe}`,
-            requestStart,
-            requestEnd,
-            postingStart,
-            postingEnd,
+          console.log('=== 時間互換性チェック詳細 ===', {
+            pharmacist_id: request.pharmacist_id,
+            pharmacy_id: pharmacyNeed.pharmacy_id,
+            pharmacist_time: `${rs}-${re}`,
+            pharmacy_time: `${ps}-${pe}`,
+            requestStart_minutes: requestStart,
+            requestEnd_minutes: requestEnd,
+            postingStart_minutes: postingStart,
+            postingEnd_minutes: postingEnd,
+            condition1: `requestStart(${requestStart}) <= postingStart(${postingStart}) = ${requestStart <= postingStart}`,
+            condition2: `requestEnd(${requestEnd}) >= postingEnd(${postingEnd}) = ${requestEnd >= postingEnd}`,
             isCompatible,
-            reason: isCompatible ? '薬剤師の希望時間が薬局の募集時間を完全にカバー' : '時間が合わない'
+            reason: isCompatible ? '✅ 薬剤師の希望時間が薬局の募集時間を完全にカバー' : '❌ 時間が合わない（完全カバーしていない）'
           });
         }
         
@@ -1239,6 +1243,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       setAiMatches([]);
       setAiMatchesByDate({});
       console.log('既存のマッチング結果をクリアしました');
+      
+      // assigned_shiftsテーブルのstatus: 'pending'データをクリア
+      if (supabase) {
+        try {
+          const { error: deleteError } = await supabase
+            .from('assigned_shifts')
+            .delete()
+            .eq('status', 'pending');
+          
+          if (deleteError) {
+            console.error('pendingデータの削除エラー:', deleteError);
+          } else {
+            console.log('assigned_shiftsテーブルのpendingデータをクリアしました');
+            // assigned stateも更新
+            await loadAssignedShifts();
+          }
+        } catch (error) {
+          console.error('pendingデータクリアエラー:', error);
+        }
+      }
 
       // 現在の月の全ての日付を取得
       const currentMonth = currentDate.getMonth();
