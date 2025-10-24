@@ -379,6 +379,12 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
                 urgency: 'medium',
                 flexibility: 0
               },
+              // デバッグ: findOptimalSolution内でのmatch.pharmacyNeedを確認
+              debugPharmacyNeed: {
+                start_time: match.pharmacyNeed.start_time,
+                end_time: match.pharmacyNeed.end_time,
+                pharmacy_id: match.pharmacyNeed.pharmacy_id
+              },
           compatibilityScore: match.pharmacistRating / 5,
           reasons: [`評価${match.pharmacistRating}`, `優先度${match.priority}`, '時間範囲適合']
         });
@@ -5704,7 +5710,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                         const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00';
                                         const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00';
                                         
-                                        console.log('最終的な時間表示:', { startTime, endTime });
+                                        console.log('最終的な時間表示:', { 
+                                          startTime, 
+                                          endTime,
+                                          timeSlot: match.timeSlot,
+                                          posting: match.posting,
+                                          debugPharmacyNeed: match.debugPharmacyNeed,
+                                          pharmacyNeed: match.pharmacyNeed
+                                        });
                                         return `${startTime} - ${endTime}`;
                                       })()}
                                     </div>
@@ -5853,7 +5866,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                         const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00';
                                         const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00';
                                         
-                                        console.log('最終的な時間表示:', { startTime, endTime });
+                                        console.log('最終的な時間表示:', { 
+                                          startTime, 
+                                          endTime,
+                                          timeSlot: match.timeSlot,
+                                          posting: match.posting,
+                                          debugPharmacyNeed: match.debugPharmacyNeed,
+                                          pharmacyNeed: match.pharmacyNeed
+                                        });
                                         return `${startTime} - ${endTime}`;
                                       })()}
                                     </div>
