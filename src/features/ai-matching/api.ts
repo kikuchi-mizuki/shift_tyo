@@ -5,6 +5,7 @@
 
 import { supabase } from '../../lib/supabase';
 import { generateDistanceBasedMatches } from './distanceMatching';
+import { executeHistoryBasedMatching } from './pharmacistHistoryMatching';
 
 export interface AIMatchingRequest {
   date: string;
@@ -291,10 +292,19 @@ const executeHybridMatching = async (requests: any[], postings: any[], userProfi
     }
   }
   
-  // 全ての結果を統合（距離ベースを最優先、次にAI、最後にルールベース）
-  const combinedMatches = [...distanceBasedMatches, ...aiScoredMatches, ...ruleBasedMatches];
+  // 履歴ベースのマッチング（薬剤師の希望回数を考慮）
+  let historyBasedMatches: any[] = [];
+  try {
+    historyBasedMatches = await executeHistoryBasedMatching(requests, postings, userProfiles);
+    console.log(`History-based matches: ${historyBasedMatches.length}`);
+  } catch (error) {
+    console.warn('History-based matching failed:', error);
+  }
   
-  // 重複を除去（距離ベースの結果を優先）
+  // 全ての結果を統合（履歴ベースを最優先、次に距離ベース、AI、最後にルールベース）
+  const combinedMatches = [...historyBasedMatches, ...distanceBasedMatches, ...aiScoredMatches, ...ruleBasedMatches];
+  
+  // 重複を除去（履歴ベースの結果を最優先）
   const uniqueMatches = combinedMatches.filter((match, index, self) => 
     index === self.findIndex(m => 
       m.pharmacist_id === match.pharmacist_id && 
