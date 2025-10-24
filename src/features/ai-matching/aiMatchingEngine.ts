@@ -239,6 +239,24 @@ export class AIMatchingEngine {
               timeSlotStart: posting.start_time,
               timeSlotEnd: posting.end_time
             },
+            // デバッグ: 詳細なpostingとrequestの情報を確認
+            debugDetailedInfo: {
+              posting: {
+                id: posting.id,
+                pharmacy_id: posting.pharmacy_id,
+                start_time: posting.start_time,
+                end_time: posting.end_time,
+                date: posting.date,
+                store_name: posting.store_name
+              },
+              request: {
+                id: request.id,
+                pharmacist_id: request.pharmacist_id,
+                start_time: request.start_time,
+                end_time: request.end_time,
+                date: request.date
+              }
+            },
               compatibilityScore: 0.8,
               reasons: ['マッチング']
             };
