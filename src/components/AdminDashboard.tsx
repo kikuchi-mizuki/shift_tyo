@@ -265,7 +265,18 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
             distanceScore,
             requestCountScore,
             ratingScore,
-            totalScore
+            totalScore,
+            // timeSlotを追加（薬局の募集時間を使用）
+            timeSlot: {
+              start: pharmacyNeed.start_time,
+              end: pharmacyNeed.end_time,
+              date: request.date,
+              urgency: 'medium',
+              flexibility: 0
+            },
+            // 互換性スコアを追加
+            compatibilityScore: totalScore,
+            reasons: ['時間適合', '距離適合']
           });
         }
       }
@@ -3902,8 +3913,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               pharmacy_id: match.pharmacy.id,
               date: date,
               time_slot: 'negotiable', // デフォルト値（使用しないが制約のため必要）
-              start_time: match.posting.start_time, // 薬局の募集時間を使用
-              end_time: match.posting.end_time, // 薬局の募集時間を使用
+              start_time: match.timeSlot?.start || match.posting?.start_time || '09:00:00', // 薬局の募集時間を使用
+              end_time: match.timeSlot?.end || match.posting?.end_time || '18:00:00', // 薬局の募集時間を使用
               status: 'confirmed',
               store_name: storeName,
               memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
