@@ -1492,19 +1492,47 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       // マッチング結果をassigned_shiftsテーブルに保存
       if (safeLength(matches) > 0 && supabase) {
         try {
-          const shiftsToInsert = matches.map((match: any) => ({
-            pharmacist_id: match.pharmacist.id,
-            pharmacy_id: match.pharmacy.id,
-            date: date,
-            time_slot: 'negotiable', // デフォルト値
-            start_time: match.timeSlot?.start || '09:00:00',
-            end_time: match.timeSlot?.end || '18:00:00',
-            status: 'pending', // 確定前のマッチング結果
-            store_name: match.pharmacy.store_name || '店舗名なし',
-            memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
-          }));
+          // 薬局の店舗名をSupabaseから取得
+          const pharmacyIds = matches.map((match: any) => match.pharmacy.id);
+          const { data: pharmacyData, error: pharmacyError } = await supabase
+            .from('user_profiles')
+            .select('id, name, store_name')
+            .in('id', pharmacyIds);
+
+          if (pharmacyError) {
+            console.error('薬局データ取得エラー:', pharmacyError);
+          }
+
+          // 薬局IDをキーとした店舗名マップを作成
+          const pharmacyStoreMap = new Map();
+          if (pharmacyData) {
+            pharmacyData.forEach((pharmacy: any) => {
+              pharmacyStoreMap.set(pharmacy.id, pharmacy.store_name || pharmacy.name);
+            });
+          }
+
+          const shiftsToInsert = matches.map((match: any) => {
+            // Supabaseから取得した店舗名を使用
+            const storeName = pharmacyStoreMap.get(match.pharmacy.id) || 
+                             match.pharmacy.store_name || 
+                             match.pharmacy.name || 
+                             '店舗名なし';
+
+            return {
+              pharmacist_id: match.pharmacist.id,
+              pharmacy_id: match.pharmacy.id,
+              date: date,
+              time_slot: 'negotiable', // デフォルト値
+              start_time: match.timeSlot?.start || '09:00:00',
+              end_time: match.timeSlot?.end || '18:00:00',
+              status: 'pending', // 確定前のマッチング結果
+              store_name: storeName,
+              memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+            };
+          });
 
           console.log(`マッチング結果をassigned_shiftsテーブルに保存: ${safeLength(shiftsToInsert)}件`);
+          console.log('保存する店舗名:', shiftsToInsert.map(s => ({ pharmacy_id: s.pharmacy_id, store_name: s.store_name })));
           
           const { data: insertedShifts, error: insertError } = await supabase
             .from('assigned_shifts')
