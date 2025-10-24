@@ -733,22 +733,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         const aPharmacist = userProfiles[a.pharmacist_id];
         const bPharmacist = userProfiles[b.pharmacist_id];
         
-        // 距離スコア（近いほど高い）
+        // 1. 距離スコア（近いほど高い）
         const aDistanceScore = aPharmacist ? calculateDistanceScore(aPharmacist, {}) : 0.5;
         const bDistanceScore = bPharmacist ? calculateDistanceScore(bPharmacist, {}) : 0.5;
         if (aDistanceScore !== bDistanceScore) return bDistanceScore - aDistanceScore;
         
-        // 希望回数スコア（多いほど高い）
+        // 2. 希望回数スコア（多いほど高い）
         const aRequestCountScore = calculateRequestCountScore(a.pharmacist_id);
         const bRequestCountScore = calculateRequestCountScore(b.pharmacist_id);
         if (aRequestCountScore !== bRequestCountScore) return bRequestCountScore - aRequestCountScore;
         
-        // 評価スコア（高いほど高い）
+        // 3. 評価スコア（高いほど高い）
         const aRating = getPharmacistRating(a.pharmacist_id);
         const bRating = getPharmacistRating(b.pharmacist_id);
         if (aRating !== bRating) return bRating - aRating;
         
-        // 優先度（high > medium > low）
+        // 4. 優先度（high > medium > low）- 最後の判定基準
         const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
         return priorityOrder[b.priority] - priorityOrder[a.priority];
       });
@@ -4988,22 +4988,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       const aPharmacist = userProfiles[a.pharmacist_id];
                       const bPharmacist = userProfiles[b.pharmacist_id];
                       
-                      // 距離スコア（近いほど高い）
+                      // 1. 距離スコア（近いほど高い）
                       const aDistanceScore = aPharmacist ? calculateDistanceScore(aPharmacist, {}) : 0.5;
                       const bDistanceScore = bPharmacist ? calculateDistanceScore(bPharmacist, {}) : 0.5;
                       if (aDistanceScore !== bDistanceScore) return bDistanceScore - aDistanceScore;
                       
-                      // 希望回数スコア（多いほど高い）
+                      // 2. 希望回数スコア（多いほど高い）
                       const aRequestCountScore = calculateRequestCountScore(a.pharmacist_id);
                       const bRequestCountScore = calculateRequestCountScore(b.pharmacist_id);
                       if (aRequestCountScore !== bRequestCountScore) return bRequestCountScore - aRequestCountScore;
                       
-                      // 評価スコア（高いほど高い）
+                      // 3. 評価スコア（高いほど高い）
                       const aRating = getPharmacistRating(a.pharmacist_id);
                       const bRating = getPharmacistRating(b.pharmacist_id);
                       if (aRating !== bRating) return bRating - aRating;
                       
-                      // 優先度（high > medium > low）
+                      // 4. 優先度（high > medium > low）- 最後の判定基準
                       const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
                       return priorityOrder[b.priority] - priorityOrder[a.priority];
                     });
@@ -6598,22 +6598,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                         const aPharmacist = userProfiles[a.pharmacist_id];
                         const bPharmacist = userProfiles[b.pharmacist_id];
                         
-                        // 距離スコア（近いほど高い）- 薬局情報がない場合は中程度のスコア
+                        // 1. 距離スコア（近いほど高い）- 薬局情報がない場合は中程度のスコア
                         const aDistanceScore = aPharmacist ? calculateDistanceScore(aPharmacist, {}) : 0.5;
                         const bDistanceScore = bPharmacist ? calculateDistanceScore(bPharmacist, {}) : 0.5;
                         if (aDistanceScore !== bDistanceScore) return bDistanceScore - aDistanceScore;
                         
-                        // 希望回数スコア（多いほど高い）
+                        // 2. 希望回数スコア（多いほど高い）
                         const aRequestCountScore = calculateRequestCountScore(a.pharmacist_id);
                         const bRequestCountScore = calculateRequestCountScore(b.pharmacist_id);
                         if (aRequestCountScore !== bRequestCountScore) return bRequestCountScore - aRequestCountScore;
                         
-                        // 評価スコア（高いほど高い）
+                        // 3. 評価スコア（高いほど高い）
                         const aRating = getPharmacistRating(a.pharmacist_id);
                         const bRating = getPharmacistRating(b.pharmacist_id);
                         if (aRating !== bRating) return bRating - aRating;
                         
-                        // 優先度（high > medium > low）
+                        // 4. 優先度（high > medium > low）- 最後の判定基準
                       const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
                       return priorityOrder[b.priority] - priorityOrder[a.priority];
                     }) : [];
