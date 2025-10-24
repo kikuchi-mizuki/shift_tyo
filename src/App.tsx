@@ -50,6 +50,7 @@ import { MultiUserAuthProvider, useMultiUserAuth } from './contexts/MultiUserAut
 import { MultiUserLoginForm } from './components/MultiUserLoginForm';
 import { AdminLoginForm } from './components/AdminLoginForm';
 import { UserTypeSwitcher } from './components/UserTypeSwitcher';
+import AdminDashboardRefactored from './components/AdminDashboardRefactored';
 
 // エラーバウンダリーコンポーネント
 class AppErrorBoundary extends Component<
@@ -307,7 +308,7 @@ function AppContent() {
                 if (effectiveUserType === 'admin') {
                   return (
                     <AppErrorBoundary>
-                      <AdminDashboard user={currentSession} />
+                      <AdminDashboardRefactored user={currentSession} />
                     </AppErrorBoundary>
                   );
                 }
