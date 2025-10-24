@@ -974,7 +974,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         pharmacy: {
           id: pharmacy.pharmacy_id,
           name: pharmacyProfile?.name || 'Unknown',
-          store_name: pharmacy.store_name || '店舗名なし'
+          store_name: pharmacy.store_name || pharmacyProfile?.store_name || '店舗名なし'
         },
         timeSlot: {
           start: pharmacy.start_time,  // 薬局の募集時間を使用
@@ -5791,6 +5791,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     {/* 薬局名と店舗名を表示 */}
                                     <div className="text-gray-500 text-xs">
                                       店舗: {(() => {
+                                        // デバッグ: マッチング結果のデータ構造を確認
+                                        console.log('=== マッチング結果デバッグ ===', {
+                                          match: match,
+                                          pharmacy: match.pharmacy,
+                                          store_name: match.pharmacy?.store_name,
+                                          memo: match.memo
+                                        });
+                                        
                                         // 募集している薬局と同じ方式で店舗名を取得
                                         const getStoreName = (match: any) => {
                                           const direct = (match.pharmacy?.store_name || '').trim();
@@ -5799,6 +5807,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                             const m = match.memo.match(/\[store:([^\]]+)\]/);
                                             if (m && m[1]) fromMemo = m[1];
                                           }
+                                          
+                                          console.log('店舗名取得デバッグ:', {
+                                            direct,
+                                            fromMemo,
+                                            result: direct || fromMemo || '（店舗名未設定）'
+                                          });
+                                          
                                           return direct || fromMemo || '（店舗名未設定）';
                                         };
                                         
