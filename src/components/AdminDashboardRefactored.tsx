@@ -8,6 +8,8 @@ import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
 import DebugModal from './DebugModal';
+import UnifiedCalendar from './UnifiedCalendar';
+import { getMonthName, getDaysInMonth, formatDateString, getPreviousMonth, getNextMonth, safeLength } from '../utils/calendarUtils';
 
 interface AdminDashboardProps {
   user: any;
@@ -4943,30 +4945,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       {false && <AIMatchingStats className="mb-6" />}
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
-        {/* left calendar */}
-        <div className="flex-1 bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 rounded-lg">←</button>
-              <span className="text-lg font-medium">{getMonthName(currentDate)}</span>
-              <button onClick={handleNextMonth} className="p-2 hover:bg-gray-100 rounded-lg">→</button>
-            </div>
-          </div>
-
-          <div className="bg-blue-600 text-white p-4 rounded-lg mb-4">
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-5 h-5" />
-              <h2 className="text-xl font-semibold">{getMonthName(currentDate)}</h2>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-7 gap-1 mb-4">
-            {['日','月','火','水','木','金','土'].map(d => (
-              <div key={d} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500">{d}</div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        {/* left calendar - 統一カレンダーコンポーネントを使用 */}
+        <UnifiedCalendar
+          currentDate={currentDate}
+          onPreviousMonth={handlePrevMonth}
+          onNextMonth={handleNextMonth}
+          getMonthName={getMonthName}
+        >
             {getDaysInMonth(currentDate).map((d, i) => {
               // dがnullの場合は空白セルを返す
               if (d === null) {
@@ -5355,8 +5340,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                 </div>
               );
             })}
-          </div>
-        </div>
+        </UnifiedCalendar>
 
         {/* right panel */}
         <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
