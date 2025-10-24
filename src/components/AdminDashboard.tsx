@@ -3666,6 +3666,26 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       if (!supabase) {
         console.error('Supabase client is not available');
+        alert('データベース接続エラー: Supabase client is not available');
+        return;
+      }
+      
+      // バリデーション: 必要なデータが存在するかチェック
+      if (!match || !match.pharmacist || !match.pharmacy) {
+        console.error('マッチングデータが不完全:', match);
+        alert('シフト確定に失敗しました: マッチングデータが不完全です');
+        return;
+      }
+      
+      if (!match.pharmacist.id || !match.pharmacy.id) {
+        console.error('薬剤師または薬局のIDが不足:', { pharmacist: match.pharmacist, pharmacy: match.pharmacy });
+        alert('シフト確定に失敗しました: 薬剤師または薬局のIDが不足しています');
+        return;
+      }
+      
+      if (!date || !date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        console.error('日付フォーマットが不正:', date);
+        alert('シフト確定に失敗しました: 日付フォーマットが不正です');
         return;
       }
       
@@ -3696,8 +3716,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
       };
       
+      console.log('挿入するシフトデータ:', shift);
+      
       const { data: insertedData, error } = await supabase.from('assigned_shifts').insert([shift]).select();
-      if (error) throw error;
+      if (error) {
+        console.error('assigned_shifts挿入エラー:', error);
+        throw new Error(`データベース挿入エラー: ${error.message || error.details || 'Unknown database error'}`);
+      }
+      
+      console.log('assigned_shifts挿入成功:', insertedData);
       
       // 挿入されたデータのIDを取得
       const insertedShift = insertedData?.[0];
@@ -3817,7 +3844,32 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       alert(`シフトを確定しました。\n${userProfiles[match.pharmacist.id]?.name} → ${pharmacyName}`);
     } catch (error) {
       console.error('個別マッチ確定エラー:', error);
-      alert(`シフト確定に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // より詳細なエラー情報を表示
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object') {
+        // Supabaseエラーの場合
+        if (error.code) {
+          errorMessage = `Database error (${error.code}): ${error.message || error.details || 'Unknown database error'}`;
+        } else if (error.message) {
+          errorMessage = error.message;
+        } else {
+          errorMessage = JSON.stringify(error);
+        }
+      }
+      
+      console.error('詳細エラー情報:', {
+        error,
+        errorType: typeof error,
+        errorConstructor: error?.constructor?.name,
+        errorMessage
+      });
+      
+      alert(`シフト確定に失敗しました: ${errorMessage}`);
     }
   };
 
