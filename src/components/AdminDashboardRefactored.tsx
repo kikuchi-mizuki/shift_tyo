@@ -7,7 +7,6 @@ import DataCollector from '../features/ai-matching/dataCollector';
 import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
-import DebugModal from './DebugModal';
 import UnifiedCalendar from './UnifiedCalendar';
 import { getMonthName, getDaysInMonth, formatDateString, getPreviousMonth, getNextMonth, safeLength } from '../utils/calendarUtils';
 
@@ -57,9 +56,6 @@ const AdminDashboardRefactored: React.FC<AdminDashboardProps> = ({ user }) => {
   // パスワード変更モーダル表示状態
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
 
-  // デバッグモーダル表示状態
-  const [showDebugModal, setShowDebugModal] = useState(false);
-  const [debugData, setDebugData] = useState<any>(null);
 
   // 月次マッチング実行状態
   const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false);
@@ -96,25 +92,6 @@ const AdminDashboardRefactored: React.FC<AdminDashboardProps> = ({ user }) => {
     initializeAI();
   }, []);
 
-  // デバッグモーダルを開く関数
-  const handleDebugModal = async () => {
-    try {
-      // 現在の日付のデバッグデータを収集
-      const debugInfo = {
-        selectedDate,
-        aiMatches: aiMatchesByDate[selectedDate] || [],
-        shiftPostings: await fetchShiftPostingsForDate(selectedDate),
-        shiftRequests: await fetchShiftRequestsForDate(selectedDate),
-        currentDate: new Date().toISOString(),
-        timestamp: Date.now()
-      };
-      
-      setDebugData(debugInfo);
-      setShowDebugModal(true);
-    } catch (error) {
-      console.error('デバッグデータの収集に失敗しました:', error);
-    }
-  };
 
   // 指定された日付のシフト投稿を取得
   const fetchShiftPostingsForDate = async (date: string) => {
@@ -5348,13 +5325,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   <Lock className="w-3 h-3" />
                   <span>パスワード変更</span>
                 </button>
-                <button
-                  onClick={handleDebugModal}
-                  className="text-sm text-yellow-100 hover:text-white flex items-center space-x-1"
-                >
-                  <AlertCircle className="w-3 h-3" />
-                  <span>デバッグ</span>
-                </button>
               </div>
             </div>
           </div>
@@ -7361,12 +7331,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         user={user}
       />
 
-      <DebugModal
-        isOpen={showDebugModal}
-        onClose={() => setShowDebugModal(false)}
-        debugData={debugData}
-        selectedDate={selectedDate}
-      />
       
     </div>
   );
