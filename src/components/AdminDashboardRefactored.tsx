@@ -1251,7 +1251,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     setAiMatchingLoading(true);
     try {
       // 既存のマッチング結果をクリア
-      setAiMatches([]);
+      // setAiMatches([]);
       setAiMatchesByDate({});
       console.log('既存のマッチング結果をクリアしました');
       
@@ -1464,7 +1464,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         } catch {}
         
         // 0件の場合でも結果を保存
-        setAiMatches([]);
+        // setAiMatches([]);
         setAiMatchesByDate(prev => {
           const newMatchesByDate = {
             ...prev,
@@ -4514,7 +4514,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.log(`個別シフトを取り消しました: ${shift.id}`);
       
       // システム状態を未確定に戻す
-      setSystemStatus('pending');
+      // setSystemStatus('pending');
       setLastUpdated(new Date());
       
       // 確定取り消し後は不足薬局表示を抑制
@@ -4655,7 +4655,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       console.log(`${date}の確定シフトを取り消しました`);
       
       // システム状態を未確定に戻す
-      setSystemStatus('pending');
+      // setSystemStatus('pending');
       setLastUpdated(new Date());
       
       // 確定取り消し後は不足薬局表示を抑制
