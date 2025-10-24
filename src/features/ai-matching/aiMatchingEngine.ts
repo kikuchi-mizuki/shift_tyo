@@ -230,6 +230,15 @@ export class AIMatchingEngine {
               urgency: 'medium',
               flexibility: 0
             },
+            // デバッグ: AIマッチングエンジンでのtimeSlot設定を確認
+            debugAITimeSlot: {
+              postingStart: posting.start_time,
+              postingEnd: posting.end_time,
+              requestStart: request.start_time,
+              requestEnd: request.end_time,
+              timeSlotStart: posting.start_time,
+              timeSlotEnd: posting.end_time
+            },
               compatibilityScore: 0.8,
               reasons: ['マッチング']
             };

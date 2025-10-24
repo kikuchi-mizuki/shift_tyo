@@ -5751,6 +5751,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                           debugFinalTimeSlot: match.debugFinalTimeSlot,
                                           debugFinalTimeSlot2: match.debugFinalTimeSlot2,
                                           debugFinalTimeSlot3: match.debugFinalTimeSlot3,
+                                          debugAITimeSlot: match.debugAITimeSlot,
                                           pharmacyNeed: match.pharmacyNeed
                                         });
                                         return `${startTime} - ${endTime}`;
@@ -5911,6 +5912,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                           debugFinalTimeSlot: match.debugFinalTimeSlot,
                                           debugFinalTimeSlot2: match.debugFinalTimeSlot2,
                                           debugFinalTimeSlot3: match.debugFinalTimeSlot3,
+                                          debugAITimeSlot: match.debugAITimeSlot,
                                           pharmacyNeed: match.pharmacyNeed
                                         });
                                         return `${startTime} - ${endTime}`;
