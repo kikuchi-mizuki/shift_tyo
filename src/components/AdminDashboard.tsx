@@ -385,6 +385,13 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
                 end_time: match.pharmacyNeed.end_time,
                 pharmacy_id: match.pharmacyNeed.pharmacy_id
               },
+              // デバッグ: timeSlot作成時の詳細ログ
+              debugTimeSlotCreation: {
+                pharmacyNeedStart: match.pharmacyNeed.start_time,
+                pharmacyNeedEnd: match.pharmacyNeed.end_time,
+                timeSlotStart: match.pharmacyNeed.start_time,
+                timeSlotEnd: match.pharmacyNeed.end_time
+              },
           compatibilityScore: match.pharmacistRating / 5,
           reasons: [`評価${match.pharmacistRating}`, `優先度${match.priority}`, '時間範囲適合']
         });
@@ -5716,6 +5723,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                           timeSlot: match.timeSlot,
                                           posting: match.posting,
                                           debugPharmacyNeed: match.debugPharmacyNeed,
+                                          debugTimeSlotCreation: match.debugTimeSlotCreation,
                                           pharmacyNeed: match.pharmacyNeed
                                         });
                                         return `${startTime} - ${endTime}`;
@@ -5872,6 +5880,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                           timeSlot: match.timeSlot,
                                           posting: match.posting,
                                           debugPharmacyNeed: match.debugPharmacyNeed,
+                                          debugTimeSlotCreation: match.debugTimeSlotCreation,
                                           pharmacyNeed: match.pharmacyNeed
                                         });
                                         return `${startTime} - ${endTime}`;
