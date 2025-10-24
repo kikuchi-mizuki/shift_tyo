@@ -5320,13 +5320,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             )}
                             
                             
-                            {/* 相談数 */}
-                            {safeLength(dayConsultRequests) > 0 && (
-                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">相{safeLength(dayConsultRequests)}</span>
-                                <span className="hidden sm:inline">相談 {safeLength(dayConsultRequests)}</span>
-                              </div>
-                            )}
                           </div>
                           
                           {/* ホバー詳細は右側パネルで表示するため非表示に変更 */}
