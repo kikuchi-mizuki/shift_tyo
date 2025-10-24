@@ -3,50 +3,55 @@ import { generateDistanceBasedMatches } from './distanceMatching';
 
 export interface MatchCandidate {
   pharmacist: {
-  id: string;
-  name: string;
-    email: string;
-  rating: number;
-  preferences: {
-    preferredPharmacyTypes: string[];
+    id: string;
+    name: string;
+    email?: string;
+    rating?: number;
+    preferences?: {
+      preferredPharmacyTypes: string[];
       maxCommuteTime: number;
-    preferredTimeSlots: string[];
-  };
-  pastPerformance: {
-    totalShifts: number;
-    averageSatisfaction: number;
-    completionRate: number;
-    noShowRate: number;
-  };
+      preferredTimeSlots: string[];
+    };
+    pastPerformance?: {
+      totalShifts: number;
+      averageSatisfaction: number;
+      completionRate: number;
+      noShowRate: number;
+    };
   };
   pharmacy: {
-  id: string;
-  name: string;
-  requirements: {
-    requiredSkills: string[];
+    id: string;
+    name: string;
+    requirements?: {
+      requiredSkills: string[];
       experienceLevel: string;
-    specialNeeds: string[];
-  };
-  environment: {
+      specialNeeds: string[];
+    };
+    environment?: {
       type: string;
       size: string;
-    specialties: string[];
-  };
-  pastPerformance: {
-    averagePharmacistSatisfaction: number;
-    retentionRate: number;
-    workEnvironment: number;
-  };
+      specialties: string[];
+    };
+    pastPerformance?: {
+      averagePharmacistSatisfaction: number;
+      retentionRate: number;
+      workEnvironment: number;
+    };
   };
   timeSlot: {
-  start: string;
-  end: string;
-  date: string;
-    urgency: string;
-    flexibility: number;
+    start: string;
+    end: string;
+    date: string;
+    urgency?: string;
+    flexibility?: number;
   };
   compatibilityScore: number;
   reasons: string[];
+  // 追加のプロパティ（簡易マッチングで使用）
+  posting?: {
+    start_time: string;
+    end_time: string;
+  };
 }
 
 export class AIMatchingEngine {

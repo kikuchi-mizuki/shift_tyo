@@ -287,101 +287,92 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
     
     console.log(`可能なマッチング組み合わせ: ${safeLength(allPossibleMatches)}件`);
     
-    // 最適解を構築（薬剤師は1日1つの薬局のみ、全体で不足薬局を最小化）
-    // 全探索による真の最適解アルゴリズム
+    // 最適解を構築（効率的な貪欲法アルゴリズム）
     const findOptimalSolution = (possibleMatches: any[]): any[] => {
-      let bestMatches: any[] = [];
-      let bestScore = 0;
-      
-      console.log('=== 全探索アルゴリズム開始 ===');
+      console.log('=== 貪欲法アルゴリズム開始 ===');
       console.log('可能なマッチング候補:', safeLength(possibleMatches));
-      possibleMatches.forEach((match, index) => {
-        console.log(`${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.storeName}) スコア:${match.totalScore}`);
-      });
       
-      // 全組み合わせを探索（2^Nの組み合わせ）
-      const totalCombinations = Math.pow(2, safeLength(possibleMatches));
-      console.log(`全探索開始: ${totalCombinations}通りの組み合わせを検証`);
+      // スコア順でソート（高い順）
+      const sortedMatches = [...possibleMatches].sort((a, b) => b.totalScore - a.totalScore);
       
-      let validCombinations = 0;
-      let maxMatchesFound = 0;
+      const selectedMatches: any[] = [];
+      const usedPharmacists = new Set<string>();
+      const pharmacyNeedsMap = new Map<string, number>();
       
-      for (let i = 0; i < totalCombinations; i++) {
-        let currentMatches: any[] = [];
-        const usedPharmacists = new Set<string>();
-        const pharmacyNeedsMap = new Map<string, number>();
+      // 各薬局の必要人数を初期化
+      for (const pharmacyNeed of pharmacyNeeds) {
+        const key = `${pharmacyNeed.pharmacy_id}_${pharmacyNeed.store_name || 'default'}`;
+        pharmacyNeedsMap.set(key, Number(pharmacyNeed.required_staff) || 1);
+      }
+      
+      // 貪欲法で最適解を構築
+      for (const match of sortedMatches) {
+        const key = `${match.pharmacyNeed.pharmacy_id}_${match.pharmacyNeed.store_name || 'default'}`;
+        const remaining = pharmacyNeedsMap.get(key) || 0;
         
-        // 各薬局の必要人数を初期化
-        for (const pharmacyNeed of pharmacyNeeds) {
-          const key = `${pharmacyNeed.pharmacy_id}_${pharmacyNeed.store_name || 'default'}`;
-          pharmacyNeedsMap.set(key, Number(pharmacyNeed.required_staff) || 1);
+        // 制約チェック
+        if (usedPharmacists.has(match.request.pharmacist_id) || remaining <= 0) {
+          continue;
         }
         
-        // 現在の組み合わせを構築
-        for (let j = 0; j < safeLength(possibleMatches); j++) {
-          if (i & (1 << j)) { // ビットが立っている場合のみ選択
-            const match = possibleMatches[j];
-            const key = `${match.pharmacyNeed.pharmacy_id}_${match.pharmacyNeed.store_name || 'default'}`;
-            const remaining = pharmacyNeedsMap.get(key) || 0;
-            
-            // 制約チェック
-            if (usedPharmacists.has(match.request.pharmacist_id) || remaining <= 0) {
-              // 制約違反の場合はこの組み合わせを破棄
-              currentMatches = [];
-              break;
+        // マッチングを追加
+        selectedMatches.push({
+          pharmacist: {
+            id: match.request.pharmacist_id,
+            name: match.pharmacist?.name || 'Unknown',
+            email: '',
+            rating: match.pharmacistRating || 0,
+            preferences: {
+              preferredPharmacyTypes: [],
+              maxCommuteTime: 60,
+              preferredTimeSlots: []
+            },
+            pastPerformance: {
+              totalShifts: 0,
+              averageSatisfaction: 0,
+              completionRate: 1.0,
+              noShowRate: 0
             }
-            
-            // マッチングを追加
-            currentMatches.push({
-              pharmacist: {
-                id: match.request.pharmacist_id,
-                name: match.pharmacist?.name || 'Unknown'
-              },
-              pharmacy: {
-                id: match.pharmacyNeed.pharmacy_id,
-                name: match.storeName || match.pharmacy?.name || 'Unknown'
-              },
+          },
+          pharmacy: {
+            id: match.pharmacyNeed.pharmacy_id,
+            name: match.storeName || match.pharmacy?.name || 'Unknown',
+            requirements: {
+              requiredSkills: [],
+              experienceLevel: 'intermediate',
+              specialNeeds: []
+            },
+            environment: {
+              type: 'community',
+              size: 'medium',
+              specialties: []
+            },
+            pastPerformance: {
+              averagePharmacistSatisfaction: 0,
+              retentionRate: 1.0,
+              workEnvironment: 0
+            }
+          },
               timeSlot: {
                 start: match.pharmacyNeed.start_time,
                 end: match.pharmacyNeed.end_time,
-                date: match.pharmacyNeed.date
+                date: match.pharmacyNeed.date || new Date().toISOString().split('T')[0],
+                urgency: 'medium',
+                flexibility: 0
               },
-              compatibilityScore: match.pharmacistRating / 5,
-              reasons: [`評価${match.pharmacistRating}`, `優先度${match.priority}`, '時間範囲適合']
-            });
-            
-            // 状態更新
-            usedPharmacists.add(match.request.pharmacist_id);
-            pharmacyNeedsMap.set(key, remaining - 1);
-          }
-        }
+          compatibilityScore: match.pharmacistRating / 5,
+          reasons: [`評価${match.pharmacistRating}`, `優先度${match.priority}`, '時間範囲適合']
+        });
         
-        // 有効な組み合わせをカウント
-        if (safeLength(currentMatches) > 0) {
-          validCombinations++;
-          maxMatchesFound = Math.max(maxMatchesFound, safeLength(currentMatches));
-          
-          // 最適解の更新（マッチ数優先、同数の場合はスコア優先）
-          const currentScore = currentMatches.reduce((sum, match) => sum + match.compatibilityScore, 0);
-          if (safeLength(currentMatches) > safeLength(bestMatches) || 
-              (safeLength(currentMatches) === safeLength(bestMatches) && currentScore > bestScore)) {
-            bestMatches = [...currentMatches];
-            bestScore = currentScore;
-            
-            console.log(`✅ 新しい最適解発見: ${safeLength(currentMatches)}件マッチ, スコア: ${currentScore.toFixed(2)}`);
-            currentMatches.forEach((match, index) => {
-              console.log(`  ${index + 1}. ${match.pharmacist.name} → ${match.pharmacy.name} (${match.timeSlot.start}-${match.timeSlot.end})`);
-            });
-          }
-        }
+        // 状態更新
+        usedPharmacists.add(match.request.pharmacist_id);
+        pharmacyNeedsMap.set(key, remaining - 1);
       }
       
-      console.log(`=== 全探索完了 ===`);
-      console.log(`有効な組み合わせ: ${validCombinations}通り`);
-      console.log(`最大マッチ数: ${maxMatchesFound}件`);
-      console.log(`最適解: ${safeLength(bestMatches)}件マッチ`);
+      console.log(`=== 貪欲法完了 ===`);
+      console.log(`選択されたマッチング: ${safeLength(selectedMatches)}件`);
       
-      return bestMatches;
+      return selectedMatches;
     };
     
     // 全探索による最適解を実行
@@ -1436,8 +1427,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
       
       // timeSlotの構造を確認して適切な時間を取得
-      const startTime = match.timeSlot?.start || match.timeSlot?.startTime || match.posting?.start_time || '09:00:00';
-      const endTime = match.timeSlot?.end || match.timeSlot?.endTime || match.posting?.end_time || '18:00:00';
+      const startTime = match.timeSlot?.start || match.timeSlot?.start || match.posting?.start_time || '09:00:00';
+      const endTime = match.timeSlot?.end || match.timeSlot?.end || match.posting?.end_time || '18:00:00';
       
       return { 
         pharmacist_id: match.pharmacist.id,
@@ -3464,8 +3455,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
       
       // timeSlotの構造を確認して適切な時間を取得
-      const startTime = match.timeSlot?.start || match.timeSlot?.startTime || match.posting?.start_time || '09:00:00';
-      const endTime = match.timeSlot?.end || match.timeSlot?.endTime || match.posting?.end_time || '18:00:00';
+      const startTime = match.timeSlot?.start || match.timeSlot?.start || match.posting?.start_time || '09:00:00';
+      const endTime = match.timeSlot?.end || match.timeSlot?.end || match.posting?.end_time || '18:00:00';
       
       console.log('時間取得デバッグ:', {
         timeSlot: match.timeSlot,
@@ -5435,14 +5426,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                         timeSlot: match.timeSlot,
                                         start: match.timeSlot?.start,
                                         end: match.timeSlot?.end,
-                                        startTime: match.timeSlot?.startTime,
-                                        endTime: match.timeSlot?.endTime,
+                                        startTime: match.timeSlot?.start,
+                                        endTime: match.timeSlot?.end,
                                         posting: match.posting,
                                         fullMatch: match
                                       });
                                       
-                                      const startTime = match.timeSlot?.start || match.timeSlot?.startTime || '09:00';
-                                      const endTime = match.timeSlot?.end || match.timeSlot?.endTime || '18:00';
+                                      const startTime = match.timeSlot?.start || '09:00';
+                                      const endTime = match.timeSlot?.end || '18:00';
                                       
                                       return `${startTime} - ${endTime}`;
                                     })()}
@@ -5684,8 +5675,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     <div className="text-gray-600">
                                       {(() => {
-                                        const startTime = match.timeSlot?.start || match.timeSlot?.startTime || '09:00';
-                                        const endTime = match.timeSlot?.end || match.timeSlot?.endTime || '18:00';
+                                        const startTime = match.timeSlot?.start || '09:00';
+                                        const endTime = match.timeSlot?.end || '18:00';
                                         return `${startTime} - ${endTime}`;
                                       })()}
                                     </div>
@@ -5830,8 +5821,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     <div className="text-gray-600">
                                       {(() => {
-                                        const startTime = match.timeSlot?.start || match.timeSlot?.startTime || '09:00';
-                                        const endTime = match.timeSlot?.end || match.timeSlot?.endTime || '18:00';
+                                        const startTime = match.timeSlot?.start || '09:00';
+                                        const endTime = match.timeSlot?.end || '18:00';
                                         return `${startTime} - ${endTime}`;
                                       })()}
                                     </div>
