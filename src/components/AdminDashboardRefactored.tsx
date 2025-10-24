@@ -877,7 +877,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         const ps = pharmacyNeed?.start_time;
         const pe = pharmacyNeed?.end_time;
         
-        // 薬局の募集時間帯に入れる薬剤師は全員マッチング対象
+        // 薬剤師の希望時間が薬局の募集時間を完全にカバーしているかチェック
         let isCompatible = false;
         if (rs && re && ps && pe) {
           // 時間を数値に変換して比較
@@ -891,10 +891,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           const postingStart = timeToMinutes(ps);
           const postingEnd = timeToMinutes(pe);
           
-          // 薬剤師の希望時間が薬局の募集時間帯に含まれるかチェック（境界を含む）
-          isCompatible = (requestStart >= postingStart && requestStart < postingEnd) || 
-                        (requestEnd >= postingStart && requestEnd <= postingEnd) || 
-                        (requestStart <= postingStart && requestEnd >= postingEnd);
+          // 要件2: 薬剤師の希望時間が薬局の募集時間を完全にカバーしている
+          // 薬剤師の開始時間 <= 薬局の開始時間 かつ 薬剤師の終了時間 >= 薬局の終了時間
+          isCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
+          
+          console.log('時間互換性チェック:', {
+            pharmacist: `${rs}-${re}`,
+            pharmacy: `${ps}-${pe}`,
+            requestStart,
+            requestEnd,
+            postingStart,
+            postingEnd,
+            isCompatible,
+            reason: isCompatible ? '薬剤師の希望時間が薬局の募集時間を完全にカバー' : '時間が合わない'
+          });
         }
         
         if (!blockedByPharmacist && !blockedByPharmacy && isCompatible) {
@@ -903,8 +913,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           const requestCountScore = calculateRequestCountScore(request.pharmacist_id);
           const ratingScore = getPharmacistRating(request.pharmacist_id) / 5; // 0-1に正規化
           
-          // 総合スコア（距離: 60%, 希望回数: 30%, 評価: 10%）
-          const totalScore = (distanceScore * 0.6) + (requestCountScore * 0.3) + (ratingScore * 0.1);
+          // 要件3: 距離→薬剤師の今までのシフト希望回数→薬剤師の評価の優先順位
+          // 距離を最優先（50%）、希望回数を次優先（30%）、評価を最後（20%）
+          const totalScore = (distanceScore * 0.5) + (requestCountScore * 0.3) + (ratingScore * 0.2);
           
           // マッチング候補をスコア付きで保存
           allMatchCandidates.push({
