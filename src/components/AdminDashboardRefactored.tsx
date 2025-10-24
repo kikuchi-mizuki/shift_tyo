@@ -1496,6 +1496,12 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
               pharmacyStoreMap.set(pharmacy.id, pharmacy.store_name || pharmacy.name);
             });
           }
+          
+          console.log('=== 薬局データ取得デバッグ ===', {
+            pharmacyIds,
+            pharmacyData,
+            pharmacyStoreMap: Array.from(pharmacyStoreMap.entries())
+          });
 
           const shiftsToInsert = matches.map((match: any) => {
             // Supabaseから取得した店舗名を使用
@@ -1529,6 +1535,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             console.error('assigned_shiftsテーブルへの保存エラー:', insertError);
           } else {
             console.log(`マッチング結果保存完了: ${safeLength(insertedShifts)}件`);
+            
+            // assigned_shiftsテーブルに保存後、assigned stateを更新
+            await loadAssignedShifts();
           }
         } catch (error) {
           console.error('マッチング結果保存エラー:', error);
@@ -3814,12 +3823,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   // 確定シフトのみを再読み込みする関数
   const loadAssignedShifts = async () => {
     try {
-      const { data: assignedData, error: assignedError } = await shifts.getShifts('', 'admin' as any);
+      if (!supabase) {
+        console.error('Supabase client is not available');
+        return;
+      }
+      
+      // 直接Supabaseからassigned_shiftsテーブルを取得
+      const { data: assignedData, error: assignedError } = await supabase
+        .from('assigned_shifts')
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (assignedError) {
         console.error('Error loading assigned shifts:', assignedError);
         setAssigned([]);
       } else {
+        console.log('Loaded assigned shifts:', assignedData);
         setAssigned(assignedData || []);
       }
     } catch (error) {
@@ -5494,24 +5513,35 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   
                   if (safeLength(pendingShifts) > 0) {
                     // assigned_shiftsテーブルから直接マッチング結果を取得
-                    dayMatches = pendingShifts.map((shift: any) => ({
-                      pharmacist: {
-                        id: shift.pharmacist_id,
-                        name: userProfiles[shift.pharmacist_id]?.name || 'Unknown'
-                      },
-                      pharmacy: {
-                        id: shift.pharmacy_id,
-                        name: userProfiles[shift.pharmacy_id]?.name || 'Unknown',
-                        store_name: shift.store_name || '店舗名なし'
-                      },
-                      timeSlot: {
-                        start: shift.start_time,
-                        end: shift.end_time,
-                        date: shift.date
-                      },
-                      compatibilityScore: 0.8, // デフォルトスコア
-                      reasons: ['時間適合', '距離適合']
-                    }));
+                    dayMatches = pendingShifts.map((shift: any) => {
+                      // デバッグ: assigned_shiftsテーブルのデータを確認
+                      console.log('=== assigned_shiftsデータデバッグ ===', {
+                        shift_id: shift.id,
+                        pharmacy_id: shift.pharmacy_id,
+                        store_name: shift.store_name,
+                        memo: shift.memo,
+                        userProfile: userProfiles[shift.pharmacy_id]
+                      });
+                      
+                      return {
+                        pharmacist: {
+                          id: shift.pharmacist_id,
+                          name: userProfiles[shift.pharmacist_id]?.name || 'Unknown'
+                        },
+                        pharmacy: {
+                          id: shift.pharmacy_id,
+                          name: userProfiles[shift.pharmacy_id]?.name || 'Unknown',
+                          store_name: shift.store_name || userProfiles[shift.pharmacy_id]?.store_name || '店舗名なし'
+                        },
+                        timeSlot: {
+                          start: shift.start_time,
+                          end: shift.end_time,
+                          date: shift.date
+                        },
+                        compatibilityScore: 0.8, // デフォルトスコア
+                        reasons: ['時間適合', '距離適合']
+                      };
+                    });
                   } else if (safeLength(dayRequests) > 0 && safeLength(dayPostings) > 0) {
                     // assigned_shiftsにデータがない場合は、カレンダーと同じロジックでマッチング分析を実行
                     console.log('assigned_shiftsにpendingデータがないため、カレンダーと同じロジックでマッチング分析を実行');
