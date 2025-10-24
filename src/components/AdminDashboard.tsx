@@ -5464,50 +5464,32 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     allDayPostings
                   );
                   
-                  // AIマッチング結果の表示（Supabaseから直接取得）
+                  // AIマッチング結果の表示（カレンダーと同じロジックを使用）
                   let dayMatches: any[] = [];
                   
-                  // Supabaseから直接マッチング結果を取得
-                  if (supabase) {
-                    try {
-                      const { data: matchesData, error: matchesError } = await supabase
-                        .from('assigned_shifts')
-                        .select(`
-                          *,
-                          pharmacist:pharmacist_id(id, name),
-                          pharmacy:pharmacy_id(id, name)
-                        `)
-                        .eq('date', selectedDate)
-                        .eq('status', 'pending'); // 確定前のマッチング結果
-                      
-                      if (!matchesError && matchesData) {
-                        dayMatches = matchesData.map((match: any) => ({
-                          pharmacist: {
-                            id: match.pharmacist_id,
-                            name: match.pharmacist?.name || 'Unknown'
-                          },
-                          pharmacy: {
-                            id: match.pharmacy_id,
-                            name: match.pharmacy?.name || 'Unknown',
-                            store_name: match.store_name || '店舗名なし'
-                          },
-                          timeSlot: {
-                            start: match.start_time,
-                            end: match.end_time,
-                            date: match.date
-                          },
-                          compatibilityScore: 0.8,
-                          reasons: ['時間適合', '距離適合']
-                        }));
-                      }
-                    } catch (error) {
-                      console.error('マッチング結果取得エラー:', error);
-                    }
-                  }
+                  // まずaiMatchesByDateから取得を試行
+                  const allDayMatches = aiMatchesByDate[selectedDate] || [];
                   
-                  // フォールバック: Supabaseから取得できない場合は、カレンダーと同じロジックでマッチング分析を実行
-                  if (safeLength(dayMatches) === 0 && safeLength(dayRequests) > 0 && safeLength(dayPostings) > 0) {
-                    console.log('Supabaseからマッチング結果を取得できないため、カレンダーと同じロジックでマッチング分析を実行');
+                  console.log('=== 詳細画面マッチング結果デバッグ ===', {
+                    selectedDate,
+                    aiMatchesByDateKeys: Object.keys(aiMatchesByDate || {}),
+                    allDayMatches: safeLength(allDayMatches),
+                    allDayMatchesData: allDayMatches
+                  });
+                  
+                  if (safeLength(allDayMatches) > 0) {
+                    // aiMatchesByDateにデータがある場合はそれを使用
+                  const confirmedPharmacistIds = new Set(
+                    (assigned || []).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
+                      .map((s: any) => s.pharmacist_id)
+                  );
+                  
+                    dayMatches = allDayMatches.filter(match => 
+                    !confirmedPharmacistIds.has(match.pharmacist.id)
+                  );
+                  } else if (safeLength(dayRequests) > 0 && safeLength(dayPostings) > 0) {
+                    // aiMatchesByDateが空の場合は、カレンダーと同じロジックでマッチング分析を実行
+                    console.log('aiMatchesByDateが空のため、カレンダーと同じロジックでマッチング分析を実行');
                     
                     // カレンダーと同じマッチング分析ロジックを実行
                     const matchingResult = performMatchingAnalysis(dayRequests, dayPostings, selectedDate);
