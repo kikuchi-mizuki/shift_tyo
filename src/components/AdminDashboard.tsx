@@ -7,6 +7,7 @@ import DataCollector from '../features/ai-matching/dataCollector';
 import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
+import DebugModal from './DebugModal';
 
 interface AdminDashboardProps {
   user: any;
@@ -54,6 +55,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // パスワード変更モーダル表示状態
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
 
+  // デバッグモーダル表示状態
+  const [showDebugModal, setShowDebugModal] = useState(false);
+  const [debugData, setDebugData] = useState<any>(null);
+
   // 月次マッチング実行状態
   const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false);
 
@@ -88,6 +93,58 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
     initializeAI();
   }, []);
+
+  // デバッグモーダルを開く関数
+  const handleDebugModal = async () => {
+    try {
+      // 現在の日付のデバッグデータを収集
+      const debugInfo = {
+        selectedDate,
+        aiMatches: aiMatchesByDate[selectedDate] || [],
+        shiftPostings: await fetchShiftPostingsForDate(selectedDate),
+        shiftRequests: await fetchShiftRequestsForDate(selectedDate),
+        currentDate: new Date().toISOString(),
+        timestamp: Date.now()
+      };
+      
+      setDebugData(debugInfo);
+      setShowDebugModal(true);
+    } catch (error) {
+      console.error('デバッグデータの収集に失敗しました:', error);
+    }
+  };
+
+  // 指定された日付のシフト投稿を取得
+  const fetchShiftPostingsForDate = async (date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('shift_postings')
+        .select('*')
+        .eq('date', date);
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('シフト投稿の取得に失敗:', error);
+      return [];
+    }
+  };
+
+  // 指定された日付のシフトリクエストを取得
+  const fetchShiftRequestsForDate = async (date: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('shift_requests')
+        .select('*')
+        .eq('date', date);
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('シフトリクエストの取得に失敗:', error);
+      return [];
+    }
+  };
 
   // データ初期化の強制実行（useEffectを最初に配置）
   React.useEffect(() => {
@@ -935,7 +992,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       },
       timeSlot: {
         start: pharmacist.start_time,
-        end: pharmacist.end_time
+        end: pharmacist.end_time,
+        date: pharmacist.date
       },
       compatibilityScore: 0.8, // デフォルトスコア
       reasons: ['時間適合', '距離適合']
@@ -5305,13 +5363,22 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           <div className="bg-purple-600 text-white p-4 rounded-t-lg flex-shrink-0">
             <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">管理者パネル</h2>
-              <button
-                onClick={() => setShowPasswordChangeModal(true)}
-                className="text-sm text-blue-100 hover:text-white flex items-center space-x-1"
-              >
-                <Lock className="w-3 h-3" />
-                <span>パスワード変更</span>
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowPasswordChangeModal(true)}
+                  className="text-sm text-blue-100 hover:text-white flex items-center space-x-1"
+                >
+                  <Lock className="w-3 h-3" />
+                  <span>パスワード変更</span>
+                </button>
+                <button
+                  onClick={handleDebugModal}
+                  className="text-sm text-yellow-100 hover:text-white flex items-center space-x-1"
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  <span>デバッグ</span>
+                </button>
+              </div>
             </div>
           </div>
           
@@ -7315,6 +7382,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         isOpen={showPasswordChangeModal}
         onClose={() => setShowPasswordChangeModal(false)}
         user={user}
+      />
+
+      <DebugModal
+        isOpen={showDebugModal}
+        onClose={() => setShowDebugModal(false)}
+        debugData={debugData}
+        selectedDate={selectedDate}
       />
       
     </div>
