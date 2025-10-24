@@ -1489,6 +1489,38 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         return newMatchesByDate;
       });
 
+      // マッチング結果をassigned_shiftsテーブルに保存
+      if (safeLength(matches) > 0 && supabase) {
+        try {
+          const shiftsToInsert = matches.map((match: any) => ({
+            pharmacist_id: match.pharmacist.id,
+            pharmacy_id: match.pharmacy.id,
+            date: date,
+            time_slot: 'negotiable', // デフォルト値
+            start_time: match.timeSlot?.start || '09:00:00',
+            end_time: match.timeSlot?.end || '18:00:00',
+            status: 'pending', // 確定前のマッチング結果
+            store_name: match.pharmacy.store_name || '店舗名なし',
+            memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+          }));
+
+          console.log(`マッチング結果をassigned_shiftsテーブルに保存: ${safeLength(shiftsToInsert)}件`);
+          
+          const { data: insertedShifts, error: insertError } = await supabase
+            .from('assigned_shifts')
+            .insert(shiftsToInsert)
+            .select();
+
+          if (insertError) {
+            console.error('assigned_shiftsテーブルへの保存エラー:', insertError);
+          } else {
+            console.log(`マッチング結果保存完了: ${safeLength(insertedShifts)}件`);
+          }
+        } catch (error) {
+          console.error('マッチング結果保存エラー:', error);
+        }
+      }
+
       console.log(`AI Matching completed: ${safeLength(matches)} matches found`);
     } catch (error) {
       console.error('AI Matching failed:', error);
