@@ -960,23 +960,29 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     }
     
     // マッチング結果をMatchCandidate形式に変換
-    const matches = matchedPharmacists.map((pharmacist, index) => ({
-      pharmacist: {
-        id: pharmacist.pharmacist_id,
-        name: userProfiles[pharmacist.pharmacist_id]?.name || 'Unknown'
-      },
-      pharmacy: {
-        id: matchedPharmacies[index].pharmacy_id,
-        name: userProfiles[matchedPharmacies[index].pharmacy_id]?.name || 'Unknown'
-      },
-      timeSlot: {
-        start: matchedPharmacies[index].start_time,  // 薬局の募集時間を使用
-        end: matchedPharmacies[index].end_time,      // 薬局の募集時間を使用
-        date: pharmacist.date
-      },
-      compatibilityScore: 0.8, // デフォルトスコア
-      reasons: ['時間適合', '距離適合']
-    }));
+    const matches = matchedPharmacists.map((pharmacist, index) => {
+      const pharmacy = matchedPharmacies[index];
+      const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
+      
+      return {
+        pharmacist: {
+          id: pharmacist.pharmacist_id,
+          name: userProfiles[pharmacist.pharmacist_id]?.name || 'Unknown'
+        },
+        pharmacy: {
+          id: pharmacy.pharmacy_id,
+          name: pharmacyProfile?.name || 'Unknown',
+          store_name: pharmacy.store_name || '店舗名なし'
+        },
+        timeSlot: {
+          start: pharmacy.start_time,  // 薬局の募集時間を使用
+          end: pharmacy.end_time,      // 薬局の募集時間を使用
+          date: pharmacist.date
+        },
+        compatibilityScore: 0.8, // デフォルトスコア
+        reasons: ['時間適合', '距離適合']
+      };
+    });
     
     console.log(`マッチング分析完了 [${date}]: マッチ=${safeLength(matches)}件`);
     
@@ -5722,8 +5728,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     {/* 薬局名と店舗名を表示 */}
                                     <div className="text-gray-500 text-xs">
-                                      薬局: {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
-                                      {match.pharmacy.name && match.pharmacy.name !== 'Unknown' && ` / 店舗: ${match.pharmacy.name}`}
+                                      店舗: {match.pharmacy.store_name || '店舗名なし'}
                                     </div>
                                   </div>
                                   <div className="text-right ml-2">

@@ -988,7 +988,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       },
       pharmacy: {
         id: matchedPharmacies[index].pharmacy_id,
-        name: userProfiles[matchedPharmacies[index].pharmacy_id]?.name || 'Unknown'
+        name: userProfiles[matchedPharmacies[index].pharmacy_id]?.name || 'Unknown',
+        store_name: matchedPharmacies[index].store_name || '店舗名なし'
       },
       timeSlot: {
         start: matchedPharmacies[index].start_time,  // 薬局の募集時間を使用
@@ -5989,7 +5990,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     {/* 薬局名と店舗名を表示 */}
                                     <div className="text-gray-500 text-xs">
-                                      店舗: {match.pharmacy.name || '店舗名なし'}
+                                      店舗: {match.pharmacy.store_name || '店舗名なし'}
                                     </div>
                                   </div>
                                   <div className="text-right ml-2">
