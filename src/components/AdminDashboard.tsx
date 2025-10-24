@@ -5990,7 +5990,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     {/* 薬局名と店舗名を表示 */}
                                     <div className="text-gray-500 text-xs">
-                                      店舗: {match.pharmacy.store_name || '店舗名なし'}
+                                      店舗: {(() => {
+                                        // 募集している薬局と同じ方式で店舗名を取得
+                                        const getStoreName = (match: any) => {
+                                          const direct = (match.pharmacy?.store_name || '').trim();
+                                          let fromMemo = '';
+                                          if (!direct && typeof match.memo === 'string') {
+                                            const m = match.memo.match(/\[store:([^\]]+)\]/);
+                                            if (m && m[1]) fromMemo = m[1];
+                                          }
+                                          return direct || fromMemo || '（店舗名未設定）';
+                                        };
+                                        
+                                        return getStoreName(match);
+                                      })()}
                                     </div>
                                   </div>
                                   <div className="text-right ml-2">

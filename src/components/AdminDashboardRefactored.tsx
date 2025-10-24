@@ -853,12 +853,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       remaining: Number(p.required_staff) || 0
     }));
     
-    // デバッグ: 募集データの店舗名を確認
-    console.log('募集データ店舗名デバッグ:', {
-      filteredPostings: filteredPostings,
-      pharmacyNeeds: pharmacyNeeds,
-      store_names: pharmacyNeeds.map(p => ({ id: p.pharmacy_id, store_name: p.store_name }))
-    });
     
     // 全薬剤師と薬局の組み合わせをスコア付きで収集
     const allMatchCandidates: any[] = [];
@@ -971,13 +965,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const pharmacy = matchedPharmacies[index];
       const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
       
-      // デバッグ: 店舗名の取得状況を確認
-      console.log('マッチング結果店舗名デバッグ:', {
-        pharmacy: pharmacy,
-        store_name: pharmacy.store_name,
-        pharmacy_id: pharmacy.pharmacy_id,
-        index: index
-      });
       
       return {
         pharmacist: {
@@ -5743,7 +5730,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     {/* 薬局名と店舗名を表示 */}
                                     <div className="text-gray-500 text-xs">
-                                      店舗: {match.pharmacy.store_name || '店舗名なし'}
+                                      店舗: {(() => {
+                                        // 募集している薬局と同じ方式で店舗名を取得
+                                        const getStoreName = (match: any) => {
+                                          const direct = (match.pharmacy?.store_name || '').trim();
+                                          let fromMemo = '';
+                                          if (!direct && typeof match.memo === 'string') {
+                                            const m = match.memo.match(/\[store:([^\]]+)\]/);
+                                            if (m && m[1]) fromMemo = m[1];
+                                          }
+                                          return direct || fromMemo || '（店舗名未設定）';
+                                        };
+                                        
+                                        return getStoreName(match);
+                                      })()}
                                     </div>
                                   </div>
                                   <div className="text-right ml-2">
