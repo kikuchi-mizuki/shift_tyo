@@ -353,6 +353,11 @@ ${availablePostings.map(p => `- ID: ${p.pharmacy_id}, 時間: ${p.start_time}-${
               workEnvironment: 0
             }
           },
+              posting: {
+                start_time: match.pharmacyNeed.start_time,
+                end_time: match.pharmacyNeed.end_time,
+                date: match.pharmacyNeed.date || new Date().toISOString().split('T')[0]
+              },
               timeSlot: {
                 start: match.pharmacyNeed.start_time,
                 end: match.pharmacyNeed.end_time,
