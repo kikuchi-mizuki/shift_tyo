@@ -51,7 +51,6 @@ import { MultiUserLoginForm } from './components/MultiUserLoginForm';
 import { AdminLoginForm } from './components/AdminLoginForm';
 import { UserTypeSwitcher } from './components/UserTypeSwitcher';
 import AdminDashboardRefactored from './components/AdminDashboardRefactored';
-import AdminDashboardStep1 from './components/AdminDashboardStep1';
 
 // エラーバウンダリーコンポーネント
 class AppErrorBoundary extends Component<
