@@ -5413,12 +5413,29 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     <div className="font-medium text-gray-800">
                                       {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
                                     </div>
-                                    <div className="text-gray-600">
-                                      店舗: {match.pharmacy.name || '店舗名なし'}
-                                    </div>
-                                    <div className="text-gray-600">
-                                      {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
-                                    </div>
+                                  <div className="text-gray-600">
+                                    店舗: {match.pharmacy.name || '店舗名なし'}
+                                  </div>
+                                  <div className="text-gray-600">
+                                    {(() => {
+                                      // デバッグ: マッチング結果の時間データを確認
+                                      console.log('Match timeSlot debug:', {
+                                        matchId: match.pharmacist?.id + '_' + match.pharmacy?.id,
+                                        timeSlot: match.timeSlot,
+                                        start: match.timeSlot?.start,
+                                        end: match.timeSlot?.end,
+                                        startTime: match.timeSlot?.startTime,
+                                        endTime: match.timeSlot?.endTime,
+                                        posting: match.posting,
+                                        fullMatch: match
+                                      });
+                                      
+                                      const startTime = match.timeSlot?.start || match.timeSlot?.startTime || '09:00';
+                                      const endTime = match.timeSlot?.end || match.timeSlot?.endTime || '18:00';
+                                      
+                                      return `${startTime} - ${endTime}`;
+                                    })()}
+                                  </div>
                                   </div>
                                   <div className="text-right ml-2">
                                     <div className="text-purple-600 font-medium mb-1">
@@ -5655,7 +5672,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                       {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
                                     </div>
                                     <div className="text-gray-600">
-                                      {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
+                                      {(() => {
+                                        const startTime = match.timeSlot?.start || match.timeSlot?.startTime || '09:00';
+                                        const endTime = match.timeSlot?.end || match.timeSlot?.endTime || '18:00';
+                                        return `${startTime} - ${endTime}`;
+                                      })()}
                                     </div>
                                     {/* 薬局名と店舗名を表示 */}
                                     <div className="text-gray-500 text-xs">
@@ -5797,7 +5818,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                       {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
                                     </div>
                                     <div className="text-gray-600">
-                                      {match.timeSlot?.start || match.timeSlot?.startTime || '09:00'} - {match.timeSlot?.end || match.timeSlot?.endTime || '18:00'}
+                                      {(() => {
+                                        const startTime = match.timeSlot?.start || match.timeSlot?.startTime || '09:00';
+                                        const endTime = match.timeSlot?.end || match.timeSlot?.endTime || '18:00';
+                                        return `${startTime} - ${endTime}`;
+                                      })()}
                                     </div>
                                     {/* 薬局名と店舗名を表示 */}
                                     <div className="text-gray-500 text-xs">
