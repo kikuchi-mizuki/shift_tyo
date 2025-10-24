@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, AlertCircle, Star, Brain, Zap, Bell, Lock } from 'lucide-react';
 import { shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
 import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
-import DataCollector from '../features/ai-matching/dataCollector';
+// import DataCollector from '../features/ai-matching/dataCollector';
 import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
@@ -24,7 +24,7 @@ const AdminDashboardRefactored: React.FC<AdminDashboardProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   
   // すべてのstateを確実に安全に初期化
-  const [systemStatus, setSystemStatus] = useState('pending');
+  // const [systemStatus, setSystemStatus] = useState('pending');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [userProfiles, setUserProfiles] = useState<any>({});
   const [storeNgPharmacists, setStoreNgPharmacists] = useState<{[pharmacyId: string]: any[]}>({});
@@ -62,8 +62,8 @@ const AdminDashboardRefactored: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // AI Matching関連の状態
   const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
-  const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
-  const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
+  // const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
+  // const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
   const [aiMatchesByDate, setAiMatchesByDate] = useState<{[date: string]: MatchCandidate[]}>({});
   const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
   const [aiMatchingLoading, setAiMatchingLoading] = useState(false);
@@ -93,8 +93,13 @@ const AdminDashboardRefactored: React.FC<AdminDashboardProps> = ({ user }) => {
   }, []);
 
 
-  // 指定された日付のシフト投稿を取得
+  // 指定された日付のシフト投稿を取得（未使用）
+  /*
   const fetchShiftPostingsForDate = async (date: string) => {
+    if (!supabase) {
+      console.error('Supabase client is not available');
+      return [];
+    }
     try {
       const { data, error } = await supabase
         .from('shift_postings')
@@ -108,9 +113,15 @@ const AdminDashboardRefactored: React.FC<AdminDashboardProps> = ({ user }) => {
       return [];
     }
   };
+  */
 
-  // 指定された日付のシフトリクエストを取得
+  // 指定された日付のシフトリクエストを取得（未使用）
+  /*
   const fetchShiftRequestsForDate = async (date: string) => {
+    if (!supabase) {
+      console.error('Supabase client is not available');
+      return [];
+    }
     try {
       const { data, error } = await supabase
         .from('shift_requests')
@@ -124,6 +135,7 @@ const AdminDashboardRefactored: React.FC<AdminDashboardProps> = ({ user }) => {
       return [];
     }
   };
+  */
 
   // データ初期化の強制実行（useEffectを最初に配置）
   React.useEffect(() => {
@@ -621,7 +633,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           console.error('Supabase client is not available');
           return;
         }
-        
         const { data: insertResult, error } = await supabase
           .from('shift_requests')
           .insert(shiftRequests)
