@@ -1426,9 +1426,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
       const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
       
-      // timeSlotの構造を確認して適切な時間を取得
-      const startTime = match.timeSlot?.start || match.timeSlot?.start || match.posting?.start_time || '09:00:00';
-      const endTime = match.timeSlot?.end || match.timeSlot?.end || match.posting?.end_time || '18:00:00';
+      // timeSlotの構造を確認して適切な時間を取得（薬局の募集時間を使用）
+      const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00:00';
+      const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00:00';
       
       return { 
         pharmacist_id: match.pharmacist.id,
