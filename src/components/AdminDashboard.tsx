@@ -991,8 +991,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         name: userProfiles[matchedPharmacies[index].pharmacy_id]?.name || 'Unknown'
       },
       timeSlot: {
-        start: pharmacist.start_time,
-        end: pharmacist.end_time,
+        start: matchedPharmacies[index].start_time,  // 薬局の募集時間を使用
+        end: matchedPharmacies[index].end_time,      // 薬局の募集時間を使用
         date: pharmacist.date
       },
       compatibilityScore: 0.8, // デフォルトスコア
