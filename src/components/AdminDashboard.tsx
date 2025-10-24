@@ -5429,7 +5429,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                         startTime: match.timeSlot?.start,
                                         endTime: match.timeSlot?.end,
                                         posting: match.posting,
-                                        fullMatch: match
+                                        fullMatch: match,
+                                        // 追加デバッグ情報
+                                        pharmacyNeed: match.pharmacyNeed,
+                                        request: match.request
                                       });
                                       
                                       // 薬局の募集時間を優先的に使用
