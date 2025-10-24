@@ -853,6 +853,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       remaining: Number(p.required_staff) || 0
     }));
     
+    // デバッグ: 募集データの店舗名を確認
+    console.log('募集データ店舗名デバッグ:', {
+      filteredPostings: filteredPostings,
+      pharmacyNeeds: pharmacyNeeds,
+      store_names: pharmacyNeeds.map(p => ({ id: p.pharmacy_id, store_name: p.store_name }))
+    });
+    
     // 全薬剤師と薬局の組み合わせをスコア付きで収集
     const allMatchCandidates: any[] = [];
     
@@ -963,6 +970,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     const matches = matchedPharmacists.map((pharmacist, index) => {
       const pharmacy = matchedPharmacies[index];
       const pharmacyProfile = userProfiles[pharmacy.pharmacy_id];
+      
+      // デバッグ: 店舗名の取得状況を確認
+      console.log('マッチング結果店舗名デバッグ:', {
+        pharmacy: pharmacy,
+        store_name: pharmacy.store_name,
+        pharmacy_id: pharmacy.pharmacy_id,
+        index: index
+      });
       
       return {
         pharmacist: {
