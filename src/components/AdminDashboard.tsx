@@ -5432,8 +5432,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                         fullMatch: match
                                       });
                                       
-                                      const startTime = match.timeSlot?.start || '09:00';
-                                      const endTime = match.timeSlot?.end || '18:00';
+                                      // 薬局の募集時間を優先的に使用
+                                      const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00';
+                                      const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00';
+                                      
+                                      console.log('最終的な時間表示:', { startTime, endTime });
                                       
                                       return `${startTime} - ${endTime}`;
                                     })()}
@@ -5675,8 +5678,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     <div className="text-gray-600">
                                       {(() => {
-                                        const startTime = match.timeSlot?.start || '09:00';
-                                        const endTime = match.timeSlot?.end || '18:00';
+                                        // 薬局の募集時間を優先的に使用
+                                        const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00';
+                                        const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00';
+                                        
+                                        console.log('最終的な時間表示:', { startTime, endTime });
                                         return `${startTime} - ${endTime}`;
                                       })()}
                                     </div>
@@ -5821,8 +5827,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     <div className="text-gray-600">
                                       {(() => {
-                                        const startTime = match.timeSlot?.start || '09:00';
-                                        const endTime = match.timeSlot?.end || '18:00';
+                                        // 薬局の募集時間を優先的に使用
+                                        const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00';
+                                        const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00';
+                                        
+                                        console.log('最終的な時間表示:', { startTime, endTime });
                                         return `${startTime} - ${endTime}`;
                                       })()}
                                     </div>
