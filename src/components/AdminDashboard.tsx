@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { Calendar, AlertCircle, Star, Brain, Zap, Bell, Lock } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
+import { shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
 import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
 import DataCollector from '../features/ai-matching/dataCollector';
 import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
@@ -3729,7 +3729,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       // 挿入されたデータのIDを取得
       const insertedShift = insertedData?.[0];
       if (insertedShift) {
-        shift.id = insertedShift.id;
+        (shift as any).id = insertedShift.id;
       }
       
       // 対応する希望・募集のステータスを'confirmed'に更新
@@ -3853,10 +3853,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         errorMessage = error;
       } else if (error && typeof error === 'object') {
         // Supabaseエラーの場合
-        if (error.code) {
-          errorMessage = `Database error (${error.code}): ${error.message || error.details || 'Unknown database error'}`;
-        } else if (error.message) {
-          errorMessage = error.message;
+        const errorObj = error as any;
+        if (errorObj.code) {
+          errorMessage = `Database error (${errorObj.code}): ${errorObj.message || errorObj.details || 'Unknown database error'}`;
+        } else if (errorObj.message) {
+          errorMessage = errorObj.message;
         } else {
           errorMessage = JSON.stringify(error);
         }
