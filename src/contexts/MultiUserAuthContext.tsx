@@ -106,37 +106,53 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
 
   const addSession = async (user: any, fallbackUserType?: 'pharmacist' | 'pharmacy' | 'admin') => {
     try {
-      // ユーザープロフィールを取得
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      console.log('MultiUserAuth: Adding session for user:', user.id);
+      
+      // ユーザープロフィールを取得（エラー時はフォールバックを使用）
+      let userType = fallbackUserType;
+      let userName = user.email;
+      
+      try {
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
 
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        if (!fallbackUserType) {
-          throw new Error(`ユーザープロフィールの取得に失敗しました: ${error.message}`);
+        if (!error && profile) {
+          userType = profile.user_type as 'pharmacist' | 'pharmacy' | 'admin';
+          userName = profile.name || user.email;
+          console.log('MultiUserAuth: Profile found:', { userType, name: userName });
+        } else {
+          console.warn('MultiUserAuth: Profile not found, using fallback:', { error: error?.message, fallbackUserType });
         }
+      } catch (profileError) {
+        console.warn('MultiUserAuth: Profile fetch failed, using fallback:', profileError);
       }
 
-      const userType = (profile?.user_type as 'pharmacist' | 'pharmacy' | 'admin') || fallbackUserType!;
+      if (!userType) {
+        throw new Error('ユーザータイプが特定できませんでした');
+      }
       
       const newSession: UserSession = {
         id: user.id,
         email: user.email,
         user_type: userType,
-        name: (profile?.name || user.email),
+        name: userName,
         lastActive: new Date()
       };
+
+      console.log('MultiUserAuth: Creating session:', newSession);
 
       // 単一セッション運用: 新しいログインで既存セッションを置き換える
       setActiveSessions([newSession]);
 
       // 直近でログインしたユーザータイプを現在のユーザータイプとして採用
       setCurrentUserType(userType);
+      
+      console.log('MultiUserAuth: Session added successfully');
     } catch (error) {
-      console.error('Error adding session:', error);
+      console.error('MultiUserAuth: Error adding session:', error);
       throw error; // エラーを再スローして呼び出し元で処理できるようにする
     }
   };

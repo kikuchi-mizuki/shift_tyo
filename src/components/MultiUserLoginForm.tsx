@@ -74,9 +74,8 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
     setLoading(true);
     setError('');
 
-    // 非同期でログイン処理を実行（UIのブロックを防ぐ）
-    setTimeout(async () => {
-      try {
+    // ログイン処理を同期的に実行（setTimeoutを削除して安定性を向上）
+    try {
         if (isRegistering) {
           // 新規登録処理
           if (password.length < 6) {
@@ -275,7 +274,6 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
       } finally {
         setLoading(false);
       }
-    }, 0); // setTimeoutの閉じ括弧
   };
 
   const getUserTypeLabel = (type: 'pharmacist' | 'pharmacy') => {

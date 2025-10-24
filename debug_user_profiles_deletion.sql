@@ -112,3 +112,5 @@ SELECT
   n_dead_tup
 FROM pg_stat_user_tables 
 WHERE tablename = 'user_profiles';
+
+

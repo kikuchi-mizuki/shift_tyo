@@ -213,7 +213,15 @@ function AppContent() {
     ? (activeSessions.find(s => s.user_type === effectiveUserType) || activeSessions[0] || null)
     : null;
 
+  // セッション情報のデバッグログ
+  console.log('App: Session state:', {
+    effectiveUserType,
+    currentSession: currentSession ? { id: currentSession.id, user_type: currentSession.user_type } : null,
+    activeSessionsCount: activeSessions.length
+  });
+
   if (!effectiveUserType || !currentSession) {
+    console.log('App: No valid session, showing login form');
     return <MultiUserLoginForm onLoginSuccess={() => {}} />;
   }
 
@@ -287,17 +295,29 @@ function AppContent() {
               <div className="h-3 w-5/6 bg-gray-200 rounded animate-pulse" />
             </div>
           }>
-            {effectiveUserType === 'pharmacist' && (
-              <PharmacistDashboard user={currentSession} />
-            )}
-            {effectiveUserType === 'pharmacy' && (
-              <PharmacyDashboard user={currentSession} />
-            )}
-            {effectiveUserType === 'admin' && (
-              <AppErrorBoundary>
-                <AdminDashboard user={currentSession} />
-              </AppErrorBoundary>
-            )}
+            {(() => {
+              console.log('App: Rendering dashboard for user type:', effectiveUserType);
+              try {
+                if (effectiveUserType === 'pharmacist') {
+                  return <PharmacistDashboard user={currentSession} />;
+                }
+                if (effectiveUserType === 'pharmacy') {
+                  return <PharmacyDashboard user={currentSession} />;
+                }
+                if (effectiveUserType === 'admin') {
+                  return (
+                    <AppErrorBoundary>
+                      <AdminDashboard user={currentSession} />
+                    </AppErrorBoundary>
+                  );
+                }
+                console.warn('App: Unknown user type:', effectiveUserType);
+                return <div className="p-4 text-red-600">不明なユーザータイプです: {effectiveUserType}</div>;
+              } catch (error) {
+                console.error('App: Error rendering dashboard:', error);
+                return <div className="p-4 text-red-600">ダッシュボードの読み込みに失敗しました。ページを再読み込みしてください。</div>;
+              }
+            })()}
           </React.Suspense>
         </AppErrorBoundary>
       </main>
