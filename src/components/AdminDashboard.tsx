@@ -2699,7 +2699,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         userType: user?.user_metadata?.user_type
       });
       
-      const { data: r, error: requestsError } = await shiftRequests.getRequests('', 'admin' as any);
+      // 管理画面では直接Supabaseからシフト希望データを取得
+      const { data: r, error: requestsError } = await supabase
+        .from('shift_requests')
+        .select('*');
       
       console.log('📊 薬剤師の希望データ取得結果:', {
         data: r,
