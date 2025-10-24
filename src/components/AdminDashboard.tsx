@@ -5641,7 +5641,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                       {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
                                     </div>
                                   <div className="text-gray-600">
-                                    店舗: {match.pharmacy.name || '店舗名なし'}
+                                    店舗: {match.pharmacy.store_name || '店舗名なし'}
                                   </div>
                                   <div className="text-gray-600">
                                     {(() => {
