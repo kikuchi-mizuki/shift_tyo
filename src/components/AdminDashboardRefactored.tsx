@@ -5478,32 +5478,43 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                     allDayPostings
                   );
                   
-                  // AIマッチング結果の表示（カレンダーと同じロジックを使用）
+                  // AIマッチング結果の表示（assigned_shiftsテーブルから直接取得）
                   let dayMatches: any[] = [];
                   
-                  // まずaiMatchesByDateから取得を試行
-                  const allDayMatches = aiMatchesByDate[selectedDate] || [];
+                  // assigned_shiftsテーブルからstatus: 'pending'のマッチング結果を取得
+                  const pendingShifts = (assigned || []).filter((s: any) => 
+                    s.date === selectedDate && s.status === 'pending'
+                  );
                   
                   console.log('=== 詳細画面マッチング結果デバッグ ===', {
                     selectedDate,
-                    aiMatchesByDateKeys: Object.keys(aiMatchesByDate || {}),
-                    allDayMatches: safeLength(allDayMatches),
-                    allDayMatchesData: allDayMatches
+                    pendingShifts: safeLength(pendingShifts),
+                    pendingShiftsData: pendingShifts
                   });
                   
-                  if (safeLength(allDayMatches) > 0) {
-                    // aiMatchesByDateにデータがある場合はそれを使用
-                  const confirmedPharmacistIds = new Set(
-                    (assigned || []).filter((s: any) => s?.date === selectedDate && s?.status === 'confirmed')
-                      .map((s: any) => s.pharmacist_id)
-                  );
-                  
-                    dayMatches = allDayMatches.filter(match => 
-                    !confirmedPharmacistIds.has(match.pharmacist.id)
-                  );
+                  if (safeLength(pendingShifts) > 0) {
+                    // assigned_shiftsテーブルから直接マッチング結果を取得
+                    dayMatches = pendingShifts.map((shift: any) => ({
+                      pharmacist: {
+                        id: shift.pharmacist_id,
+                        name: userProfiles[shift.pharmacist_id]?.name || 'Unknown'
+                      },
+                      pharmacy: {
+                        id: shift.pharmacy_id,
+                        name: userProfiles[shift.pharmacy_id]?.name || 'Unknown',
+                        store_name: shift.store_name || '店舗名なし'
+                      },
+                      timeSlot: {
+                        start: shift.start_time,
+                        end: shift.end_time,
+                        date: shift.date
+                      },
+                      compatibilityScore: 0.8, // デフォルトスコア
+                      reasons: ['時間適合', '距離適合']
+                    }));
                   } else if (safeLength(dayRequests) > 0 && safeLength(dayPostings) > 0) {
-                    // aiMatchesByDateが空の場合は、カレンダーと同じロジックでマッチング分析を実行
-                    console.log('aiMatchesByDateが空のため、カレンダーと同じロジックでマッチング分析を実行');
+                    // assigned_shiftsにデータがない場合は、カレンダーと同じロジックでマッチング分析を実行
+                    console.log('assigned_shiftsにpendingデータがないため、カレンダーと同じロジックでマッチング分析を実行');
                     
                     // カレンダーと同じマッチング分析ロジックを実行
                     const matchingResult = performMatchingAnalysis(dayRequests, dayPostings, selectedDate);
@@ -5790,35 +5801,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                     </div>
                                     {/* 薬局名と店舗名を表示 */}
                                     <div className="text-gray-500 text-xs">
-                                      店舗: {(() => {
-                                        // デバッグ: マッチング結果のデータ構造を確認
-                                        console.log('=== マッチング結果デバッグ ===', {
-                                          match: match,
-                                          pharmacy: match.pharmacy,
-                                          store_name: match.pharmacy?.store_name,
-                                          memo: match.memo
-                                        });
-                                        
-                                        // 募集している薬局と同じ方式で店舗名を取得
-                                        const getStoreName = (match: any) => {
-                                          const direct = (match.pharmacy?.store_name || '').trim();
-                                          let fromMemo = '';
-                                          if (!direct && typeof match.memo === 'string') {
-                                            const m = match.memo.match(/\[store:([^\]]+)\]/);
-                                            if (m && m[1]) fromMemo = m[1];
-                                          }
-                                          
-                                          console.log('店舗名取得デバッグ:', {
-                                            direct,
-                                            fromMemo,
-                                            result: direct || fromMemo || '（店舗名未設定）'
-                                          });
-                                          
-                                          return direct || fromMemo || '（店舗名未設定）';
-                                        };
-                                        
-                                        return getStoreName(match);
-                                      })()}
+                                      店舗: {match.pharmacy?.store_name || '店舗名なし'}
                                     </div>
                                   </div>
                                   <div className="text-right ml-2">
