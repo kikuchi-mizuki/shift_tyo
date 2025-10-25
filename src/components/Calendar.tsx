@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar as CalendarIcon, Clock, MapPin, DollarSign } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { AssignedShift } from '../types';
 
 interface CalendarProps {
@@ -17,6 +17,15 @@ export const Calendar: React.FC<CalendarProps> = ({ shifts, month, year, onDateC
     '7月', '8月', '9月', '10月', '11月', '12月'
   ];
   const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+  
+  // デバッグ用ログ
+  console.log('Calendar Debug:', {
+    year,
+    month,
+    daysInMonth,
+    firstDayOfMonth,
+    firstDayName: dayNames[firstDayOfMonth]
+  });
 
   const getShiftsForDate = (day: number): AssignedShift[] => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -79,14 +88,20 @@ export const Calendar: React.FC<CalendarProps> = ({ shifts, month, year, onDateC
         </div>
 
         <div className="grid grid-cols-7 gap-1">
+          {/* 空のセルを追加（月の最初の日より前の曜日分） */}
           {Array.from({ length: firstDayOfMonth }, (_, i) => (
-            <div key={`empty-${i}`} className="h-24"></div>
+            <div key={`empty-${i}`} className="h-24 border border-gray-200 rounded-lg bg-gray-50"></div>
           ))}
           
+          {/* 月の日付を表示 */}
           {Array.from({ length: daysInMonth }, (_, i) => {
             const day = i + 1;
             const dayShifts = getShiftsForDate(day);
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            // デバッグ用：実際の曜日を計算
+            const actualDayOfWeek = new Date(year, month, day).getDay();
+            const actualDayName = dayNames[actualDayOfWeek];
             
             return (
               <div
@@ -95,11 +110,16 @@ export const Calendar: React.FC<CalendarProps> = ({ shifts, month, year, onDateC
                   dayShifts.length > 0 ? 'bg-blue-50' : 'bg-white'
                 }`}
                 onClick={() => onDateClick?.(dateStr)}
+                title={`${day}日 (${actualDayName})`}
               >
                 <div className="flex flex-col h-full">
-                  <div className="text-sm font-semibold text-gray-700 mb-1">{day}</div>
+                  <div className="text-sm font-semibold text-gray-700 mb-1">
+                    {day}
+                    {/* デバッグ用：曜日を表示 */}
+                    <span className="text-xs text-gray-500 ml-1">({actualDayName})</span>
+                  </div>
                   <div className="flex-1 overflow-hidden">
-                    {dayShifts.slice(0, 2).map((shift, index) => (
+                    {dayShifts.slice(0, 2).map((shift) => (
                       <div
                         key={shift.id}
                         className={`text-xs px-1 py-0.5 rounded mb-1 border ${getTimeSlotColor(shift.timeSlot)(shift)}`}
