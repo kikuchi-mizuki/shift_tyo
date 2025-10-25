@@ -7,8 +7,8 @@ import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatc
 import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
-import UnifiedCalendar from './UnifiedCalendar';
-import { getMonthName, getDaysInMonth, formatDateString, getPreviousMonth, getNextMonth, safeLength } from '../utils/calendarUtils';
+import AdminCalendar from './admin/AdminCalendar';
+import { formatDateString, safeLength } from '../utils/calendarUtils';
 
 interface AdminDashboardProps {
   user: any;
@@ -3637,17 +3637,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
 
-  const handleDateSelect = (day: number) => {
-    if (day) {
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth() + 1;
-      const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  const handleDateSelect = (date: string) => {
+    if (date) {
+      const formattedDate = date;
       
       console.log('🗓️ 日付選択:', {
-        clickedDay: day,
+        selectedDate: date,
         currentDate,
-        year,
-        month,
         formattedDate,
         previousSelectedDate: selectedDate
       });
@@ -5108,178 +5104,20 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       {false && <AIMatchingStats className="mb-6" />}
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
-        {/* left calendar - 統一カレンダーコンポーネントを使用 */}
-        <UnifiedCalendar
+        {/* left calendar - 管理画面専用カレンダーコンポーネントを使用 */}
+        <AdminCalendar
           currentDate={currentDate}
+          selectedDate={selectedDate}
+          onDateSelect={handleDateSelect}
           onPreviousMonth={handlePrevMonth}
           onNextMonth={handleNextMonth}
-          getMonthName={getMonthName}
-        >
-            {getDaysInMonth(currentDate).map((d, i) => {
-              // dがnullの場合は空白セルを返す
-              if (d === null) {
-                return (
-                  <div key={i} className="p-2 sm:p-3 text-center text-xs sm:text-sm border border-gray-200 min-h-[80px] sm:min-h-[90px] bg-gray-50">
-                  </div>
-                );
-              }
-
-              const year = currentDate.getFullYear();
-              const month = currentDate.getMonth() + 1;
-              const dateStr = `${year}-${month.toString().padStart(2, '0')}-${d?.toString().padStart(2, '0')}`;
-              
-              // その日の確定シフトを取得（安全な配列チェック）
-              const dayAssignedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s.date === dateStr && s.status === 'confirmed') : [];
-              
-              // デバッグ用：確定シフトの詳細をログ出力
-              if (safeLength(dayAssignedShifts) > 0) {
-                console.log(`日付 ${dateStr} の確定シフト:`, dayAssignedShifts);
-              }
-              
-              // その日の希望と募集を取得（要相談を除外、安全な配列チェック）
-              const allDayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === dateStr && r.time_slot !== 'consult') : [];
-              const allDayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === dateStr && p.time_slot !== 'consult') : [];
-              
-              // 確定済みステータスの希望・募集を除外
-              const { filteredRequests: dayRequests, filteredPostings: dayPostings } = filterConfirmedRequestsAndPostings(
-                allDayRequests, 
-                allDayPostings
-              );
-              
-              // データがある日付のみログを出力（デバッグ用）
-              if (safeLength(dayRequests) > 0 || safeLength(dayPostings) > 0) {
-                console.log(`🔥🔥🔥 日付 ${dateStr} のデータフィルタリング 🔥🔥🔥`);
-                console.log('全シフト希望:', safeLength(requests));
-                console.log('全シフト募集:', safeLength(postings));
-                console.log('フィルタ後の希望:', safeLength(dayRequests));
-                console.log('フィルタ後の募集:', safeLength(dayPostings));
-                console.log('希望の時間帯:', dayRequests.map(r => r.time_slot));
-                console.log('募集の時間帯:', dayPostings.map(p => p.time_slot));
-                console.log('データフィルタリングが実行されました - コンソールを確認してください');
-              }
-              // 要相談のリクエストを取得（安全な配列チェック）
-              const dayConsultRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === dateStr && r.time_slot === 'consult') : [];
-              
-              
-              // マッチング状況を計算（詳細画面と同じ方式）
-              const calculateMatchingStatus = () => {
-                // その日の確定シフト数を取得
-                const dayAssignedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s.date === dateStr && s.status === 'confirmed') : [];
-                const confirmedCount = safeLength(dayAssignedShifts);
-                
-                // その日のpendingマッチング結果を取得（詳細画面と同じ方式）
-                const dayPendingShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s.date === dateStr && s.status === 'pending') : [];
-                const unconfirmedMatches = safeLength(dayPendingShifts);
-                
-                // 確定シフトとpendingマッチング結果の合計
-                const totalMatched = confirmedCount + unconfirmedMatches;
-                
-                // 不足数の計算（詳細画面と同じロジック）
-                let totalShortage = 0;
-                if (safeLength(dayPostings) > 0) {
-                  const totalRequired = dayPostings.reduce((sum, p) => sum + (Number(p.required_staff) || 0), 0);
-                  totalShortage = Math.max(0, totalRequired - totalMatched);
-                }
-                
-                console.log(`カレンダー表示用マッチング結果 [${dateStr}]: 確定=${confirmedCount}, マッチ=${unconfirmedMatches}, 合計=${totalMatched}, 不足=${totalShortage}`);
-
-                return {
-                  type: totalMatched > 0 ? 'matched' : (totalShortage > 0 || safeLength(dayRequests) > 0 ? 'pending' : 'empty'),
-                  count: totalMatched,
-                  shortage: totalShortage,
-                  unconfirmedMatches: unconfirmedMatches
-                };
-              };
-              
-              const matchingStatus = calculateMatchingStatus();
-              
-              return (
-                <div 
-                  key={i} 
-                  className={`p-2 sm:p-3 text-center text-xs sm:text-sm border border-gray-200 min-h-[80px] sm:min-h-[90px] ${
-                    d ? 'cursor-pointer' : 'bg-gray-50'
-                  } ${
-                    selectedDate === dateStr ? 'bg-blue-100 border-blue-300' : ''
-                  }`}
-                  onClick={() => d && handleDateSelect(d)}
-                >
-                  {d && (
-                    <>
-                      <div className="font-medium">{d}</div>
-                      
-                      {/* マッチング状況表示 */}
-                      {matchingStatus.type === 'confirmed' && (
-                        <div className="relative group">
-                          <div className="text-[7px] sm:text-[8px] space-y-0.5">
-                            <div className="text-green-700 bg-green-50 border border-green-200 rounded px-1 inline-block">
-                              <span className="sm:hidden">確{matchingStatus.count}</span>
-                              <span className="hidden sm:inline">確定 {matchingStatus.count}件</span>
-                            </div>
-                            
-                            {/* 未確定マッチを表示 */}
-                            {matchingStatus.unconfirmedMatches > 0 && (
-                                <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">マ{matchingStatus.unconfirmedMatches}</span>
-                                <span className="hidden sm:inline">マッチ {matchingStatus.unconfirmedMatches}</span>
-                                </div>
-                            )}
-                            
-                            {/* 確定後も不足パッチを表示（AI機能は無効化） */}
-                            {matchingStatus.shortage > 0 && (
-                              <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">不{matchingStatus.shortage}</span>
-                                <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
-                              </div>
-                            )}
-                            
-                            
-                            {safeLength(dayConsultRequests) > 0 && (
-                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">相{safeLength(dayConsultRequests)}</span>
-                                <span className="hidden sm:inline">相談 {safeLength(dayConsultRequests)}</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* ホバー詳細は右側パネルで表示するため非表示に変更 */}
-                        </div>
-                      )}
-                      
-                      {/* マッチング状況表示（確定シフトがない場合） */}
-                      {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (
-                        <div className="relative group">
-                          <div className="text-[7px] sm:text-[8px] space-y-0.5">
-                            {/* マッチ件数（マッチング分析結果に基づく） */}
-                            {matchingStatus.count > 0 && (
-                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">マ{matchingStatus.count}</span>
-                                <span className="hidden sm:inline">マッチ {matchingStatus.count}</span>
-                              </div>
-                            )}
-                            
-                            {/* 不足件数（マッチング分析結果に基づく） */}
-                            {matchingStatus.shortage > 0 && (
-                              <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">不{matchingStatus.shortage}</span>
-                                <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
-                              </div>
-                            )}
-                            
-                            
-                          </div>
-                          
-                          {/* ホバー詳細は右側パネルで表示するため非表示に変更 */}
-                        </div>
-                      )}
-                      
-                      
-                      {/* 確定は上のブロックで件数ラベルのみ表示 */}
-                    </>
-                  )}
-                </div>
-              );
-            })}
-        </UnifiedCalendar>
+          assigned={assigned}
+          requests={requests}
+          postings={postings}
+          userProfiles={userProfiles}
+          aiMatchesByDate={aiMatchesByDate}
+          monthlyMatchingExecuted={monthlyMatchingExecuted}
+        />
 
         {/* right panel */}
         <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
