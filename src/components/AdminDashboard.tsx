@@ -5323,44 +5323,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       <div className="font-medium">{d}</div>
                       
                       {/* マッチング状況表示 */}
-                      {matchingStatus.type === 'confirmed' && (
-                        <div className="relative group">
-                          <div className="text-[7px] sm:text-[8px] space-y-0.5">
-                            <div className="text-green-700 bg-green-50 border border-green-200 rounded px-1 inline-block">
-                              <span className="sm:hidden">確{matchingStatus.count}</span>
-                              <span className="hidden sm:inline">確定 {matchingStatus.count}件</span>
-                            </div>
-                            
-                            {/* 未確定マッチを表示 */}
-                            {matchingStatus.unconfirmedMatches > 0 && (
-                                <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">マ{matchingStatus.unconfirmedMatches}</span>
-                                <span className="hidden sm:inline">マッチ {matchingStatus.unconfirmedMatches}</span>
-                                </div>
-                            )}
-                            
-                            {/* 確定後も不足パッチを表示（AI機能は無効化） */}
-                            {matchingStatus.shortage > 0 && (
-                              <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">不{matchingStatus.shortage}</span>
-                                <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
-                              </div>
-                            )}
-                            
-                            
-                            {safeLength(dayConsultRequests) > 0 && (
-                              <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">相{safeLength(dayConsultRequests)}</span>
-                                <span className="hidden sm:inline">相談 {safeLength(dayConsultRequests)}</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* ホバー詳細は右側パネルで表示するため非表示に変更 */}
-                        </div>
-                      )}
-                      
-                      {/* マッチング状況表示 */}
                       {matchingStatus.type !== 'empty' && (
                         <div className="relative group">
                           <div className="text-[7px] sm:text-[8px] space-y-0.5">
