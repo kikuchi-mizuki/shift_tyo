@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
-import { Calendar, AlertCircle, Star, Brain, Zap, Bell, Lock } from 'lucide-react';
+import { Calendar, AlertCircle, Star, Brain, Zap, Lock } from 'lucide-react';
 import { shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
 import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
-import EmergencyShiftRequest from './EmergencyShiftRequest';
+import AdminEmergencyShift from './admin/AdminEmergencyShift';
 import PasswordChangeModal from './PasswordChangeModal';
 import AdminCalendar from './admin/AdminCalendar';
 import AdminUserManagement from './admin/AdminUserManagement';
@@ -49,8 +49,6 @@ const AdminDashboardRefactored: React.FC<AdminDashboardProps> = ({ user }) => {
     notes: null
   });
 
-  // 緊急シフトモーダル表示状態
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
   // パスワード変更モーダル表示状態
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
@@ -5038,20 +5036,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
   return (
     <div className="space-y-6">
       
-      {/* 緊急シフトリクエスト機能 */}
-      <div className="flex justify-end">
-          <button
-            onClick={() => {
-              console.error('=== EMERGENCY BUTTON CLICKED ===');
-              console.error('Setting showEmergencyModal to true');
-              setShowEmergencyModal(true);
-            }}
-          className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
-          >
-          <Bell className="w-5 h-5" />
-            LINEで呼びかける
-          </button>
-      </div>
+      {/* 緊急シフト機能 */}
+      <AdminEmergencyShift />
 
       {/* AIマッチングコントロール */}
       {false && (
@@ -6660,19 +6646,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         setUserEditForm={setUserEditForm}
       />
 
-      {/* 緊急シフトモーダル */}
-      {showEmergencyModal && (
-        (() => {
-          console.error('=== RENDERING EMERGENCY MODAL ===');
-          console.error('showEmergencyModal is true, rendering EmergencyShiftRequest');
-          return (
-            <EmergencyShiftRequest onClose={() => {
-              console.error('=== CLOSING EMERGENCY MODAL ===');
-              setShowEmergencyModal(false);
-            }} />
-          );
-        })()
-      )}
 
       {/* パスワード変更モーダル */}
       <PasswordChangeModal
