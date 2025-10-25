@@ -5189,24 +5189,24 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                             {/* 確定件数 */}
                             {matchingStatus.confirmedCount > 0 && (
                               <div className="text-green-600 bg-green-50 border border-green-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">確{matchingStatus.confirmedCount}</span>
-                                <span className="hidden sm:inline">確定 {matchingStatus.confirmedCount}</span>
+                                <span className="sm:hidden">確</span>
+                                <span className="hidden sm:inline">確定</span>
                               </div>
                             )}
                             
                             {/* マッチ件数（マッチング分析結果に基づく） */}
                             {matchingStatus.matchedCount > 0 && (
                               <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">マ{matchingStatus.matchedCount}</span>
-                                <span className="hidden sm:inline">マッチ {matchingStatus.matchedCount}</span>
+                                <span className="sm:hidden">マ</span>
+                                <span className="hidden sm:inline">マッチ</span>
                               </div>
                             )}
                             
                             {/* 不足件数（マッチング分析結果に基づく） */}
                             {matchingStatus.shortage > 0 && (
                               <div className="text-red-600 bg-red-50 border border-red-200 rounded px-1 inline-block">
-                                <span className="sm:hidden">不{matchingStatus.shortage}</span>
-                                <span className="hidden sm:inline">不足 {matchingStatus.shortage}</span>
+                                <span className="sm:hidden">不</span>
+                                <span className="hidden sm:inline">不足</span>
                               </div>
                             )}
                             
