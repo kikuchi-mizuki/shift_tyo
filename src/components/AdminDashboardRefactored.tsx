@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, AlertCircle, Star, Brain, Zap, Lock } from 'lucide-react';
 import { shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
 import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
+import DataCollector from '../features/ai-matching/dataCollector';
 import AdminEmergencyShift from './admin/AdminEmergencyShift';
 import PasswordChangeModal from './PasswordChangeModal';
 import AdminCalendar from './admin/AdminCalendar';
@@ -48,6 +49,7 @@ const AdminDashboardRefactored: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // AI Matching関連の状態
   const [aiMatchingEngine, setAiMatchingEngine] = useState<AIMatchingEngine | null>(null);
+  const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
   const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
   const [aiMatchesByDate, setAiMatchesByDate] = useState<{[date: string]: MatchCandidate[]}>({});
   const [useAIMatching, setUseAIMatching] = useState(true); // デフォルトでAIマッチングを有効
@@ -1291,8 +1293,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     }
   };
   const executeAIMatching = async (date: string) => {
-    if (!aiMatchingEngine) {
-      console.error('AI Matching Engine not initialized');
+    if (!aiMatchingEngine || !dataCollector) {
+      console.error('AI Matching Engine or DataCollector not initialized');
       return;
     }
 
@@ -3930,7 +3932,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         
         let aiMatches: any[] = [];
         
-        if (false) { // AI機能は無効化
+        if (aiMatchingEngine && dataCollector) { // AI機能を有効化
           // フルAIマッチングエンジンを使用
           console.log('AIマッチングエンジンを使用します');
           

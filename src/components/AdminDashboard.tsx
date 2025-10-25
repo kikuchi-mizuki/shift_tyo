@@ -4173,7 +4173,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         
         let aiMatches: any[] = [];
         
-        if (false) { // AI機能は無効化
+        if (aiMatchingEngine && dataCollector) { // AI機能を有効化
           // フルAIマッチングエンジンを使用
           console.log('AIマッチングエンジンを使用します');
           
