@@ -1557,6 +1557,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           console.log(`マッチング結果をassigned_shiftsテーブルに保存: ${safeLength(shiftsToInsert)}件`);
           console.log('保存する店舗名:', shiftsToInsert.map(s => ({ pharmacy_id: s.pharmacy_id, store_name: s.store_name })));
           
+          // 重複を避けるため、既存のシフトを削除してから挿入
+          for (const shift of shiftsToInsert) {
+            await supabase
+              .from('assigned_shifts')
+              .delete()
+              .eq('pharmacist_id', shift.pharmacist_id)
+              .eq('date', shift.date)
+              .eq('time_slot', shift.time_slot);
+          }
+          
           const { data: insertedShifts, error: insertError } = await supabase
             .from('assigned_shifts')
             .insert(shiftsToInsert)
@@ -3516,13 +3526,56 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       
       console.log('挿入するシフトデータ:', shift);
       
-      const { data: insertedData, error } = await supabase.from('assigned_shifts').insert([shift]).select();
-      if (error) {
-        console.error('assigned_shifts挿入エラー:', error);
-        throw new Error(`データベース挿入エラー: ${error.message || error.details || 'Unknown database error'}`);
+      // 既存のシフトをチェック（重複回避）
+      const { data: existingShifts, error: checkError } = await supabase
+        .from('assigned_shifts')
+        .select('id, status')
+        .eq('pharmacist_id', shift.pharmacist_id)
+        .eq('date', shift.date)
+        .eq('time_slot', shift.time_slot);
+      
+      if (checkError) {
+        console.error('既存シフトチェックエラー:', checkError);
+        throw new Error(`既存シフトチェックエラー: ${checkError.message}`);
       }
       
-      console.log('assigned_shifts挿入成功:', insertedData);
+      let insertedData;
+      if (existingShifts && existingShifts.length > 0) {
+        // 既存のシフトがある場合は更新
+        const existingShift = existingShifts[0];
+        console.log('既存のシフトが見つかりました。更新します:', existingShift);
+        
+        const { data: updatedData, error: updateError } = await supabase
+          .from('assigned_shifts')
+          .update({
+            pharmacy_id: shift.pharmacy_id,
+            start_time: shift.start_time,
+            end_time: shift.end_time,
+            status: shift.status,
+            store_name: shift.store_name,
+            memo: shift.memo,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingShift.id)
+          .select();
+          
+        if (updateError) {
+          console.error('シフト更新エラー:', updateError);
+          throw new Error(`シフト更新エラー: ${updateError.message}`);
+        }
+        
+        insertedData = updatedData;
+        console.log('シフト更新成功:', insertedData);
+      } else {
+        // 既存のシフトがない場合は新規挿入
+        const { data: newData, error: insertError } = await supabase.from('assigned_shifts').insert([shift]).select();
+        if (insertError) {
+          console.error('assigned_shifts挿入エラー:', insertError);
+          throw new Error(`データベース挿入エラー: ${insertError.message || insertError.details || 'Unknown database error'}`);
+        }
+        insertedData = newData;
+        console.log('assigned_shifts挿入成功:', insertedData);
+      }
       
       // 挿入されたデータのIDを取得
       const insertedShift = insertedData?.[0];
