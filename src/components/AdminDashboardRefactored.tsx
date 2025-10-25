@@ -3796,8 +3796,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         .from('assigned_shifts')
         .select(`
           *,
-          pharmacist:pharmacist_id(user_profiles!pharmacist_id(name)),
-          pharmacy:pharmacy_id(user_profiles!pharmacy_id(name))
+          pharmacist:pharmacist_id(name),
+          pharmacy:pharmacy_id(name)
         `)
         .order('created_at', { ascending: false });
       
@@ -3806,6 +3806,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         setAssigned([]);
       } else {
         console.log('Loaded assigned shifts:', assignedData);
+        console.log('Assigned shifts with JOIN data:', assignedData?.map(shift => ({
+          id: shift.id,
+          pharmacist_id: shift.pharmacist_id,
+          pharmacy_id: shift.pharmacy_id,
+          pharmacist_name: shift.pharmacist?.name,
+          pharmacy_name: shift.pharmacy?.name,
+          store_name: shift.store_name
+        })));
         setAssigned(assignedData || []);
       }
     } catch (error) {
@@ -5390,9 +5398,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       </div>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {Array.isArray(assigned) && assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
-                        // Supabaseから取得したデータを使用
-                        const pharmacistName = shift.pharmacist?.name || '薬剤師名未設定';
-                        const pharmacyName = shift.pharmacy?.name || '薬局名未設定';
+                        // Supabaseから取得したデータを使用（フォールバック付き）
+                        const pharmacistName = shift.pharmacist?.name || userProfiles[shift.pharmacist_id]?.name || '薬剤師名未設定';
+                        const pharmacyName = shift.pharmacy?.name || userProfiles[shift.pharmacy_id]?.name || '薬局名未設定';
                         const isEditing = editingShift?.id === shift.id;
                         
                         // デバッグ用：確定シフトの詳細をログ出力
