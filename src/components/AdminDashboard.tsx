@@ -1149,7 +1149,31 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
     return shortagePharmacies;
   };
 
-  // 薬局の不足状況を分析する関数
+  // データベースから薬局の詳細情報を取得する関数
+  const getPharmacyDetails = async (pharmacyId: string) => {
+    if (!supabase) return null;
+    
+    try {
+      const { data: pharmacyProfile, error } = await supabase
+        .from('user_profiles')
+        .select('name, store_name, email, phone')
+        .eq('id', pharmacyId)
+        .eq('user_type', 'pharmacy')
+        .single();
+      
+      if (error) {
+        console.warn(`薬局詳細取得エラー [${pharmacyId}]:`, error);
+        return null;
+      }
+      
+      return pharmacyProfile;
+    } catch (error) {
+      console.error(`薬局詳細取得エラー [${pharmacyId}]:`, error);
+      return null;
+    }
+  };
+
+  // 薬局の不足状況を分析する関数（データベースから詳細情報を取得）
   const analyzePharmacyShortage = (date: string) => {
     const allDayRequests = Array.isArray(requests) ? requests.filter((r: any) => r.date === date) : [];
     const allDayPostings = Array.isArray(postings) ? postings.filter((p: any) => p.date === date) : [];
@@ -5597,9 +5621,15 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                 return (
                                   <div key={index} className="bg-white rounded border p-3 text-sm">
                                     <div className="font-semibold text-gray-800 mb-2">
-                                      {pharmacy.name}
-                                      {pharmacy.store_name && (
-                                        <span className="text-gray-600 font-normal">（{pharmacy.store_name}）</span>
+                                      <div className="flex items-center space-x-2">
+                                        <span className="text-blue-600">薬局:</span>
+                                        <span>{pharmacy.name}</span>
+                                      </div>
+                                      {pharmacy.store_name && pharmacy.store_name !== '店舗名なし' && (
+                                        <div className="flex items-center space-x-2 mt-1">
+                                          <span className="text-green-600">店舗:</span>
+                                          <span className="text-gray-600">{pharmacy.store_name}</span>
+                                        </div>
                                       )}
                                     </div>
                                     <div className="space-y-1 text-xs">
