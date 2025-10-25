@@ -3791,10 +3791,14 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         return;
       }
       
-      // 直接Supabaseからassigned_shiftsテーブルを取得
+      // 直接Supabaseからassigned_shiftsテーブルを取得（関連するuser_profilesも含む）
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
-        .select('*')
+        .select(`
+          *,
+          pharmacist:pharmacist_id(user_profiles!pharmacist_id(name)),
+          pharmacy:pharmacy_id(user_profiles!pharmacy_id(name))
+        `)
         .order('created_at', { ascending: false });
       
       if (assignedError) {
@@ -5386,8 +5390,9 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                       </div>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                       {Array.isArray(assigned) && assigned.filter((s: any) => s.date === selectedDate && s.status === 'confirmed').map((shift: any, index: number) => {
-                        const pharmacistProfile = userProfiles[shift.pharmacist_id];
-                        const pharmacyProfile = userProfiles[shift.pharmacy_id];
+                        // Supabaseから取得したデータを使用
+                        const pharmacistName = shift.pharmacist?.name || '薬剤師名未設定';
+                        const pharmacyName = shift.pharmacy?.name || '薬局名未設定';
                         const isEditing = editingShift?.id === shift.id;
                         
                         // デバッグ用：確定シフトの詳細をログ出力
@@ -5401,6 +5406,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                           memo: shift.memo,
                           status: shift.status
                         });
+                        
                         
                         // 店舗名を取得（store_name または memo から）
                         const getStoreName = (shift: any) => {
@@ -5498,66 +5504,8 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 pr-2">
                                   <div className="text-xs text-gray-800 leading-snug break-words">
-                                    <div>薬剤師: {(() => {
-                                      // 薬剤師名の取得を改善
-                                      const pharmacistId = shift.pharmacist_id;
-                                      const profile = userProfiles[pharmacistId];
-                                      
-                                      // デバッグ情報を追加
-                                      console.log('薬剤師名表示デバッグ:', {
-                                        pharmacistId,
-                                        profile,
-                                        userProfilesKeys: Object.keys(userProfiles || {}),
-                                        userProfilesCount: Object.keys(userProfiles || {}).length,
-                                        allPharmacistProfiles: Object.values(userProfiles || {}).filter((p: any) => p.user_type === 'pharmacist')
-                                      });
-                                      
-                                      if (profile?.name && profile.name.trim()) {
-                                        return profile.name.trim();
-                                      } else if (profile?.email) {
-                                        return profile.email;
-                                      } else {
-                                        // フォールバック: 全薬剤師プロフィールから検索
-                                        const allPharmacistProfiles = Object.values(userProfiles || {}).filter((p: any) => p.user_type === 'pharmacist');
-                                        const foundProfile = allPharmacistProfiles.find((p: any) => p.id === pharmacistId);
-                                        if (foundProfile?.name && foundProfile.name.trim()) {
-                                          return foundProfile.name.trim();
-                                        } else if (foundProfile?.email) {
-                                          return foundProfile.email;
-                                        }
-                                        return `薬剤師未設定 (ID: ${pharmacistId})`;
-                                      }
-                                    })()}</div>
-                                    <div>薬局: {(() => {
-                                      // 薬局名の取得を改善
-                                      const pharmacyId = shift.pharmacy_id;
-                                      const profile = userProfiles[pharmacyId];
-                                      
-                                      // デバッグ情報を追加
-                                      console.log('薬局名表示デバッグ:', {
-                                        pharmacyId,
-                                        profile,
-                                        userProfilesKeys: Object.keys(userProfiles || {}),
-                                        userProfilesCount: Object.keys(userProfiles || {}).length,
-                                        allPharmacyProfiles: Object.values(userProfiles || {}).filter((p: any) => p.user_type === 'pharmacy')
-                                      });
-                                      
-                                      if (profile?.name && profile.name.trim()) {
-                                        return profile.name.trim();
-                                      } else if (profile?.email) {
-                                        return profile.email;
-                                      } else {
-                                        // フォールバック: 全薬局プロフィールから検索
-                                        const allPharmacyProfiles = Object.values(userProfiles || {}).filter((p: any) => p.user_type === 'pharmacy');
-                                        const foundProfile = allPharmacyProfiles.find((p: any) => p.id === pharmacyId);
-                                        if (foundProfile?.name && foundProfile.name.trim()) {
-                                          return foundProfile.name.trim();
-                                        } else if (foundProfile?.email) {
-                                          return foundProfile.email;
-                                        }
-                                        return `薬局未設定 (ID: ${pharmacyId})`;
-                                      }
-                                    })()}</div>
+                                    <div>薬剤師: {pharmacistName}</div>
+                                    <div>薬局: {pharmacyName}</div>
                                     <div>店舗: {getStoreName(shift)}</div>
                                     
                                     {/* 評価情報表示 */}
