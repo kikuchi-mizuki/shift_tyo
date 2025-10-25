@@ -5117,6 +5117,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           userProfiles={userProfiles}
           aiMatchesByDate={aiMatchesByDate}
           monthlyMatchingExecuted={monthlyMatchingExecuted}
+          filterConfirmedRequestsAndPostings={filterConfirmedRequestsAndPostings}
         />
 
         {/* right panel */}
