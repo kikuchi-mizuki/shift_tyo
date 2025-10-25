@@ -3500,8 +3500,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
       }
       
       // 単一マッチを確定シフトに変換
-      const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
-      const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
+      // 店舗名を正しく取得（postingのstore_nameを使用）
+      const storeName = match.posting?.store_name || match.pharmacy?.store_name || userProfiles[match.pharmacy.id]?.name || '店舗名未設定';
+      
+      console.log('個別確定店舗名設定デバッグ:', {
+        matchId: match.pharmacist.id + '_' + match.pharmacy.id,
+        postingStoreName: match.posting?.store_name,
+        pharmacyStoreName: match.pharmacy?.store_name,
+        userProfileName: userProfiles[match.pharmacy.id]?.name,
+        finalStoreName: storeName
+      });
       
       // timeSlotの構造を確認して適切な時間を取得（薬局の募集時間を使用）
       const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00:00';
@@ -4030,9 +4038,16 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         if (safeLength(aiMatches) > 0) {
           // AIマッチング結果を確定シフトに変換
           const aiShifts = aiMatches.map(match => {
-            // 薬局名と店舗名を正しく取得
-            const pharmacyName = userProfiles[match.pharmacy.id]?.name || 'Unknown';
-            const storeName = match.pharmacy.name && match.pharmacy.name !== pharmacyName ? match.pharmacy.name : pharmacyName;
+            // 店舗名を正しく取得（postingのstore_nameを使用）
+            const storeName = match.posting?.store_name || match.pharmacy?.store_name || userProfiles[match.pharmacy.id]?.name || '店舗名未設定';
+            
+            console.log('店舗名設定デバッグ:', {
+              matchId: match.pharmacist.id + '_' + match.pharmacy.id,
+              postingStoreName: match.posting?.store_name,
+              pharmacyStoreName: match.pharmacy?.store_name,
+              userProfileName: userProfiles[match.pharmacy.id]?.name,
+              finalStoreName: storeName
+            });
             
             return {
               pharmacist_id: match.pharmacist.id,
