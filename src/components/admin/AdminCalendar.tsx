@@ -82,6 +82,17 @@ const AdminCalendar: React.FC<AdminCalendarProps> = ({
           const month = currentDate.getMonth() + 1;
           const dateStr = `${year}-${month.toString().padStart(2, '0')}-${d?.toString().padStart(2, '0')}`;
           
+          // デバッグ用：実際の曜日を計算
+          const actualDate = new Date(year, month - 1, d);
+          const actualDayOfWeek = actualDate.getDay();
+          const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+          const actualDayName = dayNames[actualDayOfWeek];
+          
+          // デバッグログ（最初の数日のみ）
+          if (d && d <= 5) {
+            console.log(`AdminCalendar Debug: ${d}日 = ${actualDayName} (${actualDayOfWeek})`);
+          }
+          
           // その日の確定シフトを取得（安全な配列チェック）
           const dayAssignedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s.date === dateStr && s.status === 'confirmed') : [];
           
@@ -147,7 +158,11 @@ const AdminCalendar: React.FC<AdminCalendarProps> = ({
             >
               {d && (
                 <>
-                  <div className="font-medium">{d}</div>
+                  <div className="font-medium">
+                    {d}
+                    {/* デバッグ用：曜日を表示 */}
+                    <span className="text-xs text-gray-500 ml-1">({actualDayName})</span>
+                  </div>
                   
                   {/* マッチング状況表示 */}
                   {matchingStatus.type === 'confirmed' && (

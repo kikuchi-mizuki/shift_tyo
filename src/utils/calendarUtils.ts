@@ -11,16 +11,25 @@ export const getMonthName = (date: Date): string => {
 };
 
 /**
- * 月の日数を取得
+ * 月の日数を取得（カレンダー表示用）
+ * 空のセル（月の最初の日より前の曜日分）も含む
  */
-export const getDaysInMonth = (date: Date): number[] => {
+export const getDaysInMonth = (date: Date): (number | null)[] => {
   const year = date.getFullYear();
   const month = date.getMonth();
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
+  const firstDayOfWeek = firstDay.getDay(); // 0=日曜日, 1=月曜日, ...
   
   const days = [];
+  
+  // 月の最初の日より前の空のセルを追加
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    days.push(null);
+  }
+  
+  // 月の日付を追加
   for (let i = 1; i <= daysInMonth; i++) {
     days.push(i);
   }
