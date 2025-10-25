@@ -5037,10 +5037,10 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1">
                                     <div className="font-medium text-gray-800">
-                                      {userProfiles[match.pharmacist.id]?.name || 'Unknown'} → {userProfiles[match.pharmacy.id]?.name || 'Unknown'}
+                                      {match.pharmacist?.name || userProfiles[match.pharmacist.id]?.name || '薬剤師名未設定'} → {match.pharmacy?.name || userProfiles[match.pharmacy.id]?.name || '薬局名未設定'}
                                     </div>
                                   <div className="text-gray-600">
-                                    店舗: {match.pharmacy.store_name || '店舗名なし'}
+                                    店舗: {match.posting?.store_name || match.pharmacy?.store_name || '店舗名未設定'}
                                   </div>
                                   <div className="text-gray-600">
                                     {(() => {
