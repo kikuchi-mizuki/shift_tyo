@@ -4961,6 +4961,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             {/* 募集管理 */}
             <AdminRecruitmentManagement />
 
+
           </div>
 
           {/* スクロール可能な詳細エリア */}
@@ -5180,7 +5181,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                         時間: {pharmacy.start_time || '09:00'}-{pharmacy.end_time || '18:00'}
                                       </div>
                                     </div>
-                                  </div>
+                                        </div>
                                 );
                               })}
                             </div>
