@@ -5285,15 +5285,24 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                   
                   console.log(`詳細表示用簡易不足計算 [${selectedDate}]: 必要=${totalRequired}, 確定=${totalConfirmed}, マッチ=${safeLength(dayMatches)}, 合計=${totalMatched}, 不足=${totalShortage}`);
                   
-                  // 不足がある場合のみ不足薬局を表示
-                  const dayShortageAnalysis = totalShortage > 0 ? [{
-                    id: 'shortage',
-                    name: '不足薬局',
-                    store_name: '',
-                    start_time: '09:00',
-                    end_time: '18:00',
-                    shortage: totalShortage
-                  }] : [];
+                  // 実際の不足薬局データを取得
+                  const dayShortageAnalysis = (() => {
+                    if (totalShortage <= 0) return [];
+                    
+                    // 実際の不足薬局データを分析
+                    const shortageData = analyzePharmacyShortageWithMatches(selectedDate, dayMatches);
+                    const shortagePharmacies = Object.values(shortageData || {})
+                      .filter((pharmacy: any) => pharmacy.shortage > 0);
+                    
+                    console.log('不足薬局分析結果:', {
+                      selectedDate,
+                      totalShortage,
+                      shortagePharmacies: shortagePharmacies.length,
+                      shortageData: shortagePharmacies
+                    });
+                    
+                    return shortagePharmacies;
+                  })();
                   
                   // 日付が選択されている場合に詳細を表示
                   if (selectedDate) {
@@ -5373,30 +5382,7 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                               <h4 className="text-sm font-semibold text-red-800">不足薬局 {safeLength(dayShortageAnalysis)}薬局</h4>
                             </div>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
-                              {dayShortageAnalysis.map((pharmacy, index) => {
-                                // データベースから薬剤師を取得（user_profilesから薬剤師タイプのみ）
-                                console.log('薬剤師選択時のuserProfiles確認:', {
-                                  userProfiles,
-                                  userProfilesType: typeof userProfiles,
-                                  userProfilesKeys: Object.keys(userProfiles || {}),
-                                  userProfilesLength: Object.keys(safeObject(userProfiles || {})).length
-                                });
-                                
-                                const availablePharmacists = Object.values(userProfiles || {}).filter((profile: any) => {
-                                  console.log('薬剤師プロフィール確認:', {
-                                    profile,
-                                    user_type: profile?.user_type,
-                                    id: profile?.id,
-                                    name: profile?.name
-                                  });
-                                  return profile?.user_type === 'pharmacist';
-                                });
-                                
-                                console.log('利用可能な薬剤師:', {
-                                  availablePharmacists,
-                                  count: safeLength(availablePharmacists)
-                                });
-                                
+                              {dayShortageAnalysis.map((pharmacy: any, index: number) => {
                                 return (
                                   <div key={index} className="bg-white rounded border p-3 text-sm">
                                     <div className="font-semibold text-gray-800 mb-2">
@@ -5413,76 +5399,11 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
                                         時間: {pharmacy.start_time || '09:00'}-{pharmacy.end_time || '18:00'}
                                       </div>
                                     </div>
-                                    
-                                    {/* 手動マッチング用のプルダウン */}
-                                    {pharmacy.shortage > 0 && (
-                                      <div className="mt-2">
-                                        <div className="text-xs text-gray-600 mb-1">
-                                          <span className="text-red-600">※ 選択した薬剤師の新しいシフト希望が作成されます</span>
-                                        </div>
-                                        <div className="space-y-1">
-                                          {Array.from({ length: pharmacy.shortage }, (_, index) => (
-                                            <div key={index} className="flex items-center space-x-2">
-                                              <span className="text-xs text-gray-500 w-8">
-                                                {index + 1}:
-                                              </span>
-                                              <select
-                                                id={`pharmacist-select-${pharmacy.id}-${index}`}
-                                                name={`pharmacist-select-${pharmacy.id}-${index}`}
-                                                value={manualMatches[pharmacy.id]?.[index] || ''}
-                                                onChange={(e) => {
-                                                  const newMatches = [...(manualMatches[pharmacy.id] || [])];
-                                                  newMatches[index] = e.target.value;
-                                                  setManualMatches(prev => ({
-                                                    ...prev,
-                                                    [pharmacy.id]: newMatches
-                                                  }));
-                                                }}
-                                                className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
-                                              >
-                                                <option value="">薬剤師を選択してください</option>
-                                                {availablePharmacists.map((pharmacist: any, pharmacistIndex: number) => {
-                                                  console.log('薬剤師選択オプション:', {
-                                                    pharmacist,
-                                                    id: pharmacist.id,
-                                                    name: pharmacist.name,
-                                                    idType: typeof pharmacist.id
-                                                  });
-                                                  
-                                                  return (
-                                                    <option 
-                                                      key={pharmacistIndex} 
-                                                      value={pharmacist.id}
-                                                      disabled={manualMatches[pharmacy.id]?.includes(pharmacist.id) && manualMatches[pharmacy.id]?.[index] !== pharmacist.id}
-                                                    >
-                                                      {pharmacist.name || `薬剤師${pharmacist.id ? pharmacist.id.slice(-4) : 'unknown'}`}
-                                                    </option>
-                                                  );
-                                                })}
-                                              </select>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
                                   </div>
                                 );
                               })}
                             </div>
                             
-                            {/* 手動マッチング確定ボタン */}
-        {Object.values(manualMatches).some(matches => matches.some(id => id && id !== '')) && (
-          <div className="mt-3 pt-2 border-t border-red-200">
-            <button
-              onClick={() => saveManualShiftRequests(selectedDate)}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-xs font-medium"
-            >
-              選択した薬剤師を希望シフトとして保存
-              <br />
-              <span className="text-xs opacity-90">（新しいシフト希望が作成されます）</span>
-            </button>
-          </div>
-        )}
                           </div>
                         )}
                         
