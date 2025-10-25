@@ -114,12 +114,8 @@ const AdminCalendar: React.FC<AdminCalendarProps> = ({
             const dayPendingShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s.date === dateStr && s.status === 'pending') : [];
             const unconfirmedMatches = safeLength(dayPendingShifts);
             
-            // AIマッチング結果も考慮（メモリ上のマッチング結果）
-            const aiMatchesForDate = aiMatchesByDate[dateStr] || [];
-            const aiMatchCount = safeLength(aiMatchesForDate);
-            
-            // 確定シフト、pendingマッチング結果、AIマッチング結果の合計
-            const totalMatched = confirmedCount + unconfirmedMatches + aiMatchCount;
+            // 確定シフトとpendingマッチング結果の合計
+            const totalMatched = confirmedCount + unconfirmedMatches;
             
             // 不足数の計算（詳細画面と同じロジック）
             let totalShortage = 0;
@@ -128,15 +124,14 @@ const AdminCalendar: React.FC<AdminCalendarProps> = ({
               totalShortage = Math.max(0, totalRequired - totalMatched);
             }
             
-            console.log(`カレンダー表示用マッチング結果 [${dateStr}]: 確定=${confirmedCount}, pending=${unconfirmedMatches}, AI=${aiMatchCount}, 合計=${totalMatched}, 不足=${totalShortage}`);
+            console.log(`カレンダー表示用マッチング結果 [${dateStr}]: 確定=${confirmedCount}, pending=${unconfirmedMatches}, 合計=${totalMatched}, 不足=${totalShortage}`);
 
             return {
               type: confirmedCount > 0 ? 'confirmed' : (totalMatched > 0 ? 'matched' : (totalShortage > 0 || safeLength(dayRequests) > 0 ? 'shortage' : 'empty')),
               confirmedCount: confirmedCount,
-              matchedCount: unconfirmedMatches + aiMatchCount, // pending + AIマッチング結果
+              matchedCount: unconfirmedMatches, // pendingマッチング結果のみ
               shortage: totalShortage,
-              unconfirmedMatches: unconfirmedMatches,
-              aiMatchCount: aiMatchCount
+              unconfirmedMatches: unconfirmedMatches
             };
           };
           
