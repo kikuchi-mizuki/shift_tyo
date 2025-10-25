@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, AlertCircle, Star, Brain, Zap, Bell, Lock } from 'lucide-react';
 import { shiftRequests, shiftPostings, shiftRequestsAdmin, supabase, pharmacistRatings } from '../lib/supabase';
 import { AIMatchingEngine, MatchCandidate } from '../features/ai-matching/aiMatchingEngine';
-import AIMatchingStats from '../features/ai-matching/AIMatchingStats';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
 import AdminCalendar from './admin/AdminCalendar';
@@ -5099,8 +5098,6 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
         </div>
       )}
 
-      {/* AIマッチング統計 - 非表示 */}
-      {false && <AIMatchingStats className="mb-6" />}
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         {/* left calendar - 管理画面専用カレンダーコンポーネントを使用 */}
