@@ -127,8 +127,9 @@ const AdminCalendar: React.FC<AdminCalendarProps> = ({
             console.log(`カレンダー表示用マッチング結果 [${dateStr}]: 確定=${confirmedCount}, マッチ=${unconfirmedMatches}, 合計=${totalMatched}, 不足=${totalShortage}`);
 
             return {
-              type: totalMatched > 0 ? 'matched' : (totalShortage > 0 || safeLength(dayRequests) > 0 ? 'pending' : 'empty'),
-              count: totalMatched,
+              type: confirmedCount > 0 ? 'confirmed' : (totalMatched > 0 ? 'matched' : (totalShortage > 0 || safeLength(dayRequests) > 0 ? 'shortage' : 'empty')),
+              confirmedCount: confirmedCount,
+              matchedCount: unconfirmedMatches,
               shortage: totalShortage,
               unconfirmedMatches: unconfirmedMatches
             };
@@ -185,15 +186,23 @@ const AdminCalendar: React.FC<AdminCalendarProps> = ({
                     </div>
                   )}
                   
-                  {/* マッチング状況表示（確定シフトがない場合） */}
-                  {matchingStatus.type !== 'confirmed' && matchingStatus.type !== 'empty' && (
+                  {/* マッチング状況表示 */}
+                  {matchingStatus.type !== 'empty' && (
                     <div className="relative group">
                       <div className="text-[7px] sm:text-[8px] space-y-0.5">
+                        {/* 確定件数 */}
+                        {matchingStatus.confirmedCount > 0 && (
+                          <div className="text-green-600 bg-green-50 border border-green-200 rounded px-1 inline-block">
+                            <span className="sm:hidden">確{matchingStatus.confirmedCount}</span>
+                            <span className="hidden sm:inline">確定 {matchingStatus.confirmedCount}</span>
+                          </div>
+                        )}
+                        
                         {/* マッチ件数（マッチング分析結果に基づく） */}
-                        {matchingStatus.count > 0 && (
+                        {matchingStatus.matchedCount > 0 && (
                           <div className="text-purple-600 bg-purple-50 border border-purple-200 rounded px-1 inline-block">
-                            <span className="sm:hidden">マ{matchingStatus.count}</span>
-                            <span className="hidden sm:inline">マッチ {matchingStatus.count}</span>
+                            <span className="sm:hidden">マ{matchingStatus.matchedCount}</span>
+                            <span className="hidden sm:inline">マッチ {matchingStatus.matchedCount}</span>
                           </div>
                         )}
                         
