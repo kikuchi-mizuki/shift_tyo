@@ -3956,10 +3956,13 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
           // フルAIマッチングエンジンを使用
           console.log('AIマッチングエンジンを使用します');
           
-          // 確定済み店舗を除外
+          // 確定済み店舗と薬剤師を除外
           const confirmedShifts = Array.isArray(assigned) ? assigned.filter((s: any) => s?.status === 'confirmed') : [];
           const confirmedStores = new Set(
             confirmedShifts.map((s: any) => `${s.pharmacy_id}_${s.store_name || 'default'}`)
+          );
+          const confirmedPharmacists = new Set(
+            confirmedShifts.map((s: any) => s.pharmacist_id)
           );
           
           // 確定済み店舗を除外した募集のみを使用
@@ -3968,22 +3971,30 @@ pharmacyInfo?.end_time: ${pharmacyInfo?.end_time}`;
             return !confirmedStores.has(storeKey);
           });
           
+          // 確定済み薬剤師を除外した希望のみを使用
+          const availableRequests = dayRequests.filter((r: any) => {
+            return !confirmedPharmacists.has(r.pharmacist_id);
+          });
+          
           console.log('AIマッチング対象:', {
             全募集数: safeLength(dayPostings),
             利用可能募集数: safeLength(availablePostings),
-            除外数: safeLength(dayPostings) - safeLength(availablePostings)
+            除外数: safeLength(dayPostings) - safeLength(availablePostings),
+            全希望数: safeLength(dayRequests),
+            利用可能希望数: safeLength(availableRequests),
+            除外希望数: safeLength(dayRequests) - safeLength(availableRequests)
           });
           
           console.log('AIマッチングエンジン詳細:', {
             engine: aiMatchingEngine,
-            requests: safeLength(dayRequests),
+            requests: safeLength(availableRequests),
             postings: safeLength(availablePostings),
             userProfiles: userProfiles ? Object.keys(safeObject(userProfiles)).length : 0,
             ratings: ratings ? safeLength(ratings) : 0
           });
           
           try {
-            aiMatches = await aiMatchingEngine.executeOptimalMatching(dayRequests, availablePostings, {
+            aiMatches = await aiMatchingEngine.executeOptimalMatching(availableRequests, availablePostings, {
               useAPI: true,
               algorithm: 'ai_based',
               priority: 'pharmacy_satisfaction'
