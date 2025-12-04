@@ -125,6 +125,19 @@ npm run preview
 
 ## 🧪 開発用ツール
 
+### テスト
+
+```bash
+# すべてのテストを実行
+npm run test
+
+# テストUIを起動
+npm run test:ui
+
+# テストを1回実行（CI用）
+npm run test:run
+```
+
 ### Lint
 
 ```bash
@@ -158,14 +171,26 @@ npm run lint
 shift_tyo-main/
 ├── src/
 │   ├── components/       # Reactコンポーネント
+│   │   ├── admin/        # 管理者専用コンポーネント
+│   │   │   ├── calendar/ # カレンダー関連（4コンポーネント）
+│   │   │   ├── detail/   # 詳細パネル（7コンポーネント）
+│   │   │   ├── panel/    # サイドパネル（3コンポーネント）
+│   │   │   └── users/    # ユーザー管理（5コンポーネント）
+│   │   └── ...           # その他のコンポーネント
 │   ├── contexts/         # Reactコンテキスト
 │   ├── features/         # 機能別モジュール
 │   │   ├── ai-matching/  # AIマッチングエンジン
 │   │   └── shifts/       # シフト関連API
 │   ├── hooks/            # カスタムフック
+│   │   └── admin/        # 管理者専用フック（5フック）
 │   ├── lib/              # 共通ライブラリ
+│   ├── services/         # ビジネスロジック層
+│   │   └── admin/        # 管理者専用サービス（5サービス）
+│   ├── test/             # テストセットアップ
 │   ├── types/            # TypeScript型定義
+│   │   └── admin/        # 管理者専用型定義
 │   └── utils/            # ユーティリティ関数
+│       └── admin/        # 管理者専用ユーティリティ（5ファイル）
 ├── supabase/
 │   ├── functions/        # Edge Functions
 │   └── migrations/       # データベースマイグレーション
@@ -174,16 +199,42 @@ shift_tyo-main/
 └── dist/                 # ビルド出力（gitignore）
 ```
 
-## 🎯 今後の改善案
+### アーキテクチャ
 
-- [ ] AdminDashboard.tsxのリファクタリング（コンポーネント分割）
-- [ ] TypeScriptの型安全性向上（`any`型の削減）
+**5レイヤーのクリーンアーキテクチャ**:
+1. **Presentation Layer** (19 UI Components) - ユーザーインターフェース
+2. **Application Layer** (5 Custom Hooks) - 状態管理とアプリケーションロジック
+3. **Business Layer** (5 Services) - ビジネスロジック
+4. **Utility Layer** (5 Helper Functions) - 汎用ヘルパー関数
+5. **Type Layer** (型定義) - TypeScript型定義
+
+## 🎯 リファクタリング完了状況
+
+- [x] **AdminDashboard.tsxのリファクタリング** - 7,276行 → 379行（94.8%削減）
+- [x] **パフォーマンスの最適化** - React.memo適用（3コンポーネント）
+- [x] **ユニットテストの追加** - Vitest + 31テスト
+- [ ] TypeScriptの型安全性向上（`any`型の完全な削減）
 - [ ] console.logの削除または適切なロガーへの置き換え
-- [ ] パフォーマンスの最適化
-- [ ] ユニットテストの追加
-- [ ] E2Eテストの追加
+- [ ] E2Eテストの追加（Playwright）
+- [ ] Storybookの導入
+
+### 最近の更新（Phase 1-7完了）
+
+**Phase 5完了**: AdminDashboard本体のリファクタリング
+- 7,276行 → 379行（94.8%削減）
+- 5レイヤーのクリーンアーキテクチャを実現
+- 34ファイルに適切にモジュール化
+
+**Phase 6完了**: パフォーマンス改善
+- React.memo適用（DateCell, PharmacistCard, PharmacyCard）
+- 型使用状況調査（34ファイル）
+
+**Phase 7完了**: テストとドキュメント
+- Vitestセットアップ
+- 31個のユニットテスト（2ファイル）
+- README更新
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: 2025-10-12
+**Version**: 2.0.0
+**Last Updated**: 2025-12-05
