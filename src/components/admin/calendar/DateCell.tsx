@@ -17,7 +17,7 @@ interface DateCellProps {
   onSelect: (date: number) => void;
 }
 
-export const DateCell: React.FC<DateCellProps> = ({
+export const DateCell: React.FC<DateCellProps> = React.memo(({
   date,
   dateStr,
   isSelected,
@@ -88,4 +88,4 @@ export const DateCell: React.FC<DateCellProps> = ({
       )}
     </div>
   );
-};
+});

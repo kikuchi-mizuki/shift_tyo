@@ -17,7 +17,7 @@ interface PharmacyCardProps {
   onDelete: () => void;
 }
 
-export const PharmacyCard: React.FC<PharmacyCardProps> = ({
+export const PharmacyCard: React.FC<PharmacyCardProps> = React.memo(({
   pharmacy,
   isEditing,
   editForm,
@@ -94,4 +94,4 @@ export const PharmacyCard: React.FC<PharmacyCardProps> = ({
       </div>
     </div>
   );
-};
+});
