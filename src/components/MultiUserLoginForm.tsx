@@ -49,19 +49,21 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
 
   // デモアカウント（一般ユーザーのみ）
   const demoAccounts = [
-    { 
-      email: 'tanaka@pharmacist.com', 
-      password: 'demo123', 
-      name: '田中花子（薬剤師）', 
+    {
+      email: 'tanaka@pharmacist.com',
+      password: 'demo123',
+      name: '田中花子（薬剤師）',
       type: 'pharmacist' as const,
+      id: '0df8ba4e-1ecc-464f-9a7b-55a8d03cf2c8', // 固定UUID（データベース内の実際の薬剤師ID）
       icon: Pill,
       color: 'text-green-600 bg-green-50 border-green-200'
     },
-    { 
-      email: 'sakura@pharmacy.com', 
-      password: 'demo123', 
-      name: 'さくら薬局', 
+    {
+      email: 'sakura@pharmacy.com',
+      password: 'demo123',
+      name: 'さくら薬局',
       type: 'pharmacy' as const,
+      id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', // 固定UUID（デモ用薬局ID）
       icon: Building,
       color: 'text-blue-600 bg-blue-50 border-blue-200'
     }
@@ -126,12 +128,12 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
         console.log('Attempting login with:', { email, userType });
         
         // デモアカウントは本番/開発を問わず常に許可（開発利便性のため）
-        const demoAccount = demoAccounts.find(acc => 
+        const demoAccount = demoAccounts.find(acc =>
           acc.email === email && acc.password === password && acc.type === userType
         );
         if (demoAccount) {
           const mockUser = {
-            id: `demo-${demoAccount.type}-${Date.now()}`,
+            id: demoAccount.id, // 固定UUIDを使用
             email: demoAccount.email
           };
           await addSession(mockUser, demoAccount.type);
