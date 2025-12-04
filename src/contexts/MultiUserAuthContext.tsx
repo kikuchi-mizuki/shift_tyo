@@ -37,37 +37,80 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
   const [activeSessions, setActiveSessions] = useState<UserSession[]>([]);
   const [currentUserType, setCurrentUserType] = useState<'pharmacist' | 'pharmacy' | 'admin' | null>(null);
 
+  // セッションデータのバージョン（古いデータを自動クリアするため）
+  const SESSION_VERSION = '2.0'; // デモアカウント修正後のバージョン
+
+  // UUIDの妥当性チェック
+  const isValidUUID = (id: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  };
+
   // ローカルストレージからセッション情報を復元
   useEffect(() => {
     try {
       console.log('MultiUserAuth: Loading sessions from localStorage');
       const savedSessions = localStorage.getItem('multi_user_sessions');
       const savedCurrentType = localStorage.getItem('current_user_type');
-      
-      console.log('MultiUserAuth: Saved data:', { 
+      const savedVersion = localStorage.getItem('session_version');
+
+      console.log('MultiUserAuth: Saved data:', {
         savedSessions: savedSessions ? 'EXISTS' : 'NULL',
-        savedCurrentType: savedCurrentType || 'NULL'
+        savedCurrentType: savedCurrentType || 'NULL',
+        savedVersion: savedVersion || 'NULL'
       });
-      
+
+      // バージョンが古い場合は全てクリア
+      if (savedVersion !== SESSION_VERSION) {
+        console.warn('MultiUserAuth: Session version mismatch, clearing all sessions');
+        console.log(`Old version: ${savedVersion}, New version: ${SESSION_VERSION}`);
+        localStorage.removeItem('multi_user_sessions');
+        localStorage.removeItem('current_user_type');
+        localStorage.setItem('session_version', SESSION_VERSION);
+        return;
+      }
+
       if (savedSessions) {
         try {
-          const sessions = JSON.parse(savedSessions).map((session: any) => ({
+          const parsedSessions = JSON.parse(savedSessions);
+
+          // 無効なUUIDを持つセッションを除外
+          const validSessions = parsedSessions.filter((session: any) => {
+            const isValid = isValidUUID(session.id);
+            if (!isValid) {
+              console.warn(`MultiUserAuth: Invalid UUID detected, skipping session: ${session.id}`);
+            }
+            return isValid;
+          }).map((session: any) => ({
             ...session,
             lastActive: new Date(session.lastActive)
           }));
-          setActiveSessions(sessions);
-          console.log('MultiUserAuth: Loaded sessions:', sessions.length);
+
+          if (validSessions.length !== parsedSessions.length) {
+            console.log(`MultiUserAuth: Filtered ${parsedSessions.length - validSessions.length} invalid sessions`);
+          }
+
+          setActiveSessions(validSessions);
+          console.log('MultiUserAuth: Loaded sessions:', validSessions.length);
         } catch (error) {
           console.error('Error parsing saved sessions:', error);
+          // パースエラーの場合はクリア
+          localStorage.removeItem('multi_user_sessions');
+          localStorage.removeItem('current_user_type');
         }
       }
-      
+
       if (savedCurrentType) {
         setCurrentUserType(savedCurrentType as 'pharmacist' | 'pharmacy' | 'admin');
         console.log('MultiUserAuth: Set current user type:', savedCurrentType);
       }
+
+      // バージョンを保存
+      localStorage.setItem('session_version', SESSION_VERSION);
     } catch (error) {
       console.error('MultiUserAuth: Error accessing localStorage:', error);
+      // エラーの場合は安全のためクリア
+      localStorage.clear();
     }
   }, []);
 
