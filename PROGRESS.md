@@ -180,6 +180,8 @@ SUPABASE_SERVICE_ROLE_KEY=your_key node scripts/reset-test-passwords.js
 
 **作成したファイル（5ファイル、2,058行）**:
 
+#### ✅ 完了済み
+
 **services/admin/**
 1. `MatchingService.ts` (~1,000行) - AIマッチングアルゴリズム
    - executeSimpleAIMatching - 簡易AIマッチング実行
@@ -214,6 +216,44 @@ SUPABASE_SERVICE_ROLE_KEY=your_key node scripts/reset-test-passwords.js
 - 抽出行数: 約2,058行
 - AdminDashboard.tsx現状: 7,276行
 - 目標: 200行以下（まだ統合作業が必要）
+
+### Phase 3実施: カスタムフックの抽出
+
+**作成したファイル（5ファイル、1,150行）**:
+
+**hooks/admin/**
+1. `useAdminData.ts` (~500行) - データ取得・キャッシュ管理
+   - reload - 全データ再読み込み
+   - loadRecruitmentStatus - 募集ステータス読み込み
+   - loadAssignedShifts - 確定シフト読み込み
+   - toggleRecruitmentStatus - 募集締切/再開切り替え
+
+2. `useAIMatching.ts` (~200行) - AIマッチング状態管理
+   - executeMatching - 指定日のAIマッチング実行
+   - executeMonthlyMatching - 1ヶ月分のAIマッチング実行
+   - AIマッチング結果の状態管理
+
+3. `useManualMatching.ts` (~150行) - 手動マッチング管理
+   - handlePharmacistSelection - 薬剤師選択
+   - saveManualShiftRequests - 手動マッチング保存
+   - clearManualMatches - 選択クリア
+
+4. `useCalendarState.ts` (~100行) - カレンダー状態管理
+   - handlePrevMonth / handleNextMonth - 月移動
+   - handleDateSelect - 日付選択
+   - currentDate / selectedDate 管理
+
+5. `useFormState.ts` (~200行) - フォーム状態管理
+   - ユーザー編集フォーム状態
+   - 募集追加フォーム状態
+   - 希望追加フォーム状態
+   - セクション展開状態
+
+**削減効果**:
+- 抽出行数: 約1,150行
+- 累計抽出: Phase 1 (602行) + Phase 2 (2,058行) + Phase 3 (1,150行) = **3,810行**
+- AdminDashboard.tsx現状: 7,276行
+- 目標: 200行以下（統合作業が必要）
 
 ---
 
