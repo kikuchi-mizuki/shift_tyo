@@ -1,25 +1,25 @@
 # 薬局シフト管理システム - 開発進捗記録
 
-**最終更新**: 2025-12-05
+**最終更新**: 2025-12-05 (Day 2 完了)
 **プロジェクト**: pharmacy-shift-system
 
 ---
 
 ## 📊 全体進捗
 
-### 完了済み（Day 1）
+### 完了済み（Day 1-2）
 - ✅ 要件定義書の作成（REQUIREMENTS.md）
 - ✅ リファクタリング計画書の作成（REFACTORING_PLAN.md）
 - ✅ Phase 1: ユーティリティと型定義の抽出
+- ✅ Phase 2: サービス層の抽出（~2,058行）
 - ✅ ログイン問題の修正（緊急）
 - ✅ localStorage自動クリア機能
 - ✅ Supabase APIキー更新
 
 ### 進行中
-- 🔄 Phase 2-5の実施（Day 2以降）
+- 🔄 Phase 3-5の実施（Day 3以降）
 
 ### 未着手
-- ⬜ Phase 2: サービス層の抽出
 - ⬜ Phase 3: カスタムフックの抽出
 - ⬜ Phase 4: UIコンポーネント分割
 - ⬜ Phase 5: AdminDashboard本体のリファクタリング
@@ -174,11 +174,54 @@ SUPABASE_SERVICE_ROLE_KEY=your_key node scripts/reset-test-passwords.js
 
 ---
 
-## 🚀 次のステップ（Day 2以降）
+## 🎯 Day 2 完了内容（2025-12-05）
 
-### Day 2-3予定: サービス層とカスタムフック
+### Phase 2実施: サービス層の抽出
 
-#### Phase 2: サービス層の抽出（見積: 20時間）
+**作成したファイル（5ファイル、2,058行）**:
+
+**services/admin/**
+1. `MatchingService.ts` (~1,000行) - AIマッチングアルゴリズム
+   - executeSimpleAIMatching - 簡易AIマッチング実行
+   - executeAIMatching - 完全AIマッチング実行（DB保存含む）
+   - performMatchingAnalysis - マッチング分析
+   - isRangeCompatible - 時間範囲互換性チェック
+   - filterConfirmedRequestsAndPostings - 確定済みフィルタリング
+   - loadAssignedShifts - 確定シフト再読み込み
+
+2. `AnalysisService.ts` (~500行) - 不足分析ロジック
+   - analyzeMonthlyShortage - 月次不足分析
+   - analyzePharmacyShortageWithMatches - マッチング考慮不足分析
+   - analyzePharmacyShortage - 薬局不足分析
+   - getPharmacyDetails - 薬局詳細取得
+
+3. `UserService.ts` (~400行) - ユーザー管理
+   - prepareUserEdit - ユーザー編集準備
+   - saveUserEdit - ユーザー情報更新
+   - deleteUserProfile - ユーザー削除
+
+4. `ShiftService.ts` (~300行) - シフト確定・取り消し
+   - confirmSingleMatch - 単一マッチ確定
+   - confirmShiftsForDate - 日付単位一括確定
+   - cancelConfirmedShift - 確定取り消し
+
+5. `PostingRequestService.ts` (~200行) - 募集・希望CRUD
+   - addPosting / deletePosting - 募集追加・削除
+   - addRequest / deleteRequest - 希望追加・削除
+   - updatePosting / updateRequest - 更新操作
+
+**削減効果**:
+- 抽出行数: 約2,058行
+- AdminDashboard.tsx現状: 7,276行
+- 目標: 200行以下（まだ統合作業が必要）
+
+---
+
+## 🚀 次のステップ（Day 3以降）
+
+### Day 3-4予定: カスタムフックとUIコンポーネント
+
+#### Phase 3: カスタムフックの抽出（見積: 18時間）
 
 **作成予定ファイル**:
 1. `services/admin/MatchingService.ts` (~900行)
