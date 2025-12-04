@@ -307,7 +307,7 @@ function AppContent() {
                 if (effectiveUserType === 'admin') {
                   return (
                     <AppErrorBoundary>
-                      <AdminDashboardRefactored user={currentSession} />
+                      <AdminDashboard user={currentSession} />
                     </AppErrorBoundary>
                   );
                 }
