@@ -50,7 +50,6 @@ import { MultiUserAuthProvider, useMultiUserAuth } from './contexts/MultiUserAut
 import { MultiUserLoginForm } from './components/MultiUserLoginForm';
 import { AdminLoginForm } from './components/AdminLoginForm';
 import { UserTypeSwitcher } from './components/UserTypeSwitcher';
-import AdminDashboardRefactored from './components/AdminDashboardRefactored';
 
 // エラーバウンダリーコンポーネント
 class AppErrorBoundary extends Component<
@@ -66,7 +65,7 @@ class AppErrorBoundary extends Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo);
     
     // エラーを自動的に報告

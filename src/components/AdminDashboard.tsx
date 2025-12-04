@@ -18,7 +18,7 @@ import { useCalendarState } from '../hooks/admin/useCalendarState';
 import { useFormState } from '../hooks/admin/useFormState';
 
 // Services
-import { confirmSingleMatch, confirmShiftsForDate, cancelConfirmedShift } from '../services/admin/ShiftService';
+import { confirmSingleMatch, cancelConfirmedShift } from '../services/admin/ShiftService';
 import { addPosting, deletePosting, addRequest, deleteRequest } from '../services/admin/PostingRequestService';
 import { prepareUserEdit, saveUserEdit, deleteUserProfile } from '../services/admin/UserService';
 import { analyzePharmacyShortage } from '../services/admin/AnalysisService';
@@ -30,11 +30,12 @@ import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
 import DebugModal from './DebugModal';
 
-// Utils
-import { safeLength, safeObject } from '../utils/admin/arrayHelpers';
-
 interface AdminDashboardProps {
-  user: any;
+  user: {
+    id: string;
+    email?: string;
+    [key: string]: unknown;
+  };
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
@@ -42,7 +43,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const {
     currentDate,
     selectedDate,
-    setCurrentDate,
     setSelectedDate,
     handlePrevMonth,
     handleNextMonth,
@@ -60,25 +60,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     storeNgPharmacies,
     recruitmentStatus,
     loading,
-    error,
     reload,
-    loadRecruitmentStatus,
     loadAssignedShifts,
     toggleRecruitmentStatus
   } = useAdminData(supabase, user, currentDate);
 
   // カスタムフック: AIマッチング
   const {
-    aiMatches,
     aiMatchesByDate,
-    aiMatchingEngine,
     aiMatchingLoading,
-    useAIMatching,
-    monthlyMatchingExecuted,
-    setAiMatches,
-    setAiMatchesByDate,
-    setUseAIMatching,
-    setMonthlyMatchingExecuted,
     executeMatching,
     executeMonthlyMatching
   } = useAIMatching(supabase, requests, postings, assigned, userProfiles, ratings);
@@ -87,8 +77,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const {
     manualMatches,
     handlePharmacistSelection,
-    saveManualShiftRequests,
-    clearManualMatches
+    saveManualShiftRequests
   } = useManualMatching(supabase);
 
   // カスタムフック: フォーム状態管理
@@ -105,10 +94,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     newRequest,
     setShowAddRequest,
     setNewRequest,
-    systemStatus,
-    lastUpdated,
-    setSystemStatus,
-    setLastUpdated,
     expandedSections,
     toggleSection
   } = useFormState();
@@ -117,7 +102,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [showDebugModal, setShowDebugModal] = useState(false);
-  const [debugData, setDebugData] = useState<any>(null);
+  const [debugData, setDebugData] = useState<Record<string, unknown> | null>(null);
 
   // ユーザー管理ハンドラー
   const handleEditUser = (profile: any) => {

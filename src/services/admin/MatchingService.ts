@@ -182,7 +182,7 @@ export const executeSimpleAIMatching = async (
     return priorityOrder[b.priority] - priorityOrder[a.priority];
   });
 
-  let remainingRequired = availablePostings.reduce(
+  const remainingRequired = availablePostings.reduce(
     (sum: number, p: any) => sum + (Number(p.required_staff) || 0),
     0
   );
@@ -718,7 +718,7 @@ export const executeAIMatching = async (
       ratings,
       requests
     );
-    let matches = matchingResult.matches;
+    const matches = matchingResult.matches;
 
     // マッチング結果をassigned_shiftsテーブルに保存
     if (safeLength(matches) > 0 && supabase) {

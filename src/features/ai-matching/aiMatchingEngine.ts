@@ -389,7 +389,7 @@ export class AIMatchingEngine {
    */
   private getPharmacyNameSource(posting: any, userProfiles?: any): string {
     const pharmacyId = posting.pharmacy_id;
-    let sources = [];
+    const sources = [];
     
     // 薬局名の取得元をチェック
     if (userProfiles && userProfiles[pharmacyId]?.name) {

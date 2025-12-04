@@ -863,7 +863,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.log('Fetch error:', fetchError);
       
       // store_namesを直接保存（カラム存在チェックを削除）
-      let updateData: any = { 
+      const updateData: any = { 
         name: profileName, 
         ng_list: ngList,
         store_names: storeNames,

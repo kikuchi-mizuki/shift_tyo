@@ -100,7 +100,7 @@ export class PharmacyShiftScheduler {
     });
 
     // 各日付の処理
-    postingsByDate.forEach((datePostings, date) => {
+    postingsByDate.forEach((datePostings, _date) => {
       const timeSlotPostings = new Map<string, ShiftPosting[]>();
       
       // 時間帯別にグループ化
@@ -112,7 +112,7 @@ export class PharmacyShiftScheduler {
       });
 
       // 各時間帯のマッチング処理
-      timeSlotPostings.forEach((slotPostings, timeSlot) => {
+      timeSlotPostings.forEach((slotPostings, _timeSlot) => {
         slotPostings.forEach(posting => {
           // この募集にマッチする希望を検索
           const matchingRequests = this.requests.filter(request => 
@@ -143,7 +143,7 @@ export class PharmacyShiftScheduler {
           // 必要人数分をアサイン
           const assignCount = Math.min(candidates.length, posting.requiredPeople);
           for (let i = 0; i < assignCount; i++) {
-            const { request, user } = candidates[i];
+            const { user } = candidates[i];
             const pharmacy = this.pharmacies.find(p => p.id === posting.pharmacyId)!;
           
             const duration = this.calculateDuration(posting.timeSlot);

@@ -305,7 +305,7 @@ export const userProfiles = {
 };
 
 // テーブル存在チェック用のキャッシュ
-let tableExistsCache: {[tableName: string]: boolean} = {};
+const tableExistsCache: {[tableName: string]: boolean} = {};
 
 // テーブル存在チェック関数
 const checkTableExists = async (tableName: string): Promise<boolean> => {
