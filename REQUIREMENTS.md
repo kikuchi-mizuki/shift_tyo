@@ -108,9 +108,8 @@
 #### 4.2.1 シフト希望提出
 - **FR-PHARM-001**: シフト希望の新規作成
   - 日付選択
-  - 時間帯選択（午前/午後/終日/応相談）
+  - 時間帯選択（午前/午後/終日）
   - カスタム時間設定（開始時刻・終了時刻）
-  - 優先度設定（高/中/低）
   - メモ追加
 - **FR-PHARM-002**: シフト希望の一覧表示
 - **FR-PHARM-003**: シフト希望の編集・削除
@@ -142,7 +141,7 @@
 #### 4.3.1 シフト募集投稿
 - **FR-STORE-001**: シフト募集の新規作成
   - 日付選択
-  - 時間帯選択（午前/午後/終日/応相談）
+  - 時間帯選択（午前/午後/終日）
   - カスタム時間設定（開始時刻・終了時刻）
   - 必要人数の設定
   - 店舗名の指定
@@ -288,10 +287,9 @@
 | id | uuid | シフトリクエストID（PK） |
 | pharmacist_id | uuid | 薬剤師ID（FK to user_profiles） |
 | date | date | 希望日 |
-| time_slot | text | 時間帯（morning/afternoon/fullday/negotiable） |
+| time_slot | text | 時間帯（morning/afternoon/fullday） |
 | start_time | time | 開始時刻 |
 | end_time | time | 終了時刻 |
-| priority | text | 優先度（high/medium/low） |
 | memo | text | メモ |
 | status | text | ステータス（pending/approved/rejected） |
 | created_at | timestamp | 作成日時 |
@@ -304,7 +302,7 @@
 | id | uuid | シフト募集ID（PK） |
 | pharmacy_id | uuid | 薬局ID（FK to user_profiles） |
 | date | date | 募集日 |
-| time_slot | text | 時間帯（morning/afternoon/fullday/negotiable） |
+| time_slot | text | 時間帯（morning/afternoon/fullday） |
 | start_time | time | 開始時刻 |
 | end_time | time | 終了時刻 |
 | required_staff | integer | 必要人数 |
@@ -441,7 +439,6 @@ LINE通知ログ
 | SC-102 | シフト希望提出フォーム | 新規シフト希望作成 | PharmacistShiftRequestForm.tsx |
 | SC-103 | 確定シフト一覧 | 自身の確定シフト表示 | （ダッシュボード内） |
 | SC-104 | カレンダービュー | シフトカレンダー表示 | UnifiedCalendar.tsx |
-| SC-105 | NG設定画面 | NG薬局の設定 | NGSettingsModal.tsx |
 | SC-106 | 設定画面 | プロフィール・LINE連携 | SettingsPage.tsx |
 
 ### 6.3 薬局画面
@@ -452,8 +449,7 @@ LINE通知ログ
 | SC-202 | シフト募集投稿フォーム | 新規シフト募集作成 | PharmacyShiftPostingForm.tsx |
 | SC-203 | 確定シフト一覧 | 配属された薬剤師表示 | （ダッシュボード内） |
 | SC-204 | カレンダービュー | シフトカレンダー表示 | UnifiedCalendar.tsx |
-| SC-205 | NG設定画面 | NG薬剤師の設定 | NGSettingsModal.tsx |
-| SC-206 | 評価画面 | 薬剤師評価の入力 | （ダッシュボード内） |
+| SC-206 | 薬剤師評価画面 | 薬剤師評価の入力 | （ダッシュボード内） |
 | SC-207 | 設定画面 | プロフィール・LINE連携 | SettingsPage.tsx |
 
 ### 6.4 管理者画面
@@ -462,7 +458,7 @@ LINE通知ログ
 |--------|--------|------|-----------|
 | SC-301 | 管理者ダッシュボード | メイン画面 | AdminDashboard.tsx |
 | SC-302 | 募集管理画面 | 募集ステータス管理 | AdminRecruitmentManagement.tsx |
-| SC-303 | ユーザー管理画面 | ユーザー一覧・編集 | AdminUserManagement.tsx |
+| SC-303 | ユーザー管理画面（NG設定含む） | ユーザー一覧・編集・NG設定 | AdminUserManagement.tsx |
 | SC-304 | マッチング実行画面 | AIマッチング実行 | （ダッシュボード内） |
 | SC-305 | マッチング結果画面 | マッチング結果表示 | （ダッシュボード内） |
 | SC-306 | カレンダー管理画面 | 統合カレンダー | AdminCalendar.tsx |

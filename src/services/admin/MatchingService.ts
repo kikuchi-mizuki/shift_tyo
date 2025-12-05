@@ -36,17 +36,15 @@ export const isRangeCompatible = (request: any, posting: any): boolean => {
   const postingStart = timeToMinutes(ps);
   const postingEnd = timeToMinutes(pe);
 
-  console.log('時間適合性チェック:', {
+  // 薬剤師の希望時間が薬局の募集時間を完全にカバーしているかチェック
+  const isFullyCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
+
+  console.log('時間適合性チェック（完全カバー）:', {
     request: { start: rs, end: re, startMin: requestStart, endMin: requestEnd },
     posting: { start: ps, end: pe, startMin: postingStart, endMin: postingEnd },
     condition: `${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd}`,
-    result: requestStart <= postingStart && requestEnd >= postingEnd
+    result: isFullyCompatible
   });
-
-  // 部分適合を許可
-  const isFullyCompatible = (requestStart >= postingStart && requestStart < postingEnd) ||
-                           (requestEnd > postingStart && requestEnd <= postingEnd) ||
-                           (requestStart <= postingStart && requestEnd >= postingEnd);
 
   return isFullyCompatible;
 };
@@ -232,14 +230,14 @@ export const executeSimpleAIMatching = async (
 
         const storeName = getStoreNameFromPosting(pharmacyNeed);
 
-        // スコア計算
+        // スコア計算（段階的優先順位用）
         const distanceScore = calculateDistanceScore(pharmacist, pharmacy);
         const requestCountScore = calculateRequestCountScore(request.pharmacist_id, requests);
         const pharmacistRating = getPharmacistRating(request.pharmacist_id, ratings);
         const ratingScore = pharmacistRating / 5;
 
-        // 総合スコア
-        const totalScore = (distanceScore * 0.6) + (requestCountScore * 0.3) + (ratingScore * 0.1);
+        // totalScoreは表示用に保持（実際のソートは段階的優先順位で行う）
+        const totalScore = (distanceScore * 0.4) + (requestCountScore * 0.3) + (ratingScore * 0.3);
 
         allPossibleMatches.push({
           request,
@@ -265,8 +263,21 @@ export const executeSimpleAIMatching = async (
     }
   }
 
-  // スコア順でソート
-  allPossibleMatches.sort((a, b) => b.totalScore - a.totalScore);
+  // 段階的優先順位でソート: 距離 → シフト希望回数 → 評価
+  allPossibleMatches.sort((a, b) => {
+    // 1. 距離で比較（距離が近い方が優先 = distanceScoreが高い方が優先）
+    if (Math.abs(a.distanceScore - b.distanceScore) > 0.01) {
+      return b.distanceScore - a.distanceScore;
+    }
+
+    // 2. 距離が同じ場合、シフト希望回数で比較（回数が少ない方が優先 = requestCountScoreが低い方が優先）
+    if (Math.abs(a.requestCountScore - b.requestCountScore) > 0.01) {
+      return a.requestCountScore - b.requestCountScore;
+    }
+
+    // 3. 回数も同じ場合、評価で比較（評価が高い方が優先）
+    return b.ratingScore - a.ratingScore;
+  });
 
   console.log(`可能なマッチング組み合わせ: ${safeLength(allPossibleMatches)}件`);
 
@@ -274,7 +285,16 @@ export const executeSimpleAIMatching = async (
   const findOptimalSolution = (possibleMatches: any[]): MatchCandidate[] => {
     console.log('=== 貪欲法アルゴリズム開始 ===');
 
-    const sortedMatches = [...possibleMatches].sort((a, b) => b.totalScore - a.totalScore);
+    // 段階的優先順位でソート（既に親関数でソート済みだが念のため）
+    const sortedMatches = [...possibleMatches].sort((a, b) => {
+      if (Math.abs(a.distanceScore - b.distanceScore) > 0.01) {
+        return b.distanceScore - a.distanceScore;
+      }
+      if (Math.abs(a.requestCountScore - b.requestCountScore) > 0.01) {
+        return a.requestCountScore - b.requestCountScore;
+      }
+      return b.ratingScore - a.ratingScore;
+    });
 
     const selectedMatches: MatchCandidate[] = [];
     const usedPharmacists = new Set<string>();
