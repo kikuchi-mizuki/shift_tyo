@@ -65,8 +65,7 @@ export class AIMatchingEngine {
   private async initialize() {
     try {
       if (supabase) {
-      this.isInitialized = true;
-        console.log('AI Matching Engine initialized');
+        this.isInitialized = true;
       }
     } catch (error) {
       console.error('AI Matching Engine initialization failed:', error);
@@ -85,10 +84,6 @@ export class AIMatchingEngine {
     storeNgPharmacists?: any,
     confirmedMatches?: Set<string>
   ): Promise<MatchCandidate[]> {
-    console.log('=== generateMatchCandidates START ===');
-    console.log('requests:', requests);
-    console.log('postings:', postings);
-    
     // デバッグ情報を収集
     let debugInfo = `=== generateMatchCandidates デバッグ ===\n`;
     debugInfo += `入力データ: 希望 ${requests.length}件, 募集 ${postings.length}件\n`;
@@ -282,13 +277,7 @@ export class AIMatchingEngine {
       
       console.error('generateMatchCandidates エラー:', error);
     }
-    
-    // デバッグ情報をコンソールに出力
-    console.log(debugInfo);
-    
-    console.log(`シンプルマッチング完了: ${candidates.length}件の候補を生成`);
-    console.log('candidates:', candidates);
-    
+
     return candidates;
   }
 
@@ -317,57 +306,28 @@ export class AIMatchingEngine {
     const pharmacyId = posting.pharmacy_id;
     let pharmacyName = '';
     let storeName = '';
-    
-    // デバッグ: 利用可能なキーを確認
-    console.log('=== 薬局名取得デバッグ ===');
-    console.log('posting.pharmacy_id:', pharmacyId);
-    console.log('posting object:', posting);
-    console.log('userProfiles keys:', userProfiles ? Object.keys(userProfiles) : 'なし');
-    console.log('userProfiles[pharmacyId]:', userProfiles?.[pharmacyId]);
-    console.log('userProfiles type:', typeof userProfiles);
-    console.log('userProfiles length:', userProfiles ? Object.keys(userProfiles).length : 0);
-    
-    // 全userProfilesの内容を確認
-    if (userProfiles) {
-      console.log('全userProfiles内容:');
-      Object.keys(userProfiles).forEach(key => {
-        console.log(`  ${key}: ${userProfiles[key]?.name || '名前なし'}`);
-      });
-      
-      // 薬局IDとの一致を確認
-      const matchingKeys = Object.keys(userProfiles).filter(key => key === pharmacyId);
-      console.log('pharmacyIdと一致するキー:', matchingKeys);
-    }
-    
+
     // 1. 薬局名を取得（user_profilesテーブルから）
     if (userProfiles && userProfiles[pharmacyId]) {
       const profile = userProfiles[pharmacyId];
       if (profile.name && profile.name.trim()) {
         pharmacyName = profile.name.trim();
-        console.log('薬局名取得成功:', pharmacyName);
       }
-    } else {
-      console.log('薬局名取得失敗: userProfiles[pharmacyId]が存在しません');
     }
-    
+
     // 2. 店舗名を取得（shift_postingsテーブルのstore_nameから）
     if (posting.store_name && posting.store_name.trim()) {
       storeName = posting.store_name.trim();
     }
-    
+
     // 3. 店舗名のみを返す（薬局名と店舗名が同じ場合は店舗名のみ）
     if (storeName) {
       return storeName;
     } else if (pharmacyName) {
       return pharmacyName;
     }
-    
+
     // 4. フォールバック - userProfilesにデータがない場合の対処
-    console.log('薬局名取得失敗 - フォールバック実行');
-    console.log('pharmacyId:', pharmacyId);
-    console.log('userProfiles存在:', !!userProfiles);
-    console.log('userProfiles keys:', userProfiles ? Object.keys(userProfiles) : []);
-    
     return `薬局${pharmacyId.slice(-4)}`;
   }
 

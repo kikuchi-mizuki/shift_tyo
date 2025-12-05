@@ -46,7 +46,6 @@ export const useAIMatching = (
       try {
         const engine = new AIMatchingEngine();
         setAiMatchingEngine(engine);
-        console.log('✅ AI Matching Engine initialized successfully');
       } catch (error) {
         console.error('❌ Failed to initialize AI Matching Engine:', error);
         setUseAIMatching(false);
@@ -83,8 +82,6 @@ export const useAIMatching = (
         ...prev,
         [date]: matches
       }));
-
-      console.log(`AI Matching completed for ${date}: ${safeLength(matches)} matches found`);
     } catch (error) {
       console.error('AI Matching failed:', error);
     } finally {
@@ -126,14 +123,11 @@ export const useAIMatching = (
         monthlyDates.push(date.toISOString().split('T')[0]);
       }
 
-      console.log(`1ヶ月分のAIマッチング開始: ${monthlyDates.length}日分`);
-
       // 各日付に対してAIマッチングを実行
       for (const date of monthlyDates) {
         await executeMatching(date);
       }
 
-      console.log('1ヶ月分のAIマッチング完了');
       setMonthlyMatchingExecuted(true);
 
     } catch (error) {

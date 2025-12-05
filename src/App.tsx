@@ -148,51 +148,16 @@ function AppContent() {
   
   // アプリケーション起動時の診断
   useEffect(() => {
-    console.log('=== APP STARTUP DIAGNOSTICS ===');
-    console.log('App: Multi-user auth state:', {
-      currentUserType,
-      activeSessions: activeSessions.length,
-      isAdminLoginPath
-    });
-    
-    console.log('App: Environment check:', {
-      isProduction: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET',
-      supabaseUrl: import.meta.env.VITE_SUPABASE_URL?.substring(0, 20) + '...',
-      supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
-    });
-
     // 前回のエラーレポートを確認
     try {
       const lastError = localStorage.getItem('last_error_report');
       if (lastError) {
-        const errorReport = JSON.parse(lastError);
-        console.log('Previous error report found:', errorReport);
         // エラーレポートをクリア
         localStorage.removeItem('last_error_report');
       }
     } catch (e) {
       console.error('Failed to check error report:', e);
     }
-
-    // ブラウザ機能の確認（安全な機能判定）
-    const canUseLocalStorage = (() => {
-      try {
-        const k = '__ls_test__';
-        localStorage.setItem(k, '1');
-        localStorage.removeItem(k);
-        return true;
-      } catch { return false; }
-    })();
-    
-    console.log('Browser capabilities:', {
-      localStorage: canUseLocalStorage,
-      sessionStorage: typeof sessionStorage !== 'undefined',
-      fetch: typeof fetch !== 'undefined',
-      Promise: typeof Promise !== 'undefined',
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
-      platform: typeof navigator !== 'undefined' ? navigator.platform : 'N/A',
-      cookieEnabled: typeof navigator !== 'undefined' ? navigator.cookieEnabled : false
-    });
   }, [isAdminLoginPath, currentUserType, activeSessions.length]);
   
 
@@ -213,15 +178,7 @@ function AppContent() {
     ? (activeSessions.find(s => s.user_type === effectiveUserType) || activeSessions[0] || null)
     : null;
 
-  // セッション情報のデバッグログ
-  console.log('App: Session state:', {
-    effectiveUserType,
-    currentSession: currentSession ? { id: currentSession.id, user_type: currentSession.user_type } : null,
-    activeSessionsCount: activeSessions.length
-  });
-
   if (!effectiveUserType || !currentSession) {
-    console.log('App: No valid session, showing login form');
     return <MultiUserLoginForm onLoginSuccess={() => {}} />;
   }
 
@@ -296,7 +253,6 @@ function AppContent() {
             </div>
           }>
             {(() => {
-              console.log('App: Rendering dashboard for user type:', effectiveUserType);
               try {
                 if (effectiveUserType === 'pharmacist') {
                   return <PharmacistDashboard user={currentSession} />;

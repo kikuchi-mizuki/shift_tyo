@@ -131,8 +131,6 @@ export const useAdminData = (
       setLoading(true);
       setError(null);
 
-      console.log('=== loadAll started - データ読み込み開始 ===');
-
       // 募集状況を読み込み
       await loadRecruitmentStatus();
 
@@ -243,12 +241,6 @@ export const useAdminData = (
         });
         setStoreNgPharmacists(ngMap);
       }
-
-      console.log('=== 全データ読み込み完了 ===');
-      console.log('ユーザープロフィール数:', Object.keys(profilesMap || {}).length);
-      console.log('シフト募集数:', safeLength(postingsData || []));
-      console.log('シフト希望数:', safeLength(requestsData || []));
-      console.log('確定シフト数:', safeLength(assignedData || []));
 
     } catch (err: any) {
       console.error('Error in loadAll:', err);

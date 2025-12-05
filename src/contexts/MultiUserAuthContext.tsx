@@ -49,21 +49,13 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
   // ローカルストレージからセッション情報を復元
   useEffect(() => {
     try {
-      console.log('MultiUserAuth: Loading sessions from localStorage');
       const savedSessions = localStorage.getItem('multi_user_sessions');
       const savedCurrentType = localStorage.getItem('current_user_type');
       const savedVersion = localStorage.getItem('session_version');
 
-      console.log('MultiUserAuth: Saved data:', {
-        savedSessions: savedSessions ? 'EXISTS' : 'NULL',
-        savedCurrentType: savedCurrentType || 'NULL',
-        savedVersion: savedVersion || 'NULL'
-      });
-
       // バージョンが古い場合は全てクリア
       if (savedVersion !== SESSION_VERSION) {
         console.warn('MultiUserAuth: Session version mismatch, clearing all sessions');
-        console.log(`Old version: ${savedVersion}, New version: ${SESSION_VERSION}`);
         localStorage.removeItem('multi_user_sessions');
         localStorage.removeItem('current_user_type');
         localStorage.setItem('session_version', SESSION_VERSION);
@@ -86,12 +78,7 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
             lastActive: new Date(session.lastActive)
           }));
 
-          if (validSessions.length !== parsedSessions.length) {
-            console.log(`MultiUserAuth: Filtered ${parsedSessions.length - validSessions.length} invalid sessions`);
-          }
-
           setActiveSessions(validSessions);
-          console.log('MultiUserAuth: Loaded sessions:', validSessions.length);
         } catch (error) {
           console.error('Error parsing saved sessions:', error);
           // パースエラーの場合はクリア
@@ -102,7 +89,6 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
 
       if (savedCurrentType) {
         setCurrentUserType(savedCurrentType as 'pharmacist' | 'pharmacy' | 'admin');
-        console.log('MultiUserAuth: Set current user type:', savedCurrentType);
       }
 
       // バージョンを保存
@@ -117,8 +103,6 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
   // Supabase認証状態の監視
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.id);
-      
       if (event === 'SIGNED_OUT') {
         // ログアウト時は全てのセッションをクリア
         setActiveSessions([]);
@@ -134,7 +118,6 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
   // セッション情報をローカルストレージに保存
   useEffect(() => {
     try {
-      console.log('MultiUserAuth: Saving sessions to localStorage:', activeSessions.length);
       localStorage.setItem('multi_user_sessions', JSON.stringify(activeSessions));
     } catch (error) {
       console.error('MultiUserAuth: Error saving sessions to localStorage:', error);
@@ -149,12 +132,10 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
 
   const addSession = async (user: any, fallbackUserType?: 'pharmacist' | 'pharmacy' | 'admin') => {
     try {
-      console.log('MultiUserAuth: Adding session for user:', user.id);
-      
       // ユーザープロフィールを取得（エラー時はフォールバックを使用）
       let userType = fallbackUserType;
       let userName = user.email;
-      
+
       try {
         const { data: profile, error } = await supabase
           .from('user_profiles')
@@ -165,7 +146,6 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
         if (!error && profile) {
           userType = profile.user_type as 'pharmacist' | 'pharmacy' | 'admin';
           userName = profile.name || user.email;
-          console.log('MultiUserAuth: Profile found:', { userType, name: userName });
         } else {
           console.warn('MultiUserAuth: Profile not found, using fallback:', { error: error?.message, fallbackUserType });
         }
@@ -176,7 +156,7 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
       if (!userType) {
         throw new Error('ユーザータイプが特定できませんでした');
       }
-      
+
       const newSession: UserSession = {
         id: user.id,
         email: user.email,
@@ -185,15 +165,11 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
         lastActive: new Date()
       };
 
-      console.log('MultiUserAuth: Creating session:', newSession);
-
       // 単一セッション運用: 新しいログインで既存セッションを置き換える
       setActiveSessions([newSession]);
 
       // 直近でログインしたユーザータイプを現在のユーザータイプとして採用
       setCurrentUserType(userType);
-      
-      console.log('MultiUserAuth: Session added successfully');
     } catch (error) {
       console.error('MultiUserAuth: Error adding session:', error);
       throw error; // エラーを再スローして呼び出し元で処理できるようにする
