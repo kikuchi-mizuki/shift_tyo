@@ -55,13 +55,10 @@ export const supabase = (() => {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false
-      },
-      global: {
-        headers: {
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${supabaseAnonKey}`
-        }
       }
+      // NOTE: Authorizationヘッダーは自動管理されるため、手動設定を削除
+      // ログイン前: ANON_KEY を使用
+      // ログイン後: セッションJWT を使用
     });
     
     console.log('Supabase client created successfully');
