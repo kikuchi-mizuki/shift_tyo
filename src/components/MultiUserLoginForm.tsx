@@ -18,33 +18,9 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
   
   const { addSession, isLoggedIn, activeSessions } = useMultiUserAuth();
 
-  // コンポーネントマウント時のデバッグ情報
+  // Component mount (debugging removed for production)
   useEffect(() => {
-    console.log('=== LOGIN FORM MOUNTED ===');
-    console.log('MultiUserLoginForm mounted:', { 
-      isProduction, 
-      activeSessions: activeSessions.length,
-      userAgent: navigator.userAgent,
-      platform: navigator.platform,
-      cookieEnabled: navigator.cookieEnabled,
-      localStorage: typeof(Storage) !== "undefined",
-      screenWidth: window.screen.width,
-      screenHeight: window.screen.height,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight
-    });
-
-    // フォームが正常にマウントされたことを確認
-    try {
-      const testElement = document.querySelector('form');
-      console.log('Form element found:', !!testElement);
-      
-      // PC環境の検出
-      const isPC = window.innerWidth >= 1024 || navigator.platform.includes('Win') || navigator.platform.includes('Mac');
-      console.log('Device type detection:', { isPC, width: window.innerWidth, platform: navigator.platform });
-    } catch (e) {
-      console.error('Error checking form element:', e);
-    }
+    // Component mounted successfully
   }, []);
 
   // デモアカウント（一般ユーザーのみ）

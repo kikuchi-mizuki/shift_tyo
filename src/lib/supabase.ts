@@ -7,33 +7,10 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIU
 // 本番環境かどうかの判定
 export const isProduction = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key');
 
-// 環境変数の確認
-console.log('=== SUPABASE CONFIG DEBUG ===');
-console.log('Environment variables:');
-console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
-console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY);
-console.log('All env vars:', import.meta.env);
-console.log('Final config:');
-console.log('supabaseUrl:', supabaseUrl);
-console.log('supabaseAnonKey:', supabaseAnonKey?.substring(0, 20) + '...');
-console.log('isProduction:', isProduction);
-console.log('Using fallback values:', {
-  urlFromEnv: !!import.meta.env.VITE_SUPABASE_URL,
-  keyFromEnv: !!import.meta.env.VITE_SUPABASE_ANON_KEY
-});
-
-console.log('===============================');
-
 // Supabaseクライアントの作成（フォールバック値を使用）
 export const supabase = (() => {
   // フォールバック値が設定されているので、常にクライアントを作成
   try {
-    console.log('Creating Supabase client with:', {
-      url: supabaseUrl,
-      keyPrefix: supabaseAnonKey?.substring(0, 20) + '...',
-      urlLength: supabaseUrl?.length,
-      keyLength: supabaseAnonKey?.length
-    });
     
     // URLとAPI keyの基本検証
     if (!supabaseUrl || !supabaseAnonKey) {
@@ -60,8 +37,7 @@ export const supabase = (() => {
       // ログイン前: ANON_KEY を使用
       // ログイン後: セッションJWT を使用
     });
-    
-    console.log('Supabase client created successfully');
+
     return client;
   } catch (error) {
     console.error('Supabaseクライアントの作成に失敗しました:', error);
@@ -74,11 +50,7 @@ export const supabase = (() => {
   }
 })();
 
-console.log('Supabase client created:', !!supabase);
-if (supabase) {
-  console.log('Supabase client URL:', supabase.supabaseUrl);
-  console.log('Supabase client key prefix:', supabase.supabaseKey?.substring(0, 20) + '...');
-} else {
+if (!supabase) {
   console.error('Failed to create Supabase client!');
 }
 
@@ -213,7 +185,6 @@ export const auth = {
 
     try {
       const { data, error } = await supabase.auth.refreshSession();
-      console.log('Session refresh result:', { hasSession: !!data.session, error });
       return { data, error };
     } catch (error) {
       console.error('Session refresh error:', error);
@@ -255,8 +226,6 @@ export const userProfiles = {
 
     try {
       // Edge FunctionのJWT認証エラーを回避するため、直接Supabaseクライアントを使用
-      console.log('Direct Supabase query for user profile:', userId);
-      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -323,8 +292,7 @@ const checkTableExists = async (tableName: string): Promise<boolean> => {
     
     const exists = !error || error.code !== 'PGRST116';
     tableExistsCache[tableName] = exists;
-    
-    console.log(`Table ${tableName} exists:`, exists);
+
     return exists;
   } catch (error) {
     console.error(`Error checking table ${tableName}:`, error);
@@ -349,7 +317,6 @@ export const storeNgPharmacists = {
     }
 
     try {
-      console.log('Attempting to fetch store NG pharmacists for pharmacy_id:', pharmacyId);
       const { data, error } = await supabase
         .from('store_ng_pharmacists')
         .select(`
@@ -371,18 +338,17 @@ export const storeNgPharmacists = {
           hint: error.hint,
           pharmacy_id: pharmacyId
         });
-        
+
         // テーブルが存在しない場合のエラーハンドリング
         if (error.code === 'PGRST116' || error.message.includes('Could not find the table')) {
           console.warn('store_ng_pharmacists table not found, returning empty data');
           tableExistsCache['store_ng_pharmacists'] = false;
           return { data: [], error: null };
         }
-        
+
         return { data: null, error };
       }
 
-      console.log('Store NG pharmacists fetched successfully:', data);
       return { data, error: null };
     } catch (error) {
       console.error('Exception in getStoreNgPharmacists:', error);
@@ -1207,9 +1173,6 @@ export const shiftRequests = {
 export const shiftPostings = {
   // シフト募集取得
   getPostings: async (userId: string, userType: string) => {
-    console.log('=== getPostings START ===');
-    console.log('userId:', userId, 'userType:', userType);
-    
     if (!supabase) {
       console.error('Supabase not initialized');
       return { data: [], error: { message: 'Supabaseが設定されていません' } };
@@ -1217,30 +1180,25 @@ export const shiftPostings = {
 
     try {
       let query = supabase.from('shift_postings').select('*');
-      
+
       if ((userType === 'store' || userType === 'pharmacy') && userId) {
         query = query.eq('pharmacy_id', userId);
-        console.log('Filtering by pharmacy_id:', userId);
       }
       // pharmacist/adminは全ての募集を閲覧可能
-      
-      console.log('Executing shift_postings query...');
+
       const { data, error } = await query;
-      
-      console.log('Query result:', { dataCount: data?.length || 0, error });
-      
+
       // テーブルが存在しない場合のエラーハンドリング
       if (error && (error.code === 'PGRST116' || error.message.includes('Could not find the table'))) {
         console.warn('shift_postings table not found, falling back to demo mode');
         return { data: [], error: { code: 'PGRST116', message: 'shift_postingsテーブルが存在しません' } };
       }
-      
+
       if (error) {
         console.error('shift_postings query error:', error);
         return { data: [], error };
       }
-      
-      console.log('=== getPostings END ===');
+
       return { data: data || [], error: null };
     } catch (error) {
       console.error('Get postings error:', error);
@@ -1250,17 +1208,12 @@ export const shiftPostings = {
 
   // シフト募集作成
   createPostings: async (postingsData: any[]) => {
-    console.log('createPostings called with:', postingsData);
-    
     if (!supabase) {
       console.error('Supabase not initialized');
       return { data: [], error: { message: 'Supabaseが設定されていません' } };
     }
 
     try {
-      console.log('Inserting into shift_postings table...');
-      console.log('Original postingsData:', postingsData);
-      
       // テーブル定義の相違に備えて、許可されたカラムだけを送る
       const sanitized = postingsData.map((p: any) => {
         // HH:MM も HH:MM:SS に正規化
@@ -1509,19 +1462,12 @@ export const pharmacistRatings = {
     }
 
     try {
-      console.log('=== UPSERT RATING START ===');
-      console.log('Rating data:', ratingData);
-      console.log('Supabase URL:', supabase.supabaseUrl);
-      console.log('Supabase Key (first 10 chars):', supabase.supabaseKey?.substring(0, 10));
-      
       // Check if table exists by trying a simple select
-      console.log('Testing table access...');
       const { data: testData, error: testError } = await supabase
         .from('pharmacist_ratings')
         .select('id')
         .limit(1);
-      console.log('Table access test:', { testData, testError });
-      
+
       const { data, error } = await supabase
         .from('pharmacist_ratings')
         .upsert(ratingData, {
