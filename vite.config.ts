@@ -14,14 +14,21 @@ export default defineConfig({
         manualChunks: undefined,
       },
     },
-    // 本番環境でのエラーを抑制
+    // 本番環境でのconsole.log削除
     minify: 'terser',
-         terserOptions: {
-           compress: {
-             drop_console: enableDebugLogs ? false : true,
-             drop_debugger: enableDebugLogs ? false : true,
-           },
-         },
+    terserOptions: {
+      compress: {
+        // 本番環境ではconsole.logとdebuggerを削除（環境変数で制御可能）
+        drop_console: !enableDebugLogs,
+        drop_debugger: !enableDebugLogs,
+        // console.error/warn は残す
+        pure_funcs: enableDebugLogs ? [] : ['console.log', 'console.debug', 'console.info'],
+      },
+      format: {
+        // コメントを削除
+        comments: false,
+      },
+    },
   },
   optimizeDeps: {
     exclude: ['lucide-react'],

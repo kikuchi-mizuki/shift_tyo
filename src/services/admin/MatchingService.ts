@@ -65,9 +65,8 @@ export const filterConfirmedRequestsAndPostings = (
     return posting.status !== 'confirmed';
   });
 
-  console.log(`=== 管理画面フィルタリング詳細 ===`);
-  console.log(`フィルタ前: 希望${safeLength(requests)}件, 募集${safeLength(postings)}件`);
-  console.log(`フィルタ後: 希望${safeLength(filteredRequests)}件, 募集${safeLength(filteredPostings)}件`);
+  // Debug logging removed for production performance
+  // This function is called ~30 times per calendar render (once per day)
 
   return { filteredRequests, filteredPostings };
 };
