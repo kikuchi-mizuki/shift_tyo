@@ -194,10 +194,10 @@ export const useAdminData = (
         .from('user_profiles')
         .select('*');
 
+      const profilesMap: any = {};
       if (allProfilesError) {
         console.error('Error fetching user profiles:', allProfilesError);
       } else {
-        const profilesMap: any = {};
         if (allProfilesData) {
           allProfilesData.forEach((profile: any) => {
             profilesMap[profile.id] = profile;
