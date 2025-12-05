@@ -35,13 +35,20 @@ test.describe('Authentication', () => {
   test('should navigate to registration page', async ({ page }) => {
     await page.goto('/');
 
-    // Look for registration link
-    const registerLink = page.getByText(/登録|register|sign up/i);
-    if (await registerLink.isVisible()) {
-      await registerLink.click();
+    // Look for registration link (only available in production)
+    const registerLink = page.getByText(/新規アカウント作成はこちら|登録|register|sign up/i).first();
 
-      // Should navigate to registration page
-      await expect(page).toHaveURL(/register|signup/i);
+    // Check if link exists with timeout
+    const isLinkVisible = await registerLink.isVisible({ timeout: 2000 }).catch(() => false);
+
+    if (isLinkVisible) {
+      await registerLink.click();
+      // Should navigate to registration page or show registration form
+      await page.waitForTimeout(500);
+      await expect(page.getByRole('heading', { name: /新規登録/i })).toBeVisible();
+    } else {
+      // Skip test if registration link is not available (demo environment)
+      test.skip();
     }
   });
 });

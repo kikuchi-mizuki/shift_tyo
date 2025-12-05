@@ -114,9 +114,14 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- トリガーの作成
+-- トリガーの作成（既存のトリガーを削除してから作成）
+DROP TRIGGER IF EXISTS update_match_outcomes_updated_at ON match_outcomes;
 CREATE TRIGGER update_match_outcomes_updated_at BEFORE UPDATE ON match_outcomes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_pharmacist_profiles_updated_at ON pharmacist_profiles;
 CREATE TRIGGER update_pharmacist_profiles_updated_at BEFORE UPDATE ON pharmacist_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_pharmacy_profiles_updated_at ON pharmacy_profiles;
 CREATE TRIGGER update_pharmacy_profiles_updated_at BEFORE UPDATE ON pharmacy_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- DISABLED: サンプルデータの挿入（既存のuser_profilesから）
