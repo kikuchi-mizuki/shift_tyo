@@ -3,7 +3,7 @@
  * AIマッチング関連の状態管理を行うカスタムフック
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AIMatchingEngine, MatchCandidate } from '../../features/ai-matching/aiMatchingEngine';
 import { executeAIMatching } from '../../services/admin/MatchingService';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -41,7 +41,7 @@ export const useAIMatching = (
   const [monthlyMatchingExecuted, setMonthlyMatchingExecuted] = useState(false);
 
   // AIマッチングエンジンを初期化
-  useState(() => {
+  useEffect(() => {
     const initializeAI = async () => {
       try {
         const engine = new AIMatchingEngine();
@@ -53,7 +53,7 @@ export const useAIMatching = (
     };
 
     initializeAI();
-  });
+  }, []);
 
   /**
    * 指定日のAIマッチングを実行
