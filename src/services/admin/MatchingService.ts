@@ -709,7 +709,7 @@ export const executeAIMatching = async (
             pharmacist_id: match.pharmacist.id,
             pharmacy_id: match.pharmacy.id,
             date: date,
-            time_slot: 'negotiable',
+            time_slot: 'fullday',
             start_time: match.timeSlot?.start || '09:00:00',
             end_time: match.timeSlot?.end || '18:00:00',
             status: 'pending',
