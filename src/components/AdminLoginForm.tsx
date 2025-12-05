@@ -85,7 +85,32 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
 
       if (data.user) {
         console.log('Admin login successful:', data.user.id);
-        
+
+        // デバッグ: セッション情報を確認
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log('Session debug:', {
+          hasSession: !!sessionData.session,
+          sessionUserId: sessionData.session?.user?.id,
+          accessToken: sessionData.session?.access_token?.substring(0, 20) + '...'
+        });
+
+        // デバッグ: まず .single() なしで試す
+        console.log('Attempting to fetch profile without .single()...');
+        const { data: allProfiles, error: allError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', data.user.id);
+
+        console.log('Profile fetch result (without .single()):', {
+          success: !allError,
+          count: allProfiles?.length || 0,
+          error: allError?.message
+        });
+
+        if (allError) {
+          console.error('Error fetching profiles (without .single()):', allError);
+        }
+
         // ユーザープロフィールを取得して管理者権限を確認
         const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
@@ -95,6 +120,12 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
 
         if (profileError) {
           console.error('Error fetching admin profile:', profileError);
+          console.log('Debug info:', {
+            userId: data.user.id,
+            errorCode: profileError.code,
+            errorMessage: profileError.message,
+            allProfilesCount: allProfiles?.length || 0
+          });
           setError('ユーザープロフィールの取得に失敗しました');
           setLoading(false);
           return;
