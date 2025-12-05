@@ -542,24 +542,70 @@ export const performMatchingAnalysis = (
   }
 
   // マッチング結果をMatchCandidate形式に変換
-  const matches: MatchCandidate[] = matchedPharmacists.map((pharmacist, index) => ({
-    pharmacist: {
-      id: pharmacist.pharmacist_id,
-      name: userProfiles[pharmacist.pharmacist_id]?.name || 'Unknown'
-    },
-    pharmacy: {
-      id: matchedPharmacies[index].pharmacy_id,
-      name: userProfiles[matchedPharmacies[index].pharmacy_id]?.name || 'Unknown',
-      store_name: matchedPharmacies[index].store_name || userProfiles[matchedPharmacies[index].pharmacy_id]?.store_name || '店舗名なし'
-    },
-    timeSlot: {
-      start: matchedPharmacies[index].start_time,
-      end: matchedPharmacies[index].end_time,
-      date: pharmacist.date
-    },
-    compatibilityScore: 0.8,
-    reasons: ['時間適合', '距離適合']
-  }));
+  const matches: MatchCandidate[] = matchedPharmacists.map((pharmacist, index) => {
+    const pharmacistId = pharmacist.pharmacist_id;
+    const pharmacyId = matchedPharmacies[index].pharmacy_id;
+    const pharmacistProfile = userProfiles[pharmacistId];
+    const pharmacyProfile = userProfiles[pharmacyId];
+
+    // 薬剤師名の取得（名前 → email → ID末尾4桁）
+    let pharmacistName = '薬剤師名未設定';
+    if (pharmacistProfile) {
+      if (pharmacistProfile.name && pharmacistProfile.name.trim()) {
+        pharmacistName = pharmacistProfile.name.trim();
+      } else if (pharmacistProfile.email && pharmacistProfile.email.trim()) {
+        pharmacistName = pharmacistProfile.email.split('@')[0];
+      } else if (pharmacistId) {
+        pharmacistName = `薬剤師${pharmacistId.slice(-4)}`;
+      }
+    } else if (pharmacistId) {
+      pharmacistName = `薬剤師${pharmacistId.slice(-4)}`;
+    }
+
+    // 薬局名の取得（名前 → email → ID末尾4桁）
+    let pharmacyName = '薬局名未設定';
+    if (pharmacyProfile) {
+      if (pharmacyProfile.name && pharmacyProfile.name.trim()) {
+        pharmacyName = pharmacyProfile.name.trim();
+      } else if (pharmacyProfile.email && pharmacyProfile.email.trim()) {
+        pharmacyName = pharmacyProfile.email.split('@')[0];
+      } else if (pharmacyId) {
+        pharmacyName = `薬局${pharmacyId.slice(-4)}`;
+      }
+    } else if (pharmacyId) {
+      pharmacyName = `薬局${pharmacyId.slice(-4)}`;
+    }
+
+    // 店舗名の取得
+    const storeName = matchedPharmacies[index].store_name ||
+                     pharmacyProfile?.store_name ||
+                     '店舗名未設定';
+
+    return {
+      pharmacist: {
+        id: pharmacistId,
+        name: pharmacistName
+      },
+      pharmacy: {
+        id: pharmacyId,
+        name: pharmacyName,
+        store_name: storeName
+      },
+      timeSlot: {
+        start: matchedPharmacies[index].start_time,
+        end: matchedPharmacies[index].end_time,
+        date: pharmacist.date
+      },
+      compatibilityScore: 0.8,
+      reasons: ['時間適合', '距離適合'],
+      // 店舗名を含むposting情報を追加
+      posting: {
+        start_time: matchedPharmacies[index].start_time,
+        end_time: matchedPharmacies[index].end_time,
+        store_name: storeName
+      }
+    };
+  });
 
   return {
     matches,
