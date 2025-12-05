@@ -580,7 +580,7 @@ export const performMatchingAnalysis = (
     const pharmacistProfile = userProfiles[pharmacistId];
     const pharmacyProfile = userProfiles[pharmacyId];
 
-    console.log('🔍 [DEBUG] Name generation:', {
+    console.error('🔍 [DEBUG] Name generation:', {
       pharmacistId,
       pharmacyId,
       hasPharmacistProfile: !!pharmacistProfile,
@@ -604,7 +604,7 @@ export const performMatchingAnalysis = (
       pharmacistName = `薬剤師${pharmacistId.slice(-4)}`;
     }
 
-    console.log('🔍 [DEBUG] Pharmacist name result:', pharmacistName);
+    console.error('🔍 [DEBUG] Pharmacist name result:', pharmacistName);
 
     // 薬局名の取得（名前 → email → ID末尾4桁）
     let pharmacyName = '薬局名未設定';
@@ -620,14 +620,14 @@ export const performMatchingAnalysis = (
       pharmacyName = `薬局${pharmacyId.slice(-4)}`;
     }
 
-    console.log('🔍 [DEBUG] Pharmacy name result:', pharmacyName);
+    console.error('🔍 [DEBUG] Pharmacy name result:', pharmacyName);
 
     // 店舗名の取得
     const storeName = matchedPharmacies[index].store_name ||
                      pharmacyProfile?.store_name ||
                      '店舗名未設定';
 
-    console.log('🔍 [DEBUG] Store name result:', storeName);
+    console.error('🔍 [DEBUG] Store name result:', storeName);
 
     return {
       pharmacist: {
