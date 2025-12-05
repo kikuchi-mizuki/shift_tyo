@@ -8,10 +8,9 @@ const corsHeaders = {
 };
 
 interface EmergencyShiftRequest {
-  date: string; // シフト日付
-  timeSlot: string; // 時間帯
-  startTime?: string; // 開始時刻
-  endTime?: string; // 終了時刻
+  shiftId: string; // シフトID
+  targetType: "all" | "specific" | "nearby"; // 通知対象タイプ
+  targetIds?: string[]; // 特定薬剤師のID（specificの場合）
 }
 
 // 時間帯の日本語表記
@@ -23,8 +22,6 @@ function formatTimeSlot(timeSlot: string): string {
       return "午後";
     case "fullday":
       return "終日";
-    case "negotiable":
-      return "要相談";
     default:
       return timeSlot;
   }
@@ -68,26 +65,59 @@ serve(async (req) => {
     // リクエストボディの解析
     const request: EmergencyShiftRequest = await req.json();
     console.log("Emergency shift request received:", JSON.stringify(request, null, 2));
-    
+
     // リクエストの検証
-    if (!request.date) {
-      throw new Error("date is required");
+    if (!request.shiftId) {
+      throw new Error("shiftId is required");
+    }
+    if (!request.targetType) {
+      throw new Error("targetType is required");
+    }
+    if (request.targetType === "specific" && (!request.targetIds || request.targetIds.length === 0)) {
+      throw new Error("targetIds is required when targetType is 'specific'");
     }
     console.log("Request validation passed");
 
-    // 全ての薬剤師を対象とする（LINE連携済みのみ）
-    const { data, error } = await supabaseClient
+    // シフト情報を取得
+    const { data: shift, error: shiftError } = await supabaseClient
+      .from("shift_postings")
+      .select("*, user_profiles!pharmacy_id(name, nearest_station_name)")
+      .eq("id", request.shiftId)
+      .single();
+
+    if (shiftError || !shift) {
+      throw new Error(`Shift not found: ${shiftError?.message || 'Unknown error'}`);
+    }
+
+    console.log("Shift data loaded:", shift);
+
+    // 通知対象の薬剤師を取得
+    let targetUsersQuery = supabaseClient
       .from("user_profiles")
-      .select("id, name, email, line_user_id, line_notification_enabled")
+      .select("id, name, email, line_user_id, line_notification_enabled, nearest_station_name")
       .eq("user_type", "pharmacist")
       .eq("line_notification_enabled", true)
       .not("line_user_id", "is", null)
       .not("line_user_id", "eq", "");
 
+    if (request.targetType === "specific") {
+      // 特定薬剤師のみ
+      targetUsersQuery = targetUsersQuery.in("id", request.targetIds!);
+    } else if (request.targetType === "nearby") {
+      // 近隣薬剤師（薬局の最寄駅と同じ薬剤師）
+      const pharmacyStation = shift.user_profiles?.nearest_station_name;
+      if (pharmacyStation) {
+        targetUsersQuery = targetUsersQuery.eq("nearest_station_name", pharmacyStation);
+      }
+    }
+    // targetType === "all" の場合は条件追加なし（全員）
+
+    const { data, error } = await targetUsersQuery;
+
     if (error) throw error;
     const targetUsers = data || [];
-    
-    console.log(`Found ${targetUsers.length} pharmacists with LINE integration`);
+
+    console.log(`Found ${targetUsers.length} pharmacists with LINE integration (targetType: ${request.targetType})`);
 
     if (targetUsers.length === 0) {
       return new Response(
@@ -105,25 +135,21 @@ serve(async (req) => {
 
     // メッセージを作成
     const timeInfo =
-      request.startTime && request.endTime
-        ? `${formatTime(request.startTime)}〜${formatTime(request.endTime)}`
-        : formatTimeSlot(request.timeSlot);
+      shift.start_time && shift.end_time
+        ? `${formatTime(shift.start_time)}〜${formatTime(shift.end_time)}`
+        : formatTimeSlot(shift.time_slot);
+
+    const pharmacyName = shift.user_profiles?.name || "薬局";
+    const storeName = shift.store_name ? ` ${shift.store_name}` : "";
 
     const webAppUrl = Deno.env.get("WEB_APP_URL") || "https://shift-tyo.com";
 
-    const message = `【🚨 緊急シフト募集】\n\n日時: ${formatDate(
-      request.date
-    )}\n時間: ${timeInfo}\n\n詳細・応募はこちら:\n${webAppUrl}\n\nお早めにご確認ください！`;
+    const message = `【🚨 緊急シフト募集】\n\n薬局: ${pharmacyName}${storeName}\n日時: ${formatDate(
+      shift.date
+    )}\n時間: ${timeInfo}\n人数: ${shift.required_staff}人\n\n詳細・応募はこちら:\n${webAppUrl}\n\nお早めにご確認ください！`;
 
     console.log(`Target users found: ${targetUsers.length}`);
     console.log('Target users:', targetUsers.map(u => ({ id: u.id, name: u.name, line_user_id: u.line_user_id })));
-    
-    // デバッグ: targetUsersの詳細確認
-    console.log('=== TARGET USERS DEBUG ===');
-    console.log('targetUsers type:', typeof targetUsers);
-    console.log('targetUsers is array:', Array.isArray(targetUsers));
-    console.log('targetUsers length:', targetUsers?.length);
-    console.log('targetUsers content:', JSON.stringify(targetUsers, null, 2));
 
     // 各ユーザーに通知を送信
     const results = {
@@ -135,51 +161,14 @@ serve(async (req) => {
     };
 
     console.log('=== STARTING NOTIFICATION LOOP ===');
-    console.log('About to iterate over targetUsers:', targetUsers);
-    
+
     for (const user of targetUsers) {
       console.log(`=== PROCESSING USER: ${user.id} (${user.name}) ===`);
       try {
         console.log(`Sending LINE notification to user: ${user.id} (${user.name})`);
-        console.log(`Using ANON_KEY for Edge Function call: ${Deno.env.get("SUPABASE_ANON_KEY") ? "Present" : "Missing"}`);
-        
-        console.log(`=== CALLING send-line-notification Edge Function ===`);
-        console.log(`URL: ${Deno.env.get("SUPABASE_URL")}/functions/v1/send-line-notification`);
-        console.log(`Using ANON_KEY: ${Deno.env.get("SUPABASE_ANON_KEY") ? "Present" : "Missing"}`);
-        console.log(`ANON_KEY length: ${Deno.env.get("SUPABASE_ANON_KEY")?.length || 0}`);
-        console.log(`Request body:`, JSON.stringify({
-          userId: user.id,
-          message,
-          notificationType: "emergency",
-          metadata: {
-            shiftDate: request.date,
-            timeSlot: request.timeSlot,
-          },
-        }, null, 2));
-        
-        // 直接LINE APIを呼び出す方法を試行
-        console.log("=== DIRECT LINE API CALL ===");
-        
-        // ユーザープロフィールを取得
-        const { data: userProfile, error: profileError } = await supabaseClient
-          .from("user_profiles")
-          .select("line_user_id, line_notification_enabled, name")
-          .eq("id", user.id)
-          .single();
 
-        if (profileError || !userProfile) {
-          console.error("User profile not found:", profileError);
-          results.failed++;
-          results.details.push({
-            userId: user.id,
-            name: user.name,
-            status: "failed",
-            error: "User profile not found",
-          });
-          continue;
-        }
-
-        if (!userProfile.line_user_id || userProfile.line_user_id.trim() === '') {
+        // ユーザープロフィールを確認
+        if (!user.line_user_id || user.line_user_id.trim() === '') {
           console.log("LINE not linked for user:", user.id);
           results.skipped++;
           results.details.push({
@@ -193,8 +182,7 @@ serve(async (req) => {
 
         // LINE APIを直接呼び出し
         const lineChannelAccessToken = Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN");
-        console.log("LINE Channel Access Token exists:", !!lineChannelAccessToken);
-        
+
         if (!lineChannelAccessToken) {
           console.error("LINE_CHANNEL_ACCESS_TOKEN is not set");
           results.failed++;
@@ -215,7 +203,7 @@ serve(async (req) => {
               'Authorization': `Bearer ${lineChannelAccessToken}`,
             },
             body: JSON.stringify({
-              to: userProfile.line_user_id,
+              to: user.line_user_id,
               messages: [
                 {
                   type: 'text',
@@ -226,12 +214,27 @@ serve(async (req) => {
           });
 
           console.log("LINE API response status:", lineResponse.status);
-          console.log("LINE API response ok:", lineResponse.ok);
-          
+
           const lineResponseData = await lineResponse.text();
           console.log("LINE API response body:", lineResponseData);
 
           if (lineResponse.ok) {
+            // 通知ログを保存
+            await supabaseClient
+              .from("line_notification_logs")
+              .insert({
+                user_id: user.id,
+                notification_type: "emergency",
+                message: message,
+                status: "sent",
+                metadata: {
+                  shift_id: request.shiftId,
+                  shift_date: shift.date,
+                  time_slot: shift.time_slot,
+                  target_type: request.targetType,
+                },
+              });
+
             results.sent++;
             results.details.push({
               userId: user.id,
@@ -298,4 +301,3 @@ serve(async (req) => {
     );
   }
 });
-

@@ -26,6 +26,7 @@ import { analyzePharmacyShortage } from '../services/admin/AnalysisService';
 // Components
 import { AdminCalendar } from './admin/calendar/AdminCalendar';
 import { AdminPanel } from './admin/panel/AdminPanel';
+import { AdminEmergencyShift } from './AdminEmergencyShift';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
 import DebugModal from './DebugModal';
@@ -103,6 +104,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [debugData, setDebugData] = useState<Record<string, unknown> | null>(null);
+
+  // 緊急シフト管理モード
+  const [showEmergencyManagement, setShowEmergencyManagement] = useState(false);
 
   // ユーザー管理ハンドラー
   const handleEditUser = (profile: any) => {
@@ -256,85 +260,101 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   return (
     <div className="space-y-6">
-      {/* 緊急シフトリクエストボタン */}
-      <div className="flex justify-end">
+      {/* モード切り替えボタン */}
+      <div className="flex justify-end gap-3">
         <button
-          onClick={() => setShowEmergencyModal(true)}
-          className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+          onClick={() => setShowEmergencyManagement(!showEmergencyManagement)}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors font-medium ${
+            showEmergencyManagement
+              ? 'bg-gray-600 text-white hover:bg-gray-700'
+              : 'bg-orange-600 text-white hover:bg-orange-700'
+          }`}
         >
-          <Bell className="w-5 h-5" />
-          LINEで呼びかける
+          {showEmergencyManagement ? '通常管理に戻る' : '緊急シフト管理'}
         </button>
+        {!showEmergencyManagement && (
+          <button
+            onClick={() => setShowEmergencyModal(true)}
+            className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+          >
+            <Bell className="w-5 h-5" />
+            LINEで呼びかける
+          </button>
+        )}
       </div>
 
       {/* メインレイアウト */}
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
-        {/* カレンダー */}
-        <AdminCalendar
-          currentDate={currentDate}
-          selectedDate={selectedDate}
-          requests={requests}
-          postings={postings}
-          assigned={assigned}
-          onPrevMonth={handlePrevMonth}
-          onNextMonth={handleNextMonth}
-          onDateSelect={onDateSelect}
-        />
+      {showEmergencyManagement ? (
+        <AdminEmergencyShift user={user} />
+      ) : (
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
+          {/* カレンダー */}
+          <AdminCalendar
+            currentDate={currentDate}
+            selectedDate={selectedDate}
+            requests={requests}
+            postings={postings}
+            assigned={assigned}
+            onPrevMonth={handlePrevMonth}
+            onNextMonth={handleNextMonth}
+            onDateSelect={onDateSelect}
+          />
 
-        {/* 管理パネル */}
-        <AdminPanel
-          onPasswordChange={() => setShowPasswordChangeModal(true)}
-          onDebug={handleDebugModal}
-          recruitmentStatus={recruitmentStatus}
-          aiMatchingLoading={aiMatchingLoading}
-          onToggleRecruitment={toggleRecruitmentStatus}
-          onMonthlyMatching={() => executeMonthlyMatching(currentDate)}
-          selectedDate={selectedDate}
-          dateDetailProps={dayData ? {
-            selectedDate,
-            dayData,
-            userProfiles,
-            availablePharmacists,
-            manualMatches,
-            showAddForms: { posting: showAddPosting, request: showAddRequest },
-            newPosting,
-            newRequest,
-            onClose: () => setSelectedDate(''),
-            onConfirmMatch: handleConfirmMatch,
-            onPharmacistSelect: (pharmacyId, index, pharmacistId) => {
-              const newMatches = [...(manualMatches[pharmacyId] || [])];
-              newMatches[index] = pharmacistId;
-              handlePharmacistSelection(pharmacyId, pharmacistId, true);
-            },
-            onSaveManualMatches: () => saveManualShiftRequests(selectedDate, postings),
-            onCancelShift: handleCancelShift,
-            onTogglePostingForm: () => setShowAddPosting(!showAddPosting),
-            onPostingChange: setNewPosting,
-            onAddPosting: handleAddPosting,
-            onDeletePosting: handleDeletePosting,
-            onToggleRequestForm: () => setShowAddRequest(!showAddRequest),
-            onRequestChange: setNewRequest,
-            onAddRequest: handleAddRequest,
-            onDeleteRequest: handleDeleteRequest
-          } : undefined}
-          userManagementProps={{
-            pharmacies,
-            pharmacists,
-            ratings,
-            storeNgPharmacies,
-            expandedSections,
-            editingUserId,
-            userEditForm,
-            userProfiles,
-            onToggleSection: toggleSection,
-            onEditFormChange: setUserEditForm,
-            onEdit: handleEditUser,
-            onSave: handleSaveUser,
-            onCancel: () => setEditingUserId(null),
-            onDelete: handleDeleteUser
-          }}
-        />
-      </div>
+          {/* 管理パネル */}
+          <AdminPanel
+            onPasswordChange={() => setShowPasswordChangeModal(true)}
+            onDebug={handleDebugModal}
+            recruitmentStatus={recruitmentStatus}
+            aiMatchingLoading={aiMatchingLoading}
+            onToggleRecruitment={toggleRecruitmentStatus}
+            onMonthlyMatching={() => executeMonthlyMatching(currentDate)}
+            selectedDate={selectedDate}
+            dateDetailProps={dayData ? {
+              selectedDate,
+              dayData,
+              userProfiles,
+              availablePharmacists,
+              manualMatches,
+              showAddForms: { posting: showAddPosting, request: showAddRequest },
+              newPosting,
+              newRequest,
+              onClose: () => setSelectedDate(''),
+              onConfirmMatch: handleConfirmMatch,
+              onPharmacistSelect: (pharmacyId, index, pharmacistId) => {
+                const newMatches = [...(manualMatches[pharmacyId] || [])];
+                newMatches[index] = pharmacistId;
+                handlePharmacistSelection(pharmacyId, pharmacistId, true);
+              },
+              onSaveManualMatches: () => saveManualShiftRequests(selectedDate, postings),
+              onCancelShift: handleCancelShift,
+              onTogglePostingForm: () => setShowAddPosting(!showAddPosting),
+              onPostingChange: setNewPosting,
+              onAddPosting: handleAddPosting,
+              onDeletePosting: handleDeletePosting,
+              onToggleRequestForm: () => setShowAddRequest(!showAddRequest),
+              onRequestChange: setNewRequest,
+              onAddRequest: handleAddRequest,
+              onDeleteRequest: handleDeleteRequest
+            } : undefined}
+            userManagementProps={{
+              pharmacies,
+              pharmacists,
+              ratings,
+              storeNgPharmacies,
+              expandedSections,
+              editingUserId,
+              userEditForm,
+              userProfiles,
+              onToggleSection: toggleSection,
+              onEditFormChange: setUserEditForm,
+              onEdit: handleEditUser,
+              onSave: handleSaveUser,
+              onCancel: () => setEditingUserId(null),
+              onDelete: handleDeleteUser
+            }}
+          />
+        </div>
+      )}
 
       {/* モーダル */}
       {showEmergencyModal && (

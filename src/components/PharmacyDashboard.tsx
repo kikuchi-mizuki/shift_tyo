@@ -3,6 +3,7 @@ import { Calendar as CalendarIcon, Plus, Sun, Users, Star, Bell, X, Lock } from 
 import { shifts, shiftPostings, systemStatus, storeNgPharmacists, supabase, pharmacistRatings } from '../lib/supabase';
 import { LineIntegration } from './LineIntegration';
 import PasswordChangeModal from './PasswordChangeModal';
+import { PharmacistRatingModal } from './PharmacistRatingModal';
 
 // デバッグ: インポートの確認
 console.log('PharmacyDashboard imports:', { shifts, shiftPostings });
@@ -70,11 +71,14 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   
   // 評価関連のstate
   const [ratings, setRatings] = useState<any[]>([]);
-  const [editingRating, setEditingRating] = useState<string | null>(null);
-  const [ratingForm, setRatingForm] = useState<{
-    rating: number;
-    comment: string;
-  }>({ rating: 5, comment: '' });
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedShiftForRating, setSelectedShiftForRating] = useState<{
+    id: string;
+    pharmacist_id: string;
+    pharmacist_name: string;
+    date: string;
+    store_name: string;
+  } | null>(null);
   const [selectedNgPharmacistId, setSelectedNgPharmacistId] = useState(''); // 薬局全体用
   const [storeNgLists, setStoreNgLists] = useState<{[storeName: string]: string[]}>({}); // 店舗毎のNG薬剤師ID
   const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
@@ -1987,50 +1991,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                       <div className="mt-2 pt-2 border-t border-gray-200">
                         {(() => {
                           const existingRating = getExistingRating(ratings, shift.id);
-                          const isEditing = editingRating === shift.id;
-                          
-                          if (isEditing) {
-                            return (
-                              <div className="space-y-2">
-                                <div className="text-xs font-medium text-gray-700">薬剤師の評価</div>
-                                {renderStarRating(ratingForm.rating, (rating) => 
-                                  setRatingForm(prev => ({ ...prev, rating }))
-                                )}
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={async () => {
-                                      // 認証ユーザーIDを取得
-                                      const { data: { user: authUser } } = await supabase.auth.getUser();
-                                      const pharmacyIdToUse = authUser?.id || user.id;
-                                      
-                                      await handleRatingSubmit(
-                                        shift.id,
-                                        shift.pharmacist_id,
-                                        pharmacyIdToUse,
-                                        ratingForm.rating,
-                                        '', // コメントは常に空文字列
-                                        setRatings,
-                                        setEditingRating,
-                                        setRatingForm
-                                      );
-                                    }}
-                                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                                  >
-                                    保存
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setEditingRating(null);
-                                      setRatingForm({ rating: 5, comment: '' });
-                                    }}
-                                    className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
-                                  >
-                                    キャンセル
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          } else if (existingRating) {
+
+                          if (existingRating) {
                             return (
                               <div className="space-y-1">
                                 <div className="text-xs font-medium text-gray-700">評価済み</div>
@@ -2047,11 +2009,15 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                                 )}
                                 <button
                                   onClick={() => {
-                                    setEditingRating(shift.id);
-                                    setRatingForm({
-                                      rating: existingRating.rating,
-                                      comment: existingRating.comment || ''
+                                    const pharmacistProfile = userProfiles[shift.pharmacist_id];
+                                    setSelectedShiftForRating({
+                                      id: shift.id,
+                                      pharmacist_id: shift.pharmacist_id,
+                                      pharmacist_name: pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師名未設定',
+                                      date: shift.date,
+                                      store_name: getStoreName(shift)
                                     });
+                                    setRatingModalOpen(true);
                                   }}
                                   className="text-xs text-blue-600 hover:text-blue-800"
                                 >
@@ -2065,8 +2031,15 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                                 <div className="text-xs font-medium text-gray-700">薬剤師の評価</div>
                                 <button
                                   onClick={() => {
-                                    setEditingRating(shift.id);
-                                    setRatingForm({ rating: 5, comment: '' });
+                                    const pharmacistProfile = userProfiles[shift.pharmacist_id];
+                                    setSelectedShiftForRating({
+                                      id: shift.id,
+                                      pharmacist_id: shift.pharmacist_id,
+                                      pharmacist_name: pharmacistProfile?.name || pharmacistProfile?.email || '薬剤師名未設定',
+                                      date: shift.date,
+                                      store_name: getStoreName(shift)
+                                    });
+                                    setRatingModalOpen(true);
                                   }}
                                   className="text-xs text-blue-600 hover:text-blue-800 border border-blue-300 px-2 py-1 rounded"
                                 >
@@ -2563,89 +2536,33 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         onClose={() => setShowPasswordChangeModal(false)}
         user={user}
       />
+
+      {/* 薬剤師評価モーダル */}
+      {selectedShiftForRating && (
+        <PharmacistRatingModal
+          isOpen={ratingModalOpen}
+          onClose={() => {
+            setRatingModalOpen(false);
+            setSelectedShiftForRating(null);
+          }}
+          assignedShift={selectedShiftForRating}
+          pharmacyId={user.id}
+          onSuccess={async () => {
+            // 評価データを再読み込み
+            const { data: ratingsData } = await pharmacistRatings.getRatings({
+              pharmacy_id: user.id
+            });
+            if (ratingsData) {
+              setRatings(ratingsData);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
 
-// 評価機能の関数（コンポーネント外で定義）
-const handleRatingSubmit = async (
-  shiftId: string, 
-  pharmacistId: string, 
-  pharmacyId: string,
-  rating: number,
-  comment: string,
-  setRatings: (ratings: any[]) => void,
-  setEditingRating: (id: string | null) => void,
-  setRatingForm: (form: { rating: number; comment: string }) => void
-) => {
-  try {
-    console.log('=== RATING SUBMISSION START ===');
-    console.log('Parameters:', {
-      shiftId,
-      pharmacistId,
-      pharmacyId,
-      rating,
-      comment
-    });
-    
-    // 認証状態の確認
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-    console.log('=== AUTH CHECK ===');
-    console.log('Auth user:', authUser);
-    console.log('Auth user ID:', authUser?.id);
-    console.log('Pharmacy ID from parameter:', pharmacyId);
-    console.log('IDs match:', authUser?.id === pharmacyId);
-    console.log('Auth error:', authError);
-    
-    const ratingData = {
-      pharmacy_id: authUser?.id || pharmacyId, // Use authenticated user ID if available
-      pharmacist_id: pharmacistId,
-      assigned_shift_id: shiftId,
-      rating: rating,
-      comment: comment
-    };
-    
-    console.log('Rating data to submit:', ratingData);
-    
-    const { data, error } = await pharmacistRatings.upsertRating(ratingData);
-
-    if (error) {
-      console.error('=== RATING SUBMISSION ERROR ===');
-      console.error('Error details:', {
-        error,
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
-      alert(`評価の保存に失敗しました: ${error.message || 'Unknown error'}`);
-      return;
-    }
-
-    console.log('=== RATING SUBMISSION SUCCESS ===');
-    console.log('Saved rating data:', data);
-
-    // 評価データを再読み込み
-    console.log('Reloading ratings data...');
-    const { data: ratingsData } = await pharmacistRatings.getRatings({
-      pharmacy_id: authUser?.id || pharmacyId
-    });
-    if (ratingsData) {
-      console.log('Reloaded ratings:', ratingsData);
-      setRatings(ratingsData);
-    } else {
-      console.log('No ratings data reloaded');
-    }
-
-    setEditingRating(null);
-    setRatingForm({ rating: 5, comment: '' });
-    alert('評価を保存しました');
-  } catch (error) {
-    console.error('Rating submission error:', error);
-    alert('評価の保存中にエラーが発生しました');
-  }
-};
-
+// ヘルパー関数（コンポーネント外で定義）
 const getExistingRating = (ratings: any[], shiftId: string) => {
   return ratings.find(r => r.assigned_shift_id === shiftId);
 };
