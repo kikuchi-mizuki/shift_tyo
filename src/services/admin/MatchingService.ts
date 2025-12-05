@@ -39,13 +39,6 @@ export const isRangeCompatible = (request: any, posting: any): boolean => {
   // 薬剤師の希望時間が薬局の募集時間を完全にカバーしているかチェック
   const isFullyCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
 
-  console.log('時間適合性チェック（完全カバー）:', {
-    request: { start: rs, end: re, startMin: requestStart, endMin: requestEnd },
-    posting: { start: ps, end: pe, startMin: postingStart, endMin: postingEnd },
-    condition: `${requestStart} <= ${postingStart} && ${requestEnd} >= ${postingEnd}`,
-    result: isFullyCompatible
-  });
-
   return isFullyCompatible;
 };
 
@@ -97,7 +90,6 @@ export const loadAssignedShifts = async (
       return [];
     }
 
-    console.log('Loaded assigned shifts:', assignedData);
     return assignedData || [];
   } catch (error) {
     console.error('Error in loadAssignedShifts:', error);
@@ -122,11 +114,6 @@ export const executeSimpleAIMatching = async (
   userProfiles: any,
   ratings: any[]
 ): Promise<MatchCandidate[]> => {
-  console.log('簡易AIマッチング開始:', {
-    requests: safeLength(requests),
-    postings: safeLength(postings)
-  });
-
   // 確定済み店舗と薬剤師を取得して除外
   const confirmedShifts = Array.isArray(assigned)
     ? assigned.filter((s: any) => s?.status === 'confirmed')
@@ -138,9 +125,6 @@ export const executeSimpleAIMatching = async (
     confirmedShifts.map((s: any) => s.pharmacist_id)
   );
 
-  console.log('確定済み店舗:', Array.from(confirmedStores));
-  console.log('確定済み薬剤師:', Array.from(confirmedPharmacists));
-
   // 確定済み店舗を除外した募集のみを使用
   const availablePostings = postings.filter((p: any) => {
     const storeKey = `${p.pharmacy_id}_${p.store_name || 'default'}`;
@@ -151,9 +135,6 @@ export const executeSimpleAIMatching = async (
   const availableRequests = requests.filter((r: any) => {
     return !confirmedPharmacists.has(r.pharmacist_id);
   });
-
-  console.log('利用可能な募集数:', safeLength(availablePostings));
-  console.log('利用可能な希望数:', safeLength(availableRequests));
 
   const matches: MatchCandidate[] = [];
 
@@ -278,12 +259,8 @@ export const executeSimpleAIMatching = async (
     return b.ratingScore - a.ratingScore;
   });
 
-  console.log(`可能なマッチング組み合わせ: ${safeLength(allPossibleMatches)}件`);
-
   // 最適解を構築
   const findOptimalSolution = (possibleMatches: any[]): MatchCandidate[] => {
-    console.log('=== 貪欲法アルゴリズム開始 ===');
-
     // 段階的優先順位でソート（既に親関数でソート済みだが念のため）
     const sortedMatches = [...possibleMatches].sort((a, b) => {
       if (Math.abs(a.distanceScore - b.distanceScore) > 0.01) {
@@ -374,18 +351,12 @@ export const executeSimpleAIMatching = async (
       pharmacyNeedsMap.set(key, remaining - 1);
     }
 
-    console.log(`=== 貪欲法完了 ===`);
-    console.log(`選択されたマッチング: ${safeLength(selectedMatches)}件`);
-
     return selectedMatches;
   };
 
   // 最適解を実行
   const optimalMatches = findOptimalSolution(allPossibleMatches);
   matches.push(...optimalMatches);
-
-  console.log(`=== AIマッチング完了 ===`);
-  console.log(`マッチ数: ${safeLength(matches)}件`);
 
   return matches;
 };
@@ -411,8 +382,6 @@ export const performMatchingAnalysis = (
   ratings: any[],
   requests: any[]
 ): { matches: MatchCandidate[]; matchedCount: number; shortage: number } => {
-  console.log(`マッチング分析実行 [${date}]: 希望=${safeLength(dayRequests)}, 募集=${safeLength(dayPostings)}`);
-
   // 確定済みの薬剤師・薬局を除外
   const confirmedPharmacists = new Set<string>();
   const confirmedPharmacies = new Set<string>();
@@ -439,16 +408,6 @@ export const performMatchingAnalysis = (
     const stillNeedsStaff = confirmedCountForStore < requiredStaff;
 
     return stillNeedsStaff;
-  });
-
-  console.log('=== performMatchingAnalysis 確定済み除外 ===', {
-    date,
-    originalRequests: safeLength(dayRequests),
-    originalPostings: safeLength(dayPostings),
-    filteredRequests: safeLength(filteredRequests),
-    filteredPostings: safeLength(filteredPostings),
-    confirmedPharmacists: Array.from(confirmedPharmacists),
-    confirmedStoreKeys: Array.from(confirmedStoreKeys)
   });
 
   // 薬剤師を距離・希望回数・評価の優先順位でソート
@@ -602,8 +561,6 @@ export const performMatchingAnalysis = (
     reasons: ['時間適合', '距離適合']
   }));
 
-  console.log(`マッチング分析完了 [${date}]: マッチ=${safeLength(matches)}件`);
-
   return {
     matches,
     matchedCount,
@@ -679,12 +636,6 @@ export const executeAIMatching = async (
     const dayRequests = freshRequests.filter((r: any) => r.status !== 'confirmed');
     const dayPostings = freshPostings.filter((p: any) => p.status !== 'confirmed');
 
-    console.log('=== AIマッチング用データ取得 ===', {
-      date,
-      filteredRequests: safeLength(dayRequests),
-      filteredPostings: safeLength(dayPostings)
-    });
-
     // 確定済みの組み合わせをセット化
     const confirmedPharmacists = new Set<string>();
     const confirmedStoreKeys = new Set<string>();
@@ -713,19 +664,10 @@ export const executeAIMatching = async (
     });
     const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
-    console.log('=== 確定済み除外ロジック詳細 ===', {
-      date,
-      filteredRequests: safeLength(filteredDayRequests),
-      filteredPostings: safeLength(filteredDayPostings)
-    });
-
     // 募集/希望が0件の場合
     if (safeLength(filteredDayPostings) === 0 || safeLength(filteredDayRequests) === 0) {
-      console.log('AIマッチングをスキップ（募集/希望が0件）');
       return [];
     }
-
-    console.log(`AI Matching for ${date}: ${safeLength(filteredDayRequests)} requests, ${safeLength(filteredDayPostings)} postings`);
 
     // マッチング分析を実行
     const matchingResult = performMatchingAnalysis(
@@ -776,8 +718,6 @@ export const executeAIMatching = async (
           };
         });
 
-        console.log(`マッチング結果をassigned_shiftsテーブルに保存: ${safeLength(shiftsToInsert)}件`);
-
         const { data: insertedShifts, error: insertError } = await supabase
           .from('assigned_shifts')
           .insert(shiftsToInsert)
@@ -785,15 +725,12 @@ export const executeAIMatching = async (
 
         if (insertError) {
           console.error('assigned_shiftsテーブルへの保存エラー:', insertError);
-        } else {
-          console.log(`マッチング結果保存完了: ${safeLength(insertedShifts)}件`);
         }
       } catch (error) {
         console.error('マッチング結果保存エラー:', error);
       }
     }
 
-    console.log(`AI Matching completed: ${safeLength(matches)} matches found`);
     return matches;
   } catch (error) {
     console.error('AI Matching failed:', error);
