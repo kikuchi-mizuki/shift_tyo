@@ -32,12 +32,29 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
       </div>
       <div className="space-y-2 max-h-48 overflow-y-auto">
         {matches.map((match, index) => {
-          const pharmacistName = match.pharmacist?.name || (match.pharmacist?.id && userProfiles[match.pharmacist.id]?.name) || '薬剤師名未設定';
-          const pharmacyName = match.pharmacy?.name || (match.pharmacy?.id && userProfiles[match.pharmacy.id]?.name) || '薬局名未設定';
-          const storeName = match.posting?.store_name || match.pharmacy?.store_name || '店舗名未設定';
+          // AIマッチングエンジンが生成した名前を優先的に使用
+          const pharmacistName = match.pharmacist?.name || '薬剤師名未設定';
+          const pharmacyName = match.pharmacy?.name || '薬局名未設定';
+
+          // 店舗名の取得（複数のソースから試行）
+          let storeName = '店舗名未設定';
+          if (match.posting?.store_name) {
+            storeName = match.posting.store_name;
+          } else if (match.pharmacy?.id && userProfiles[match.pharmacy.id]) {
+            const profile = userProfiles[match.pharmacy.id];
+            // 薬局名と店舗名が異なる場合は店舗名を使用
+            storeName = profile.store_name || profile.name || '店舗名未設定';
+          }
+
           const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00';
           const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00';
-          const score = Math.round(match.compatibilityScore * 100);
+
+          // compatibilityScoreの安全な取得（undefinedの場合は0.8をデフォルト値として使用）
+          const compatibilityScore = typeof match.compatibilityScore === 'number' && !isNaN(match.compatibilityScore)
+            ? match.compatibilityScore
+            : 0.8;
+          const score = Math.round(compatibilityScore * 100);
+
           const reasons = (match.reasons || []).slice(0, 2).join(', ');
 
           return (

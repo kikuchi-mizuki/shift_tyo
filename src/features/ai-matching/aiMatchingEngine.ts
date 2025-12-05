@@ -186,7 +186,7 @@ export class AIMatchingEngine {
             pharmacist: {
               id: request.pharmacist_id,
                 name: this.getPharmacistName(request, userProfiles),
-                email: '',
+                email: userProfiles?.[request.pharmacist_id]?.email || '',
               rating: 0,
               preferences: {
                 preferredPharmacyTypes: [],
@@ -254,7 +254,13 @@ export class AIMatchingEngine {
               }
             },
               compatibilityScore: 0.8,
-              reasons: ['マッチング']
+              reasons: ['マッチング'],
+              // 店舗名を含むposting情報を追加
+              posting: {
+                start_time: posting.start_time,
+                end_time: posting.end_time,
+                store_name: posting.store_name || ''
+              }
             };
             
               candidates.push(candidate);
@@ -286,17 +292,21 @@ export class AIMatchingEngine {
    */
   private getPharmacistName(request: any, userProfiles?: any): string {
     const pharmacistId = request.pharmacist_id;
-    
+
     // AdminDashboardと同じロジック: user_profilesテーブルから取得
     if (userProfiles && userProfiles[pharmacistId]) {
-      const name = userProfiles[pharmacistId]?.name;
-      if (name && name.trim()) {
-        return name.trim();
+      const profile = userProfiles[pharmacistId];
+      if (profile.name && profile.name.trim()) {
+        return profile.name.trim();
+      }
+      // 名前がない場合はemailを使用
+      if (profile.email && profile.email.trim()) {
+        return profile.email.split('@')[0]; // emailの@より前の部分を使用
       }
     }
-    
-    // フォールバック
-    return 'Unknown';
+
+    // フォールバック: IDの末尾4桁を使用
+    return `薬剤師${pharmacistId ? pharmacistId.slice(-4) : 'Unknown'}`;
   }
 
   /**
@@ -305,30 +315,26 @@ export class AIMatchingEngine {
   private getPharmacyName(posting: any, userProfiles?: any): string {
     const pharmacyId = posting.pharmacy_id;
     let pharmacyName = '';
-    let storeName = '';
 
     // 1. 薬局名を取得（user_profilesテーブルから）
     if (userProfiles && userProfiles[pharmacyId]) {
       const profile = userProfiles[pharmacyId];
       if (profile.name && profile.name.trim()) {
         pharmacyName = profile.name.trim();
+      } else if (profile.email && profile.email.trim()) {
+        // 名前がない場合はemailを使用
+        pharmacyName = profile.email.split('@')[0];
       }
     }
 
     // 2. 店舗名を取得（shift_postingsテーブルのstore_nameから）
-    if (posting.store_name && posting.store_name.trim()) {
-      storeName = posting.store_name.trim();
-    }
-
-    // 3. 店舗名のみを返す（薬局名と店舗名が同じ場合は店舗名のみ）
-    if (storeName) {
-      return storeName;
-    } else if (pharmacyName) {
+    // 注意: pharmacy.nameには薬局名を設定し、店舗名は別途使用する
+    if (pharmacyName) {
       return pharmacyName;
     }
 
-    // 4. フォールバック - userProfilesにデータがない場合の対処
-    return `薬局${pharmacyId.slice(-4)}`;
+    // 3. フォールバック - userProfilesにデータがない場合の対処
+    return `薬局${pharmacyId ? pharmacyId.slice(-4) : 'Unknown'}`;
   }
 
   /**
