@@ -32,8 +32,8 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
       </div>
       <div className="space-y-2 max-h-48 overflow-y-auto">
         {matches.map((match, index) => {
-          const pharmacistName = match.pharmacist?.name || userProfiles[match.pharmacist.id]?.name || '薬剤師名未設定';
-          const pharmacyName = match.pharmacy?.name || userProfiles[match.pharmacy.id]?.name || '薬局名未設定';
+          const pharmacistName = match.pharmacist?.name || (match.pharmacist?.id && userProfiles[match.pharmacist.id]?.name) || '薬剤師名未設定';
+          const pharmacyName = match.pharmacy?.name || (match.pharmacy?.id && userProfiles[match.pharmacy.id]?.name) || '薬局名未設定';
           const storeName = match.posting?.store_name || match.pharmacy?.store_name || '店舗名未設定';
           const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00';
           const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00';
