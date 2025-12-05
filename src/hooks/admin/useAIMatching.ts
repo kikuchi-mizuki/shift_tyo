@@ -31,7 +31,9 @@ export const useAIMatching = (
   postings: any[],
   assigned: any[],
   userProfiles: any,
-  ratings: any[]
+  ratings: any[],
+  storeNgPharmacists: { [pharmacyId: string]: any[] },
+  storeNgPharmacies: { [pharmacistId: string]: any[] }
 ): UseAIMatchingReturn => {
   const [aiMatches, setAiMatches] = useState<MatchCandidate[]>([]);
   const [aiMatchesByDate, setAiMatchesByDate] = useState<{ [date: string]: MatchCandidate[] }>({});
@@ -74,7 +76,9 @@ export const useAIMatching = (
         assigned,
         userProfiles,
         ratings,
-        aiMatchingEngine
+        aiMatchingEngine,
+        storeNgPharmacists,
+        storeNgPharmacies
       );
 
       setAiMatches(matches);
@@ -87,7 +91,7 @@ export const useAIMatching = (
     } finally {
       setAiMatchingLoading(false);
     }
-  }, [aiMatchingEngine, supabase, requests, postings, assigned, userProfiles, ratings]);
+  }, [aiMatchingEngine, supabase, requests, postings, assigned, userProfiles, ratings, storeNgPharmacists, storeNgPharmacies]);
 
   /**
    * 1ヶ月分のAIマッチングを実行

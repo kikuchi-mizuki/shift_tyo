@@ -72,7 +72,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     aiMatchingLoading,
     executeMatching,
     executeMonthlyMatching
-  } = useAIMatching(supabase, requests, postings, assigned, userProfiles, ratings);
+  } = useAIMatching(supabase, requests, postings, assigned, userProfiles, ratings, storeNgPharmacists, storeNgPharmacies);
 
   // カスタムフック: 手動マッチング
   const {

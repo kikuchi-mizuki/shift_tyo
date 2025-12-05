@@ -371,6 +371,8 @@ export const executeSimpleAIMatching = async (
  * @param userProfiles - ユーザープロフィール
  * @param ratings - 薬剤師評価リスト
  * @param requests - 全シフト希望リスト（希望回数計算用）
+ * @param storeNgPharmacists - 薬局のNG薬剤師リスト（pharmacy_id -> NG薬剤師配列）
+ * @param storeNgPharmacies - 薬剤師のNG薬局リスト（pharmacist_id -> NG薬局配列）
  * @returns マッチング分析結果
  */
 export const performMatchingAnalysis = (
@@ -380,7 +382,9 @@ export const performMatchingAnalysis = (
   assigned: any[],
   userProfiles: any,
   ratings: any[],
-  requests: any[]
+  requests: any[],
+  storeNgPharmacists?: { [pharmacyId: string]: any[] },
+  storeNgPharmacies?: { [pharmacistId: string]: any[] }
 ): { matches: MatchCandidate[]; matchedCount: number; shortage: number } => {
   // 確定済みの薬剤師・薬局を除外
   const confirmedPharmacists = new Set<string>();
@@ -448,16 +452,33 @@ export const performMatchingAnalysis = (
 
   sortedRequests.forEach((request: any) => {
     const pharmacist = userProfiles[request.pharmacist_id];
-    const pharmacistNg: string[] = Array.isArray(pharmacist?.ng_list) ? pharmacist.ng_list : [];
 
     for (const pharmacyNeed of pharmacyNeeds) {
       if (pharmacyNeed.remaining <= 0) continue;
 
       const pharmacy = userProfiles[pharmacyNeed.pharmacy_id];
-      const pharmacyNg: string[] = Array.isArray(pharmacy?.ng_list) ? pharmacy.ng_list : [];
 
-      const blockedByPharmacist = pharmacistNg.includes(pharmacyNeed.pharmacy_id);
-      const blockedByPharmacy = pharmacyNg.includes(request.pharmacist_id);
+      // NG設定チェック（store_ng_pharmacists, store_ng_pharmaciesテーブルを使用）
+      let blockedByPharmacist = false;
+      let blockedByPharmacy = false;
+
+      // 薬剤師がNG指定している薬局をチェック
+      if (storeNgPharmacies && storeNgPharmacies[request.pharmacist_id]) {
+        const ngPharmacies = storeNgPharmacies[request.pharmacist_id];
+        blockedByPharmacist = ngPharmacies.some((ng: any) =>
+          ng.pharmacy_id === pharmacyNeed.pharmacy_id &&
+          (!ng.store_name || ng.store_name === pharmacyNeed.store_name)
+        );
+      }
+
+      // 薬局がNG指定している薬剤師をチェック
+      if (storeNgPharmacists && storeNgPharmacists[pharmacyNeed.pharmacy_id]) {
+        const ngPharmacists = storeNgPharmacists[pharmacyNeed.pharmacy_id];
+        blockedByPharmacy = ngPharmacists.some((ng: any) =>
+          ng.pharmacist_id === request.pharmacist_id &&
+          (!ng.store_name || ng.store_name === pharmacyNeed.store_name)
+        );
+      }
 
       // 時間範囲互換性をチェック
       const rs = request?.start_time;
@@ -487,9 +508,6 @@ export const performMatchingAnalysis = (
         const requestCountScore = calculateRequestCountScore(request.pharmacist_id, requests);
         const ratingScore = getPharmacistRating(request.pharmacist_id, ratings) / 5;
 
-        // 距離を最優先（50%）、希望回数を次優先（30%）、評価を最後（20%）
-        const totalScore = (distanceScore * 0.5) + (requestCountScore * 0.3) + (ratingScore * 0.2);
-
         allMatchCandidates.push({
           request,
           pharmacyNeed,
@@ -497,46 +515,60 @@ export const performMatchingAnalysis = (
           pharmacy,
           distanceScore,
           requestCountScore,
-          ratingScore,
-          totalScore
+          ratingScore
         });
       }
     }
   });
 
-  // スコア順にソート
-  allMatchCandidates.sort((a, b) => b.totalScore - a.totalScore);
-
-  // 薬局ごとに募集人数分の薬剤師をマッチング
-  const usedPharmacists = new Set<string>();
-  const pharmacyMatches = new Map<string, any[]>();
-
-  for (const candidate of allMatchCandidates) {
-    const pharmacyKey = candidate.pharmacyNeed.pharmacy_id;
-    if (!pharmacyMatches.has(pharmacyKey)) {
-      pharmacyMatches.set(pharmacyKey, []);
+  // 段階的優先順位でソート（タイブレーク方式）
+  // 1. 距離（近い方が優先） → 2. シフト希望回数（少ない方が優先） → 3. 評価（高い方が優先）
+  allMatchCandidates.sort((a, b) => {
+    // 1. 距離で比較（距離が近い方が優先 = distanceScoreが高い方が優先）
+    if (Math.abs(a.distanceScore - b.distanceScore) > 0.01) {
+      return b.distanceScore - a.distanceScore;
     }
-    pharmacyMatches.get(pharmacyKey)!.push(candidate);
+
+    // 2. 距離が同じ場合、シフト希望回数で比較（回数が少ない方が優先 = requestCountScoreが低い方が優先）
+    if (Math.abs(a.requestCountScore - b.requestCountScore) > 0.01) {
+      return a.requestCountScore - b.requestCountScore;
+    }
+
+    // 3. 回数も同じ場合、評価で比較（評価が高い方が優先 = ratingScoreが高い方が優先）
+    return b.ratingScore - a.ratingScore;
+  });
+
+  // 店舗別に募集人数分の薬剤師をマッチング
+  const usedPharmacists = new Set<string>();
+  const storeMatches = new Map<string, any[]>();
+
+  // 店舗キー（pharmacy_id + store_name）でグルーピング
+  for (const candidate of allMatchCandidates) {
+    const storeKey = `${candidate.pharmacyNeed.pharmacy_id}_${(candidate.pharmacyNeed.store_name || '').trim()}`;
+    if (!storeMatches.has(storeKey)) {
+      storeMatches.set(storeKey, []);
+    }
+    storeMatches.get(storeKey)!.push(candidate);
   }
 
-  // 各薬局について、募集人数分の薬剤師をマッチング
+  // 各店舗について、募集人数分の薬剤師をマッチング
   let matchedCount = 0;
   const matchedPharmacists = [] as any[];
   const matchedPharmacies = [] as any[];
 
-  for (const [pharmacyId, candidates] of pharmacyMatches) {
+  for (const [storeKey, candidates] of storeMatches) {
     const pharmacyNeed = candidates[0].pharmacyNeed;
     const requiredStaff = pharmacyNeed.required_staff || 1;
-    let matchedForPharmacy = 0;
+    let matchedForStore = 0;
 
     for (const candidate of candidates) {
-      if (matchedForPharmacy >= requiredStaff) break;
+      if (matchedForStore >= requiredStaff) break;
       if (usedPharmacists.has(candidate.request.pharmacist_id)) continue;
 
       matchedCount++;
       matchedPharmacists.push(candidate.request);
       matchedPharmacies.push(candidate.pharmacyNeed);
-      matchedForPharmacy++;
+      matchedForStore++;
       usedPharmacists.add(candidate.request.pharmacist_id);
     }
   }
@@ -625,6 +657,8 @@ export const performMatchingAnalysis = (
  * @param userProfiles - ユーザープロフィール
  * @param ratings - 薬剤師評価リスト
  * @param aiMatchingEngine - AIマッチングエンジン
+ * @param storeNgPharmacists - 薬局のNG薬剤師リスト
+ * @param storeNgPharmacies - 薬剤師のNG薬局リスト
  * @returns マッチング結果
  */
 export const executeAIMatching = async (
@@ -635,7 +669,9 @@ export const executeAIMatching = async (
   assigned: any[],
   userProfiles: any,
   ratings: any[],
-  aiMatchingEngine: AIMatchingEngine | null
+  aiMatchingEngine: AIMatchingEngine | null,
+  storeNgPharmacists?: { [pharmacyId: string]: any[] },
+  storeNgPharmacies?: { [pharmacistId: string]: any[] }
 ): Promise<MatchCandidate[]> => {
   if (!aiMatchingEngine) {
     console.error('AI Matching Engine not initialized');
@@ -723,7 +759,9 @@ export const executeAIMatching = async (
       assigned,
       userProfiles,
       ratings,
-      requests
+      requests,
+      storeNgPharmacists,
+      storeNgPharmacies
     );
     const matches = matchingResult.matches;
 
