@@ -94,6 +94,28 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
           accessToken: sessionData.session?.access_token?.substring(0, 20) + '...'
         });
 
+        // デバッグ: auth.uid()を直接テスト
+        console.log('Testing auth.uid() directly...');
+        const { data: authUidTest, error: authUidError } = await supabase
+          .rpc('auth_uid_test');
+
+        console.log('auth.uid() test result:', {
+          authUid: authUidTest,
+          error: authUidError?.message
+        });
+
+        // デバッグ: RLSを無視してすべてのプロフィールを取得（service_roleで実行されないのでエラーになる）
+        console.log('Attempting to fetch ALL profiles (should fail with RLS)...');
+        const { data: allProfilesNoFilter, error: allNoFilterError } = await supabase
+          .from('user_profiles')
+          .select('id, email, user_type');
+
+        console.log('All profiles result:', {
+          success: !allNoFilterError,
+          count: allProfilesNoFilter?.length || 0,
+          error: allNoFilterError?.message
+        });
+
         // デバッグ: まず .single() なしで試す
         console.log('Attempting to fetch profile without .single()...');
         const { data: allProfiles, error: allError } = await supabase
@@ -104,7 +126,8 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
         console.log('Profile fetch result (without .single()):', {
           success: !allError,
           count: allProfiles?.length || 0,
-          error: allError?.message
+          error: allError?.message,
+          profiles: allProfiles?.map(p => ({ id: p.id, email: p.email, user_type: p.user_type }))
         });
 
         if (allError) {
