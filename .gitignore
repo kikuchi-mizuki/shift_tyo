@@ -30,3 +30,8 @@ supabase/.temp
 # Development files
 development/
 *.bak
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

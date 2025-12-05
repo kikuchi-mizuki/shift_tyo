@@ -1,86 +1,82 @@
-# 🚀 Edge Function デプロイガイド
+# デプロイメントガイド
 
-## 📋 ローカルPCからのデプロイ手順
+## 本番環境設定
 
-### 1️⃣ Supabase CLI インストール
+### 1. 環境変数の設定
 
-```bash
-# macOS (Homebrew)
-brew install supabase/tap/supabase
-
-# もしくは npm
-npm i -g supabase
-```
-
-### 2️⃣ ログイン & プロジェクト紐付け
+デプロイプラットフォーム（Railway, Vercel等）で以下の環境変数を設定してください：
 
 ```bash
-# Supabaseにログイン（ブラウザでトークン入力）
-supabase login
+# Supabase設定
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 
-# プロジェクトに紐付け
-supabase link --project-ref <YOUR_PROJECT_REF>
+# Sentry設定（エラートラッキング）
+VITE_SENTRY_DSN=https://your-sentry-dsn@sentry.io/your-project-id
+
+# デバッグログ設定（開発環境のみ）
+VITE_ENABLE_DEBUG_LOGS=false
 ```
 
-### 3️⃣ Edge Function用シークレット設定（初回のみ）
+### 2. Supabase設定
 
-**重要**: `<YOUR_SERVICE_ROLE_KEY>`を実際のService Role Keyに置き換えてください。
+#### ログ保持期間の設定（90日間）
+
+Supabaseダッシュボードで以下のSQL関数を実行してください：
+
+```sql
+-- line_notification_logsテーブルの自動削除（90日以上前のログ）
+CREATE OR REPLACE FUNCTION delete_old_notification_logs()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM line_notification_logs
+  WHERE created_at < NOW() - INTERVAL '90 days';
+END;
+$$ LANGUAGE plpgsql;
+
+-- 毎日実行するCron job（Supabase pg_cronを使用）
+SELECT cron.schedule(
+  'delete-old-logs',
+  '0 2 * * *', -- 毎日午前2時に実行
+  $$SELECT delete_old_notification_logs()$$
+);
+```
+
+####CORS設定
+
+Supabaseダッシュボード > Settings > API > CORS Configuration:
+
+```
+# 本番ドメインのみ許可
+https://your-production-domain.com
+```
+
+### 3. セキュリティチェックリスト
+
+- [ ] 環境変数が正しく設定されている
+- [ ] RLSポリシーが設定されている
+- [ ] CORS設定が本番ドメインに限定されている
+- [ ] Sentryが正しく設定されている
+- [ ] ログ保持期間が90日に設定されている
+
+### 4. パフォーマンス監視
+
+#### Sentry設定（既に実装済み）
+
+`src/main.tsx`で設定済み：
+- Performance Monitoring: トランザクションの10%をキャプチャ
+- Session Replay: エラー時100%、通常時10%
+- エラートラッキング: すべてのエラーをキャプチャ
+
+### 5. デプロイコマンド
 
 ```bash
-supabase functions secrets set \
-  SUPABASE_URL=https://<YOUR_PROJECT_REF>.supabase.co \
-  SUPABASE_SERVICE_ROLE_KEY=<YOUR_SERVICE_ROLE_KEY>
+# ビルド
+npm run build
+
+# E2Eテスト
+npm run test:e2e
+
+# デプロイ（プラットフォームに応じて）
+git push origin main
 ```
-
-#### Service Role Key の取得方法：
-1. [Supabase Dashboard](https://supabase.com/dashboard) → プロジェクト選択
-2. **Settings** → **API** をクリック
-3. **Project API keys** セクションの **service_role** キーをコピー
-
-### 4️⃣ デプロイ実行
-
-```bash
-# "api" という関数名でデプロイ
-supabase functions deploy api --project-ref <YOUR_PROJECT_REF>
-```
-
-### 5️⃣ 動作確認
-
-```bash
-# user_profiles を1件取得してテスト
-curl -s "https://<YOUR_PROJECT_REF>.supabase.co/functions/v1/api/user_profiles?limit=1" \
-  -H "Authorization: Bearer <YOUR_ANON_KEY>"
-```
-
-**期待される結果**: 200ステータスでJSONデータが返される
-
-## 🔧 開発中のローカル実行（オプション）
-
-```bash
-# ローカルでEdge Functionを実行
-supabase functions serve --env-file .env
-```
-
-## ✅ デプロイ完了後の確認事項
-
-1. **PGRST205エラーの解消** - アプリケーションでエラーが出なくなる
-2. **データ取得の安定化** - 4つのリソースが正常に取得できる
-3. **本番環境の動作** - Supabase認証とデータベース連携が正常動作
-
-## 🚨 トラブルシューティング
-
-### エラー: "Function not found"
-- デプロイが完了していない可能性があります
-- `supabase functions list` でデプロイ状況を確認
-
-### エラー: "Unauthorized" 
-- Service Role Keyが正しく設定されていない可能性があります
-- シークレット設定を再実行してください
-
-### エラー: "Database connection failed"
-- データベースマイグレーションが完了していない可能性があります
-- `SETUP_DATABASE.md` の手順を確認してください
-
-## 📞 サポート
-
-デプロイで問題が発生した場合は、エラーメッセージと実行したコマンドをお知らせください。
