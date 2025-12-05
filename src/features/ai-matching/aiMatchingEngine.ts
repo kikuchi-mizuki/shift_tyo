@@ -293,20 +293,33 @@ export class AIMatchingEngine {
   private getPharmacistName(request: any, userProfiles?: any): string {
     const pharmacistId = request.pharmacist_id;
 
+    // デバッグ情報を出力
+    console.error('[AI Matching Debug] getPharmacistName:', {
+      pharmacistId,
+      hasUserProfiles: !!userProfiles,
+      userProfilesKeys: userProfiles ? Object.keys(userProfiles).length : 0,
+      hasProfile: !!(userProfiles && userProfiles[pharmacistId]),
+      profile: userProfiles?.[pharmacistId]
+    });
+
     // AdminDashboardと同じロジック: user_profilesテーブルから取得
     if (userProfiles && userProfiles[pharmacistId]) {
       const profile = userProfiles[pharmacistId];
       if (profile.name && profile.name.trim()) {
+        console.error('[AI Matching Debug] Using profile.name:', profile.name);
         return profile.name.trim();
       }
       // 名前がない場合はemailを使用
       if (profile.email && profile.email.trim()) {
+        console.error('[AI Matching Debug] Using profile.email:', profile.email);
         return profile.email.split('@')[0]; // emailの@より前の部分を使用
       }
     }
 
     // フォールバック: IDの末尾4桁を使用
-    return `薬剤師${pharmacistId ? pharmacistId.slice(-4) : 'Unknown'}`;
+    const fallbackName = `薬剤師${pharmacistId ? pharmacistId.slice(-4) : 'Unknown'}`;
+    console.error('[AI Matching Debug] Using fallback:', fallbackName);
+    return fallbackName;
   }
 
   /**
@@ -316,14 +329,26 @@ export class AIMatchingEngine {
     const pharmacyId = posting.pharmacy_id;
     let pharmacyName = '';
 
+    // デバッグ情報を出力
+    console.error('[AI Matching Debug] getPharmacyName:', {
+      pharmacyId,
+      hasUserProfiles: !!userProfiles,
+      userProfilesKeys: userProfiles ? Object.keys(userProfiles).length : 0,
+      hasProfile: !!(userProfiles && userProfiles[pharmacyId]),
+      profile: userProfiles?.[pharmacyId],
+      storeName: posting.store_name
+    });
+
     // 1. 薬局名を取得（user_profilesテーブルから）
     if (userProfiles && userProfiles[pharmacyId]) {
       const profile = userProfiles[pharmacyId];
       if (profile.name && profile.name.trim()) {
         pharmacyName = profile.name.trim();
+        console.error('[AI Matching Debug] Using profile.name:', pharmacyName);
       } else if (profile.email && profile.email.trim()) {
         // 名前がない場合はemailを使用
         pharmacyName = profile.email.split('@')[0];
+        console.error('[AI Matching Debug] Using profile.email:', pharmacyName);
       }
     }
 
@@ -334,7 +359,9 @@ export class AIMatchingEngine {
     }
 
     // 3. フォールバック - userProfilesにデータがない場合の対処
-    return `薬局${pharmacyId ? pharmacyId.slice(-4) : 'Unknown'}`;
+    const fallbackName = `薬局${pharmacyId ? pharmacyId.slice(-4) : 'Unknown'}`;
+    console.error('[AI Matching Debug] Using fallback:', fallbackName);
+    return fallbackName;
   }
 
   /**
