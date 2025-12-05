@@ -77,7 +77,7 @@ export const PharmacyPostings: React.FC<PharmacyPostingsProps> = ({
             >
               <option value="">薬局を選択</option>
               {Object.entries(userProfiles || {})
-                .filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacy' || profile.user_type === 'store')
+                .filter(([_, profile]: [string, any]) => profile && (profile.user_type === 'pharmacy' || profile.user_type === 'store'))
                 .map(([id, profile]: [string, any]) => (
                   <option key={id} value={id}>{profile.name || profile.email}</option>
                 ))}
