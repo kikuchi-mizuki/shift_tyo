@@ -236,9 +236,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   };
 
   // ユーザーリストの整理
-  const pharmacies = Object.values(userProfiles).filter((p: any) => p.user_type === 'pharmacy' || p.user_type === 'store');
-  const pharmacists = Object.values(userProfiles).filter((p: any) => p.user_type === 'pharmacist');
-  const availablePharmacists = pharmacists;
+  const pharmacies = Object.values(userProfiles).filter((p: any) => p && p.user_type === 'pharmacy' || p && p.user_type === 'store');
+  const pharmacists = Object.values(userProfiles).filter((p: any) => p && p.user_type === 'pharmacist');
+  const availablePharmacists = pharmacists.filter((p: any) => p && p.id);
 
   // 選択された日付のデータ
   const dayData = selectedDate ? {

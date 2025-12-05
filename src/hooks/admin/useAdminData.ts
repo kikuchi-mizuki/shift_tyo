@@ -198,7 +198,9 @@ export const useAdminData = (
       } else {
         if (allProfilesData) {
           allProfilesData.forEach((profile: any) => {
-            profilesMap[profile.id] = profile;
+            if (profile && profile.id) {
+              profilesMap[profile.id] = profile;
+            }
           });
         }
         setUserProfiles(profilesMap);
