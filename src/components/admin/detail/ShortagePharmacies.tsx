@@ -39,8 +39,10 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
         </h4>
       </div>
       <div className="space-y-2 max-h-48 overflow-y-auto">
-        {shortages.map((pharmacy, index) => (
-          <div key={index} className="bg-white rounded border p-3 text-sm">
+        {(shortages || [])
+          .filter((p: any) => p && p.id)
+          .map((pharmacy, index) => (
+            <div key={index} className="bg-white rounded border p-3 text-sm">
             <div className="font-semibold text-gray-800 mb-2">
               <div className="flex items-center space-x-2">
                 <span className="text-blue-600">薬局:</span>
@@ -80,18 +82,20 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
                         className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
                       >
                         <option value="">薬剤師を選択してください</option>
-                        {availablePharmacists.map((pharmacist: any) => (
-                          <option
-                            key={pharmacist.id}
-                            value={pharmacist.id}
-                            disabled={
-                              manualMatches[pharmacy.id]?.includes(pharmacist.id) &&
-                              manualMatches[pharmacy.id]?.[slotIndex] !== pharmacist.id
-                            }
-                          >
-                            {pharmacist.name || `薬剤師${pharmacist.id?.slice(-4) || 'unknown'}`}
-                          </option>
-                        ))}
+                        {(availablePharmacists || [])
+                          .filter((p: any) => p && p.id)
+                          .map((pharmacist: any) => (
+                            <option
+                              key={pharmacist.id}
+                              value={pharmacist.id}
+                              disabled={
+                                manualMatches[pharmacy.id]?.includes(pharmacist.id) &&
+                                manualMatches[pharmacy.id]?.[slotIndex] !== pharmacist.id
+                              }
+                            >
+                              {pharmacist.name || `薬剤師${pharmacist.id?.slice(-4) || 'unknown'}`}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   ))}
@@ -99,7 +103,7 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
               </div>
             )}
           </div>
-        ))}
+          ))}
       </div>
 
       {/* 手動マッチング確定ボタン */}
