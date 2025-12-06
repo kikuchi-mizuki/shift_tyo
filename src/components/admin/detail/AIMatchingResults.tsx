@@ -74,15 +74,20 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
             pharmacyName = `薬局${pharmacyId.slice(-4)}`;
           }
 
-          // 店舗名の取得
+          // 店舗名の取得（薬局名をフォールバックとして使わない）
           let storeName = '店舗名未設定';
           if (match.store_name) {
             storeName = match.store_name;
           } else if (match.posting?.store_name) {
             storeName = match.posting.store_name;
-          } else if (pharmacyId && userProfiles[pharmacyId]) {
-            const profile = userProfiles[pharmacyId];
-            storeName = profile.store_name || profile.name || '店舗名未設定';
+          } else {
+            // postingsから検索して店舗名を取得
+            const posting = postings.find((p: any) => p.pharmacy_id === pharmacyId);
+            if (posting?.store_name) {
+              storeName = posting.store_name;
+            } else if (pharmacyId && userProfiles[pharmacyId]?.store_name) {
+              storeName = userProfiles[pharmacyId].store_name;
+            }
           }
 
           // 薬局の募集時間を取得（postingsから検索）
