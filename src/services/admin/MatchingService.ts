@@ -783,25 +783,10 @@ export const executeAIMatching = async (
     // マッチング結果をassigned_shiftsテーブルに保存
     if (safeLength(matches) > 0 && supabase) {
       try {
-        // 薬局の店舗名をSupabaseから取得
-        const pharmacyIds = matches.map((match: any) => match.pharmacy.id);
-        const { data: pharmacyData } = await supabase
-          .from('user_profiles')
-          .select('id, name, store_name')
-          .in('id', pharmacyIds);
-
-        // 薬局IDをキーとした店舗名マップを作成
-        const pharmacyStoreMap = new Map();
-        if (pharmacyData) {
-          pharmacyData.forEach((pharmacy: any) => {
-            pharmacyStoreMap.set(pharmacy.id, pharmacy.store_name || pharmacy.name);
-          });
-        }
-
         const shiftsToInsert = matches.map((match: any) => {
-          const storeName = pharmacyStoreMap.get(match.pharmacy.id) ||
-                           match.pharmacy.store_name ||
-                           match.pharmacy.name ||
+          // match.pharmacy.store_name（shift_postings由来）を優先的に使用
+          const storeName = match.pharmacy.store_name ||
+                           match.posting?.store_name ||
                            '店舗名なし';
 
           return {
