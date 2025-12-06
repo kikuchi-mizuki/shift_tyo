@@ -76,19 +76,36 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
 
           // 店舗名の取得（薬局名をフォールバックとして使わない）
           let storeName = '店舗名未設定';
+
+          console.error('🔍 [DEBUG] Store name lookup:', {
+            pharmacyId,
+            hasMatchStoreName: !!match.store_name,
+            hasMatchPosting: !!match.posting,
+            postingsCount: postings.length,
+            postings: postings.map((p: any) => ({ id: p.pharmacy_id, store_name: p.store_name }))
+          });
+
           if (match.store_name) {
             storeName = match.store_name;
+            console.error('🔍 [DEBUG] Using match.store_name:', storeName);
           } else if (match.posting?.store_name) {
             storeName = match.posting.store_name;
+            console.error('🔍 [DEBUG] Using match.posting.store_name:', storeName);
           } else {
             // postingsから検索して店舗名を取得
             const posting = postings.find((p: any) => p.pharmacy_id === pharmacyId);
+            console.error('🔍 [DEBUG] Found posting:', posting);
+
             if (posting?.store_name) {
               storeName = posting.store_name;
+              console.error('🔍 [DEBUG] Using posting.store_name:', storeName);
             } else if (pharmacyId && userProfiles[pharmacyId]?.store_name) {
               storeName = userProfiles[pharmacyId].store_name;
+              console.error('🔍 [DEBUG] Using userProfile.store_name:', storeName);
             }
           }
+
+          console.error('🔍 [DEBUG] Final storeName:', storeName);
 
           // 薬局の募集時間を取得（postingsから検索）
           let startTime = '09:00';
