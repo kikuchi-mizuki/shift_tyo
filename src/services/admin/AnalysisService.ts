@@ -329,8 +329,13 @@ export const analyzePharmacyShortage = (
   // マッチ数を集計（店舗ごとに個別）
   // 1. AIマッチング結果から
   dayMatches.forEach(match => {
-    const pharmacyId = match.pharmacy.id;
-    const storeName = match.pharmacy.name || '店舗名なし';
+    const pharmacyId = match.pharmacy.id || match.pharmacy_id;
+    // 店舗名を正しく取得（match.pharmacy.store_name, match.store_name, またはpostingから）
+    let storeName = match.pharmacy?.store_name || match.store_name;
+    if (!storeName) {
+      const matchingPosting = dayPostings.find(p => p.pharmacy_id === pharmacyId);
+      storeName = matchingPosting?.store_name || '店舗名なし';
+    }
     const uniqueKey = `${pharmacyId}_${storeName}`;
 
     if (pharmacyNeeds[uniqueKey]) {
