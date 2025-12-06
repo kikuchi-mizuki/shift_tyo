@@ -19,9 +19,9 @@ export default defineConfig({
     terserOptions: {
       compress: {
         // 本番環境ではconsole.logとdebuggerを削除（環境変数で制御可能）
-        drop_console: !enableDebugLogs,
+        drop_console: false, // console.errorを残すため、falseに変更
         drop_debugger: !enableDebugLogs,
-        // console.error/warn は残す
+        // console.log/debug/infoのみ削除（console.error/warnは残す）
         pure_funcs: enableDebugLogs ? [] : ['console.log', 'console.debug', 'console.info'],
       },
       format: {
