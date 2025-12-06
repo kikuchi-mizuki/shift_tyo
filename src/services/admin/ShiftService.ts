@@ -37,11 +37,12 @@ export const confirmSingleMatch = async (
       return { success: false, message: '日付フォーマットが不正です' };
     }
 
-    // 店舗名を正しく取得
+    // 店舗名を正しく取得（薬局名をフォールバックとして使わない）
     const storeName =
       match.posting?.store_name ||
       match.pharmacy?.store_name ||
-      userProfiles[match.pharmacy.id]?.name ||
+      match.store_name ||
+      userProfiles[match.pharmacy.id]?.store_name ||
       '店舗名未設定';
 
     // 時間を取得
