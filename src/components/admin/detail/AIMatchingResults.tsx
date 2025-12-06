@@ -10,12 +10,14 @@ import { safeLength } from '../../../utils/admin/arrayHelpers';
 interface AIMatchingResultsProps {
   matches: any[];
   userProfiles: any;
+  postings: any[];
   onConfirmMatch: (match: any) => void;
 }
 
 export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
   matches,
   userProfiles,
+  postings,
   onConfirmMatch
 }) => {
   if (safeLength(matches) === 0) {
@@ -75,31 +77,24 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
             storeName = profile.store_name || profile.name || '店舗名未設定';
           }
 
-          // デバッグ：matchオブジェクトの構造を確認
-          console.error('🔍 [DEBUG] Match object:', {
-            time_slot: match.time_slot,
-            timeSlot: match.timeSlot,
-            posting: match.posting,
-            allKeys: Object.keys(match)
-          });
-
-          // 時間の取得（薬局の募集時間を優先）
+          // 薬局の募集時間を取得（postingsから検索）
           let startTime = '09:00';
           let endTime = '18:00';
 
-          // assigned_shiftsのtime_slotをパース（"09:00-18:00"形式の場合）
-          if (match.time_slot && typeof match.time_slot === 'string') {
-            const parts = match.time_slot.split('-');
-            if (parts.length === 2) {
-              startTime = parts[0].trim();
-              endTime = parts[1].trim();
+          // pharmacy_idから対応するpostingを検索
+          const posting = postings.find((p: any) => p.pharmacy_id === pharmacyId);
+          if (posting) {
+            // 募集時間をパース（"11:00:00-19:00:00"形式）
+            if (posting.start_time) {
+              startTime = posting.start_time.substring(0, 5); // "11:00:00" → "11:00"
             }
-          } else if (match.timeSlot) {
-            startTime = match.timeSlot.start || '09:00';
-            endTime = match.timeSlot.end || '18:00';
+            if (posting.end_time) {
+              endTime = posting.end_time.substring(0, 5); // "19:00:00" → "19:00"
+            }
           } else if (match.posting) {
-            startTime = match.posting.start_time || '09:00';
-            endTime = match.posting.end_time || '18:00';
+            // matchに含まれているpostingデータを使用
+            startTime = match.posting.start_time?.substring(0, 5) || '09:00';
+            endTime = match.posting.end_time?.substring(0, 5) || '18:00';
           }
 
           // compatibilityScoreの安全な取得（undefinedの場合は0.8をデフォルト値として使用）

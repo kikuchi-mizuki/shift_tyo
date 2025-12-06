@@ -95,6 +95,7 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
         <AIMatchingResults
           matches={dayData.matches}
           userProfiles={userProfiles}
+          postings={dayData.postings}
           onConfirmMatch={onConfirmMatch}
         />
 
