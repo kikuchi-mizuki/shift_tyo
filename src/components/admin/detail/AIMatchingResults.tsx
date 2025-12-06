@@ -32,17 +32,46 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
       </div>
       <div className="space-y-2 max-h-48 overflow-y-auto">
         {matches.map((match, index) => {
-          // AIマッチングエンジンが生成した名前を優先的に使用
-          const pharmacistName = match.pharmacist?.name || '薬剤師名未設定';
-          const pharmacyName = match.pharmacy?.name || '薬局名未設定';
+          // userProfilesから名前を取得（フォールバック: name → email → ID末尾4桁）
+          const pharmacistId = match.pharmacist_id || match.pharmacist?.id;
+          const pharmacyId = match.pharmacy_id || match.pharmacy?.id;
 
-          // 店舗名の取得（複数のソースから試行）
+          let pharmacistName = '薬剤師名未設定';
+          if (pharmacistId && userProfiles[pharmacistId]) {
+            const profile = userProfiles[pharmacistId];
+            if (profile.name && profile.name.trim()) {
+              pharmacistName = profile.name.trim();
+            } else if (profile.email && profile.email.trim()) {
+              pharmacistName = profile.email.split('@')[0];
+            } else {
+              pharmacistName = `薬剤師${pharmacistId.slice(-4)}`;
+            }
+          } else if (pharmacistId) {
+            pharmacistName = `薬剤師${pharmacistId.slice(-4)}`;
+          }
+
+          let pharmacyName = '薬局名未設定';
+          if (pharmacyId && userProfiles[pharmacyId]) {
+            const profile = userProfiles[pharmacyId];
+            if (profile.name && profile.name.trim()) {
+              pharmacyName = profile.name.trim();
+            } else if (profile.email && profile.email.trim()) {
+              pharmacyName = profile.email.split('@')[0];
+            } else {
+              pharmacyName = `薬局${pharmacyId.slice(-4)}`;
+            }
+          } else if (pharmacyId) {
+            pharmacyName = `薬局${pharmacyId.slice(-4)}`;
+          }
+
+          // 店舗名の取得
           let storeName = '店舗名未設定';
-          if (match.posting?.store_name) {
+          if (match.store_name) {
+            storeName = match.store_name;
+          } else if (match.posting?.store_name) {
             storeName = match.posting.store_name;
-          } else if (match.pharmacy?.id && userProfiles[match.pharmacy.id]) {
-            const profile = userProfiles[match.pharmacy.id];
-            // 薬局名と店舗名が異なる場合は店舗名を使用
+          } else if (pharmacyId && userProfiles[pharmacyId]) {
+            const profile = userProfiles[pharmacyId];
             storeName = profile.store_name || profile.name || '店舗名未設定';
           }
 
