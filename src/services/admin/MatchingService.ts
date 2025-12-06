@@ -386,6 +386,13 @@ export const performMatchingAnalysis = (
   storeNgPharmacists?: { [pharmacyId: string]: any[] },
   storeNgPharmacies?: { [pharmacistId: string]: any[] }
 ): { matches: MatchCandidate[]; matchedCount: number; shortage: number } => {
+  console.log('🔍 performMatchingAnalysis - dayPostings:', dayPostings.map(p => ({
+    pharmacy_id: p.pharmacy_id,
+    store_name: p.store_name,
+    start_time: p.start_time,
+    end_time: p.end_time
+  })));
+
   // 確定済みの薬剤師・薬局を除外
   const confirmedPharmacists = new Set<string>();
   const confirmedPharmacies = new Set<string>();
@@ -612,6 +619,14 @@ export const performMatchingAnalysis = (
     const storeName = matchedPharmacies[index].store_name ||
                      pharmacyProfile?.store_name ||
                      '店舗名未設定';
+
+    console.log('🔍 Creating match:', {
+      pharmacistId,
+      pharmacyId,
+      posting_store_name: matchedPharmacies[index].store_name,
+      profile_store_name: pharmacyProfile?.store_name,
+      final_storeName: storeName
+    });
 
     return {
       pharmacist: {
