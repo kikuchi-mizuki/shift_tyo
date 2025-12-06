@@ -75,8 +75,32 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
             storeName = profile.store_name || profile.name || '店舗名未設定';
           }
 
-          const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00';
-          const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00';
+          // デバッグ：matchオブジェクトの構造を確認
+          console.error('🔍 [DEBUG] Match object:', {
+            time_slot: match.time_slot,
+            timeSlot: match.timeSlot,
+            posting: match.posting,
+            allKeys: Object.keys(match)
+          });
+
+          // 時間の取得（薬局の募集時間を優先）
+          let startTime = '09:00';
+          let endTime = '18:00';
+
+          // assigned_shiftsのtime_slotをパース（"09:00-18:00"形式の場合）
+          if (match.time_slot && typeof match.time_slot === 'string') {
+            const parts = match.time_slot.split('-');
+            if (parts.length === 2) {
+              startTime = parts[0].trim();
+              endTime = parts[1].trim();
+            }
+          } else if (match.timeSlot) {
+            startTime = match.timeSlot.start || '09:00';
+            endTime = match.timeSlot.end || '18:00';
+          } else if (match.posting) {
+            startTime = match.posting.start_time || '09:00';
+            endTime = match.posting.end_time || '18:00';
+          }
 
           // compatibilityScoreの安全な取得（undefinedの場合は0.8をデフォルト値として使用）
           const compatibilityScore = typeof match.compatibilityScore === 'number' && !isNaN(match.compatibilityScore)
