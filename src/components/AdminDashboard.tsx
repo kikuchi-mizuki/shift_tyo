@@ -250,6 +250,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     consultRequests: (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot === 'consult')
   } : null;
 
+  if (dayData && selectedDate) {
+    console.error('🔍 [DEBUG] dayData for', selectedDate, ':', {
+      matchesCount: dayData.matches.length,
+      assignedTotal: assigned?.length,
+      assignedPending: assigned?.filter((s: any) => s.status === 'pending').length,
+      assignedForDate: assigned?.filter((s: any) => s.date === selectedDate).length,
+      matches: dayData.matches
+    });
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">

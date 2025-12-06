@@ -20,7 +20,15 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
   postings,
   onConfirmMatch
 }) => {
+  console.error('🔍 [DEBUG] AIMatchingResults:', {
+    matchesLength: safeLength(matches),
+    matches: matches,
+    postingsLength: postings?.length,
+    hasPostings: !!postings
+  });
+
   if (safeLength(matches) === 0) {
+    console.error('🔍 [DEBUG] No matches to display');
     return null;
   }
 
