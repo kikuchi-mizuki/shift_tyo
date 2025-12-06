@@ -338,6 +338,15 @@ export const analyzePharmacyShortage = (
     }
     const uniqueKey = `${pharmacyId}_${storeName}`;
 
+    console.error('🔍 [DEBUG] Counting AI match:', {
+      pharmacyId,
+      storeName,
+      uniqueKey,
+      hasPharmacyNeeds: !!pharmacyNeeds[uniqueKey],
+      availableKeys: Object.keys(pharmacyNeeds),
+      match: match
+    });
+
     if (pharmacyNeeds[uniqueKey]) {
       pharmacyNeeds[uniqueKey].matched++;
     }
