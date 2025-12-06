@@ -11,7 +11,6 @@ export interface AIMatchingRequest {
   date: string;
   requests: any[];
   postings: any[];
-  userProfiles?: any;
   options?: {
     useAI?: boolean;
     algorithm?: 'rule_based' | 'ai_based' | 'hybrid';
@@ -71,12 +70,12 @@ export const executeAIMatching = async (request: AIMatchingRequest): Promise<AIM
 
     if (algorithm === 'rule_based') {
       // ルールベースマッチング
-      matches = await executeRuleBasedMatching(request.requests, request.postings, request.userProfiles);
+      matches = await executeRuleBasedMatching(request.requests, request.postings);
       successRate = 0.8; // ルールベースの成功率
       averageCompatibilityScore = 0.7;
     } else if (algorithm === 'ai_based' && useAI) {
       // AIベースマッチング
-      matches = await executeAIBasedMatching(request.requests, request.postings, request.userProfiles);
+      matches = await executeAIBasedMatching(request.requests, request.postings);
       successRate = 0.9; // AIベースの成功率
       averageCompatibilityScore = 0.85;
     } else {
@@ -148,7 +147,7 @@ export const executeAIMatching = async (request: AIMatchingRequest): Promise<AIM
 /**
  * ルールベースマッチング
  */
-const executeRuleBasedMatching = async (requests: any[], postings: any[], userProfiles?: any): Promise<any[]> => {
+const executeRuleBasedMatching = async (requests: any[], postings: any[]): Promise<any[]> => {
   console.log('=== executeRuleBasedMatching START ===');
   console.log('Requests count:', requests.length);
   console.log('Postings count:', postings.length);
@@ -190,9 +189,6 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[], userPr
         currentUsage < requiredStaff &&
         isCompatible
       ) {
-        // user_profilesから店舗名を取得（薬局名をフォールバックとして使わない）
-        const storeName = userProfiles?.[posting.pharmacy_id]?.store_name || posting.store_name || '店舗名未設定';
-
         matches.push({
           pharmacist_id: request.pharmacist_id,
           pharmacy_id: posting.pharmacy_id,
@@ -201,7 +197,7 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[], userPr
           start_time: posting.start_time,
           end_time: posting.end_time,
           status: 'confirmed',
-          store_name: storeName,
+          store_name: posting.store_name || '',
           memo: 'Rule-based matching',
           compatibility_score: 0.7
         });
@@ -221,7 +217,7 @@ const executeRuleBasedMatching = async (requests: any[], postings: any[], userPr
 /**
  * AIベースマッチング
  */
-const executeAIBasedMatching = async (requests: any[], postings: any[], userProfiles?: any): Promise<any[]> => {
+const executeAIBasedMatching = async (requests: any[], postings: any[]): Promise<any[]> => {
   const matches: any[] = [];
   const usedPharmacists = new Set<string>();
   const pharmacyUsageCount = new Map<string, number>(); // 薬局・店舗ごとの使用数を追跡
@@ -233,9 +229,6 @@ const executeAIBasedMatching = async (requests: any[], postings: any[], userProf
     for (const posting of postings) {
       if (isBasicCompatible(request, posting)) {
         const score = await calculateAIScore(request, posting);
-        // user_profilesから店舗名を取得（薬局名をフォールバックとして使わない）
-        const storeName = userProfiles?.[posting.pharmacy_id]?.store_name || posting.store_name || '店舗名未設定';
-
         scoredMatches.push({
           match: {
             pharmacist_id: request.pharmacist_id,
@@ -245,7 +238,7 @@ const executeAIBasedMatching = async (requests: any[], postings: any[], userProf
             start_time: posting.start_time,
             end_time: posting.end_time,
             status: 'confirmed',
-            store_name: storeName,
+            store_name: posting.store_name || '',
             memo: `AI Matching: ${score.toFixed(2)} score`,
             compatibility_score: score
           },
@@ -283,10 +276,10 @@ const executeAIBasedMatching = async (requests: any[], postings: any[], userProf
  */
 const executeHybridMatching = async (requests: any[], postings: any[], userProfiles?: any): Promise<any[]> => {
   // ルールベースで候補を絞り込み
-  const ruleBasedMatches = await executeRuleBasedMatching(requests, postings, userProfiles);
+  const ruleBasedMatches = await executeRuleBasedMatching(requests, postings);
 
   // AIでスコアリング
-  const aiScoredMatches = await executeAIBasedMatching(requests, postings, userProfiles);
+  const aiScoredMatches = await executeAIBasedMatching(requests, postings);
   
   // 距離ベースのマッチング
   let distanceBasedMatches: any[] = [];

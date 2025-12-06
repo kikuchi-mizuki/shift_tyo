@@ -608,9 +608,9 @@ export const performMatchingAnalysis = (
       pharmacyName = `薬局${pharmacyId.slice(-4)}`;
     }
 
-    // 店舗名の取得（user_profilesを優先）
-    const storeName = pharmacyProfile?.store_name ||
-                     matchedPharmacies[index].store_name ||
+    // 店舗名の取得（shift_postingsを優先して、どの店舗の募集にマッチしたかを明確にする）
+    const storeName = matchedPharmacies[index].store_name ||
+                     pharmacyProfile?.store_name ||
                      '店舗名未設定';
 
     return {
