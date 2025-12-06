@@ -313,7 +313,8 @@ export const executeSimpleAIMatching = async (
         },
         pharmacy: {
           id: match.pharmacyNeed.pharmacy_id,
-          name: match.storeName || match.pharmacy?.name || 'Unknown',
+          name: match.pharmacy?.name || 'Unknown',
+          store_name: match.storeName || '',
           requirements: {
             requiredSkills: [],
             experienceLevel: 'intermediate',
@@ -333,7 +334,8 @@ export const executeSimpleAIMatching = async (
         posting: {
           start_time: match.pharmacyNeed.start_time,
           end_time: match.pharmacyNeed.end_time,
-          date: match.pharmacyNeed.date || new Date().toISOString().split('T')[0]
+          date: match.pharmacyNeed.date || new Date().toISOString().split('T')[0],
+          store_name: match.storeName || ''
         },
         timeSlot: {
           start: match.pharmacyNeed.start_time,
