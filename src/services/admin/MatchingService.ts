@@ -423,9 +423,35 @@ export const performMatchingAnalysis = (
     return stillNeedsStaff;
   });
 
+  // time_slotをstart_time/end_timeに変換（未設定の場合）
+  const normalizeTime = (request: any) => {
+    // 既にstart_time/end_timeがある場合はそのまま返す
+    if (request.start_time && request.end_time) {
+      return request;
+    }
+
+    // time_slotから時間を推定
+    const timeSlotMap: { [key: string]: { start: string; end: string } } = {
+      'morning': { start: '09:00:00', end: '13:00:00' },
+      'afternoon': { start: '13:00:00', end: '18:00:00' },
+      'fullday': { start: '09:00:00', end: '18:00:00' },
+      'negotiable': { start: '09:00:00', end: '18:00:00' }
+    };
+
+    const timeSlot = request.time_slot || 'fullday';
+    const times = timeSlotMap[timeSlot] || timeSlotMap['fullday'];
+
+    return {
+      ...request,
+      start_time: times.start,
+      end_time: times.end
+    };
+  };
+
   // 薬剤師を距離・希望回数・評価の優先順位でソート
   const sortedRequests = filteredRequests
-    .filter((r: any) => r.start_time && r.end_time)
+    .map(normalizeTime)  // time_slotを時間に変換
+    .filter((r: any) => r.start_time && r.end_time)  // 変換後にフィルター
     .sort((a: any, b: any) => {
       const aPharmacist = userProfiles[a.pharmacist_id];
       const bPharmacist = userProfiles[b.pharmacist_id];
