@@ -617,8 +617,10 @@ export const performMatchingAnalysis = (
       pharmacyName = `薬局${pharmacyId.slice(-4)}`;
     }
 
-    // 店舗名の取得（shift_postingsのstore_nameのみを使用。未設定の場合は明示的に表示）
-    const storeName = matchedPharmacies[index].store_name || '店舗名未設定';
+    // 店舗名の取得（shift_postingsを優先して、どの店舗の募集にマッチしたかを明確にする）
+    const storeName = matchedPharmacies[index].store_name ||
+                     pharmacyProfile?.store_name ||
+                     '店舗名未設定';
 
     console.log('🔍 Creating match:', {
       pharmacistId,
@@ -803,8 +805,10 @@ export const executeAIMatching = async (
         }
 
         const shiftsToInsert = matches.map((match: any) => {
-          // match.pharmacy.store_name（shift_postings由来）のみを使用
-          const storeName = match.pharmacy.store_name || '店舗名未設定';
+          // match.pharmacy.store_name（shift_postings由来）を優先的に使用
+          const storeName = match.pharmacy.store_name ||
+                           match.posting?.store_name ||
+                           '店舗名なし';
 
           return {
             pharmacist_id: match.pharmacist.id,
