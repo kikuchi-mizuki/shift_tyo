@@ -719,6 +719,10 @@ export const executeAIMatching = async (
   storeNgPharmacists?: { [pharmacyId: string]: any[] },
   storeNgPharmacies?: { [pharmacistId: string]: any[] }
 ): Promise<MatchCandidate[]> => {
+  console.log('🔍 executeAIMatching called for date:', date);
+  console.log('🔍 Requests count:', requests?.length || 0);
+  console.log('🔍 Postings count:', postings?.length || 0);
+
   if (!aiMatchingEngine) {
     console.error('AI Matching Engine not initialized');
     return [];
@@ -792,8 +796,12 @@ export const executeAIMatching = async (
     });
     const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
+    console.log(`🔍 ${date} - Filtered postings:`, filteredDayPostings.length);
+    console.log(`🔍 ${date} - Filtered requests:`, filteredDayRequests.length);
+
     // 募集/希望が0件の場合
     if (safeLength(filteredDayPostings) === 0 || safeLength(filteredDayRequests) === 0) {
+      console.log(`⚠️ ${date} - マッチング不可: 募集=${filteredDayPostings.length}, 希望=${filteredDayRequests.length}`);
       return [];
     }
 
