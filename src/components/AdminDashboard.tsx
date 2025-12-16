@@ -260,6 +260,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   return (
     <div className="space-y-6">
+      {/* LINEで呼びかけるボタン - 非表示 */}
+      {false && (
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => setShowEmergencyModal(true)}
+            className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+          >
+            <Bell className="w-5 h-5" />
+            LINEで呼びかける
+          </button>
+        </div>
+      )}
+
       {/* メインレイアウト */}
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
           {/* カレンダー */}
