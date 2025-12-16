@@ -125,6 +125,12 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
 
           const reasons = (match.reasons || []).slice(0, 2).join(', ');
 
+          // 店舗名が薬局名と異なる場合のみ表示（会社名の重複表示を避ける）
+          const showStoreName = storeName &&
+                               storeName !== '店舗名未設定' &&
+                               storeName !== pharmacyName &&
+                               storeName.trim() !== '';
+
           return (
             <div key={index} className="bg-white rounded border p-2 text-xs">
               <div className="flex justify-between items-start">
@@ -132,9 +138,11 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
                   <div className="font-medium text-gray-800">
                     {pharmacistName} → {pharmacyName}
                   </div>
-                  <div className="text-gray-600">
-                    店舗: {storeName}
-                  </div>
+                  {showStoreName && (
+                    <div className="text-gray-600">
+                      店舗: {storeName}
+                    </div>
+                  )}
                   <div className="text-gray-600">
                     {startTime} - {endTime}
                   </div>
