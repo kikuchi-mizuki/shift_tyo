@@ -260,34 +260,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   return (
     <div className="space-y-6">
-      {/* モード切り替えボタン */}
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={() => setShowEmergencyManagement(!showEmergencyManagement)}
-          className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors font-medium ${
-            showEmergencyManagement
-              ? 'bg-gray-600 text-white hover:bg-gray-700'
-              : 'bg-orange-600 text-white hover:bg-orange-700'
-          }`}
-        >
-          {showEmergencyManagement ? '通常管理に戻る' : '緊急シフト管理'}
-        </button>
-        {!showEmergencyManagement && (
-          <button
-            onClick={() => setShowEmergencyModal(true)}
-            className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
-          >
-            <Bell className="w-5 h-5" />
-            LINEで呼びかける
-          </button>
-        )}
-      </div>
-
       {/* メインレイアウト */}
-      {showEmergencyManagement ? (
-        <AdminEmergencyShift user={user} />
-      ) : (
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
           {/* カレンダー */}
           <AdminCalendar
             currentDate={currentDate}
@@ -354,7 +328,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             }}
           />
         </div>
-      )}
 
       {/* モーダル */}
       {showEmergencyModal && (

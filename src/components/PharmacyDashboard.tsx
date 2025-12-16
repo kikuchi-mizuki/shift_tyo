@@ -1496,8 +1496,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         </div>
       )}
       
-      {/* LINE連携バナー */}
-      {!isLineLinked && !showLineSetup && (
+      {/* LINE連携バナー - 非表示 */}
+      {false && !isLineLinked && !showLineSetup && (
         <div className="mx-2 sm:mx-4 lg:mx-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-4 shadow-md">
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-3 flex-1">
@@ -1535,9 +1535,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           </div>
         </div>
       )}
-      
-      {/* LINE連携設定画面 */}
-      {showLineSetup && (
+
+      {/* LINE連携設定画面 - 非表示 */}
+      {false && showLineSetup && (
         <div className="mx-2 sm:mx-4 lg:mx-6">
           <div className="bg-white rounded-lg shadow-lg p-4">
             <div className="flex items-center justify-between mb-4">

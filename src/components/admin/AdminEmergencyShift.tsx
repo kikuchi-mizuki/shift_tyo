@@ -22,16 +22,18 @@ const AdminEmergencyShift: React.FC<AdminEmergencyShiftProps> = ({ className = '
 
   return (
     <div className={className}>
-      {/* 緊急シフトリクエスト機能 */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleEmergencyButtonClick}
-          className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
-        >
-          <Bell className="w-5 h-5" />
-          LINEで呼びかける
-        </button>
-      </div>
+      {/* 緊急シフトリクエスト機能 - 非表示 */}
+      {false && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleEmergencyButtonClick}
+            className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+          >
+            <Bell className="w-5 h-5" />
+            LINEで呼びかける
+          </button>
+        </div>
+      )}
 
       {/* 緊急シフトモーダル */}
       {showEmergencyModal && (

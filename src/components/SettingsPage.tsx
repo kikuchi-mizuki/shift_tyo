@@ -19,8 +19,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userId, userName, us
         </div>
       </div>
 
-      {/* LINE通知設定 */}
-      <LineIntegration userId={userId} />
+      {/* LINE通知設定 - 非表示 */}
+      {false && <LineIntegration userId={userId} />}
 
       {/* その他の設定項目をここに追加 */}
       <div className="bg-white rounded-lg shadow p-6">
