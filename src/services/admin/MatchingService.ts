@@ -476,11 +476,14 @@ export const performMatchingAnalysis = (
       return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
 
-  // 各薬局の必要人数を管理
-  const pharmacyNeeds = filteredPostings.map((p: any) => ({
-    ...p,
-    remaining: Number(p.required_staff) || 0
-  }));
+  // 各薬局の必要人数を管理（time_slotを時間に変換）
+  const pharmacyNeeds = filteredPostings.map((p: any) => {
+    const normalized = normalizeTime(p);
+    return {
+      ...normalized,
+      remaining: Number(p.required_staff) || 0
+    };
+  });
 
   // 全薬剤師と薬局の組み合わせをスコア付きで収集
   const allMatchCandidates: any[] = [];
