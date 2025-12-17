@@ -97,6 +97,9 @@ export const useAIMatching = (
    * 1ヶ月分のAIマッチングを実行
    */
   const executeMonthlyMatching = useCallback(async (currentDate: Date) => {
+    console.log('🚀 executeMonthlyMatching START');
+    alert('マッチング開始！コンソールを確認してください');
+
     if (!aiMatchingEngine) {
       console.error('AI Matching Engine not initialized');
       return;
