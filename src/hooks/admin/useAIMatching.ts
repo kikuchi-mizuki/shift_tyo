@@ -97,15 +97,8 @@ export const useAIMatching = (
    * 1ヶ月分のAIマッチングを実行
    */
   const executeMonthlyMatching = useCallback(async (currentDate: Date) => {
-    // ===== デバッグ用：最初の行 =====
-    window.alert('🚀 useAIMatching: executeMonthlyMatching関数が呼ばれました！');
-    console.error('🚀 executeMonthlyMatching START');
-    console.error('🚀 currentDate:', currentDate);
-    console.error('🚀 aiMatchingEngine:', aiMatchingEngine ? 'initialized' : 'NOT initialized');
-
     if (!aiMatchingEngine) {
-      console.error('❌ AI Matching Engine not initialized');
-      window.alert('エラー: AI Matching Engine not initialized');
+      console.error('AI Matching Engine not initialized');
       return;
     }
 

@@ -24,11 +24,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       {/* 1ヶ月分のシフト自動組み */}
       <div className="bg-white rounded-lg shadow p-4 mb-4">
         <button
-          onClick={() => {
-            alert('ActionButtons: ボタンクリック検知！');
-            console.error('🟢 ActionButtons: onClick fired');
-            onMonthlyMatching();
-          }}
+          onClick={onMonthlyMatching}
           disabled={aiMatchingLoading}
           className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
         >
@@ -40,7 +36,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           ) : (
             <>
               <Zap className="w-4 h-4" />
-              <span>【確認用】1ヶ月分のシフトを自動で組む</span>
+              <span>1ヶ月分のシフトを自動で組む</span>
             </>
           )}
         </button>
