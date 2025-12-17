@@ -36,7 +36,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           ) : (
             <>
               <Zap className="w-4 h-4" />
-              <span>1ヶ月分のシフトを自動で組む</span>
+              <span>【テスト版】1ヶ月分のシフトを自動で組む</span>
             </>
           )}
         </button>
