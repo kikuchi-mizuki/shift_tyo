@@ -4,16 +4,14 @@
  */
 
 import React from 'react';
-import { Lock, AlertCircle } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 interface PanelHeaderProps {
   onPasswordChange: () => void;
-  onDebug: () => void;
 }
 
 export const PanelHeader: React.FC<PanelHeaderProps> = ({
-  onPasswordChange,
-  onDebug
+  onPasswordChange
 }) => {
   return (
     <div className="bg-purple-600 text-white p-4 rounded-t-lg flex-shrink-0">
@@ -26,13 +24,6 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
           >
             <Lock className="w-3 h-3" />
             <span>パスワード変更</span>
-          </button>
-          <button
-            onClick={onDebug}
-            className="text-sm text-yellow-100 hover:text-white flex items-center space-x-1"
-          >
-            <AlertCircle className="w-3 h-3" />
-            <span>デバッグ</span>
           </button>
         </div>
       </div>

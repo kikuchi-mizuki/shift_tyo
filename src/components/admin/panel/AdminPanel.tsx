@@ -12,7 +12,6 @@ import { UserManagement } from '../users/UserManagement';
 interface AdminPanelProps {
   // ヘッダー関連
   onPasswordChange: () => void;
-  onDebug: () => void;
 
   // アクションボタン関連
   recruitmentStatus: any;
@@ -30,7 +29,6 @@ interface AdminPanelProps {
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
   onPasswordChange,
-  onDebug,
   recruitmentStatus,
   aiMatchingLoading,
   onToggleRecruitment,
@@ -43,7 +41,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
       <PanelHeader
         onPasswordChange={onPasswordChange}
-        onDebug={onDebug}
       />
 
       <ActionButtons

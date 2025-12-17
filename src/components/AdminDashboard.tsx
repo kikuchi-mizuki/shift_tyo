@@ -29,7 +29,6 @@ import { AdminPanel } from './admin/panel/AdminPanel';
 import { AdminEmergencyShift } from './AdminEmergencyShift';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
-import DebugModal from './DebugModal';
 
 interface AdminDashboardProps {
   user: {
@@ -102,8 +101,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // モーダル表示状態
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
-  const [showDebugModal, setShowDebugModal] = useState(false);
-  const [debugData, setDebugData] = useState<Record<string, unknown> | null>(null);
 
   // 緊急シフト管理モード
   const [showEmergencyManagement, setShowEmergencyManagement] = useState(false);
@@ -212,20 +209,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     }
   };
 
-  // デバッグモーダル
-  const handleDebugModal = () => {
-    setDebugData({
-      selectedDate,
-      aiMatches: aiMatchesByDate[selectedDate] || [],
-      requests: requests.filter((r: any) => r.date === selectedDate),
-      postings: postings.filter((p: any) => p.date === selectedDate),
-      assigned: assigned.filter((a: any) => a.date === selectedDate),
-      currentDate: new Date().toISOString(),
-      timestamp: Date.now()
-    });
-    setShowDebugModal(true);
-  };
-
   // 日付選択ハンドラー
   const onDateSelect = (date: number) => {
     const year = currentDate.getFullYear();
@@ -290,7 +273,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           {/* 管理パネル */}
           <AdminPanel
             onPasswordChange={() => setShowPasswordChangeModal(true)}
-            onDebug={handleDebugModal}
             recruitmentStatus={recruitmentStatus}
             aiMatchingLoading={aiMatchingLoading}
             onToggleRecruitment={toggleRecruitmentStatus}
@@ -360,15 +342,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       {showPasswordChangeModal && (
         <PasswordChangeModal
+          isOpen={showPasswordChangeModal}
           user={user}
           onClose={() => setShowPasswordChangeModal(false)}
-        />
-      )}
-
-      {showDebugModal && debugData && (
-        <DebugModal
-          debugData={debugData}
-          onClose={() => setShowDebugModal(false)}
         />
       )}
     </div>
