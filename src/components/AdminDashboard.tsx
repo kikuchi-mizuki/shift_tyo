@@ -105,6 +105,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [debugData, setDebugData] = useState<Record<string, unknown> | null>(null);
 
+  // デバッグログ表示用
+  const [debugLog, setDebugLog] = useState<string>('');
+
   // 緊急シフト管理モード
   const [showEmergencyManagement, setShowEmergencyManagement] = useState(false);
 
@@ -260,6 +263,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   return (
     <div className="space-y-6">
+      {/* デバッグログ表示 */}
+      {debugLog && (
+        <div className="mx-2 sm:mx-4 lg:mx-6 bg-red-100 border-2 border-red-500 rounded-lg p-4">
+          <div className="text-red-900 font-bold text-lg">{debugLog}</div>
+        </div>
+      )}
+
       {/* LINEで呼びかけるボタン - 非表示 */}
       {false && (
         <div className="flex justify-end gap-3">
@@ -295,6 +305,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             aiMatchingLoading={aiMatchingLoading}
             onToggleRecruitment={toggleRecruitmentStatus}
             onMonthlyMatching={() => {
+              const timestamp = new Date().toLocaleTimeString();
+              setDebugLog(`[${timestamp}] ボタンがクリックされました`);
               console.error('🔴 AdminDashboard: ボタンがクリックされました');
               alert('AdminDashboard: ボタンクリック検知');
               executeMonthlyMatching(currentDate);
