@@ -104,11 +104,7 @@ export const useAdminData = (
 
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
-        .select(`
-          *,
-          pharmacist:pharmacist_id(name),
-          pharmacy:pharmacy_id(name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (assignedError) {
