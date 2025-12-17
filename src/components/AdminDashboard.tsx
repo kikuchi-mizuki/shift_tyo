@@ -323,6 +323,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 debugInfo.logs.push('executeMonthlyMatching呼び出し開始');
                 await executeMonthlyMatching(currentDate);
                 debugInfo.logs.push('executeMonthlyMatching呼び出し完了');
+
+                // マッチング結果を再読み込み
+                debugInfo.logs.push('マッチング結果を再読み込み中');
+                await loadAssignedShifts();
+                debugInfo.logs.push('マッチング結果の再読み込み完了');
+
                 debugInfo.success = true;
               } catch (error: any) {
                 debugInfo.logs.push('エラー: ' + error.message);
