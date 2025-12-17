@@ -308,8 +308,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               const timestamp = new Date().toLocaleTimeString();
               setDebugLog(`[${timestamp}] ボタンがクリックされました`);
               console.error('🔴 AdminDashboard: ボタンがクリックされました');
-              alert('AdminDashboard: ボタンクリック検知');
-              executeMonthlyMatching(currentDate);
+              console.error('🔴 currentDate:', currentDate);
+              console.error('🔴 executeMonthlyMatching:', typeof executeMonthlyMatching);
+
+              try {
+                executeMonthlyMatching(currentDate);
+                console.error('🔴 executeMonthlyMatching called successfully');
+              } catch (error) {
+                console.error('🔴 ERROR calling executeMonthlyMatching:', error);
+              }
             }}
             selectedDate={selectedDate}
             dateDetailProps={dayData ? {
