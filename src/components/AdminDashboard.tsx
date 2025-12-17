@@ -107,6 +107,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   // デバッグログ表示用
   const [debugLog, setDebugLog] = useState<string>('');
+  const [showMatchingDebugModal, setShowMatchingDebugModal] = useState(false);
+  const [matchingDebugInfo, setMatchingDebugInfo] = useState<any>(null);
 
   // 緊急シフト管理モード
   const [showEmergencyManagement, setShowEmergencyManagement] = useState(false);
@@ -304,19 +306,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             recruitmentStatus={recruitmentStatus}
             aiMatchingLoading={aiMatchingLoading}
             onToggleRecruitment={toggleRecruitmentStatus}
-            onMonthlyMatching={() => {
-              const timestamp = new Date().toLocaleTimeString();
-              setDebugLog(`[${timestamp}] ボタンがクリックされました`);
-              console.error('🔴 AdminDashboard: ボタンがクリックされました');
-              console.error('🔴 currentDate:', currentDate);
-              console.error('🔴 executeMonthlyMatching:', typeof executeMonthlyMatching);
+            onMonthlyMatching={async () => {
+              const debugInfo: any = {
+                timestamp: new Date().toISOString(),
+                currentDate: currentDate.toISOString(),
+                executeMonthlyMatchingType: typeof executeMonthlyMatching,
+                requestsCount: requests.length,
+                postingsCount: postings.length,
+                assignedCount: assigned.length,
+                logs: []
+              };
+
+              debugInfo.logs.push('ボタンがクリックされました');
 
               try {
-                executeMonthlyMatching(currentDate);
-                console.error('🔴 executeMonthlyMatching called successfully');
-              } catch (error) {
-                console.error('🔴 ERROR calling executeMonthlyMatching:', error);
+                debugInfo.logs.push('executeMonthlyMatching呼び出し開始');
+                await executeMonthlyMatching(currentDate);
+                debugInfo.logs.push('executeMonthlyMatching呼び出し完了');
+                debugInfo.success = true;
+              } catch (error: any) {
+                debugInfo.logs.push('エラー: ' + error.message);
+                debugInfo.error = error.message;
+                debugInfo.success = false;
               }
+
+              setMatchingDebugInfo(debugInfo);
+              setShowMatchingDebugModal(true);
             }}
             selectedDate={selectedDate}
             dateDetailProps={dayData ? {
@@ -385,6 +400,66 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           debugData={debugData}
           onClose={() => setShowDebugModal(false)}
         />
+      )}
+
+      {showMatchingDebugModal && matchingDebugInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-4 text-purple-600">マッチング実行デバッグ情報</h2>
+
+              <div className="space-y-4">
+                <div className="bg-gray-100 p-4 rounded">
+                  <h3 className="font-bold text-lg mb-2">実行状態</h3>
+                  <div className={`text-2xl font-bold ${matchingDebugInfo.success ? 'text-green-600' : 'text-red-600'}`}>
+                    {matchingDebugInfo.success ? '✓ 成功' : '✗ エラー'}
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded">
+                  <h3 className="font-bold mb-2">基本情報</h3>
+                  <div className="space-y-1 text-sm font-mono">
+                    <div>実行時刻: {matchingDebugInfo.timestamp}</div>
+                    <div>対象月: {matchingDebugInfo.currentDate}</div>
+                    <div>関数型: {matchingDebugInfo.executeMonthlyMatchingType}</div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded">
+                  <h3 className="font-bold mb-2">データ数</h3>
+                  <div className="space-y-1 text-sm">
+                    <div>募集数: {matchingDebugInfo.postingsCount}</div>
+                    <div>希望数: {matchingDebugInfo.requestsCount}</div>
+                    <div>確定シフト数: {matchingDebugInfo.assignedCount}</div>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 p-4 rounded">
+                  <h3 className="font-bold mb-2">実行ログ</h3>
+                  <div className="space-y-1 text-sm font-mono">
+                    {matchingDebugInfo.logs.map((log: string, i: number) => (
+                      <div key={i}>• {log}</div>
+                    ))}
+                  </div>
+                </div>
+
+                {matchingDebugInfo.error && (
+                  <div className="bg-red-50 p-4 rounded border-2 border-red-300">
+                    <h3 className="font-bold mb-2 text-red-600">エラー詳細</h3>
+                    <div className="text-sm font-mono text-red-800">{matchingDebugInfo.error}</div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowMatchingDebugModal(false)}
+                className="mt-6 w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
