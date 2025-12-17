@@ -822,23 +822,17 @@ export const executeAIMatching = async (
     // マッチング結果をassigned_shiftsテーブルに保存
     if (safeLength(matches) > 0 && supabase) {
       try {
-        // その月の古い pending マッチングを削除
-        const yearMonth = date.substring(0, 7); // '2025-11-01' → '2025-11'
-        const nextMonth = new Date(yearMonth + '-01');
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-        const nextMonthStr = nextMonth.toISOString().substring(0, 7);
-
+        // その日付の古い pending マッチングのみを削除
         const { error: deleteError } = await supabase
           .from('assigned_shifts')
           .delete()
-          .gte('date', `${yearMonth}-01`)
-          .lt('date', `${nextMonthStr}-01`)
+          .eq('date', date)
           .eq('status', 'pending');
 
         if (deleteError) {
           console.error('古い pending マッチングの削除エラー:', deleteError);
         } else {
-          console.log(`${yearMonth} の古い pending マッチングを削除しました`);
+          console.log(`${date} の古い pending マッチングを削除しました`);
         }
 
         const shiftsToInsert = matches.map((match: any) => {
