@@ -52,7 +52,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
               : 'bg-green-600 hover:bg-green-700 text-white'
           }`}
         >
-          {recruitmentStatus.is_open ? '✋ 募集を締め切る' : '募集を再開する'}
+          {recruitmentStatus.is_open ? '募集を締め切る' : '募集を再開する'}
         </button>
       </div>
     </div>
