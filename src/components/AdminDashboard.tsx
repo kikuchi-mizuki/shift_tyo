@@ -294,7 +294,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             recruitmentStatus={recruitmentStatus}
             aiMatchingLoading={aiMatchingLoading}
             onToggleRecruitment={toggleRecruitmentStatus}
-            onMonthlyMatching={() => executeMonthlyMatching(currentDate)}
+            onMonthlyMatching={() => {
+              console.error('🔴 AdminDashboard: ボタンがクリックされました');
+              alert('AdminDashboard: ボタンクリック検知');
+              executeMonthlyMatching(currentDate);
+            }}
             selectedDate={selectedDate}
             dateDetailProps={dayData ? {
               selectedDate,
