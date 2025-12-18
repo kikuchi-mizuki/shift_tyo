@@ -193,6 +193,20 @@ export const useAdminData = (
         console.error('Error fetching user profiles:', allProfilesError);
       } else {
         if (allProfilesData) {
+          // デバッグ：薬局のstore_namesを確認
+          console.log('📊 全ユーザープロファイル取得:', allProfilesData.length);
+          const pharmacies = allProfilesData.filter((p: any) => p.user_type === 'pharmacy');
+          console.log('📊 薬局データ詳細:', pharmacies.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            email: p.email,
+            store_name: p.store_name,
+            store_names: p.store_names,
+            store_names_type: typeof p.store_names,
+            store_names_is_array: Array.isArray(p.store_names),
+            store_names_length: Array.isArray(p.store_names) ? p.store_names.length : 'N/A'
+          })));
+
           allProfilesData.forEach((profile: any) => {
             if (profile && profile.id) {
               profilesMap[profile.id] = profile;

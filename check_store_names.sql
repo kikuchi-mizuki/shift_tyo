@@ -1,21 +1,16 @@
--- Check user_profiles store_name values
+-- user_profilesテーブルの店舗名データを確認
 SELECT
   id,
   name,
+  email,
+  user_type,
   store_name,
-  user_type
+  store_names,
+  CASE
+    WHEN store_names IS NULL THEN 'NULL'
+    WHEN array_length(store_names, 1) IS NULL THEN 'EMPTY ARRAY'
+    ELSE 'HAS DATA: ' || array_to_string(store_names, ', ')
+  END as store_names_status
 FROM user_profiles
 WHERE user_type = 'pharmacy'
-ORDER BY name;
-
--- Check shift_postings store_name values
-SELECT
-  id,
-  pharmacy_id,
-  store_name,
-  date,
-  start_time,
-  end_time
-FROM shift_postings
-WHERE date = '2025-11-01'
-ORDER BY pharmacy_id, store_name;
+ORDER BY created_at DESC;
