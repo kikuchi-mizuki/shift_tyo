@@ -345,6 +345,7 @@ export const deleteUserProfile = async (
     }
 
     // shift_requests（薬剤師）
+    console.log('Deleting shift_requests...');
     const reqDelete = await supabase
       .from('shift_requests')
       .delete()
@@ -357,6 +358,7 @@ export const deleteUserProfile = async (
     }
 
     // shift_postings（薬局）
+    console.log('Deleting shift_postings...');
     const postDelete = await supabase
       .from('shift_postings')
       .delete()
@@ -368,7 +370,68 @@ export const deleteUserProfile = async (
       };
     }
 
-    // 2) プロファイルを削除
+    // store_ng_pharmacists（薬局のNG薬剤師設定）
+    console.log('Deleting store_ng_pharmacists...');
+    const ngPharmacistsDelete = await supabase
+      .from('store_ng_pharmacists')
+      .delete()
+      .or(`pharmacy_id.eq.${profile.id},pharmacist_id.eq.${profile.id}`);
+    if ((ngPharmacistsDelete as any).error) {
+      console.warn('store_ng_pharmacists削除警告:', (ngPharmacistsDelete as any).error.message);
+    }
+
+    // store_ng_pharmacies（薬剤師のNG薬局設定）
+    console.log('Deleting store_ng_pharmacies...');
+    const ngPharmaciesDelete = await supabase
+      .from('store_ng_pharmacies')
+      .delete()
+      .or(`pharmacist_id.eq.${profile.id},pharmacy_id.eq.${profile.id}`);
+    if ((ngPharmaciesDelete as any).error) {
+      console.warn('store_ng_pharmacies削除警告:', (ngPharmaciesDelete as any).error.message);
+    }
+
+    // pharmacist_ratings（薬剤師の評価）
+    console.log('Deleting pharmacist_ratings...');
+    const ratingsDelete = await supabase
+      .from('pharmacist_ratings')
+      .delete()
+      .or(`pharmacist_id.eq.${profile.id},pharmacy_id.eq.${profile.id}`);
+    if ((ratingsDelete as any).error) {
+      console.warn('pharmacist_ratings削除警告:', (ratingsDelete as any).error.message);
+    }
+
+    // match_outcomes（AIマッチング結果）
+    console.log('Deleting match_outcomes...');
+    const matchOutcomesDelete = await supabase
+      .from('match_outcomes')
+      .delete()
+      .or(`pharmacist_id.eq.${profile.id},pharmacy_id.eq.${profile.id}`);
+    if ((matchOutcomesDelete as any).error) {
+      console.warn('match_outcomes削除警告:', (matchOutcomesDelete as any).error.message);
+    }
+
+    // pharmacist_profiles（AIマッチング用プロフィール）
+    console.log('Deleting pharmacist_profiles...');
+    const pharmProfilesDelete = await supabase
+      .from('pharmacist_profiles')
+      .delete()
+      .eq('user_id', profile.id);
+    if ((pharmProfilesDelete as any).error) {
+      console.warn('pharmacist_profiles削除警告:', (pharmProfilesDelete as any).error.message);
+    }
+
+    // pharmacy_profiles（AIマッチング用プロフィール）
+    console.log('Deleting pharmacy_profiles...');
+    const pharcyProfilesDelete = await supabase
+      .from('pharmacy_profiles')
+      .delete()
+      .eq('user_id', profile.id);
+    if ((pharcyProfilesDelete as any).error) {
+      console.warn('pharmacy_profiles削除警告:', (pharcyProfilesDelete as any).error.message);
+    }
+
+    // 2) user_profilesを削除
+    console.log('Deleting user_profiles...');
     const profileDelete = await supabase
       .from('user_profiles')
       .delete()
@@ -380,6 +443,15 @@ export const deleteUserProfile = async (
       };
     }
 
+    // 3) auth.usersを削除（認証情報とパスワードを削除）
+    console.log('Deleting auth user...');
+    const { error: authError } = await supabase.auth.admin.deleteUser(profile.id);
+    if (authError) {
+      console.warn('auth.users削除警告:', authError.message);
+      // auth削除失敗は警告のみ（すでにプロファイルは削除済み）
+    }
+
+    console.log('User deletion completed successfully');
     return { success: true };
   } catch (e: any) {
     return {
