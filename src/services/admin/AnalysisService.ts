@@ -286,8 +286,18 @@ export const analyzePharmacyShortage = (
   console.log('入力 - aiMatchesByDate:', aiMatchesByDate);
   console.log('入力 - dayMatches:', dayMatches);
 
+  // 🔧 FIX: aiMatchesByDateが空でも、assignedテーブルからpendingマッチングを取得
+  const pendingMatches = Array.isArray(assigned)
+    ? assigned.filter((s: any) => s?.date === date && s?.status === 'pending')
+    : [];
+
+  // aiMatchesByDateが空の場合は、assignedから取得したpendingマッチングを使用
+  const effectiveDayMatches = dayMatches.length > 0 ? dayMatches : pendingMatches;
+
+  console.log('📊 effectiveDayMatches (使用するマッチング):', effectiveDayMatches.length, '件');
+
   // マッチング済みの薬局IDを取得
-  const matchedPharmacyIds = new Set(dayMatches.map(match => match.pharmacy.id));
+  const matchedPharmacyIds = new Set(effectiveDayMatches.map(match => match.pharmacy?.id || match.pharmacy_id));
 
   // 薬局・店舗ごとの募集数とマッチ数を計算（店舗ごとに個別管理）
   const pharmacyNeeds: {
@@ -336,10 +346,10 @@ export const analyzePharmacyShortage = (
   console.log('📦 pharmacyNeeds 初期状態:', pharmacyNeeds);
 
   // マッチ数を集計（店舗ごとに個別）
-  // 1. AIマッチング結果から
-  console.log('📝 AIマッチング結果を集計中...');
-  dayMatches.forEach(match => {
-    const pharmacyId = match.pharmacy.id || match.pharmacy_id;
+  // 1. AIマッチング結果 + pending状態のマッチングから
+  console.log('📝 マッチング結果を集計中... (effectiveDayMatches)');
+  effectiveDayMatches.forEach(match => {
+    const pharmacyId = match.pharmacy?.id || match.pharmacy_id;
     // 店舗名を正しく取得（match.pharmacy.store_name, match.store_name, またはpostingから）
     let storeName = match.pharmacy?.store_name || match.store_name;
     if (!storeName) {
