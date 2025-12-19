@@ -443,11 +443,22 @@ export const deleteUserProfile = async (
       };
     }
 
-    // 3) auth.usersを削除（認証情報とパスワードを削除）
-    console.log('Deleting auth user...');
-    const { error: authError } = await supabase.auth.admin.deleteUser(profile.id);
-    if (authError) {
-      console.warn('auth.users削除警告:', authError.message);
+    // 3) auth.usersを削除（Edge Functionを使用）
+    console.log('Deleting auth user via Edge Function...');
+    try {
+      const { data, error: functionError } = await supabase.functions.invoke('delete-user', {
+        body: { userId: profile.id }
+      });
+
+      if (functionError) {
+        console.warn('auth.users削除警告 (Edge Function):', functionError.message);
+      } else if (data?.error) {
+        console.warn('auth.users削除警告:', data.error);
+      } else {
+        console.log('Auth user deleted successfully via Edge Function');
+      }
+    } catch (e: any) {
+      console.warn('auth.users削除警告 (Unexpected):', e?.message || 'Unknown error');
       // auth削除失敗は警告のみ（すでにプロファイルは削除済み）
     }
 
