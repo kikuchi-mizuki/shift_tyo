@@ -61,7 +61,7 @@ export const PharmacistRequests: React.FC<PharmacistRequestsProps> = ({
         <div className="mb-3 bg-white border rounded p-2">
           <div className="grid grid-cols-2 gap-2">
             <select
-              className="text-xs border rounded px-2 py-1"
+              className="text-xs border rounded px-2 py-1 col-span-2"
               value={newRequest.pharmacist_id}
               onChange={(e) => onRequestChange({ ...newRequest, pharmacist_id: e.target.value })}
             >
@@ -86,15 +86,6 @@ export const PharmacistRequests: React.FC<PharmacistRequestsProps> = ({
               onChange={(e) => onRequestChange({ ...newRequest, end_time: e.target.value })}
               placeholder="終了時間"
             />
-            <select
-              className="text-xs border rounded px-2 py-1"
-              value={newRequest.priority}
-              onChange={(e) => onRequestChange({ ...newRequest, priority: e.target.value })}
-            >
-              <option value="low">優先度: 低</option>
-              <option value="medium">優先度: 中</option>
-              <option value="high">優先度: 高</option>
-            </select>
           </div>
           <div className="mt-2">
             <button onClick={onAdd} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
@@ -123,9 +114,6 @@ export const PharmacistRequests: React.FC<PharmacistRequestsProps> = ({
                       削除
                     </button>
                   </div>
-                </div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">
-                  {request.priority === 'high' ? '高' : request.priority === 'medium' ? '中' : '低'}
                 </div>
               </div>
             </div>
