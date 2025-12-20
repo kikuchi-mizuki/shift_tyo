@@ -43,7 +43,7 @@ export const PharmacistCard: React.FC<PharmacistCardProps> = React.memo(({
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2">
         {isEditing ? (
           <input
             className="text-sm border rounded px-2 py-1 w-1/2"
@@ -51,14 +51,14 @@ export const PharmacistCard: React.FC<PharmacistCardProps> = React.memo(({
             onChange={(e) => onEditFormChange({ ...editForm, name: e.target.value })}
           />
         ) : (
-          <div className="flex items-center space-x-2">
-            <h4 className="font-medium text-gray-800">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <h4 className="font-medium text-gray-800 whitespace-nowrap">
               {pharmacist.name && pharmacist.name.trim() !== ''
                 ? pharmacist.name
                 : pharmacist.email || '名前未設定'}
             </h4>
             {hasRatings ? (
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
@@ -71,18 +71,18 @@ export const PharmacistCard: React.FC<PharmacistCardProps> = React.memo(({
                     />
                   ))}
                 </div>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded whitespace-nowrap">
                   {averageRating.toFixed(1)}/5 ({safeLength(pharmacistRatings)}件)
                 </span>
               </div>
             ) : (
-              <span className="text-xs text-gray-400 px-2 py-1 rounded bg-gray-100">
+              <span className="text-xs text-gray-400 px-2 py-1 rounded bg-gray-100 whitespace-nowrap">
                 評価なし
               </span>
             )}
           </div>
         )}
-        <span className="text-xs text-gray-500">{pharmacist.email}</span>
+        <span className="text-xs text-gray-500 flex-shrink-0">{pharmacist.email}</span>
       </div>
 
       {/* NG薬局・店舗リスト */}

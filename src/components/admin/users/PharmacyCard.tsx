@@ -29,19 +29,19 @@ export const PharmacyCard: React.FC<PharmacyCardProps> = React.memo(({
 }) => {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2">
         {isEditing ? (
           <input
-            className="text-sm border rounded px-2 py-1 w-1/2"
+            className="text-sm border rounded px-2 py-1 flex-1"
             value={editForm.name}
             onChange={(e) => onEditFormChange({ ...editForm, name: e.target.value })}
           />
         ) : (
-          <h4 className="font-medium text-gray-800">
+          <h4 className="font-medium text-gray-800 whitespace-nowrap flex-1 min-w-0 truncate">
             {pharmacy.name || pharmacy.email || '名前未設定'}
           </h4>
         )}
-        <span className="text-xs text-gray-500">{pharmacy.email}</span>
+        <span className="text-xs text-gray-500 flex-shrink-0">{pharmacy.email}</span>
       </div>
 
       {/* 店舗名 */}
