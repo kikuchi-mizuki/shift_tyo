@@ -52,7 +52,7 @@ export const PharmacistCard: React.FC<PharmacistCardProps> = React.memo(({
           />
         ) : (
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <h4 className="font-medium text-gray-800 whitespace-nowrap">
+            <h4 className="font-medium text-gray-800 truncate">
               {pharmacist.name && pharmacist.name.trim() !== ''
                 ? pharmacist.name
                 : pharmacist.email || '名前未設定'}
