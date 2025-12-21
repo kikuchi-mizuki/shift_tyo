@@ -17,15 +17,14 @@ export const PharmacyShiftPostingForm: React.FC<PharmacyShiftPostingFormProps> =
 }) => {
   const [postings, setPostings] = useState<Omit<ShiftPosting, 'id' | 'status' | 'createdAt'>[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<'morning' | 'afternoon' | 'fullday' | 'negotiable'>('morning');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<'morning' | 'afternoon' | 'fullday'>('morning');
   const [requiredPeople, setRequiredPeople] = useState(1);
   const [notes, setNotes] = useState('');
 
   const timeSlots = [
     { value: 'morning', label: '午前 (9:00-13:00)', icon: '🌅', color: 'border-yellow-300 hover:bg-yellow-50' },
     { value: 'afternoon', label: '午後 (13:00-18:00)', icon: '☀️', color: 'border-blue-300 hover:bg-blue-50' },
-    { value: 'fullday', label: '終日 (9:00-18:00)', icon: '🌞', color: 'border-orange-300 hover:bg-orange-50' },
-    { value: 'negotiable', label: '要相談', icon: '💬', color: 'border-purple-300 hover:bg-purple-50' }
+    { value: 'fullday', label: '終日 (9:00-18:00)', icon: '🌞', color: 'border-orange-300 hover:bg-orange-50' }
   ];
 
   const addPosting = () => {
