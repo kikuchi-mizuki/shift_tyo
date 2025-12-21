@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Calendar, Clock, Star, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Calendar, Clock, Trash2, AlertTriangle } from 'lucide-react';
 import { ShiftRequest } from '../types';
 
 interface PharmacistShiftRequestFormProps {
@@ -17,21 +17,13 @@ export const PharmacistShiftRequestForm: React.FC<PharmacistShiftRequestFormProp
 }) => {
   const [requests, setRequests] = useState<Omit<ShiftRequest, 'id' | 'status'>[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<'morning' | 'afternoon' | 'fullday' | 'negotiable'>('morning');
-  const [selectedPriority, setSelectedPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<'morning' | 'afternoon' | 'fullday'>('morning');
   const [notes, setNotes] = useState('');
 
   const timeSlots = [
     { value: 'morning', label: '午前 (9:00-13:00)', icon: '🌅', color: 'border-yellow-300 hover:bg-yellow-50' },
     { value: 'afternoon', label: '午後 (13:00-18:00)', icon: '☀️', color: 'border-blue-300 hover:bg-blue-50' },
-    { value: 'fullday', label: '終日 (9:00-18:00)', icon: '🌞', color: 'border-orange-300 hover:bg-orange-50' },
-    { value: 'negotiable', label: '要相談', icon: '💬', color: 'border-purple-300 hover:bg-purple-50' }
-  ];
-
-  const priorities = [
-    { value: 'high', label: '高優先度', color: 'text-red-600', bgColor: 'bg-red-50 border-red-200' },
-    { value: 'medium', label: '中優先度', color: 'text-yellow-600', bgColor: 'bg-yellow-50 border-yellow-200' },
-    { value: 'low', label: '低優先度', color: 'text-green-600', bgColor: 'bg-green-50 border-green-200' }
+    { value: 'fullday', label: '終日 (9:00-18:00)', icon: '🌞', color: 'border-orange-300 hover:bg-orange-50' }
   ];
 
   const addRequest = () => {
@@ -41,7 +33,6 @@ export const PharmacistShiftRequestForm: React.FC<PharmacistShiftRequestFormProp
       pharmacistId: currentUserId,
       date: selectedDate,
       timeSlot: selectedTimeSlot,
-      priority: selectedPriority,
       notes: notes.trim() || undefined
     };
 
@@ -71,10 +62,6 @@ export const PharmacistShiftRequestForm: React.FC<PharmacistShiftRequestFormProp
 
   const getTimeSlotInfo = (timeSlot: string) => {
     return timeSlots.find(ts => ts.value === timeSlot) || timeSlots[0];
-  };
-
-  const getPriorityInfo = (priority: string) => {
-    return priorities.find(p => p.value === priority) || priorities[1];
   };
 
   return (
@@ -138,31 +125,6 @@ export const PharmacistShiftRequestForm: React.FC<PharmacistShiftRequestFormProp
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              <Star className="w-4 h-4 inline mr-2" />
-              優先度
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {priorities.map(priority => (
-                <button
-                  key={priority.value}
-                  type="button"
-                  onClick={() => setSelectedPriority(priority.value as any)}
-                  className={`p-3 rounded-lg border-2 transition-all duration-200 ${
-                    selectedPriority === priority.value
-                      ? `${priority.bgColor} border-current`
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className={`font-medium ${selectedPriority === priority.value ? priority.color : 'text-gray-600'}`}>
-                    {priority.label}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
               メモ（任意）
             </label>
             <textarea
@@ -188,7 +150,6 @@ export const PharmacistShiftRequestForm: React.FC<PharmacistShiftRequestFormProp
             <h3 className="text-lg font-semibold text-gray-800 mb-4">追加済みの希望 ({requests.length}件)</h3>
             <div className="space-y-3 mb-6">
               {requests.map((request, index) => {
-                const priorityInfo = getPriorityInfo(request.priority);
                 const timeSlotInfo = getTimeSlotInfo(request.timeSlot);
                 return (
                   <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -201,9 +162,6 @@ export const PharmacistShiftRequestForm: React.FC<PharmacistShiftRequestFormProp
                         <div className="flex items-center space-x-2">
                           <span className="text-lg">{timeSlotInfo.icon}</span>
                           <span className="text-sm text-gray-600">{timeSlotInfo.label}</span>
-                        </div>
-                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${priorityInfo.bgColor} ${priorityInfo.color}`}>
-                          {priorityInfo.label}
                         </div>
                       </div>
                       {request.notes && (
@@ -238,8 +196,7 @@ export const PharmacistShiftRequestForm: React.FC<PharmacistShiftRequestFormProp
               <div className="font-medium mb-1">シフト希望登録のポイント</div>
               <ul className="space-y-1 text-xs">
                 <li>• 希望日は月初に一括登録することをお勧めします</li>
-                <li>• 「要相談」を選択すると柔軟な時間調整が可能です</li>
-                <li>• 高優先度の日程は優先的にマッチングされます</li>
+                <li>• 午前・午後・終日から希望の時間帯を選択できます</li>
                 <li>• NG薬局の設定は別途管理画面で行えます</li>
               </ul>
             </div>
