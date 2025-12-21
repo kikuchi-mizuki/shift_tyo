@@ -24,12 +24,20 @@ export const confirmSingleMatch = async (
   userProfiles: any
 ): Promise<{ success: boolean; message?: string; data?: any }> => {
   try {
+    // データ構造を判定（AIマッチング結果 vs assigned テーブルデータ）
+    const isAIMatchResult = match.pharmacist && match.pharmacy;
+    const isAssignedData = match.pharmacist_id && match.pharmacy_id;
+
     // バリデーション
-    if (!match || !match.pharmacist || !match.pharmacy) {
+    if (!match || (!isAIMatchResult && !isAssignedData)) {
       return { success: false, message: 'マッチングデータが不完全です' };
     }
 
-    if (!match.pharmacist.id || !match.pharmacy.id) {
+    // IDを取得（どちらの構造でも対応）
+    const pharmacistId = match.pharmacist?.id || match.pharmacist_id;
+    const pharmacyId = match.pharmacy?.id || match.pharmacy_id;
+
+    if (!pharmacistId || !pharmacyId) {
       return { success: false, message: '薬剤師または薬局のIDが不足しています' };
     }
 
@@ -37,28 +45,38 @@ export const confirmSingleMatch = async (
       return { success: false, message: '日付フォーマットが不正です' };
     }
 
-    // 店舗名を正しく取得（薬局名をフォールバックとして使わない）
+    // 店舗名を取得（複数のソースから優先順位をつけて取得）
     const storeName =
+      match.store_name ||
       match.posting?.store_name ||
       match.pharmacy?.store_name ||
-      match.store_name ||
-      userProfiles[match.pharmacy.id]?.store_name ||
+      userProfiles[pharmacyId]?.store_name ||
       '店舗名未設定';
 
     // 時間を取得
-    const startTime = match.timeSlot?.start || match.posting?.start_time || '09:00:00';
-    const endTime = match.timeSlot?.end || match.posting?.end_time || '18:00:00';
+    const startTime = match.start_time || match.timeSlot?.start || match.posting?.start_time || '09:00:00';
+    const endTime = match.end_time || match.timeSlot?.end || match.posting?.end_time || '18:00:00';
+
+    // メモを作成
+    let memo = '';
+    if (match.compatibilityScore && match.reasons) {
+      memo = `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`;
+    } else if (match.memo) {
+      memo = match.memo;
+    } else {
+      memo = 'AIマッチング結果から確定';
+    }
 
     const shift = {
-      pharmacist_id: match.pharmacist.id,
-      pharmacy_id: match.pharmacy.id,
+      pharmacist_id: pharmacistId,
+      pharmacy_id: pharmacyId,
       date: date,
       time_slot: 'negotiable',
       start_time: startTime,
       end_time: endTime,
       status: 'confirmed',
       store_name: storeName,
-      memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+      memo: memo
     };
 
     // 既存のシフトをチェック
