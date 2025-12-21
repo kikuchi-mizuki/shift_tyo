@@ -57,6 +57,24 @@ export const confirmSingleMatch = async (
     const startTime = match.start_time || match.timeSlot?.start || match.posting?.start_time || '09:00:00';
     const endTime = match.end_time || match.timeSlot?.end || match.posting?.end_time || '18:00:00';
 
+    // time_slotを判定（データベース制約: 'morning', 'afternoon', 'fullday'のみ）
+    let timeSlot = 'fullday'; // デフォルトは終日
+    if (match.time_slot && ['morning', 'afternoon', 'fullday'].includes(match.time_slot)) {
+      timeSlot = match.time_slot;
+    } else {
+      // 時間から判定
+      const start = parseInt(startTime.split(':')[0]);
+      const end = parseInt(endTime.split(':')[0]);
+
+      if (start >= 9 && end <= 13) {
+        timeSlot = 'morning';
+      } else if (start >= 13 && end <= 18) {
+        timeSlot = 'afternoon';
+      } else {
+        timeSlot = 'fullday';
+      }
+    }
+
     // メモを作成
     let memo = '';
     if (match.compatibilityScore && match.reasons) {
@@ -71,7 +89,7 @@ export const confirmSingleMatch = async (
       pharmacist_id: pharmacistId,
       pharmacy_id: pharmacyId,
       date: date,
-      time_slot: 'negotiable',
+      time_slot: timeSlot,
       start_time: startTime,
       end_time: endTime,
       status: 'confirmed',
