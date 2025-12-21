@@ -16,7 +16,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [customTimeMode, setCustomTimeMode] = useState(false); // カスタム時間入力モード
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('13:00');
-  const [selectedPriority, setSelectedPriority] = useState('medium');
   const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
   const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
   
@@ -260,10 +259,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         logToRailway('Loaded shift requests', reqs);
         // データベースのtime_slot値を確認
         if (reqs && reqs.length > 0) {
-          logToRailway('Database time_slot values', reqs.map((r: any) => ({ 
-            date: r.date, 
-            time_slot: r.time_slot, 
-            priority: r.priority,
+          logToRailway('Database time_slot values', reqs.map((r: any) => ({
+            date: r.date,
+            time_slot: r.time_slot,
             status: r.status
           })));
         }
@@ -479,7 +477,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       if (existingRequest) {
         logToRailway('Found existing request for date', existingRequest);
         setSelectedTimeSlot(existingRequest.time_slot);
-        setSelectedPriority(existingRequest.priority);
         setMemo(existingRequest.memo || '');
       } else {
         // 新しい日付の場合は時間帯をリセット
@@ -945,7 +942,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         time_slot: customTimeMode ? 'fullday' : selectedTimeSlot,
         start_time: customTimeMode ? startTime + ':00' : undefined,
         end_time: customTimeMode ? endTime + ':00' : undefined,
-        priority: 'medium',
         memo: '',
         status: 'pending'
       }));
