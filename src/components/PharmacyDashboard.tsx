@@ -2298,7 +2298,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[{id:'morning',label:'9:00-13:00',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
                   {id:'afternoon',label:'13:00-18:00',icon:Sun,color:'bg-orange-500 hover:bg-orange-600'},
-                  {id:'full',label:'9:00-18:00',icon:Users,color:'bg-yellow-500 hover:bg-yellow-600'}].map(slot=>{
+                  {id:'fullday',label:'9:00-18:00',icon:Users,color:'bg-yellow-500 hover:bg-yellow-600'}].map(slot=>{
                     const Icon = slot.icon as any;
                     return (
                       <button 
