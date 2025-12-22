@@ -53,9 +53,9 @@ export const confirmSingleMatch = async (
       userProfiles[pharmacyId]?.store_name ||
       '店舗名未設定';
 
-    // 時間を取得
-    const startTime = match.start_time || match.timeSlot?.start || match.posting?.start_time || '09:00:00';
-    const endTime = match.end_time || match.timeSlot?.end || match.posting?.end_time || '18:00:00';
+    // 時間を取得（優先順位: AIマッチングエンジンが設定した薬局の募集時間を優先）
+    const startTime = match.timeSlot?.start || match.posting?.start_time || match.start_time || '09:00:00';
+    const endTime = match.timeSlot?.end || match.posting?.end_time || match.end_time || '18:00:00';
 
     // time_slotを判定（データベース制約: 'morning', 'afternoon', 'fullday'のみ）
     let timeSlot = 'fullday'; // デフォルトは終日

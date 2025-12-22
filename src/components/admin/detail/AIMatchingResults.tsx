@@ -97,24 +97,32 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
 
           console.log('🔍 Final storeName:', storeName);
 
-          // 薬局の募集時間を取得（postingsから検索）
+          // 薬局の募集時間を取得
+          // 優先順位: 1) match.timeSlot, 2) match.posting, 3) postingsから検索
           let startTime = '09:00';
           let endTime = '18:00';
 
-          // pharmacy_idから対応するpostingを検索
-          const posting = postings.find((p: any) => p.pharmacy_id === pharmacyId);
-          if (posting) {
-            // 募集時間をパース（"11:00:00-19:00:00"形式）
-            if (posting.start_time) {
-              startTime = posting.start_time.substring(0, 5); // "11:00:00" → "11:00"
+          // 1. AIマッチングエンジンが設定したtimeSlotを優先使用
+          if (match.timeSlot?.start && match.timeSlot?.end) {
+            startTime = match.timeSlot.start.substring(0, 5);
+            endTime = match.timeSlot.end.substring(0, 5);
+          }
+          // 2. matchに含まれているpostingデータを使用
+          else if (match.posting?.start_time && match.posting?.end_time) {
+            startTime = match.posting.start_time.substring(0, 5);
+            endTime = match.posting.end_time.substring(0, 5);
+          }
+          // 3. 最後の手段: pharmacy_idとdateから対応するpostingを検索
+          else {
+            const matchDate = match.date || match.timeSlot?.date;
+            const posting = postings.find((p: any) =>
+              p.pharmacy_id === pharmacyId &&
+              (!matchDate || p.date === matchDate)
+            );
+            if (posting?.start_time && posting?.end_time) {
+              startTime = posting.start_time.substring(0, 5);
+              endTime = posting.end_time.substring(0, 5);
             }
-            if (posting.end_time) {
-              endTime = posting.end_time.substring(0, 5); // "19:00:00" → "19:00"
-            }
-          } else if (match.posting) {
-            // matchに含まれているpostingデータを使用
-            startTime = match.posting.start_time?.substring(0, 5) || '09:00';
-            endTime = match.posting.end_time?.substring(0, 5) || '18:00';
           }
 
           // compatibilityScoreの安全な取得（undefinedの場合は0.8をデフォルト値として使用）
