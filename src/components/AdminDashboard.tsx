@@ -26,6 +26,7 @@ import { analyzePharmacyShortage } from '../services/admin/AnalysisService';
 // Components
 import { AdminCalendar } from './admin/calendar/AdminCalendar';
 import { AdminPanel } from './admin/panel/AdminPanel';
+import { UserManagement } from './admin/users/UserManagement';
 import { AdminEmergencyShift } from './AdminEmergencyShift';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
@@ -257,7 +258,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       )}
 
       {/* メインレイアウト */}
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
+      <div className="flex flex-col gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
+        {/* カレンダーと管理パネル */}
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
           {/* カレンダー */}
           <AdminCalendar
             currentDate={currentDate}
@@ -313,24 +316,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               onAddRequest: handleAddRequest,
               onDeleteRequest: handleDeleteRequest
             } : undefined}
-            userManagementProps={{
-              pharmacies,
-              pharmacists,
-              ratings,
-              storeNgPharmacies,
-              expandedSections,
-              editingUserId,
-              userEditForm,
-              userProfiles,
-              onToggleSection: toggleSection,
-              onEditFormChange: setUserEditForm,
-              onEdit: handleEditUser,
-              onSave: handleSaveUser,
-              onCancel: () => setEditingUserId(null),
-              onDelete: handleDeleteUser
-            }}
           />
         </div>
+
+        {/* ユーザー管理（カレンダーの下） */}
+        <div className="w-full">
+          <UserManagement
+            pharmacies={pharmacies}
+            pharmacists={pharmacists}
+            ratings={ratings}
+            storeNgPharmacies={storeNgPharmacies}
+            expandedSections={expandedSections}
+            editingUserId={editingUserId}
+            userEditForm={userEditForm}
+            userProfiles={userProfiles}
+            onToggleSection={toggleSection}
+            onEditFormChange={setUserEditForm}
+            onEdit={handleEditUser}
+            onSave={handleSaveUser}
+            onCancel={() => setEditingUserId(null)}
+            onDelete={handleDeleteUser}
+          />
+        </div>
+      </div>
 
       {/* モーダル */}
       {showEmergencyModal && (

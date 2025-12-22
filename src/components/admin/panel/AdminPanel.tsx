@@ -7,7 +7,6 @@ import React from 'react';
 import { PanelHeader } from './PanelHeader';
 import { ActionButtons } from './ActionButtons';
 import { DateDetailPanel } from '../detail/DateDetailPanel';
-import { UserManagement } from '../users/UserManagement';
 
 interface AdminPanelProps {
   // ヘッダー関連
@@ -22,9 +21,6 @@ interface AdminPanelProps {
   // 日付詳細パネル関連
   selectedDate: string;
   dateDetailProps: any;
-
-  // ユーザー管理関連
-  userManagementProps: any;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -34,8 +30,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onToggleRecruitment,
   onMonthlyMatching,
   selectedDate,
-  dateDetailProps,
-  userManagementProps
+  dateDetailProps
 }) => {
   return (
     <div className="w-full lg:w-80 xl:w-96 bg-white rounded-lg shadow border border-purple-200 flex flex-col h-[800px]">
@@ -55,11 +50,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         {/* 選択された日付の詳細表示 */}
         {selectedDate && dateDetailProps && (
           <DateDetailPanel {...dateDetailProps} />
-        )}
-
-        {/* ユーザー管理 */}
-        {userManagementProps && (
-          <UserManagement {...userManagementProps} />
         )}
       </div>
     </div>

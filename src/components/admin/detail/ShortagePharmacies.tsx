@@ -64,8 +64,8 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
               </div>
             </div>
 
-            {/* 手動マッチング用プルダウン */}
-            {pharmacy.shortage > 0 && (
+            {/* 手動マッチング用プルダウン - 非表示 */}
+            {false && pharmacy.shortage > 0 && (
               <div className="mt-2">
                 <div className="text-xs text-gray-600 mb-1">
                   <span className="text-red-600">※ 選択した薬剤師の新しいシフト希望が作成されます</span>
@@ -106,8 +106,8 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
           ))}
       </div>
 
-      {/* 手動マッチング確定ボタン */}
-      {hasManualSelections && (
+      {/* 手動マッチング確定ボタン - 非表示 */}
+      {false && hasManualSelections && (
         <div className="mt-3 pt-2 border-t border-red-200">
           <button
             onClick={onSaveManualMatches}
