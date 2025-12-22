@@ -98,21 +98,40 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
           console.log('🔍 Final storeName:', storeName);
 
           // 薬局の募集時間を取得
-          // 優先順位: 1) match.timeSlot, 2) match.posting, 3) postingsから検索
+          // 優先順位: 1) match.timeSlot, 2) match.posting, 3) match.start_time/end_time (距離ベース), 4) postingsから検索
           let startTime = '09:00';
           let endTime = '18:00';
+
+          console.log('🕒 AIマッチング時間デバッグ:', {
+            index,
+            pharmacyId,
+            'match.timeSlot': match.timeSlot,
+            'match.posting': match.posting,
+            'match.start_time': match.start_time,
+            'match.end_time': match.end_time,
+            'match.date': match.date,
+            'match.algorithm': match.algorithm
+          });
 
           // 1. AIマッチングエンジンが設定したtimeSlotを優先使用
           if (match.timeSlot?.start && match.timeSlot?.end) {
             startTime = match.timeSlot.start.substring(0, 5);
             endTime = match.timeSlot.end.substring(0, 5);
+            console.log('✅ timeSlotから取得:', { startTime, endTime });
           }
           // 2. matchに含まれているpostingデータを使用
           else if (match.posting?.start_time && match.posting?.end_time) {
             startTime = match.posting.start_time.substring(0, 5);
             endTime = match.posting.end_time.substring(0, 5);
+            console.log('✅ match.postingから取得:', { startTime, endTime });
           }
-          // 3. 最後の手段: pharmacy_idとdateから対応するpostingを検索
+          // 3. 距離ベースマッチングの場合: match.start_time/end_timeを直接使用
+          else if (match.start_time && match.end_time) {
+            startTime = match.start_time.substring(0, 5);
+            endTime = match.end_time.substring(0, 5);
+            console.log('✅ match.start_time/end_timeから取得 (距離ベース):', { startTime, endTime });
+          }
+          // 4. 最後の手段: pharmacy_idとdateから対応するpostingを検索
           else {
             const matchDate = match.date || match.timeSlot?.date;
             const posting = postings.find((p: any) =>
@@ -122,6 +141,9 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
             if (posting?.start_time && posting?.end_time) {
               startTime = posting.start_time.substring(0, 5);
               endTime = posting.end_time.substring(0, 5);
+              console.log('✅ postings配列から取得:', { startTime, endTime, posting });
+            } else {
+              console.warn('⚠️ 時間取得失敗 - デフォルト値を使用:', { startTime, endTime });
             }
           }
 
