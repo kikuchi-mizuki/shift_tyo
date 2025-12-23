@@ -226,33 +226,6 @@ export class AIMatchingEngine {
               urgency: 'medium',
               flexibility: 0
             },
-            // デバッグ: AIマッチングエンジンでのtimeSlot設定を確認
-            debugAITimeSlot: {
-              postingStart: posting.start_time,
-              postingEnd: posting.end_time,
-              requestStart: request.start_time,
-              requestEnd: request.end_time,
-              timeSlotStart: posting.start_time,
-              timeSlotEnd: posting.end_time
-            },
-            // デバッグ: 詳細なpostingとrequestの情報を確認
-            debugDetailedInfo: {
-              posting: {
-                id: posting.id,
-                pharmacy_id: posting.pharmacy_id,
-                start_time: posting.start_time,
-                end_time: posting.end_time,
-                date: posting.date,
-                store_name: posting.store_name
-              },
-              request: {
-                id: request.id,
-                pharmacist_id: request.pharmacist_id,
-                start_time: request.start_time,
-                end_time: request.end_time,
-                date: request.date
-              }
-            },
               compatibilityScore: 0.8,
               reasons: ['マッチング'],
               // 店舗名を含むposting情報を追加
@@ -476,9 +449,11 @@ export class AIMatchingEngine {
     console.log(`storeNgPharmacists全体:`, storeNgPharmacists);
 
     // 薬剤師が薬局をNGにしているかチェック（新しいテーブル + 旧ng_list）
-    const blockedByPharmacistNew = pharmacistNgPharmacies.some((ngPharmacy: any) => 
-      ngPharmacy.pharmacy_id === posting.pharmacy_id && 
-      (ngPharmacy.store_name === posting.store_name || ngPharmacy.store_name === null)
+    const blockedByPharmacistNew = pharmacistNgPharmacies.some((ngPharmacy: any) =>
+      ngPharmacy.pharmacy_id === posting.pharmacy_id &&
+      (ngPharmacy.store_name === posting.store_name ||
+       ngPharmacy.store_name === null ||
+       !ngPharmacy.store_name)
     );
     const blockedByPharmacistOld = pharmacistNg.includes(posting.pharmacy_id);
     const blockedByPharmacist = blockedByPharmacistNew || blockedByPharmacistOld;

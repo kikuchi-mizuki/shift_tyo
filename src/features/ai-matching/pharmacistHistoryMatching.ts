@@ -35,7 +35,7 @@ export const getPharmacistHistory = async (pharmacistIds: string[]): Promise<Map
 
       // 過去の確定シフト数を取得
       const { data: confirmedShifts, error: shiftsError } = await supabase
-        .from('shifts')
+        .from('assigned_shifts')
         .select('id, created_at')
         .eq('pharmacist_id', pharmacistId);
       
