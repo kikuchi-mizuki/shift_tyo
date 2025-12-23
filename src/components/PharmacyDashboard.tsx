@@ -295,20 +295,17 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           }
         });
         
-        // 確定済みステータスの募集を除外
-        const filteredPostings = (myShiftsData || []).filter((posting: any) => {
-          return posting.status !== 'confirmed';
-        });
-        
-        console.log(`薬局ダッシュボード: 全募集${myShiftsData?.length || 0}件 → 表示${filteredPostings.length}件`);
-        console.log('フィルタ後の募集詳細:', filteredPostings.map(p => ({
+        // 募集は常に表示する（required_staffが2以上の場合、部分確定でも募集継続のため）
+        console.log(`薬局ダッシュボード: 全募集${myShiftsData?.length || 0}件`);
+        console.log('募集詳細:', (myShiftsData || []).map((p: any) => ({
           id: p.id,
           date: p.date,
           store_name: p.store_name,
           time_slot: p.time_slot,
-          status: p.status
+          status: p.status,
+          required_staff: p.required_staff
         })));
-        setMyShifts(filteredPostings);
+        setMyShifts(myShiftsData || []);
       }
       
       // 直接Supabaseから確定済みシフトを取得
@@ -1310,11 +1307,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       // 再読込（プロフィールは保持）
       const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
       if (!myShiftsError) {
-        // 確定済みステータスの募集を除外
-        const filteredPostings = (myShiftsData || []).filter((posting: any) => {
-          return posting.status !== 'confirmed';
-        });
-        setMyShifts(filteredPostings);
+        // 募集は常に表示する（required_staffが2以上の場合、部分確定でも募集継続のため）
+        setMyShifts(myShiftsData || []);
       }
     } catch (e) {
       console.error('Exception in handlePost:', e);
@@ -1414,11 +1408,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       });
       const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
       if (!myShiftsError) {
-        // 確定済みステータスの募集を除外
-        const filteredPostings = (myShiftsData || []).filter((posting: any) => {
-          return posting.status !== 'confirmed';
-        });
-        setMyShifts(filteredPostings);
+        // 募集は常に表示する（required_staffが2以上の場合、部分確定でも募集継続のため）
+        setMyShifts(myShiftsData || []);
       }
     } catch (e) {
       console.error('Update existing posting failed:', e);
@@ -1458,12 +1449,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         console.error('Error refreshing data:', myShiftsError);
         throw myShiftsError;
       }
-      
-      // 確定済みステータスの募集を除外
-      const filteredPostings = (myShiftsData || []).filter((posting: any) => {
-        return posting.status !== 'confirmed';
-      });
-      setMyShifts(filteredPostings);
+
+      // 募集は常に表示する（required_staffが2以上の場合、部分確定でも募集継続のため）
+      setMyShifts(myShiftsData || []);
       console.log('Data refreshed successfully');
       alert('募集を削除しました');
       
