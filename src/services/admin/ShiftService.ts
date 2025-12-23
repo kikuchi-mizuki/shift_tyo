@@ -146,19 +146,15 @@ export const confirmSingleMatch = async (
       insertedData = newData;
     }
 
-    // 対応する希望・募集のステータスを更新
+    // 対応する希望のステータスを更新
     await supabase
       .from('shift_requests')
       .update({ status: 'confirmed' })
       .eq('pharmacist_id', shift.pharmacist_id)
       .eq('date', shift.date);
 
-    await supabase
-      .from('shift_postings')
-      .update({ status: 'confirmed' })
-      .eq('pharmacy_id', shift.pharmacy_id)
-      .eq('date', shift.date)
-      .eq('store_name', shift.store_name);
+    // 募集のステータスは更新しない
+    // （required_staffが2以上の場合、部分的に確定しても募集は継続するため）
 
     return { success: true, data: insertedData };
   } catch (e: any) {
@@ -206,14 +202,8 @@ export const confirmShiftsForDate = async (
         .eq('date', shift.date)
         .eq('time_slot', shiftTimeSlot);
 
-      // 薬局の募集を更新
-      await supabase
-        .from('shift_postings')
-        .update({ status: 'confirmed' })
-        .eq('pharmacy_id', shift.pharmacy_id)
-        .eq('date', shift.date)
-        .eq('time_slot', shiftTimeSlot)
-        .eq('store_name', shift.store_name || null);
+      // 募集のステータスは更新しない
+      // （required_staffが2以上の場合、部分的に確定しても募集は継続するため）
     }
 
     return { success: true, data: insertResult };
