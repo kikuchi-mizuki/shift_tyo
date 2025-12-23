@@ -1171,8 +1171,8 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                         <span className="hidden sm:inline">確定</span>
                       </div>
                     )}
-                    {/* 希望バッジを表示（募集締切でない限り） */}
-                    {isRecruitmentOpen && hasMyRequest(day) && (
+                    {/* 希望バッジを表示（募集締切でない限り、かつ確定していない場合のみ） */}
+                    {isRecruitmentOpen && hasMyRequest(day) && !hasMyShift(day) && (
                       <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">
                         <span className="sm:hidden">希</span>
                         <span className="hidden sm:inline">希望</span>
