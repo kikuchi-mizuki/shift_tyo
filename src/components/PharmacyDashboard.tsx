@@ -1598,13 +1598,29 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                   {/* 募集中シフト数（青色）を表示（募集締切でない限り） */}
                   {isRecruitmentOpen && (() => {
                     const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                    const hasConfirmed = confirmedShifts.some((s: any) => s.date === dateStr);
-                    if (hasConfirmed) return null;
-                    const count = myShifts.filter((s: any) => s.date === dateStr).length;
-                    return count > 0 ? (
+
+                    // その日の募集を取得し、まだ不足がある募集のみカウント
+                    const postingsForDate = myShifts.filter((s: any) => s.date === dateStr);
+                    const confirmedForDate = confirmedShifts.filter((s: any) => s.date === dateStr);
+
+                    // 募集ごとに必要人数と確定人数を比較
+                    let shortageCount = 0;
+                    postingsForDate.forEach((posting: any) => {
+                      const requiredStaff = posting.required_staff || posting.required_people || 1;
+                      const confirmedCount = confirmedForDate.filter((confirmed: any) =>
+                        confirmed.time_slot === posting.time_slot &&
+                        confirmed.pharmacy_id === posting.pharmacy_id
+                      ).length;
+
+                      if (requiredStaff > confirmedCount) {
+                        shortageCount++;
+                      }
+                    });
+
+                    return shortageCount > 0 ? (
                       <div className="text-[9px] sm:text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 mt-1 inline-block">
-                        <span className="sm:hidden">募{count}</span>
-                        <span className="hidden sm:inline">募集 {count}件</span>
+                        <span className="sm:hidden">募{shortageCount}</span>
+                        <span className="hidden sm:inline">募集 {shortageCount}件</span>
                       </div>
                     ) : null;
                   })()}
