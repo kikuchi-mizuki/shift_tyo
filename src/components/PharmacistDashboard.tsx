@@ -908,13 +908,22 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const handleSubmit = async () => {
     console.log('PharmacistDashboard: handleSubmit called');
       console.log('Form data:', { selectedDates, selectedTimeSlot, userId: user.id });
-    
+
     // 募集締切チェック
     if (!isRecruitmentOpen) {
       alert('現在募集は締め切られています。管理者にお問い合わせください。');
       return;
     }
-    
+
+    // 確定シフトがある日付をチェック
+    const confirmedDates = selectedDates.filter(date =>
+      myShifts.some((shift: any) => shift.date === date)
+    );
+    if (confirmedDates.length > 0) {
+      alert(`以下の日付は既に確定しているため、希望を登録できません:\n${confirmedDates.join(', ')}`);
+      return;
+    }
+
     if (selectedDates.length === 0 || (!customTimeMode && !selectedTimeSlot)) {
       alert('日付と時間帯を選択してください');
       return;
@@ -972,13 +981,22 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       return;
     }
 
+    // 確定シフトがある日付をチェック
+    const confirmedDates = selectedDates.filter(date =>
+      myShifts.some((shift: any) => shift.date === date)
+    );
+    if (confirmedDates.length > 0) {
+      alert(`以下の日付は既に確定しているため、希望を削除できません:\n${confirmedDates.join(', ')}`);
+      return;
+    }
+
     try {
       // 認証ユーザーIDを取得
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       const userIdToUse = authUser?.id || user.id;
 
       // 選択された日付の既存の希望を取得
-      const existingRequests = myRequests.filter((req: any) => 
+      const existingRequests = myRequests.filter((req: any) =>
         selectedDates.includes(req.date) && req.pharmacist_id === userIdToUse
       );
 
@@ -1560,6 +1578,15 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                   <div className="space-y-3 mt-4 mb-4">
                     <button
                       onClick={async () => {
+                        // 確定シフトがある日付をチェック
+                        const confirmedDates = selectedDates.filter(date =>
+                          myShifts.some((shift: any) => shift.date === date)
+                        );
+                        if (confirmedDates.length > 0) {
+                          alert(`以下の日付は既に確定しているため、希望を更新できません:\n${confirmedDates.join(', ')}`);
+                          return;
+                        }
+
                         // 既存の希望を更新
                         try {
                           const { data: { user: authUser } } = await supabase.auth.getUser();
