@@ -47,6 +47,9 @@ export const ConfirmedShifts: React.FC<ConfirmedShiftsProps> = ({
           const pharmacyName = shift.pharmacy?.name || userProfiles[shift.pharmacy_id]?.name || '薬局名未設定';
           const storeName = getStoreName(shift);
 
+          const startTime = shift.start_time ? shift.start_time.substring(0, 5) : '09:00';
+          const endTime = shift.end_time ? shift.end_time.substring(0, 5) : '18:00';
+
           return (
             <div key={index} className="bg-white rounded border px-2 py-1">
               <div className="flex items-start justify-between">
@@ -55,6 +58,7 @@ export const ConfirmedShifts: React.FC<ConfirmedShiftsProps> = ({
                     <div>薬剤師: {pharmacistName}</div>
                     <div>薬局: {pharmacyName}</div>
                     <div>店舗: {storeName}</div>
+                    <div className="text-blue-600 font-medium">時間: {startTime} - {endTime}</div>
                   </div>
                 </div>
                 <button
