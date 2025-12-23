@@ -49,14 +49,14 @@ export const filterConfirmedRequestsAndPostings = (
   requests: any[],
   postings: any[]
 ): { filteredRequests: any[]; filteredPostings: any[] } => {
-  // ステータスが'confirmed'以外の希望・募集のみを表示
+  // ステータスが'confirmed'以外の希望のみを表示
   const filteredRequests = requests.filter((request: any) => {
     return request.status !== 'confirmed';
   });
 
-  const filteredPostings = postings.filter((posting: any) => {
-    return posting.status !== 'confirmed';
-  });
+  // 募集は常に表示する（required_staffが2以上の場合、部分確定でも募集継続のため）
+  // 不足計算はカレンダー側で確定済み人数と比較して行う
+  const filteredPostings = postings;
 
   // Debug logging removed for production performance
   // This function is called ~30 times per calendar render (once per day)
