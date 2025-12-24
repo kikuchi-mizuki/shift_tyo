@@ -1568,25 +1568,42 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               </div>
             ) : (() => {
               // 選択された日付に既存の希望があるかチェック
-              const hasExistingRequests = selectedDates.some(date => 
+              const hasExistingRequests = selectedDates.some(date =>
                 myRequests.some((req: any) => req.date === date)
               );
-              
+
+              // 選択された日付に確定シフトがあるかチェック
+              const hasConfirmedShifts = selectedDates.some(date =>
+                myShifts.some((shift: any) => shift.date === date)
+              );
+
+              if (hasConfirmedShifts) {
+                // 確定済みの日付がある場合は警告メッセージを表示
+                return (
+                  <div className="mt-4 mb-4 p-4 bg-green-50 border border-green-300 rounded-lg">
+                    <div className="flex items-start space-x-2">
+                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-800 mb-1">確定済みのシフト</p>
+                        <p className="text-xs text-green-700">
+                          選択された日付は既に確定済みです。確定済みのシフトは変更できません。
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               if (hasExistingRequests) {
                 // 既存の希望がある場合は「希望を更新」と「希望を削除」の両方を表示
                 return (
                   <div className="space-y-3 mt-4 mb-4">
                     <button
                       onClick={async () => {
-                        // 確定シフトがある日付をチェック
-                        const confirmedDates = selectedDates.filter(date =>
-                          myShifts.some((shift: any) => shift.date === date)
-                        );
-                        if (confirmedDates.length > 0) {
-                          alert(`以下の日付は既に確定しているため、希望を更新できません:\n${confirmedDates.join(', ')}`);
-                          return;
-                        }
-
                         // 既存の希望を更新
                         try {
                           const { data: { user: authUser } } = await supabase.auth.getUser();
