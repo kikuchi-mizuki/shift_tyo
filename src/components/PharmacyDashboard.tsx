@@ -1205,35 +1205,45 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     console.log('timeSlot:', timeSlot);
     console.log('customTimeMode:', customTimeMode);
     
-    for (const name of targets) {
-      const match = myShifts.find((s: any) => {
-        // 日付が一致するか
-        if (!selectedDates.includes(s.date)) return false;
-        
-        // 同じ薬局の募集か
-        if (s.pharmacy_id !== user?.id) return false;
-        
-        // 時間帯が一致するか（カスタム時間の場合はfulldayとして比較）
-        const currentTimeSlot = customTimeMode ? 'fullday' : timeSlot;
-        if (s.time_slot !== currentTimeSlot) return false;
-        
-        // 店舗名が一致するか
-        const direct = (s.store_name || '').trim();
-        let fromMemo = '';
-        if (!direct && typeof s.memo === 'string') {
-          const m = s.memo.match(/\[store:([^\]]+)\]/);
-          if (m && m[1]) fromMemo = m[1];
+    // 同じ日付の募集を取得
+    for (const date of selectedDates) {
+      for (const name of targets) {
+        const match = myShifts.find((s: any) => {
+          // 日付が一致するか
+          if (s.date !== date) return false;
+
+          // 同じ薬局の募集か
+          if (s.pharmacy_id !== user?.id) return false;
+
+          // 時間帯が一致するか（カスタム時間の場合はfulldayとして比較）
+          const currentTimeSlot = customTimeMode ? 'fullday' : timeSlot;
+          // カスタム時間の場合は、start_timeとend_timeも比較
+          if (customTimeMode && s.time_slot === 'fullday') {
+            const sStart = s.start_time ? String(s.start_time).substring(0, 5) : '';
+            const sEnd = s.end_time ? String(s.end_time).substring(0, 5) : '';
+            if (sStart !== startTime || sEnd !== endTime) return false;
+          } else {
+            if (s.time_slot !== currentTimeSlot) return false;
+          }
+
+          // 店舗名が一致するか
+          const direct = (s.store_name || '').trim();
+          let fromMemo = '';
+          if (!direct && typeof s.memo === 'string') {
+            const m = s.memo.match(/\[store:([^\]]+)\]/);
+            if (m && m[1]) fromMemo = m[1];
+          }
+          const sStoreName = direct || fromMemo;
+          return (sStoreName === '' && name === '') || sStoreName === name;
+        });
+
+        if (match) {
+          console.log(`既存募集を発見: ${date} ${name} -> 更新対象`, match);
+          updates.push({ id: match.id, storeName: name, date });
+        } else {
+          console.log(`新規募集: ${date} ${name} -> 作成対象`);
+          creates.push({ name, date });
         }
-        const sStoreName = direct || fromMemo;
-        return (sStoreName === '' && name === '') || sStoreName === name;
-      });
-      
-      if (match) {
-        console.log(`既存募集を発見: ${name} -> 更新対象`, match);
-        updates.push({ id: match.id, storeName: name });
-      } else {
-        console.log(`新規募集: ${name} -> 作成対象`);
-        creates.push(name);
       }
     }
     
@@ -1242,12 +1252,12 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     try {
       // 既存分の処理: 更新 or 削除 をユーザーに選択させる
       if (updates.length > 0) {
-        const doUpdate = confirm(`同じ日付・店舗名の募集が${updates.length}件あります。これらを上書き更新しますか？\n（キャンセルを選ぶと削除の確認に進みます）`);
+        const doUpdate = confirm(`同じ日付・店舗名・時間帯の募集が${updates.length}件あります。これらを上書き更新しますか？\n（キャンセルを選ぶと削除の確認に進みます）`);
         if (doUpdate) {
           await Promise.all(
             updates.map(u =>
               shiftPostings.updatePosting(u.id, {
-                date: selectedDates[0],
+                date: u.date,
                 store_name: u.storeName || null,
                 // DBは 'custom' を許容しないため、カスタムは 'fullday' で保存
                 time_slot: customTimeMode ? 'fullday' : timeSlot,
@@ -1275,20 +1285,18 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
       // 新規作成分
       if (creates.length > 0) {
-        const payload = selectedDates.flatMap(date => 
-          creates.map((name) => ({
-            pharmacy_id: user.id,
-            date: date,
-            store_name: name || null,
-            // カスタムは 'fullday' として保存し、start/end に実時間を保存
-            time_slot: customTimeMode ? 'fullday' : timeSlot,
-            start_time: customTimeMode ? startTime + ':00' : undefined,
-            end_time: customTimeMode ? endTime + ':00' : undefined,
-            required_staff: requiredStaff,
-            memo: '',
-            status: 'open'
-          }))
-        );
+        const payload = creates.map(({ name, date }) => ({
+          pharmacy_id: user.id,
+          date: date,
+          store_name: name || null,
+          // カスタムは 'fullday' として保存し、start/end に実時間を保存
+          time_slot: customTimeMode ? 'fullday' : timeSlot,
+          start_time: customTimeMode ? startTime + ':00' : undefined,
+          end_time: customTimeMode ? endTime + ':00' : undefined,
+          required_staff: requiredStaff,
+          memo: '',
+          status: 'open'
+        }));
         console.log('Creating postings:', payload);
         console.log('Store names being saved:', creates);
         const { error } = await shiftPostings.createPostings(payload);
@@ -2100,9 +2108,58 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                     const name = direct || fromMemo;
                     
                     return (
-                      <div key={idx} className="flex items-center justify-between bg-white rounded border px-2 py-1">
-                        <div className="text-gray-800">店舗: {name && name.trim() !== '' ? name : '（店舗名未設定）'}</div>
-                        <div className="text-gray-500">
+                      <div key={idx} className="bg-white rounded border px-2 py-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-gray-800 font-medium text-xs">店舗: {name && name.trim() !== '' ? name : '（店舗名未設定）'}</div>
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={() => {
+                                // 編集モードにする：選択日付を設定し、フォームに値を反映
+                                setSelectedDates([s.date]);
+                                setSingleStoreName(name);
+                                // カスタム時間かどうか判定
+                                if (s.start_time && s.end_time) {
+                                  setCustomTimeMode(true);
+                                  setStartTime(String(s.start_time).substring(0, 5));
+                                  setEndTime(String(s.end_time).substring(0, 5));
+                                  setTimeSlot('');
+                                } else {
+                                  setCustomTimeMode(false);
+                                  setTimeSlot(s.time_slot);
+                                  setStartTime('09:00');
+                                  setEndTime('13:00');
+                                }
+                                setRequiredStaff(s.required_staff || 1);
+                                setMemo(s.memo || '');
+                                // 画面をスクロールしてフォームに移動
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className="text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-0.5 rounded"
+                              title="編集"
+                            >
+                              編集
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (confirm(`この募集を削除しますか？\n店舗: ${name}\n日付: ${s.date}\n時間: ${(() => {
+                                  if (s.start_time && s.end_time) {
+                                    return `${String(s.start_time).substring(0, 5)}-${String(s.end_time).substring(0, 5)}`;
+                                  }
+                                  if (s.time_slot === 'morning') return '09:00-13:00';
+                                  if (s.time_slot === 'afternoon') return '13:00-18:00';
+                                  return '09:00-18:00';
+                                })()}`)) {
+                                  await handleDeleteExisting(s.id);
+                                }
+                              }}
+                              className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-0.5 rounded"
+                              title="削除"
+                            >
+                              削除
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-gray-500 text-xs">
                           {(() => {
                             // 登録済みデータの表示は時間帯名ではなく時間を優先
                             if (s.start_time && s.end_time) {
