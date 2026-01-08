@@ -5,9 +5,10 @@ import { useMultiUserAuth } from '../contexts/MultiUserAuthContext';
 
 interface MultiUserLoginFormProps {
   onLoginSuccess?: () => void;
+  onPasswordReset?: () => void;
 }
 
-export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginSuccess }) => {
+export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginSuccess, onPasswordReset }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState<'pharmacist' | 'pharmacy'>('pharmacist');
@@ -369,9 +370,20 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
 
             {/* パスワード */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                パスワード
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  パスワード
+                </label>
+                {!isRegistering && onPasswordReset && (
+                  <button
+                    type="button"
+                    onClick={onPasswordReset}
+                    className="text-xs text-blue-600 hover:text-blue-800 underline"
+                  >
+                    パスワードを忘れた方
+                  </button>
+                )}
+              </div>
               <input
                 id="multi-login-password"
                 name="multi-login-password"

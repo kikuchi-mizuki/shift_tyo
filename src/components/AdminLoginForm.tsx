@@ -6,9 +6,10 @@ import { Shield } from 'lucide-react';
 
 interface AdminLoginFormProps {
   onLoginSuccess: () => void;
+  onPasswordReset?: () => void;
 }
 
-export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
+export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, onPasswordReset }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -243,9 +244,20 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }
 
             {/* パスワード */}
             <div>
-              <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700 mb-2">
-                パスワード
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700">
+                  パスワード
+                </label>
+                {!isRegistering && onPasswordReset && (
+                  <button
+                    type="button"
+                    onClick={onPasswordReset}
+                    className="text-xs text-purple-600 hover:text-purple-800 underline"
+                  >
+                    パスワードを忘れた方
+                  </button>
+                )}
+              </div>
               <input
                 id="admin-password"
                 type="password"

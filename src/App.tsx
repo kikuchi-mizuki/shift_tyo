@@ -50,6 +50,8 @@ import { MultiUserAuthProvider, useMultiUserAuth } from './contexts/MultiUserAut
 import { MultiUserLoginForm } from './components/MultiUserLoginForm';
 import { AdminLoginForm } from './components/AdminLoginForm';
 import { UserTypeSwitcher } from './components/UserTypeSwitcher';
+import { PasswordResetRequest } from './components/PasswordResetRequest';
+import { PasswordResetComplete } from './components/PasswordResetComplete';
 
 // エラーバウンダリーコンポーネント
 class AppErrorBoundary extends Component<
@@ -139,13 +141,14 @@ class AppErrorBoundary extends Component<
 
 function AppContent() {
   const { currentUserType, getCurrentUser, activeSessions } = useMultiUserAuth();
-  
-  // URLパスから管理者ログインかどうかを判定（SSRガード付き）
-  const isAdminLoginPath =
-    typeof window !== 'undefined' &&
-    (window.location?.pathname === '/admin-login' ||
-     window.location?.pathname?.startsWith('/admin-login/'));
-  
+  const [showPasswordReset, setShowPasswordReset] = React.useState(false);
+
+  // URLパスから画面を判定（SSRガード付き）
+  const currentPath = typeof window !== 'undefined' ? window.location?.pathname : '/';
+  const isAdminLoginPath = currentPath === '/admin-login' || currentPath?.startsWith('/admin-login/');
+  const isPasswordResetPath = currentPath === '/password-reset' || currentPath?.startsWith('/password-reset/');
+  const isResetPasswordPath = currentPath === '/reset-password' || currentPath?.startsWith('/reset-password/');
+
   // アプリケーション起動時の診断
   useEffect(() => {
     // 前回のエラーレポートを確認
@@ -158,17 +161,47 @@ function AppContent() {
     } catch (e) {
       console.error('Failed to check error report:', e);
     }
-  }, [isAdminLoginPath, currentUserType, activeSessions.length]);
-  
+  }, [currentPath, currentUserType, activeSessions.length]);
+
+  // パスワードリセット完了画面（メールからのリンクでアクセス）
+  if (isResetPasswordPath) {
+    return <PasswordResetComplete />;
+  }
+
+  // パスワードリセット申請画面（管理者・一般共通）
+  if (isPasswordResetPath || showPasswordReset) {
+    const userType = isAdminLoginPath ? 'admin' : 'general';
+    return (
+      <PasswordResetRequest
+        onBack={() => {
+          setShowPasswordReset(false);
+          if (isPasswordResetPath) {
+            window.history.back();
+          }
+        }}
+        userType={userType}
+      />
+    );
+  }
 
   // 管理者ログインパスの場合は専用ログイン画面を表示
   if (isAdminLoginPath) {
-    return <AdminLoginForm onLoginSuccess={() => window.location.href = '/'} />;
+    return (
+      <AdminLoginForm
+        onLoginSuccess={() => window.location.href = '/'}
+        onPasswordReset={() => setShowPasswordReset(true)}
+      />
+    );
   }
 
   // アクティブセッションがない場合はマルチユーザーログイン画面を表示
   if (activeSessions.length === 0) {
-    return <MultiUserLoginForm onLoginSuccess={() => {}} />;
+    return (
+      <MultiUserLoginForm
+        onLoginSuccess={() => {}}
+        onPasswordReset={() => setShowPasswordReset(true)}
+      />
+    );
   }
 
   // 現在のユーザータイプが設定されていない場合は最初のセッションを使用
