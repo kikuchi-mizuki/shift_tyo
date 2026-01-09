@@ -146,3 +146,30 @@ export interface PharmacyProfile {
   user_type: 'store' | null;
   created_at?: string;
 }
+
+// 薬局詳細情報の型
+export interface PharmacyDetails {
+  name: string | null;
+  store_name?: string | null;
+  email: string | null;
+  phone?: string | null;
+}
+
+// 不足薬局情報の型
+export interface ShortagePharmacy {
+  pharmacy_id: string;
+  pharmacy_name: string;
+  date: string;
+  shortage: number;
+  needed: number;
+  filled: number;
+}
+
+// 不足分析結果の型
+export interface ShortageAnalysis {
+  totalShortage: number;
+  shortagePharmacies: ShortagePharmacy[];
+}
+
+// ユーザープロフィールマップの型
+export type UserProfileMap = Record<string, UserProfile> | UserProfile[];

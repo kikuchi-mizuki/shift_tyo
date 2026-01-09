@@ -138,13 +138,16 @@ export const executeSimpleAIMatching = async (
 
   const matches: MatchCandidate[] = [];
 
-  // ヘルパー関数
-  const getProfile = (id: string) => {
-    if (!userProfiles) return {} as any;
-    if (Array.isArray(userProfiles)) {
-      return (userProfiles as any[]).find((u: any) => u?.id === id) || ({} as any);
+  // ヘルパー関数: プロフィール取得（nullセーフ）
+  const getProfile = (id: string): any | null => {
+    if (!userProfiles) {
+      console.warn('[MatchingService] userProfiles is not available');
+      return null;
     }
-    return (userProfiles as any)[id] || ({} as any);
+    if (Array.isArray(userProfiles)) {
+      return (userProfiles as any[]).find((u: any) => u?.id === id) ?? null;
+    }
+    return (userProfiles as any)[id] ?? null;
   };
 
   // 薬剤師を評価と優先順位でソート

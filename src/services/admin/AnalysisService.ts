@@ -8,6 +8,14 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { safeLength, safeObject } from '../../utils/admin/arrayHelpers';
 import { filterConfirmedRequestsAndPostings } from './MatchingService';
+import type {
+  PharmacyDetails,
+  ShortageAnalysis,
+  ShortagePharmacy,
+  UserProfileMap,
+  PharmacistRequest,
+  PharmacyPosting
+} from '../../types';
 
 /**
  * 薬局の詳細情報をデータベースから取得する関数
@@ -15,7 +23,7 @@ import { filterConfirmedRequestsAndPostings } from './MatchingService';
 export const getPharmacyDetails = async (
   supabase: SupabaseClient,
   pharmacyId: string
-): Promise<any | null> => {
+): Promise<PharmacyDetails | null> => {
   if (!supabase) return null;
 
   try {
@@ -49,11 +57,11 @@ export const getPharmacyDetails = async (
  */
 export const analyzeMonthlyShortage = (
   matchesByDate: { [date: string]: any[] },
-  requests: any[],
-  postings: any[],
-  userProfiles: any
-): { totalShortage: number; shortagePharmacies: any[] } => {
-  const shortagePharmacies: any[] = [];
+  requests: PharmacistRequest[],
+  postings: PharmacyPosting[],
+  userProfiles: UserProfileMap
+): ShortageAnalysis => {
+  const shortagePharmacies: ShortagePharmacy[] = [];
   let totalShortage = 0;
 
   // matchesByDateが空の場合は、全postingsから分析

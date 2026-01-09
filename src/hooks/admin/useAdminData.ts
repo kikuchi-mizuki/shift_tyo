@@ -9,6 +9,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { shiftPostings } from '../../lib/supabase';
 import { safeLength, safeObject } from '../../utils/admin/arrayHelpers';
+import type {
+  PharmacistRequest,
+  PharmacyPosting,
+  AssignedShift,
+  UserProfile,
+  AuthUser
+} from '../../types';
 
 interface RecruitmentStatus {
   is_open: boolean;
@@ -17,15 +24,24 @@ interface RecruitmentStatus {
   notes: string | null;
 }
 
+interface Rating {
+  id: string;
+  pharmacist_id: string;
+  pharmacy_id: string;
+  rating: number;
+  comment?: string | null;
+  created_at?: string;
+}
+
 interface UseAdminDataReturn {
   // データ
-  requests: any[];
-  postings: any[];
-  assigned: any[];
-  userProfiles: any;
-  ratings: any[];
-  storeNgPharmacists: { [pharmacyId: string]: any[] };
-  storeNgPharmacies: { [pharmacistId: string]: any[] };
+  requests: PharmacistRequest[];
+  postings: PharmacyPosting[];
+  assigned: AssignedShift[];
+  userProfiles: Record<string, UserProfile>;
+  ratings: Rating[];
+  storeNgPharmacists: { [pharmacyId: string]: string[] };
+  storeNgPharmacies: { [pharmacistId: string]: string[] };
   recruitmentStatus: RecruitmentStatus;
 
   // 状態
@@ -43,16 +59,16 @@ const FIXED_RECRUITMENT_ID = '00000000-0000-0000-0000-000000000001';
 
 export const useAdminData = (
   supabase: SupabaseClient,
-  user: any,
+  user: AuthUser | null,
   currentDate: Date
 ): UseAdminDataReturn => {
-  const [requests, setRequests] = useState<any[]>([]);
-  const [postings, setPostings] = useState<any[]>([]);
-  const [assigned, setAssigned] = useState<any[]>([]);
-  const [userProfiles, setUserProfiles] = useState<any>({});
-  const [ratings, setRatings] = useState<any[]>([]);
-  const [storeNgPharmacists, setStoreNgPharmacists] = useState<{ [pharmacyId: string]: any[] }>({});
-  const [storeNgPharmacies, setStoreNgPharmacies] = useState<{ [pharmacistId: string]: any[] }>({});
+  const [requests, setRequests] = useState<PharmacistRequest[]>([]);
+  const [postings, setPostings] = useState<PharmacyPosting[]>([]);
+  const [assigned, setAssigned] = useState<AssignedShift[]>([]);
+  const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
+  const [ratings, setRatings] = useState<Rating[]>([]);
+  const [storeNgPharmacists, setStoreNgPharmacists] = useState<{ [pharmacyId: string]: string[] }>({});
+  const [storeNgPharmacies, setStoreNgPharmacies] = useState<{ [pharmacistId: string]: string[] }>({});
   const [recruitmentStatus, setRecruitmentStatus] = useState<RecruitmentStatus>({
     is_open: true,
     updated_at: '',

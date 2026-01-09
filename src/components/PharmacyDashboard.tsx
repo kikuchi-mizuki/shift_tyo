@@ -100,7 +100,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     console.log('PharmacyDashboard mounted, user:', user);
     try {
       console.error('[PH] PharmacyDashboard mounted', { userId: user?.id });
-    } catch {}
+    } catch (error) {
+      console.error('[PH] Failed to log mount event:', error);
+    }
     // 1) ローカルキャッシュから即座に復元（UX向上）
     try {
       const cachedStores = localStorage.getItem(`store_names_${user?.id || ''}`);
@@ -114,7 +116,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         const parsed = JSON.parse(cachedTemplates);
         if (Array.isArray(parsed)) setSavedTimeTemplates(parsed);
       }
-    } catch {}
+    } catch (error) {
+      console.error('[PH] Failed to load cached data:', error);
+    }
     // 2) サーバーデータを正とする
     loadData();
     checkRecruitmentStatus();
@@ -293,7 +297,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   useEffect(() => {
     try {
       localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeOptions));
-    } catch {}
+    } catch (error) {
+      console.error('[PH] Failed to save store_names to localStorage:', error);
+    }
   }, [storeOptions, user?.id]);
 
 
@@ -434,7 +440,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             count: assignedData?.length || 0,
             ids: (assignedData || []).map((s: any) => s.id).slice(0, 10),
           });
-        } catch {}
+        } catch (error) {
+          console.error('[PH] Failed to log assigned_shifts:', error);
+        }
         console.log('Confirmed shifts detailed analysis:', assignedData?.map((shift: any) => ({
           id: shift.id,
           date: shift.date,
@@ -755,7 +763,10 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           .select('id,name,email')
           .eq('user_type', 'pharmacist');
         setAllPharmacists(data || []);
-      } catch {}
+      } catch (error) {
+        console.error('[PH] Failed to load pharmacist list:', error);
+        setAllPharmacists([]);
+      }
     })();
   }, []);
 
@@ -1114,7 +1125,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         // 成功時はローカルキャッシュも更新
         try {
           localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
-        } catch {}
+        } catch (error) {
+          console.error('[PH] Failed to save store_names to localStorage:', error);
+        }
         
         // データベースの永続化を確認するため、少し時間を置いてから再度取得
         console.log('Waiting 2 seconds to verify database persistence...');
@@ -1589,7 +1602,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                 // バナーを閉じる（セッションストレージに保存して再表示しない）
                 try {
                   sessionStorage.setItem('hideLineBanner', 'true');
-                } catch {}
+                } catch (error) {
+                  console.error('[PH] Failed to save hideLineBanner to sessionStorage:', error);
+                }
                 setIsLineLinked(true); // 一時的に非表示にする
               }}
               className="flex-shrink-0 text-gray-400 hover:text-gray-600 ml-2"
