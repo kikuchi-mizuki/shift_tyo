@@ -3,9 +3,18 @@ import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile, Lock } from 'lu
 import { shifts, shiftRequests, shiftPostings, systemStatus, supabase, storeNgPharmacies } from '../lib/supabase';
 import PasswordChangeModal from './PasswordChangeModal';
 import { extractStoreName, getTimeDisplay } from '../utils/storeUtils';
+import { isValidLength } from '../utils/validation';
+import type {
+  AuthUser,
+  AssignedShift,
+  PharmacistRequest,
+  PharmacyProfile,
+  UserProfile,
+  TimeTemplate
+} from '../types';
 
 interface PharmacistDashboardProps {
-  user: any;
+  user: AuthUser;
 }
 
 const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
@@ -18,10 +27,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
 
   // 定型時間テンプレート
-  const [savedTimeTemplates, setSavedTimeTemplates] = useState<Array<{name: string, start: string, end: string}>>([]);
+  const [savedTimeTemplates, setSavedTimeTemplates] = useState<TimeTemplate[]>([]);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [showTemplateForm, setShowTemplateForm] = useState(false);
-  
+
   // プロフィール編集用のstate
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileName, setProfileName] = useState('');
@@ -42,21 +51,21 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const removeDateFromList = (dateToRemove: string) => {
     setSelectedDates(prev => prev.filter(date => date !== dateToRemove));
   };
-  
+
   // Railwayログ用のヘルパー関数
-  const logToRailway = (message: string, data?: any) => {
+  const logToRailway = (message: string, data?: unknown) => {
     const logMessage = `[PharmacistDashboard] ${message}${data ? ': ' + JSON.stringify(data) : ''}`;
     console.log(logMessage);
-    
+
     // Railwayのログに確実に出力されるようにfetchでログ送信を試行
     try {
       fetch('/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           action: 'log',
-          message: logMessage, 
-          timestamp: new Date().toISOString() 
+          message: logMessage,
+          timestamp: new Date().toISOString()
         })
       }).catch(() => {
         // APIエンドポイントが存在しない場合は無視
@@ -67,10 +76,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   };
 
   const [memo, setMemo] = useState('');
-  const [myShifts, setMyShifts] = useState<any[]>([]);
-  const [myRequests, setMyRequests] = useState<any[]>([]);
+  const [myShifts, setMyShifts] = useState<AssignedShift[]>([]);
+  const [myRequests, setMyRequests] = useState<PharmacistRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [allPharmacies, setAllPharmacies] = useState<any[]>([]);
+  const [allPharmacies, setAllPharmacies] = useState<UserProfile[]>([]);
   // NG設定関連のUIは管理画面のみ。値の読み込みは残すが、編集UIは表示しない。
   const [ngList, setNgList] = useState<string[]>([]);
   const [storeNgLists, setStoreNgLists] = useState<{[pharmacyId: string]: {[storeName: string]: boolean}}>({});
@@ -88,7 +97,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
     // 常時可視ログ（error レベル）
     try {
       console.error('[PD] PharmacistDashboard mounted', { userId: user?.id });
-    } catch {}
+    } catch (error) {
+      console.error('[PD] Failed to log mount event:', error);
+    }
     loadShifts();
     checkRecruitmentStatus();
 
@@ -272,9 +283,11 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         try {
           console.error('[PD] Loaded assigned_shifts', {
             count: assignedData?.length || 0,
-            ids: (assignedData || []).map((s: any) => s.id).slice(0, 10),
+            ids: (assignedData || []).map((s: AssignedShift) => s.id).slice(0, 10),
           });
-        } catch {}
+        } catch (error) {
+          console.error('[PD] Failed to log assigned_shifts:', error);
+        }
         console.log('My shifts count:', assignedData?.length || 0);
         if (assignedData && assignedData.length > 0) {
           console.log('My shifts details:', assignedData.map((s: any) => ({ date: s.date, status: s.status, pharmacy_id: s.pharmacy_id })));
@@ -451,7 +464,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           .select('id,name,email,store_names')
           .eq('user_type', 'pharmacy');
         setAllPharmacies(data || []);
-      } catch {}
+      } catch (error) {
+        console.error('Failed to load pharmacy list:', error);
+        setAllPharmacies([]);
+      }
     })();
   }, []);
 
@@ -706,7 +722,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         // 成功時はローカルキャッシュも更新
         try {
           localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(ngList));
-        } catch {}
+        } catch (error) {
+          console.error('Failed to save ng_list to localStorage:', error);
+        }
         
       // データベースの永続化を確認するため、少し時間を置いてから再度取得
       console.log('Waiting 2 seconds to verify database persistence...');
@@ -951,7 +969,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         // 成功時はローカルキャッシュも更新
         try {
           localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(newNgList));
-        } catch {}
+        } catch (error) {
+          console.error('Failed to save ng_list to localStorage:', error);
+        }
       }
       
       console.log('=== UPDATING NG LIST IN DATABASE END ===');
@@ -1543,13 +1563,25 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               </label>
               <textarea
                 value={memo}
-                onChange={(e) => setMemo(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // 最大500文字に制限
+                  if (isValidLength(value, 0, 500)) {
+                    setMemo(value);
+                  }
+                }}
                 placeholder="例: 午後からの勤務希望、交通手段について等"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none ${
+                  memo.length > 450 ? 'border-yellow-400' : 'border-gray-300'
+                }`}
                 rows={3}
+                maxLength={500}
               />
-              <div className="text-xs text-gray-500 mt-1">
-                応募時のコメントや希望条件を記入できます（管理画面で確認可能）
+              <div className="text-xs text-gray-500 mt-1 flex justify-between">
+                <span>応募時のコメントや希望条件を記入できます（管理画面で確認可能）</span>
+                <span className={memo.length > 450 ? 'text-yellow-600 font-medium' : ''}>
+                  {memo.length}/500文字
+                </span>
               </div>
             </div>
 
