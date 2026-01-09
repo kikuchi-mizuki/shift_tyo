@@ -4,6 +4,7 @@ import { shifts, shiftPostings, systemStatus, storeNgPharmacists, supabase, phar
 import { LineIntegration } from './LineIntegration';
 import PasswordChangeModal from './PasswordChangeModal';
 import { PharmacistRatingModal } from './PharmacistRatingModal';
+import { safeSetSessionStorage, safeSetLocalStorage, safeGetLocalStorage, safeSetLocalStorageJSON, safeGetLocalStorageJSON } from '../utils/storage';
 
 // デバッグ: インポートの確認
 console.log('PharmacyDashboard imports:', { shifts, shiftPostings });
@@ -104,20 +105,15 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       console.error('[PH] Failed to log mount event:', error);
     }
     // 1) ローカルキャッシュから即座に復元（UX向上）
-    try {
-      const cachedStores = localStorage.getItem(`store_names_${user?.id || ''}`);
-      if (cachedStores) {
-        const parsed = JSON.parse(cachedStores);
-        if (Array.isArray(parsed)) setStoreNames(parsed);
-      }
-      // 定型時間テンプレートをロード
-      const cachedTemplates = localStorage.getItem(`time_templates_${user?.id || ''}`);
-      if (cachedTemplates) {
-        const parsed = JSON.parse(cachedTemplates);
-        if (Array.isArray(parsed)) setSavedTimeTemplates(parsed);
-      }
-    } catch (error) {
-      console.error('[PH] Failed to load cached data:', error);
+    const cachedStores = safeGetLocalStorageJSON<string[]>(`store_names_${user?.id || ''}`);
+    if (cachedStores && Array.isArray(cachedStores)) {
+      setStoreNames(cachedStores);
+    }
+
+    // 定型時間テンプレートをロード
+    const cachedTemplates = safeGetLocalStorageJSON<Array<{name: string, start: string, end: string}>>(`time_templates_${user?.id || ''}`);
+    if (cachedTemplates && Array.isArray(cachedTemplates)) {
+      setSavedTimeTemplates(cachedTemplates);
     }
     // 2) サーバーデータを正とする
     loadData();
@@ -149,11 +145,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     setSavedTimeTemplates(updated);
 
     // ローカルストレージに保存
-    try {
-      localStorage.setItem(`time_templates_${user?.id || ''}`, JSON.stringify(updated));
-    } catch (e) {
-      console.error('Failed to save time templates:', e);
-    }
+    safeSetLocalStorageJSON(`time_templates_${user?.id || ''}`, updated);
 
     setNewTemplateName('');
     setShowTemplateForm(false);
@@ -168,11 +160,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     setSavedTimeTemplates(updated);
 
     // ローカルストレージに保存
-    try {
-      localStorage.setItem(`time_templates_${user?.id || ''}`, JSON.stringify(updated));
-    } catch (e) {
-      console.error('Failed to save time templates:', e);
-    }
+    safeSetLocalStorageJSON(`time_templates_${user?.id || ''}`, updated);
   };
 
   // 定型時間テンプレートを適用
@@ -296,11 +284,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
   // 変更があればローカルにキャッシュ
   useEffect(() => {
-    try {
-      localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeOptions));
-    } catch (error) {
-      console.error('[PH] Failed to save store_names to localStorage:', error);
-    }
+    safeSetLocalStorageJSON(`store_names_${user?.id || ''}`, storeOptions);
   }, [storeOptions, user?.id]);
 
 
@@ -1124,11 +1108,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         
         setShowProfileEdit(false);
         // 成功時はローカルキャッシュも更新
-        try {
-          localStorage.setItem(`store_names_${user?.id || ''}`, JSON.stringify(storeNames));
-        } catch (error) {
-          console.error('[PH] Failed to save store_names to localStorage:', error);
-        }
+        safeSetLocalStorageJSON(`store_names_${user?.id || ''}`, storeNames);
         
         // データベースの永続化を確認するため、少し時間を置いてから再度取得
         console.log('Waiting 2 seconds to verify database persistence...');
@@ -1601,11 +1581,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             <button
               onClick={() => {
                 // バナーを閉じる（セッションストレージに保存して再表示しない）
-                try {
-                  sessionStorage.setItem('hideLineBanner', 'true');
-                } catch (error) {
-                  console.error('[PH] Failed to save hideLineBanner to sessionStorage:', error);
-                }
+                safeSetSessionStorage('hideLineBanner', 'true');
                 setIsLineLinked(true); // 一時的に非表示にする
               }}
               className="flex-shrink-0 text-gray-400 hover:text-gray-600 ml-2"

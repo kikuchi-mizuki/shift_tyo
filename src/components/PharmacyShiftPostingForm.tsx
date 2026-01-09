@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Calendar, Clock, Users, DollarSign, MapPin, FileText, Trash2, AlertCircle } from 'lucide-react';
 import { ShiftPosting } from '../types';
+import { sanitizeTextInput, isValidLength } from '../utils/validation';
 
 interface PharmacyShiftPostingFormProps {
   onSubmitPosting: (postings: Omit<ShiftPosting, 'id' | 'status' | 'createdAt'>[]) => void;
@@ -158,8 +159,15 @@ export const PharmacyShiftPostingForm: React.FC<PharmacyShiftPostingFormProps> =
             </label>
             <textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                const sanitized = sanitizeTextInput(value, 500);
+                if (isValidLength(sanitized, 0, 500)) {
+                  setNotes(sanitized);
+                }
+              }}
               placeholder="経験年数の要件、特別な業務内容、その他の条件があれば記入してください"
+              maxLength={500}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
             />
