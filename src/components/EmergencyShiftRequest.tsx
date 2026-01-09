@@ -76,7 +76,11 @@ const EmergencyShiftRequest: React.FC<EmergencyShiftRequestProps> = ({
       
       // 現在のユーザーセッションから認証トークンを取得
       const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZ3RlcmZ3dXJtdm9zYXd6YmpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzQ4MDAsImV4cCI6MjA1MDU1MDgwMH0.bDs2CtZ9dJ0eN0vRUPA7CtR6VqYeYW1m747_IUYJxGE';
+      const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!authToken) {
+        throw new Error('認証トークンが取得できませんでした。環境変数 VITE_SUPABASE_ANON_KEY を設定してください。');
+      }
       
       console.log('Using auth token:', authToken ? 'Present' : 'Missing');
       console.log('Token type:', session ? 'Session token' : 'Anon key');

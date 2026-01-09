@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import * as Sentry from '@sentry/react';
 import App from './App.tsx';
 import './index.css';
+import { safeGetSessionStorage, safeSetSessionStorage } from './utils/storage';
 
 // Initialize Sentry (only in production)
 if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
@@ -30,9 +31,9 @@ window.addEventListener('error', (event: Event) => {
   const e = event as any;
   const target = e?.target as HTMLElement | undefined;
   if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
-    const alreadyRetried = sessionStorage.getItem('chunk-retry-done');
+    const alreadyRetried = safeGetSessionStorage('chunk-retry-done');
     if (!alreadyRetried) {
-      sessionStorage.setItem('chunk-retry-done', '1');
+      safeSetSessionStorage('chunk-retry-done', '1');
       // bust cache
       const url = new URL(window.location.href);
       url.searchParams.set('v', Date.now().toString());
