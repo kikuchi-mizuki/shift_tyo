@@ -16,11 +16,16 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [tempSelectedDate, setTempSelectedDate] = useState('');
-  const [timeSlot, setTimeSlot] = useState('morning'); // デフォルトで午前を選択
-  const [customTimeMode, setCustomTimeMode] = useState(false); // カスタム時間入力モード
+  const [timeSlot, setTimeSlot] = useState(''); // 使用しない（後方互換性のため残す）
+  const [customTimeMode, setCustomTimeMode] = useState(true); // 常に時間選択モード
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('13:00');
   const [requiredStaff, setRequiredStaff] = useState<number | null>(1); // デフォルトで1人を選択
+
+  // 定型時間テンプレート
+  const [savedTimeTemplates, setSavedTimeTemplates] = useState<Array<{name: string, start: string, end: string}>>([]);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [showTemplateForm, setShowTemplateForm] = useState(false);
   const [memo, setMemo] = useState('');
   const [myShifts, setMyShifts] = useState<any[]>([]);
   const [confirmedShifts, setConfirmedShifts] = useState<any[]>([]);
@@ -103,11 +108,74 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         const parsed = JSON.parse(cachedStores);
         if (Array.isArray(parsed)) setStoreNames(parsed);
       }
+      // 定型時間テンプレートをロード
+      const cachedTemplates = localStorage.getItem(`time_templates_${user?.id || ''}`);
+      if (cachedTemplates) {
+        const parsed = JSON.parse(cachedTemplates);
+        if (Array.isArray(parsed)) setSavedTimeTemplates(parsed);
+      }
     } catch {}
     // 2) サーバーデータを正とする
     loadData();
     checkRecruitmentStatus();
   }, [user]);
+
+  // 定型時間テンプレートを保存
+  const saveTimeTemplate = () => {
+    if (!newTemplateName.trim()) {
+      alert('テンプレート名を入力してください');
+      return;
+    }
+    if (!startTime || !endTime) {
+      alert('開始時間と終了時間を入力してください');
+      return;
+    }
+    if (startTime >= endTime) {
+      alert('開始時間は終了時間より早く設定してください');
+      return;
+    }
+
+    const newTemplate = {
+      name: newTemplateName.trim(),
+      start: startTime,
+      end: endTime
+    };
+
+    const updated = [...savedTimeTemplates, newTemplate];
+    setSavedTimeTemplates(updated);
+
+    // ローカルストレージに保存
+    try {
+      localStorage.setItem(`time_templates_${user?.id || ''}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save time templates:', e);
+    }
+
+    setNewTemplateName('');
+    setShowTemplateForm(false);
+    alert('定型時間を保存しました');
+  };
+
+  // 定型時間テンプレートを削除
+  const deleteTimeTemplate = (index: number) => {
+    if (!confirm('この定型時間を削除しますか？')) return;
+
+    const updated = savedTimeTemplates.filter((_, i) => i !== index);
+    setSavedTimeTemplates(updated);
+
+    // ローカルストレージに保存
+    try {
+      localStorage.setItem(`time_templates_${user?.id || ''}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save time templates:', e);
+    }
+  };
+
+  // 定型時間テンプレートを適用
+  const applyTimeTemplate = (template: {name: string, start: string, end: string}) => {
+    setStartTime(template.start);
+    setEndTime(template.end);
+  };
 
   // 募集状況をチェックする関数
   const checkRecruitmentStatus = async () => {
@@ -2335,74 +2403,103 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
           {/* 時間帯 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">募集時間帯</label>
-            
-            {/* 時間帯選択モード切り替え */}
-            <div className="mb-3">
-              <div className="grid grid-cols-2 gap-2 w-full">
-                <button
-                  onClick={() => setCustomTimeMode(false)}
-                  className={`w-full px-3 py-2 rounded text-sm ${!customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-                >
-                  定型時間
-                </button>
-                <button
-                  onClick={() => setCustomTimeMode(true)}
-                  className={`w-full px-3 py-2 rounded text-sm ${customTimeMode ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-                >
-                  時間を選択
-                </button>
-              </div>
-            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">募集時間</label>
 
-            {!customTimeMode ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {[{id:'morning',label:'9:00-13:00',icon:Sun,color:'bg-green-500 hover:bg-green-600'},
-                  {id:'afternoon',label:'13:00-18:00',icon:Sun,color:'bg-orange-500 hover:bg-orange-600'},
-                  {id:'fullday',label:'9:00-18:00',icon:Users,color:'bg-yellow-500 hover:bg-yellow-600'}].map(slot=>{
-                    const Icon = slot.icon as any;
-                    return (
-                      <button 
-                        key={slot.id} 
-                        onClick={() => {
-                          console.log('Time slot clicked:', slot.id);
-                          setTimeSlot(slot.id);
-                        }} 
-                        className={`w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white text-sm font-medium transition-colors ${timeSlot===slot.id?slot.color:'bg-gray-300 hover:bg-gray-400'}`}
+            {/* 定型時間テンプレート一覧 */}
+            {savedTimeTemplates.length > 0 && (
+              <div className="mb-3">
+                <label className="block text-xs text-gray-600 mb-1">定型時間から選択:</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {savedTimeTemplates.map((template, index) => (
+                    <div key={index} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => applyTimeTemplate(template)}
+                        className="w-full px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-sm text-left transition-colors"
                       >
-                        <Icon className="w-4 h-4" />
-                        <span>{slot.label}</span>
+                        <div className="font-medium text-blue-800">{template.name}</div>
+                        <div className="text-xs text-blue-600">{template.start} - {template.end}</div>
                       </button>
-                    );
-                  })}
-              </div>
-            ) : (
-              <div className="space-y-3 w-full min-w-0 overflow-x-hidden">
-                <div className="grid grid-cols-2 gap-2 w-full min-w-0 overflow-hidden">
-                  <div className="min-w-0 w-full">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">開始時間</label>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                    />
-                  </div>
-                  <div className="min-w-0 w-full">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">終了時間</label>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                    />
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500">
-                  選択時間: {startTime} - {endTime}
+                      <button
+                        type="button"
+                        onClick={() => deleteTimeTemplate(index)}
+                        className="absolute top-1 right-1 w-5 h-5 bg-red-100 hover:bg-red-200 rounded-full text-red-600 text-xs flex items-center justify-center"
+                        title="削除"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
+
+            {/* 時間入力 */}
+            <div className="space-y-3 w-full min-w-0 overflow-x-hidden">
+              <div className="grid grid-cols-2 gap-2 w-full min-w-0 overflow-hidden">
+                <div className="min-w-0 w-full">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">開始時間</label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                  />
+                </div>
+                <div className="min-w-0 w-full">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">終了時間</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                  />
+                </div>
+              </div>
+              <div className="text-xs text-gray-500">
+                選択時間: {startTime} - {endTime}
+              </div>
+
+              {/* 定型時間として保存ボタン */}
+              {!showTemplateForm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowTemplateForm(true)}
+                  className="w-full px-3 py-2 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg text-sm text-green-700 transition-colors"
+                >
+                  + この時間を定型時間として保存
+                </button>
+              ) : (
+                <div className="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <input
+                    type="text"
+                    value={newTemplateName}
+                    onChange={(e) => setNewTemplateName(e.target.value)}
+                    placeholder="例: 午前, 午後, 夜勤など"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={saveTimeTemplate}
+                      className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors"
+                    >
+                      保存
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowTemplateForm(false);
+                        setNewTemplateName('');
+                      }}
+                      className="flex-1 px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm transition-colors"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 募集人数 */}
