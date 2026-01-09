@@ -1032,7 +1032,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         time_slot: customTimeMode ? 'fullday' : selectedTimeSlot,
         start_time: customTimeMode ? startTime + ':00' : undefined,
         end_time: customTimeMode ? endTime + ':00' : undefined,
-        memo: '',
+        memo: memo,
         status: 'pending'
       }));
 
@@ -1671,6 +1671,22 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               )}
             </div>
 
+            {/* 備考欄 */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                備考・コメント
+              </label>
+              <textarea
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="例: 午後からの勤務希望、交通手段について等"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                rows={3}
+              />
+              <div className="text-xs text-gray-500 mt-1">
+                応募時のコメントや希望条件を記入できます（管理画面で確認可能）
+              </div>
+            </div>
 
             {/* 登録/削除ボタン */}
             {!isRecruitmentOpen ? (
@@ -1727,6 +1743,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                             time_slot: currentSlot,
                             start_time: customTimeMode ? `${startTime}:00` : undefined,
                             end_time: customTimeMode ? `${endTime}:00` : undefined,
+                            memo: memo,
                           });
                           if (error) {
                             console.error('Error updating requests:', error);

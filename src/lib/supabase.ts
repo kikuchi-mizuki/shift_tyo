@@ -1125,6 +1125,7 @@ export const shiftRequests = {
     time_slot: string;
     start_time?: string;
     end_time?: string;
+    memo?: string;
   }) => {
     if (!supabase) {
       console.error('Supabase not initialized');
@@ -1132,7 +1133,7 @@ export const shiftRequests = {
     }
 
     try {
-      const { pharmacist_id, dates } = params;
+      const { pharmacist_id, dates, memo } = params;
       // time_slot 正規化
       // DBは 'custom' を許容しないため、カスタムは 'fullday' に正規化
       const normalizedTimeSlot = (params.time_slot === 'full' || params.time_slot === 'custom') ? 'fullday' : params.time_slot;
@@ -1152,10 +1153,11 @@ export const shiftRequests = {
           time_slot: normalizedTimeSlot,
           start_time,
           end_time,
+          memo: memo !== undefined ? memo : null,
         })
         .eq('pharmacist_id', pharmacist_id)
         .in('date', dates)
-        .select('id,date,time_slot,start_time,end_time');
+        .select('id,date,time_slot,start_time,end_time,memo');
 
       if (error) {
         console.error('updateRequests error:', error);

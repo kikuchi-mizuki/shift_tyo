@@ -109,6 +109,11 @@ export const PharmacistRequests: React.FC<PharmacistRequestsProps> = ({
                   <div className="text-[11px] text-gray-500 mt-0.5">
                     {getTimeDisplay(request)}
                   </div>
+                  {request.memo && (
+                    <div className="text-[11px] text-gray-600 mt-1 bg-gray-50 border border-gray-200 rounded px-2 py-1">
+                      <span className="font-medium text-gray-700">備考:</span> {request.memo}
+                    </div>
+                  )}
                   <div className="mt-1 space-x-1">
                     <button onClick={() => onDelete(request.id)} className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">
                       削除
