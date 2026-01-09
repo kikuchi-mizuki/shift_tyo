@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Send, Users, MapPin, Clock } from 'lucide-react';
+import { AlertTriangle, Send, Users, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface AdminEmergencyShiftProps {
-  user: any;
+  _user?: any;
 }
 
 interface EmergencyShift {
@@ -24,7 +24,7 @@ interface EmergencyShift {
   response_count: number;
 }
 
-export function AdminEmergencyShift({ user }: AdminEmergencyShiftProps) {
+export function AdminEmergencyShift({ _user }: AdminEmergencyShiftProps) {
   const [emergencyShifts, setEmergencyShifts] = useState<EmergencyShift[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedShift, setSelectedShift] = useState<EmergencyShift | null>(null);
@@ -127,7 +127,7 @@ export function AdminEmergencyShift({ user }: AdminEmergencyShiftProps) {
     setSending(true);
     try {
       // Call Edge Function to send emergency shift notification
-      const { data, error } = await supabase.functions.invoke('send-emergency-shift', {
+      const { error } = await supabase.functions.invoke('send-emergency-shift', {
         body: {
           shiftId: selectedShift.id,
           targetType: targetType,

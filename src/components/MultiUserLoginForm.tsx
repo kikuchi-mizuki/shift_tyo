@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { User, Building, Shield, LogIn, Pill } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Building, LogIn, Pill } from 'lucide-react';
 import { supabase, isProduction } from '../lib/supabase';
 import { useMultiUserAuth } from '../contexts/MultiUserAuthContext';
 
@@ -16,13 +16,8 @@ export const MultiUserLoginForm: React.FC<MultiUserLoginFormProps> = ({ onLoginS
   const [error, setError] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [name, setName] = useState('');
-  
-  const { addSession, isLoggedIn, activeSessions } = useMultiUserAuth();
 
-  // Component mount (debugging removed for production)
-  useEffect(() => {
-    // Component mounted successfully
-  }, []);
+  const { addSession } = useMultiUserAuth();
 
   // デモアカウント（一般ユーザーのみ）
   const demoAccounts = [

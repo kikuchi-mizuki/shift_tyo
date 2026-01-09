@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Bell, Check, X, Copy, ExternalLink } from 'lucide-react';
 
@@ -16,11 +16,7 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
   const [loading, setLoading] = useState(true);
 
   // LINE連携状態を確認
-  useEffect(() => {
-    checkLineStatus();
-  }, [userId]);
-
-  const checkLineStatus = async () => {
+  const checkLineStatus = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -37,7 +33,11 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    checkLineStatus();
+  }, [checkLineStatus]);
 
   // 認証コードを生成
   const generateAuthCode = async () => {
@@ -45,7 +45,7 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
     
     try {
       // 認証状態を確認
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const { data: { user: authUser }, error: _authError } = await supabase.auth.getUser();
 
       if (!authUser) {
         alert('認証されていません。ログインし直してください。');
@@ -62,7 +62,7 @@ export const LineIntegration: React.FC<LineIntegrationProps> = ({ userId }) => {
       expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
       // 認証ユーザーIDを使用して挿入
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('line_auth_codes')
         .insert([
           {

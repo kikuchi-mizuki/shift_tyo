@@ -28,7 +28,6 @@ import { analyzePharmacyShortage } from '../services/admin/AnalysisService';
 import { AdminCalendar } from './admin/calendar/AdminCalendar';
 import { AdminPanel } from './admin/panel/AdminPanel';
 import { UserManagement } from './admin/users/UserManagement';
-import { AdminEmergencyShift } from './AdminEmergencyShift';
 import EmergencyShiftRequest from './EmergencyShiftRequest';
 import PasswordChangeModal from './PasswordChangeModal';
 
@@ -103,9 +102,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   // モーダル表示状態
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
-
-  // 緊急シフト管理モード
-  const [showEmergencyManagement, setShowEmergencyManagement] = useState(false);
 
   // ユーザー管理ハンドラー
   const handleEditUser = (profile: any) => {

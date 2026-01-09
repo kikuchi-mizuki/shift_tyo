@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { AlertCircle, Send, Users, X } from 'lucide-react';
+import { AlertCircle, Send, X } from 'lucide-react';
 
 interface EmergencyShiftRequestProps {
   onClose: () => void;

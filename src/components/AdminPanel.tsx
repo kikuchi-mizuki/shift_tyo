@@ -4,22 +4,22 @@ import { SystemStatus, AssignedShift, ShiftRequest, ShiftPosting } from '../type
 
 interface AdminPanelProps {
   systemStatus: SystemStatus;
-  onStatusChange: (status: SystemStatus['currentPhase']) => void;
+  onStatusChange?: (status: SystemStatus['currentPhase']) => void;
   onRegenerateSchedule: () => void;
-  shifts: AssignedShift[];
-  requests: ShiftRequest[];
-  postings: ShiftPosting[];
+  shifts?: AssignedShift[];
+  requests?: ShiftRequest[];
+  postings?: ShiftPosting[];
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
   systemStatus,
-  onStatusChange,
+  _onStatusChange,
   onRegenerateSchedule,
-  shifts,
-  requests,
-  postings
+  _shifts,
+  _requests,
+  _postings
 }) => {
-  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [_isRegenerating, _setIsRegenerating] = useState(false);
 
 
   return (

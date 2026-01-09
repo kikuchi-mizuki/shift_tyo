@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile, Lock } from 'lucide-react';
-import { shifts, shiftRequests, shiftPostings, systemStatus, supabase, storeNgPharmacies } from '../lib/supabase';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Calendar, Sun, Smile, Lock } from 'lucide-react';
+import { shiftRequests, systemStatus, supabase, storeNgPharmacies } from '../lib/supabase';
 import PasswordChangeModal from './PasswordChangeModal';
 import { extractStoreName, getTimeDisplay } from '../utils/storeUtils';
 import { isValidLength, sanitizeTextInput } from '../utils/validation';
@@ -9,7 +9,6 @@ import type {
   AuthUser,
   AssignedShift,
   PharmacistRequest,
-  PharmacyProfile,
   UserProfile,
   TimeTemplate
 } from '../types';
@@ -24,7 +23,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [tempSelectedDate, setTempSelectedDate] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('13:00');
-  const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
+  const [, setIsSystemConfirmed] = useState(false);
   const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
 
   // 定型時間テンプレート
@@ -85,9 +84,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [ngList, setNgList] = useState<string[]>([]);
   const [storeNgLists, setStoreNgLists] = useState<{[pharmacyId: string]: {[storeName: string]: boolean}}>({});
   // NG設定UI用の変数（非表示だが参照エラー回避のため残す）
-  const [selectedPharmacyForNg, setSelectedPharmacyForNg] = useState('');
+  const [selectedPharmacyForNg] = useState('');
   const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
-  const [availableStores, setAvailableStores] = useState<string[]>([]);
+  const [] = useState<string[]>([]);
   const [selectedNgPharmacyId, setSelectedNgPharmacyId] = useState('');
 
   // 画面内デバッグ表示切替（?debug=1）
