@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import type { AuthUser } from '../types';
 
 type Profile = {
   id: string;
@@ -8,10 +9,16 @@ type Profile = {
   user_type: 'pharmacist' | 'pharmacy' | 'admin' | 'store';
 };
 
+interface SignUpData {
+  name?: string;
+  user_type?: 'pharmacist' | 'pharmacy' | 'admin' | 'store';
+  [key: string]: unknown;
+}
+
 export const useAuth = () => {
   console.log('useAuth: Hook called');
-  
-  const [user, setUser] = useState<any>(null);
+
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -82,24 +89,24 @@ export const useAuth = () => {
     };
   }, []);
 
-  const loadUserProfile = async (authUser: any) => {
+  const loadUserProfile = async (authUser: AuthUser) => {
     try {
       console.log('useAuth: Loading user profile for:', authUser.id);
       console.log('useAuth: User metadata:', authUser.user_metadata);
-      
+
       const meta = authUser.user_metadata || {};
-      const userType = (meta.user_type || meta.role || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin' | 'store';
+      const userType = (meta.user_type || 'pharmacist') as 'pharmacist' | 'pharmacy' | 'admin' | 'store';
       const name = meta.name || authUser.email || null;
-      
+
       console.log('useAuth: Determined user type:', userType);
-      
+
       setUserProfile({
         id: authUser.id,
         name,
         email: authUser.email ?? '',
         user_type: userType
       });
-      
+
       console.log('useAuth: User profile set successfully');
     } catch (error) {
       console.error('useAuth: Error loading user profile:', error);
@@ -132,7 +139,7 @@ export const useAuth = () => {
     }
   };
 
-  const signUp = async (email: string, password: string, userData: any) => {
+  const signUp = async (email: string, password: string, userData: SignUpData) => {
     setLoading(true);
     try {
       if (!supabase) {
@@ -146,7 +153,7 @@ export const useAuth = () => {
           data: userData
         }
       });
-      
+
       return { data, error };
     } catch (error) {
       console.error('Sign up error:', error);

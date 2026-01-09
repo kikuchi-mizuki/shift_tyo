@@ -1,10 +1,15 @@
 /**
  * 管理者ダッシュボードの状態管理型定義
  * AdminDashboardから抽出
+ *
+ * @deprecated このファイルの型定義は src/types/index.ts に統合されました
+ * 新しいコードでは src/types/index.ts の型定義を使用してください
+ * 後方互換性のためにこのファイルは残されています
  */
 
 /**
  * ユーザープロフィール
+ * @deprecated Use UserProfile from '../types/index.ts' instead
  */
 export interface UserProfile {
   id: string;
@@ -29,6 +34,7 @@ export interface UserProfile {
 
 /**
  * シフトリクエスト
+ * @deprecated Use PharmacistRequest from '../types/index.ts' instead
  */
 export interface ShiftRequest {
   id: string;
@@ -45,6 +51,7 @@ export interface ShiftRequest {
 
 /**
  * シフト募集
+ * @deprecated Use PharmacyPosting from '../types/index.ts' instead
  */
 export interface ShiftPosting {
   id: string;
@@ -62,6 +69,7 @@ export interface ShiftPosting {
 
 /**
  * 確定シフト
+ * @deprecated Use AssignedShift from '../types/index.ts' instead
  */
 export interface AssignedShift {
   id: string;

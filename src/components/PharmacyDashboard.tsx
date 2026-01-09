@@ -239,7 +239,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     if (!singleStoreName && storeOptions && storeOptions.length > 0) {
       setSingleStoreName(storeOptions[0]);
     }
-  }, [storeOptions, singleStoreName]);
+    // singleStoreNameを依存配列から削除（無限ループ防止）
+  }, [storeOptions]);
 
   // storeNamesの状態変更を監視
   useEffect(() => {
