@@ -17,6 +17,7 @@ interface AdminPanelProps {
   aiMatchingLoading: boolean;
   onToggleRecruitment: () => void;
   onMonthlyMatching: () => void;
+  onCSVExport?: (type: 'matching' | 'shortage' | 'requests' | 'postings') => void;
 
   // 日付詳細パネル関連
   selectedDate: string;
@@ -29,6 +30,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   aiMatchingLoading,
   onToggleRecruitment,
   onMonthlyMatching,
+  onCSVExport,
   selectedDate,
   dateDetailProps
 }) => {
@@ -43,6 +45,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         aiMatchingLoading={aiMatchingLoading}
         onToggleRecruitment={onToggleRecruitment}
         onMonthlyMatching={onMonthlyMatching}
+        onCSVExport={onCSVExport}
       />
 
       {/* スクロール可能な詳細エリア */}

@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { exportMatchingCSV, exportShortageCSV, exportRequestsCSV, exportPostingsCSV } from '../utils/csvExport';
 
 // Custom Hooks
 import { useAdminData } from '../hooks/admin/useAdminData';
@@ -219,6 +220,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     handleDateSelect(dateStr);
   };
 
+  // CSV出力ハンドラー
+  const handleCSVExport = (type: 'matching' | 'shortage' | 'requests' | 'postings') => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+
+    switch (type) {
+      case 'matching':
+        exportMatchingCSV(assigned, userProfiles, year, month);
+        break;
+      case 'shortage':
+        exportShortageCSV(postings, assigned, userProfiles, year, month);
+        break;
+      case 'requests':
+        exportRequestsCSV(requests, userProfiles, year, month);
+        break;
+      case 'postings':
+        exportPostingsCSV(postings, userProfiles, year, month);
+        break;
+    }
+  };
+
   // ユーザーリストの整理
   const pharmacies = Object.values(userProfiles).filter((p: any) => p && p.user_type === 'pharmacy' || p && p.user_type === 'store');
   const pharmacists = Object.values(userProfiles).filter((p: any) => p && p.user_type === 'pharmacist');
@@ -288,6 +310,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                 alert('マッチング実行中にエラーが発生しました。');
               }
             }}
+            onCSVExport={handleCSVExport}
             selectedDate={selectedDate}
             dateDetailProps={dayData ? {
               selectedDate,

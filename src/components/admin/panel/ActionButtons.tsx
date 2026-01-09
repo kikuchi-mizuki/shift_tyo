@@ -3,22 +3,26 @@
  * 管理者パネルのアクションボタンコンポーネント
  */
 
-import React from 'react';
-import { Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Zap, Download, ChevronDown } from 'lucide-react';
 
 interface ActionButtonsProps {
   recruitmentStatus: any;
   aiMatchingLoading: boolean;
   onToggleRecruitment: () => void;
   onMonthlyMatching: () => void;
+  onCSVExport?: (type: 'matching' | 'shortage' | 'requests' | 'postings') => void;
 }
 
 export const ActionButtons: React.FC<ActionButtonsProps> = ({
   recruitmentStatus,
   aiMatchingLoading,
   onToggleRecruitment,
-  onMonthlyMatching
+  onMonthlyMatching,
+  onCSVExport
 }) => {
+  const [showCSVMenu, setShowCSVMenu] = useState(false);
+
   return (
     <div className="p-4 lg:p-6 pb-0 flex-shrink-0">
       {/* 1ヶ月分のシフト自動組み */}
@@ -41,6 +45,61 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           )}
         </button>
       </div>
+
+      {/* CSV出力 */}
+      {onCSVExport && (
+        <div className="bg-white rounded-lg shadow p-4 mb-4 relative">
+          <button
+            onClick={() => setShowCSVMenu(!showCSVMenu)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
+          >
+            <Download className="w-4 h-4" />
+            <span>CSV出力</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${showCSVMenu ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showCSVMenu && (
+            <div className="absolute left-0 right-0 mt-2 mx-4 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+              <button
+                onClick={() => {
+                  onCSVExport('matching');
+                  setShowCSVMenu(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 rounded-t-lg"
+              >
+                マッチング一覧
+              </button>
+              <button
+                onClick={() => {
+                  onCSVExport('shortage');
+                  setShowCSVMenu(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t"
+              >
+                不足薬局一覧
+              </button>
+              <button
+                onClick={() => {
+                  onCSVExport('requests');
+                  setShowCSVMenu(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t"
+              >
+                応募薬剤師一覧
+              </button>
+              <button
+                onClick={() => {
+                  onCSVExport('postings');
+                  setShowCSVMenu(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t rounded-b-lg"
+              >
+                募集薬局一覧
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 募集管理 */}
       <div className="bg-white rounded-lg shadow p-4 mb-4">
