@@ -27,6 +27,19 @@ export const PharmacyCard: React.FC<PharmacyCardProps> = React.memo(({
   onCancel,
   onDelete
 }) => {
+  // デバッグ: 薬局データの構造を確認
+  React.useEffect(() => {
+    console.log('PharmacyCard - pharmacy data:', {
+      id: pharmacy.id,
+      name: pharmacy.name,
+      store_names: pharmacy.store_names,
+      store_names_type: typeof pharmacy.store_names,
+      store_names_isArray: Array.isArray(pharmacy.store_names),
+      store_names_length: Array.isArray(pharmacy.store_names) ? pharmacy.store_names.length : 'N/A',
+      all_keys: Object.keys(pharmacy)
+    });
+  }, [pharmacy]);
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3">
       <div className="mb-2">
@@ -58,7 +71,7 @@ export const PharmacyCard: React.FC<PharmacyCardProps> = React.memo(({
           />
         ) : (
           <div className="text-sm">
-            {pharmacy.store_names && safeLength(pharmacy.store_names) > 0 ? (
+            {pharmacy.store_names && Array.isArray(pharmacy.store_names) && safeLength(pharmacy.store_names) > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {pharmacy.store_names.map((storeName: string, idx: number) => (
                   <span key={idx} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
@@ -67,7 +80,7 @@ export const PharmacyCard: React.FC<PharmacyCardProps> = React.memo(({
                 ))}
               </div>
             ) : (
-              <span className="text-gray-500">未設定</span>
+              <span className="text-gray-500">未設定 (データ: {JSON.stringify(pharmacy.store_names)})</span>
             )}
           </div>
         )}
