@@ -3,6 +3,7 @@ import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile, Bell, X, Lock }
 import { shifts, shiftRequests, shiftPostings, systemStatus, supabase, storeNgPharmacies } from '../lib/supabase';
 import { LineIntegration } from './LineIntegration';
 import PasswordChangeModal from './PasswordChangeModal';
+import { extractStoreName, getTimeDisplay } from '../utils/storeUtils';
 
 interface PharmacistDashboardProps {
   user: any;
@@ -12,8 +13,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [tempSelectedDate, setTempSelectedDate] = useState('');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(''); // 使用しない（後方互換性のため残す）
-  const [customTimeMode, setCustomTimeMode] = useState(true); // 常に時間選択モード
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('13:00');
   const [isSystemConfirmed, setIsSystemConfirmed] = useState(false);
@@ -201,14 +200,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   useEffect(() => {
     logToRailway('State changed', {
       selectedDates,
-      selectedTimeSlot
+      startTime,
+      endTime
     });
-  }, [selectedDates, selectedTimeSlot]);
-
-  // 個別の状態変更監視
-  useEffect(() => {
-    logToRailway('selectedTimeSlot changed', selectedTimeSlot);
-  }, [selectedTimeSlot]);
+  }, [selectedDates, startTime, endTime]);
 
 
 
@@ -988,7 +983,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
 
   const handleSubmit = async () => {
     console.log('PharmacistDashboard: handleSubmit called');
-      console.log('Form data:', { selectedDates, selectedTimeSlot, userId: user.id });
+      console.log('Form data:', { selectedDates, startTime, endTime, userId: user.id });
 
     // 募集締切チェック
     if (!isRecruitmentOpen) {
@@ -1005,15 +1000,15 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       return;
     }
 
-    if (selectedDates.length === 0 || (!customTimeMode && !selectedTimeSlot)) {
-      alert('日付と時間帯を選択してください');
+    if (selectedDates.length === 0) {
+      alert('日付を選択してください');
       return;
     }
-    if (customTimeMode && (!startTime || !endTime)) {
+    if (!startTime || !endTime) {
       alert('開始時間と終了時間を入力してください');
       return;
     }
-    if (customTimeMode && startTime >= endTime) {
+    if (startTime >= endTime) {
       alert('開始時間は終了時間より早く設定してください');
       return;
     }
@@ -1029,9 +1024,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         date: date,
         // DBの制約に合わせ、カスタム時間の場合も time_slot は 'fullday' を保存し、
         // 実際の時間は start_time/end_time で表現する
-        time_slot: customTimeMode ? 'fullday' : selectedTimeSlot,
-        start_time: customTimeMode ? startTime + ':00' : undefined,
-        end_time: customTimeMode ? endTime + ':00' : undefined,
+        time_slot: 'fullday',
+        start_time: startTime + ':00',
+        end_time: endTime + ':00',
         memo: memo,
         status: 'pending'
       }));
@@ -1371,33 +1366,11 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                       pharmacy_name: pharmacyProfile?.name || 'NOT FOUND'
                     });
                     
-                    // 店舗名を取得（memoから抽出または直接指定）
-                    const getStoreName = (shift: any) => {
-                      const direct = (shift.store_name || '').trim();
-                      let fromMemo = '';
-                      if (!direct && typeof shift.memo === 'string') {
-                        const m = shift.memo.match(/\[store:([^\]]+)\]/);
-                        if (m && m[1]) fromMemo = m[1];
-                      }
-                      
-                      // デバッグ情報
-                      console.log('Pharmacist shift data for store name:', {
-                        shift_id: shift.id,
-                        date: shift.date,
-                        store_name: shift.store_name,
-                        memo: shift.memo,
-                        direct: direct,
-                        fromMemo: fromMemo,
-                        result: direct || fromMemo || '（店舗名未設定）'
-                      });
-                      
-                      // 店舗名が取得できない場合は、薬局名を表示
-                      const fallbackName = pharmacyProfile?.name || '薬局名未設定';
-                      return direct || fromMemo || fallbackName;
-                    };
-                    
-                    const storeName = getStoreName(shift);
-                    
+                    // ユーティリティ関数を使用して店舗名と時間を取得
+                    const fallbackName = pharmacyProfile?.name || '薬局名未設定';
+                    const storeName = extractStoreName(shift, fallbackName);
+                    const timeDisplay = getTimeDisplay(shift);
+
                     return (
                       <div key={index} className="bg-white p-3 rounded border border-green-200">
                         <div className="text-sm font-medium text-gray-800">
@@ -1410,18 +1383,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                           店舗: {storeName}
                         </div>
                         <div className="text-xs text-gray-600">
-                          時間: {(() => {
-                            // start_timeとend_timeが利用可能な場合は優先的に表示
-                            if (shift.start_time && shift.end_time) {
-                              return `${shift.start_time.slice(0,5)}-${shift.end_time.slice(0,5)}`;
-                            }
-                            // 時間が設定されていない場合は従来の表示
-                            return shift.time_slot === 'morning' || shift.time_slot === 'am' ? '9:00-13:00' :
-                                   shift.time_slot === 'afternoon' || shift.time_slot === 'pm' ? '13:00-18:00' :
-                                   shift.time_slot === 'full' || shift.time_slot === 'fullday' ? '9:00-18:00' :
-                                   shift.time_slot === 'consult' || shift.time_slot === 'negotiable' ? '9:00-18:00' :
-                                   shift.time_slot === 'custom' ? 'カスタム' : '夜間';
-                          })()}
+                          時間: {timeDisplay}
                         </div>
                     </div>
                   );
@@ -1477,29 +1439,8 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                       return timeSlot || '未設定';
                     }
                     
-                    // 新規選択の場合
-                    if (!selectedTimeSlot) return '未選択';
-                    
-                    // カスタム時間モードの場合は実際の時間を表示
-                    if (selectedTimeSlot === 'custom') {
-                      return `${startTime}-${endTime}`;
-                    }
-                    
-                    // 定型時間帯の場合は開始時間と終了時間で表示
-                    if (selectedTimeSlot === 'morning' || selectedTimeSlot === 'am') {
-                      return '9:00-13:00';
-                    }
-                    if (selectedTimeSlot === 'afternoon' || selectedTimeSlot === 'pm') {
-                      return '13:00-18:00';
-                    }
-                    if (selectedTimeSlot === 'full' || selectedTimeSlot === 'fullday') {
-                      return '9:00-18:00';
-                    }
-                    if (selectedTimeSlot === 'consult' || selectedTimeSlot === 'negotiable') {
-                      return '9:00-18:00';
-                    }
-                    
-                    return selectedTimeSlot;
+                    // 選択された時間を表示
+                    return `${startTime}-${endTime}`;
                   })()}
                 </div>
               </div>
@@ -1736,13 +1677,12 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                           const { data: { user: authUser } } = await supabase.auth.getUser();
                           const userIdToUse = authUser?.id || user.id;
                           // カスタム時間の場合も time_slot は 'fullday' を保存
-                          const currentSlot = customTimeMode ? 'fullday' : selectedTimeSlot;
                           const { error } = await shiftRequests.updateRequests({
                             pharmacist_id: userIdToUse,
                             dates: selectedDates,
-                            time_slot: currentSlot,
-                            start_time: customTimeMode ? `${startTime}:00` : undefined,
-                            end_time: customTimeMode ? `${endTime}:00` : undefined,
+                            time_slot: 'fullday',
+                            start_time: `${startTime}:00`,
+                            end_time: `${endTime}:00`,
                             memo: memo,
                           });
                           if (error) {

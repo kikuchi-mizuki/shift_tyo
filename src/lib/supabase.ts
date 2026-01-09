@@ -1,24 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 環境変数の取得（Railway環境変数が設定されていない場合のフォールバック）
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wjgterfwurmvosawzbjs.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZ3RlcmZ3dXJtdm9zYXd6YmpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzOTk2OTgsImV4cCI6MjA3MDk3NTY5OH0.bDs2CtZ9dJOeN0vRUPA7CtR6VqYeYW1m747_IUYJxGE';
+// 環境変数の取得（環境変数が必須）
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // 本番環境かどうかの判定
-export const isProduction = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your-supabase-url' && supabaseAnonKey !== 'your-supabase-anon-key');
+export const isProduction = !!(supabaseUrl && supabaseAnonKey);
 
-// Supabaseクライアントの作成（フォールバック値を使用）
+// Supabaseクライアントの作成
 export const supabase = (() => {
-  // フォールバック値が設定されているので、常にクライアントを作成
   try {
-    
     // URLとAPI keyの基本検証
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Missing Supabase URL or API key:', {
+      console.error('❌ Supabase環境変数が設定されていません。.envファイルを確認してください:', {
         hasUrl: !!supabaseUrl,
         hasKey: !!supabaseAnonKey
       });
-      return null;
+      throw new Error('VITE_SUPABASE_URL と VITE_SUPABASE_ANON_KEY が必要です');
     }
     
     // API keyの形式検証
@@ -781,8 +779,25 @@ export const shifts = {
         }
         
         // 必須フィールドの検証
-        if (!shift.pharmacist_id || !shift.pharmacy_id || !shift.date || !shift.time_slot) {
-          console.error('Invalid shift data - missing required fields:', shift);
+        if (!shift.pharmacist_id || !shift.pharmacy_id || !shift.date) {
+          console.error('Invalid shift data - missing required fields:', {
+            pharmacist_id: shift.pharmacist_id,
+            pharmacy_id: shift.pharmacy_id,
+            date: shift.date,
+            hasTimeSlot: !!shift.time_slot,
+            hasStartTime: !!shift.start_time,
+            hasEndTime: !!shift.end_time
+          });
+          return null;
+        }
+
+        // time_slotまたはstart_time/end_timeのいずれかが必要
+        if (!shift.time_slot && (!shift.start_time || !shift.end_time)) {
+          console.error('Invalid shift data - missing time information:', {
+            time_slot: shift.time_slot,
+            start_time: shift.start_time,
+            end_time: shift.end_time
+          });
           return null;
         }
         
