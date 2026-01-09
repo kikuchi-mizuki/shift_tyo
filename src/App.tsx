@@ -1,6 +1,7 @@
 import React, { useEffect, Component, ReactNode } from 'react';
 import { auth } from './lib/supabase';
 import { Pill } from 'lucide-react';
+import { safeSetLocalStorageJSON, safeGetLocalStorage, safeRemoveLocalStorage } from './utils/storage';
 // 遅延読み込みで循環依存や初期化順の問題を回避
 const PharmacistDashboard = React.lazy(() => 
   import('./components/PharmacistDashboard').catch(error => {
@@ -80,8 +81,9 @@ class AppErrorBoundary extends Component<
         userAgent: navigator.userAgent,
         url: window.location.href
       };
-      localStorage.setItem('last_error_report', JSON.stringify(errorReport));
-      console.log('Error report saved:', errorReport);
+      if (safeSetLocalStorageJSON('last_error_report', errorReport)) {
+        console.log('Error report saved:', errorReport);
+      }
     } catch (e) {
       console.error('Failed to save error report:', e);
     }
@@ -153,10 +155,10 @@ function AppContent() {
   useEffect(() => {
     // 前回のエラーレポートを確認
     try {
-      const lastError = localStorage.getItem('last_error_report');
+      const lastError = safeGetLocalStorage('last_error_report');
       if (lastError) {
         // エラーレポートをクリア
-        localStorage.removeItem('last_error_report');
+        safeRemoveLocalStorage('last_error_report');
       }
     } catch (e) {
       console.error('Failed to check error report:', e);

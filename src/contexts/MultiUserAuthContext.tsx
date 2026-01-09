@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { safeGetLocalStorage, safeSetLocalStorage, safeRemoveLocalStorage, safeSetLocalStorageJSON, safeGetLocalStorageJSON } from '../utils/storage';
 
 interface UserSession {
   id: string;
@@ -49,16 +50,16 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
   // ローカルストレージからセッション情報を復元
   useEffect(() => {
     try {
-      const savedSessions = localStorage.getItem('multi_user_sessions');
-      const savedCurrentType = localStorage.getItem('current_user_type');
-      const savedVersion = localStorage.getItem('session_version');
+      const savedSessions = safeGetLocalStorage('multi_user_sessions');
+      const savedCurrentType = safeGetLocalStorage('current_user_type');
+      const savedVersion = safeGetLocalStorage('session_version');
 
       // バージョンが古い場合は全てクリア
       if (savedVersion !== SESSION_VERSION) {
         console.warn('MultiUserAuth: Session version mismatch, clearing all sessions');
-        localStorage.removeItem('multi_user_sessions');
-        localStorage.removeItem('current_user_type');
-        localStorage.setItem('session_version', SESSION_VERSION);
+        safeRemoveLocalStorage('multi_user_sessions');
+        safeRemoveLocalStorage('current_user_type');
+        safeSetLocalStorage('session_version', SESSION_VERSION);
         return;
       }
 
@@ -82,8 +83,8 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
         } catch (error) {
           console.error('Error parsing saved sessions:', error);
           // パースエラーの場合はクリア
-          localStorage.removeItem('multi_user_sessions');
-          localStorage.removeItem('current_user_type');
+          safeRemoveLocalStorage('multi_user_sessions');
+          safeRemoveLocalStorage('current_user_type');
         }
       }
 
@@ -92,11 +93,9 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
       }
 
       // バージョンを保存
-      localStorage.setItem('session_version', SESSION_VERSION);
+      safeSetLocalStorage('session_version', SESSION_VERSION);
     } catch (error) {
       console.error('MultiUserAuth: Error accessing localStorage:', error);
-      // エラーの場合は安全のためクリア
-      localStorage.clear();
     }
   }, []);
 
@@ -107,8 +106,8 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
         // ログアウト時は全てのセッションをクリア
         setActiveSessions([]);
         setCurrentUserType(null);
-        localStorage.removeItem('multi_user_sessions');
-        localStorage.removeItem('current_user_type');
+        safeRemoveLocalStorage('multi_user_sessions');
+        safeRemoveLocalStorage('current_user_type');
       }
     });
 
@@ -117,16 +116,12 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
 
   // セッション情報をローカルストレージに保存
   useEffect(() => {
-    try {
-      localStorage.setItem('multi_user_sessions', JSON.stringify(activeSessions));
-    } catch (error) {
-      console.error('MultiUserAuth: Error saving sessions to localStorage:', error);
-    }
+    safeSetLocalStorageJSON('multi_user_sessions', activeSessions);
   }, [activeSessions]);
 
   useEffect(() => {
     if (currentUserType) {
-      localStorage.setItem('current_user_type', currentUserType);
+      safeSetLocalStorage('current_user_type', currentUserType);
     }
   }, [currentUserType]);
 

@@ -4,6 +4,7 @@ import { shifts, shiftRequests, shiftPostings, systemStatus, supabase, storeNgPh
 import PasswordChangeModal from './PasswordChangeModal';
 import { extractStoreName, getTimeDisplay } from '../utils/storeUtils';
 import { isValidLength, sanitizeTextInput } from '../utils/validation';
+import { safeGetLocalStorageJSON, safeSetLocalStorageJSON } from '../utils/storage';
 import type {
   AuthUser,
   AssignedShift,
@@ -105,9 +106,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
 
     // 定型時間テンプレートをlocalStorageから読み込み
     try {
-      const saved = localStorage.getItem(`time_templates_${user?.id || ''}`);
+      const saved = safeGetLocalStorageJSON<TimeTemplate[]>(`time_templates_${user?.id || ''}`);
       if (saved) {
-        setSavedTimeTemplates(JSON.parse(saved));
+        setSavedTimeTemplates(saved);
       }
     } catch (e) {
       console.error('Failed to load time templates:', e);
@@ -138,11 +139,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
     const updated = [...savedTimeTemplates, newTemplate];
     setSavedTimeTemplates(updated);
 
-    try {
-      localStorage.setItem(`time_templates_${user?.id || ''}`, JSON.stringify(updated));
-    } catch (e) {
-      console.error('Failed to save time templates:', e);
-    }
+    safeSetLocalStorageJSON(`time_templates_${user?.id || ''}`, updated);
 
     setNewTemplateName('');
     setShowTemplateForm(false);
@@ -155,11 +152,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
     const updated = savedTimeTemplates.filter((_, i) => i !== index);
     setSavedTimeTemplates(updated);
 
-    try {
-      localStorage.setItem(`time_templates_${user?.id || ''}`, JSON.stringify(updated));
-    } catch (e) {
-      console.error('Failed to save time templates:', e);
-    }
+    safeSetLocalStorageJSON(`time_templates_${user?.id || ''}`, updated);
   };
 
   const applyTimeTemplate = (template: {name: string, start: string, end: string}) => {
@@ -720,11 +713,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         
         setShowProfileEdit(false);
         // 成功時はローカルキャッシュも更新
-        try {
-          localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(ngList));
-        } catch (error) {
-          console.error('Failed to save ng_list to localStorage:', error);
-        }
+        safeSetLocalStorageJSON(`ng_list_${user?.id || ''}`, ngList);
         
       // データベースの永続化を確認するため、少し時間を置いてから再度取得
       console.log('Waiting 2 seconds to verify database persistence...');
@@ -967,11 +956,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
         }
         
         // 成功時はローカルキャッシュも更新
-        try {
-          localStorage.setItem(`ng_list_${user?.id || ''}`, JSON.stringify(newNgList));
-        } catch (error) {
-          console.error('Failed to save ng_list to localStorage:', error);
-        }
+        safeSetLocalStorageJSON(`ng_list_${user?.id || ''}`, newNgList);
       }
       
       console.log('=== UPDATING NG LIST IN DATABASE END ===');
