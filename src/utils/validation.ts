@@ -141,3 +141,60 @@ export const isValidStaffCount = (count: number, min: number = 1, max: number = 
 
   return Number.isInteger(count) && count >= min && count <= max;
 };
+
+/**
+ * HTMLエスケープ処理（XSS対策）
+ * @param str - エスケープする文字列
+ * @returns エスケープされた文字列
+ */
+export const escapeHtml = (str: string): string => {
+  if (!str || typeof str !== 'string') {
+    return '';
+  }
+
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+};
+
+/**
+ * 制御文字を除去（サニタイゼーション）
+ * @param str - サニタイズする文字列
+ * @returns サニタイズされた文字列
+ */
+export const sanitizeString = (str: string): string => {
+  if (!str || typeof str !== 'string') {
+    return '';
+  }
+
+  // 制御文字を除去
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/[\x00-\x1F\x7F]/g, '').trim();
+};
+
+/**
+ * 安全なテキスト入力のサニタイゼーション
+ * 最大文字数制限と制御文字除去を行う
+ * @param str - サニタイズする文字列
+ * @param maxLength - 最大文字数（デフォルト: 500）
+ * @returns サニタイズされた文字列
+ */
+export const sanitizeTextInput = (str: string, maxLength: number = 500): string => {
+  if (!str || typeof str !== 'string') {
+    return '';
+  }
+
+  // 制御文字除去
+  let sanitized = sanitizeString(str);
+
+  // 最大文字数制限
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength);
+  }
+
+  return sanitized;
+};

@@ -209,7 +209,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       checkRecruitmentStatus();
     };
     window.addEventListener('focus', onFocus);
-    const intervalId = window.setInterval(checkRecruitmentStatus, 15000);
+    const intervalId = window.setInterval(checkRecruitmentStatus, 30000); // 30秒ごとにチェック（サーバー負荷軽減）
     return () => {
       window.removeEventListener('focus', onFocus);
       window.clearInterval(intervalId);

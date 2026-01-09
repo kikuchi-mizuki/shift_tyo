@@ -3,7 +3,7 @@ import { Calendar, Clock, User, Plus, Sun, MessageCircle, Smile, Lock } from 'lu
 import { shifts, shiftRequests, shiftPostings, systemStatus, supabase, storeNgPharmacies } from '../lib/supabase';
 import PasswordChangeModal from './PasswordChangeModal';
 import { extractStoreName, getTimeDisplay } from '../utils/storeUtils';
-import { isValidLength } from '../utils/validation';
+import { isValidLength, sanitizeTextInput } from '../utils/validation';
 import type {
   AuthUser,
   AssignedShift,
@@ -196,7 +196,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       checkRecruitmentStatus();
     };
     window.addEventListener('focus', onFocus);
-    const intervalId = window.setInterval(checkRecruitmentStatus, 5000); // 5秒ごとにチェック
+    const intervalId = window.setInterval(checkRecruitmentStatus, 30000); // 30秒ごとにチェック（サーバー負荷軽減）
     return () => {
       window.removeEventListener('focus', onFocus);
       window.clearInterval(intervalId);
@@ -1565,9 +1565,10 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                 value={memo}
                 onChange={(e) => {
                   const value = e.target.value;
-                  // 最大500文字に制限
-                  if (isValidLength(value, 0, 500)) {
-                    setMemo(value);
+                  // サニタイズと最大500文字に制限
+                  const sanitized = sanitizeTextInput(value, 500);
+                  if (isValidLength(sanitized, 0, 500)) {
+                    setMemo(sanitized);
                   }
                 }}
                 placeholder="例: 午後からの勤務希望、交通手段について等"
