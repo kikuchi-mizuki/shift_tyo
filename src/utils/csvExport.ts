@@ -3,6 +3,8 @@
  * CSV出力ユーティリティ関数
  */
 
+import { extractStoreName, getTimeDisplay } from './storeUtils';
+
 /**
  * データをCSV形式に変換してダウンロード
  */
@@ -72,28 +74,8 @@ export const exportMatchingCSV = (
       const pharmacistProfile = userProfiles[shift.pharmacist_id];
       const pharmacyProfile = userProfiles[shift.pharmacy_id];
 
-      // 店舗名の取得
-      let storeName = '';
-      if (shift.store_name) {
-        storeName = shift.store_name;
-      } else if (shift.memo && typeof shift.memo === 'string') {
-        const match = shift.memo.match(/\[store:([^\]]+)\]/);
-        if (match && match[1]) {
-          storeName = match[1];
-        }
-      }
-
-      // 時間の表示
-      let timeDisplay = '';
-      if (shift.start_time && shift.end_time) {
-        timeDisplay = `${String(shift.start_time).substring(0, 5)}-${String(shift.end_time).substring(0, 5)}`;
-      } else if (shift.time_slot === 'morning' || shift.time_slot === 'am') {
-        timeDisplay = '9:00-13:00';
-      } else if (shift.time_slot === 'afternoon' || shift.time_slot === 'pm') {
-        timeDisplay = '13:00-18:00';
-      } else if (shift.time_slot === 'full' || shift.time_slot === 'fullday') {
-        timeDisplay = '9:00-18:00';
-      }
+      // ユーティリティ関数を使用して店舗名と時間を取得
+      const storeName = extractStoreName(shift);
 
       return [
         shift.date,
@@ -154,17 +136,8 @@ export const exportShortageCSV = (
       return postingDate.getFullYear() === year && postingDate.getMonth() + 1 === month;
     })
     .forEach((posting: any) => {
-      // 店舗名の取得
-      let storeName = '';
-      if (posting.store_name) {
-        storeName = posting.store_name;
-      } else if (posting.memo && typeof posting.memo === 'string') {
-        const match = posting.memo.match(/\[store:([^\]]+)\]/);
-        if (match && match[1]) {
-          storeName = match[1];
-        }
-      }
-
+      // ユーティリティ関数を使用して店舗名を取得
+      const storeName = extractStoreName(posting);
       const key = `${posting.date}_${posting.pharmacy_id}_${storeName}_${posting.time_slot}_${posting.start_time || ''}_${posting.end_time || ''}`;
 
       if (!shortageMap[key]) {
@@ -190,17 +163,8 @@ export const exportShortageCSV = (
       return shiftDate.getFullYear() === year && shiftDate.getMonth() + 1 === month && shift.status === 'confirmed';
     })
     .forEach((shift: any) => {
-      // 店舗名の取得
-      let storeName = '';
-      if (shift.store_name) {
-        storeName = shift.store_name;
-      } else if (shift.memo && typeof shift.memo === 'string') {
-        const match = shift.memo.match(/\[store:([^\]]+)\]/);
-        if (match && match[1]) {
-          storeName = match[1];
-        }
-      }
-
+      // ユーティリティ関数を使用して店舗名を取得
+      const storeName = extractStoreName(shift);
       const key = `${shift.date}_${shift.pharmacy_id}_${storeName}_${shift.time_slot}_${shift.start_time || ''}_${shift.end_time || ''}`;
 
       if (shortageMap[key]) {
@@ -304,16 +268,8 @@ export const exportPostingsCSV = (
     .map((posting: any) => {
       const pharmacyProfile = userProfiles[posting.pharmacy_id];
 
-      // 店舗名の取得
-      let storeName = '';
-      if (posting.store_name) {
-        storeName = posting.store_name;
-      } else if (posting.memo && typeof posting.memo === 'string') {
-        const match = posting.memo.match(/\[store:([^\]]+)\]/);
-        if (match && match[1]) {
-          storeName = match[1];
-        }
-      }
+      // ユーティリティ関数を使用して店舗名を取得
+      const storeName = extractStoreName(posting);
 
       return [
         posting.date,
