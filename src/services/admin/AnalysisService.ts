@@ -191,20 +191,22 @@ export const analyzePharmacyShortageWithMatches = (
     };
   } = {};
 
-  // 募集数を集計（店舗ごとに個別）
+  // 募集数を集計（店舗・時間帯ごとに個別）
   dayPostings.forEach(posting => {
     const pharmacyId = posting.pharmacy_id;
     const storeName = posting.store_name || '店舗名なし';
-    // 薬局ID + 店舗名の組み合わせでユニークキーを作成
-    const uniqueKey = `${pharmacyId}_${storeName}`;
+    const startTime = posting.start_time ? String(posting.start_time).substring(0, 5) : '09:00';
+    const endTime = posting.end_time ? String(posting.end_time).substring(0, 5) : '18:00';
+    // 薬局ID + 店舗名 + 時間帯の組み合わせでユニークキーを作成
+    const uniqueKey = `${pharmacyId}_${storeName}_${startTime}_${endTime}`;
 
     if (!pharmacyNeeds[uniqueKey]) {
       pharmacyNeeds[uniqueKey] = {
         id: pharmacyId,
         name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId ? pharmacyId.slice(-4) : 'unknown'}`,
         store_name: storeName,
-        start_time: posting.start_time || '09:00',
-        end_time: posting.end_time || '18:00',
+        start_time: startTime,
+        end_time: endTime,
         required: 0,
         matched: 0,
         shortage: 0,
@@ -217,14 +219,16 @@ export const analyzePharmacyShortageWithMatches = (
     pharmacyNeeds[uniqueKey].postings.push(posting);
   });
 
-  // マッチ数を集計（店舗ごとに個別）
+  // マッチ数を集計（店舗・時間帯ごとに個別）
   // 1. AIマッチング結果から
   dayMatches.forEach(match => {
     const pharmacyId = match.pharmacy.id;
     // 店舗名は元の募集データから取得する必要がある
     const matchingPosting = dayPostings.find(p => p.pharmacy_id === pharmacyId);
     const storeName = matchingPosting?.store_name || '店舗名なし';
-    const uniqueKey = `${pharmacyId}_${storeName}`;
+    const startTime = match.start_time ? String(match.start_time).substring(0, 5) : '09:00';
+    const endTime = match.end_time ? String(match.end_time).substring(0, 5) : '18:00';
+    const uniqueKey = `${pharmacyId}_${storeName}_${startTime}_${endTime}`;
 
     if (pharmacyNeeds[uniqueKey]) {
       pharmacyNeeds[uniqueKey].matched++;
@@ -239,7 +243,9 @@ export const analyzePharmacyShortageWithMatches = (
   confirmedShifts.forEach(shift => {
     const pharmacyId = shift.pharmacy_id;
     const storeName = shift.store_name || '店舗名なし';
-    const uniqueKey = `${pharmacyId}_${storeName}`;
+    const startTime = shift.start_time ? String(shift.start_time).substring(0, 5) : '09:00';
+    const endTime = shift.end_time ? String(shift.end_time).substring(0, 5) : '18:00';
+    const uniqueKey = `${pharmacyId}_${storeName}_${startTime}_${endTime}`;
 
     if (pharmacyNeeds[uniqueKey]) {
       pharmacyNeeds[uniqueKey].matched++;
@@ -322,23 +328,25 @@ export const analyzePharmacyShortage = (
     };
   } = {};
 
-  // 募集数を集計（店舗ごとに個別）
+  // 募集数を集計（店舗・時間帯ごとに個別）
   console.log('📋 募集を集計中...', dayPostings.length, '件');
   dayPostings.forEach(posting => {
     const pharmacyId = posting.pharmacy_id;
     const storeName = posting.store_name || '店舗名なし';
-    // 薬局ID + 店舗名の組み合わせでユニークキーを作成
-    const uniqueKey = `${pharmacyId}_${storeName}`;
+    const startTime = posting.start_time ? String(posting.start_time).substring(0, 5) : '09:00';
+    const endTime = posting.end_time ? String(posting.end_time).substring(0, 5) : '18:00';
+    // 薬局ID + 店舗名 + 時間帯の組み合わせでユニークキーを作成
+    const uniqueKey = `${pharmacyId}_${storeName}_${startTime}_${endTime}`;
 
-    console.log(`  - 募集: pharmacyId=${pharmacyId}, storeName=${storeName}, uniqueKey=${uniqueKey}, required_staff=${posting.required_staff || 1}`);
+    console.log(`  - 募集: pharmacyId=${pharmacyId}, storeName=${storeName}, time=${startTime}-${endTime}, uniqueKey=${uniqueKey}, required_staff=${posting.required_staff || 1}`);
 
     if (!pharmacyNeeds[uniqueKey]) {
       pharmacyNeeds[uniqueKey] = {
         id: pharmacyId,
         name: userProfiles[pharmacyId]?.name || `薬局${pharmacyId ? pharmacyId.slice(-4) : 'unknown'}`,
         store_name: storeName,
-        start_time: posting.start_time || '09:00',
-        end_time: posting.end_time || '18:00',
+        start_time: startTime,
+        end_time: endTime,
         required: 0,
         matched: 0,
         shortage: 0,
@@ -353,7 +361,7 @@ export const analyzePharmacyShortage = (
 
   console.log('📦 pharmacyNeeds 初期状態:', pharmacyNeeds);
 
-  // マッチ数を集計（店舗ごとに個別）
+  // マッチ数を集計（店舗・時間帯ごとに個別）
   // 1. AIマッチング結果 + pending状態のマッチングから
   console.log('📝 マッチング結果を集計中... (effectiveDayMatches)');
   effectiveDayMatches.forEach(match => {
@@ -364,9 +372,12 @@ export const analyzePharmacyShortage = (
       const matchingPosting = dayPostings.find(p => p.pharmacy_id === pharmacyId);
       storeName = matchingPosting?.store_name || '店舗名なし';
     }
-    const uniqueKey = `${pharmacyId}_${storeName}`;
+    // 時間帯を取得
+    const startTime = match.start_time ? String(match.start_time).substring(0, 5) : '09:00';
+    const endTime = match.end_time ? String(match.end_time).substring(0, 5) : '18:00';
+    const uniqueKey = `${pharmacyId}_${storeName}_${startTime}_${endTime}`;
 
-    console.log(`  - マッチ: pharmacyId=${pharmacyId}, storeName=${storeName}, uniqueKey=${uniqueKey}`);
+    console.log(`  - マッチ: pharmacyId=${pharmacyId}, storeName=${storeName}, time=${startTime}-${endTime}, uniqueKey=${uniqueKey}`);
     if (pharmacyNeeds[uniqueKey]) {
       pharmacyNeeds[uniqueKey].matched++;
       console.log(`    ✓ matched++, 現在=${pharmacyNeeds[uniqueKey].matched}`);
@@ -384,7 +395,9 @@ export const analyzePharmacyShortage = (
   confirmedShifts.forEach(shift => {
     const pharmacyId = shift.pharmacy_id;
     const storeName = shift.store_name || '店舗名なし';
-    const uniqueKey = `${pharmacyId}_${storeName}`;
+    const startTime = shift.start_time ? String(shift.start_time).substring(0, 5) : '09:00';
+    const endTime = shift.end_time ? String(shift.end_time).substring(0, 5) : '18:00';
+    const uniqueKey = `${pharmacyId}_${storeName}_${startTime}_${endTime}`;
 
     if (pharmacyNeeds[uniqueKey]) {
       pharmacyNeeds[uniqueKey].matched++;
