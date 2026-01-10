@@ -1444,10 +1444,9 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
                         <button
                           type="button"
                           onClick={() => applyTimeTemplate(template)}
-                          className="w-full px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-left transition-colors"
+                          className="w-full px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-center transition-colors"
                         >
-                          <div className="text-xs font-medium text-blue-800">{template.name}</div>
-                          <div className="text-xs text-blue-600">{template.start} - {template.end}</div>
+                          <div className="text-sm font-medium text-blue-800">{template.name}</div>
                         </button>
                         <button
                           type="button"
