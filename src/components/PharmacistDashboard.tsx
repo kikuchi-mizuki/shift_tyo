@@ -28,8 +28,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
 
   // 定型時間テンプレート
   const [savedTimeTemplates, setSavedTimeTemplates] = useState<TimeTemplate[]>([]);
-  const [newTemplateName, setNewTemplateName] = useState('');
-  const [showTemplateForm, setShowTemplateForm] = useState(false);
 
   // プロフィール編集用のstate
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -125,8 +123,8 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       return;
     }
 
-    // テンプレート名が空の場合は時間帯を自動的に使用
-    const templateName = newTemplateName.trim() || `${startTime}-${endTime}`;
+    // 時間帯をテンプレート名として使用
+    const templateName = `${startTime}-${endTime}`;
 
     const newTemplate = {
       name: templateName,
@@ -139,8 +137,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
 
     safeSetLocalStorageJSON(`time_templates_${user?.id || ''}`, updated);
 
-    setNewTemplateName('');
-    setShowTemplateForm(false);
     alert('定型時間を保存しました');
   };
 
@@ -1495,48 +1491,13 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               </div>
 
               {/* 定型時間として保存ボタン */}
-              {!showTemplateForm && (
-                <button
-                  type="button"
-                  onClick={() => setShowTemplateForm(true)}
-                  className="w-full mt-3 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm text-gray-700 transition-colors"
-                >
-                  + この時間を定型時間として保存
-                </button>
-              )}
-
-              {/* 定型時間保存フォーム */}
-              {showTemplateForm && (
-                <div className="mt-3 p-3 bg-gray-50 border border-gray-300 rounded-lg space-y-2">
-                  <label className="block text-xs font-medium text-gray-700">テンプレート名（省略可）</label>
-                  <input
-                    type="text"
-                    value={newTemplateName}
-                    onChange={(e) => setNewTemplateName(e.target.value)}
-                    placeholder="未入力時は時間帯を使用（例：09:00-13:00）"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <div className="flex space-x-2">
-                    <button
-                      type="button"
-                      onClick={saveTimeTemplate}
-                      className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
-                    >
-                      保存
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowTemplateForm(false);
-                        setNewTemplateName('');
-                      }}
-                      className="flex-1 px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg text-sm transition-colors"
-                    >
-                      キャンセル
-                    </button>
-                  </div>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={saveTimeTemplate}
+                className="w-full mt-3 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+              >
+                + この時間を定型時間として保存
+              </button>
             </div>
 
             {/* 備考欄 */}
