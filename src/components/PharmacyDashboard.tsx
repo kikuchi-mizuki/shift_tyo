@@ -1249,8 +1249,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     }
 
     // 既存同日・同店舗・同時間帯の募集を検出（更新対象）と、新規作成対象を振り分け
-    const updates: { id: string, storeName: string }[] = [];
-    const creates: string[] = [];
+    const updates: { id: string, storeName: string, date: string }[] = [];
+    const creates: { name: string, date: string }[] = [];
     
     console.log('=== 重複チェック開始 ===');
     console.log('targets:', targets);
