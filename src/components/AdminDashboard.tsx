@@ -248,7 +248,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     shortages: analyzePharmacyShortage(selectedDate, requests, postings, assigned, aiMatchesByDate, userProfiles),
     confirmedShifts: (assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed'),
     postings: (postings || []).filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult'),
-    requests: (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult' && r.status !== 'confirmed'),
+    requests: (() => {
+      const filtered = (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult' && r.status !== 'confirmed');
+      // 重複除去: 薬剤師ID + 開始時間 + 終了時間でユニーク化
+      const seen = new Map<string, any>();
+      filtered.forEach((r: any) => {
+        const startTime = r.start_time ? String(r.start_time).substring(0, 5) : '';
+        const endTime = r.end_time ? String(r.end_time).substring(0, 5) : '';
+        const key = `${r.pharmacist_id}_${startTime}_${endTime}`;
+        if (!seen.has(key)) {
+          seen.set(key, r);
+        }
+      });
+      return Array.from(seen.values());
+    })(),
     consultRequests: (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot === 'consult')
   } : null;
 
