@@ -152,6 +152,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const applyTimeTemplate = (template: {name: string, start: string, end: string}) => {
     setStartTime(template.start);
     setEndTime(template.end);
+    setCustomTimeMode(true); // カスタム時間モードに切り替え
   };
 
   // 募集状況をチェックする関数
