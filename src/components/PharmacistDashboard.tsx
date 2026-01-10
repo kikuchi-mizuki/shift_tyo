@@ -996,37 +996,79 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       return;
     }
 
-    // 新しい希望を登録
+    // 新しい希望を登録または更新
     try {
       // 認証ユーザーIDを取得
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       const userIdToUse = authUser?.id || user.id;
-      
-      const requestsToInsert = selectedDates.map(date => ({
-        pharmacist_id: userIdToUse,
-        date: date,
-        // DBの制約に合わせ、カスタム時間の場合も time_slot は 'fullday' を保存し、
-        // 実際の時間は start_time/end_time で表現する
-        time_slot: 'fullday',
-        start_time: startTime + ':00',
-        end_time: endTime + ':00',
-        memo: memo,
-        status: 'pending'
-      }));
 
-      console.log('Creating shift requests:', requestsToInsert);
-      const { error } = await shiftRequests.createRequests(requestsToInsert);
-      
-      if (error) {
-        console.error('Error creating shift requests:', error);
-        alert(`シフト希望の登録に失敗しました: ${(error as any).message || (error as any).code || 'Unknown error'}`);
-      } else {
-        console.log('Shift requests created successfully');
-        setSelectedDates([]);
-        setSelectedTimeSlot('');
-        setMemo('');
-        loadShifts();
+      const startTimeFormatted = startTime + ':00';
+      const endTimeFormatted = endTime + ':00';
+
+      // 各日付について、既存の希望をチェック
+      const updates: string[] = [];
+      const creates: string[] = [];
+
+      for (const date of selectedDates) {
+        // 同じ日付・同じ時間帯の既存希望を検索
+        const existingRequest = myRequests.find((req: any) =>
+          req.pharmacist_id === userIdToUse &&
+          req.date === date &&
+          req.start_time?.substring(0, 5) === startTime &&
+          req.end_time?.substring(0, 5) === endTime
+        );
+
+        if (existingRequest) {
+          // 既存の希望がある場合は更新
+          const { error: updateError } = await supabase
+            .from('shift_requests')
+            .update({
+              memo: memo,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingRequest.id);
+
+          if (updateError) {
+            console.error('Error updating shift request:', updateError);
+            alert(`${date} の希望更新に失敗しました`);
+            return;
+          }
+          updates.push(date);
+        } else {
+          // 既存の希望がない場合は新規作成
+          const { error: insertError } = await supabase
+            .from('shift_requests')
+            .insert({
+              pharmacist_id: userIdToUse,
+              date: date,
+              time_slot: 'fullday',
+              start_time: startTimeFormatted,
+              end_time: endTimeFormatted,
+              memo: memo,
+              status: 'pending'
+            });
+
+          if (insertError) {
+            console.error('Error creating shift request:', insertError);
+            alert(`${date} の希望登録に失敗しました`);
+            return;
+          }
+          creates.push(date);
+        }
       }
+
+      console.log('Shift requests processed:', { updates, creates });
+
+      // 成功メッセージ
+      const messages = [];
+      if (creates.length > 0) messages.push(`${creates.length}件の希望を追加しました`);
+      if (updates.length > 0) messages.push(`${updates.length}件の希望を更新しました`);
+      if (messages.length > 0) alert(messages.join('\n'));
+
+      setSelectedDates([]);
+      setSelectedTimeSlot('');
+      setMemo('');
+      loadShifts();
     } catch (error) {
       console.error('Error submitting shift requests:', error);
       alert('シフト希望の登録に失敗しました');
