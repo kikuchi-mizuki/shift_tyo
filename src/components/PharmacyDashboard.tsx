@@ -216,12 +216,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     return '';
   }
 
-  // 店舗名リストが取得できたら、未選択の場合は先頭を自動選択
-  // ドロップダウン候補（プロフィール登録 + これまでの募集から抽出）のユニオン
-  const storeOptions: string[] = Array.from(new Set([
-    ...(storeNames || []),
-    ...((myShifts || []).map((s: any) => extractStoreName(s)).filter(Boolean))
-  ])).filter(name => name && name.trim() !== ''); // 空文字列を除外
+  // 店舗名リストはプロフィール登録済みのもののみを使用
+  const storeOptions: string[] = (storeNames || []).filter(name => name && name.trim() !== '');
 
   useEffect(() => {
     if (!singleStoreName && storeOptions && storeOptions.length > 0) {
@@ -2319,46 +2315,25 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             )}
           </div>
 
-          {/* 店舗名選択（一時保存可・単一選択） */}
+          {/* 店舗名選択（プロフィール登録済みの店舗から選択のみ） */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               店舗名
-              <span className="text-xs text-gray-500 ml-1">
-                （薬局名とは異なる具体的な店舗名を入力してください）
-              </span>
             </label>
-            <div className="space-y-2">
-              <input
-                type="text"
+            {storeNames && storeNames.length > 0 ? (
+              <select
                 value={singleStoreName}
                 onChange={(e) => setSingleStoreName(e.target.value)}
-                placeholder="例: 新宿店、池袋店、渋谷店など"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              {singleStoreName && singleStoreName === user.name && (
-                <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
-                  警告: 薬局名と同じ店舗名です。具体的な店舗名を入力してください。
-                </div>
-              )}
-            </div>
-            {/* 過去の店舗名から選択 */}
-            {storeOptions.length > 0 && (
-              <div className="mt-2">
-                <label className="block text-xs text-gray-600 mb-1">過去の店舗名から選択:</label>
-                <select
-                  value=""
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      setSingleStoreName(e.target.value);
-                    }
-                  }}
-                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">過去の店舗名から選択...</option>
-                  {storeOptions.map((name, index) => (
-                    <option key={index} value={name}>{name}</option>
-                  ))}
-                </select>
+              >
+                <option value="">店舗を選択してください</option>
+                {storeNames.map((name, index) => (
+                  <option key={index} value={name}>{name}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                店舗名が登録されていません。プロフィール編集から店舗名を登録してください。
               </div>
             )}
             {/* 選択した店舗を一時リストに追加 → 複数店舗をまとめて登録 */}
