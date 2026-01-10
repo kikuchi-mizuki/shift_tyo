@@ -84,7 +84,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   // NG設定UI用の変数（非表示だが参照エラー回避のため残す）
   const [selectedPharmacyForNg] = useState('');
   const [selectedStoreForNg, setSelectedStoreForNg] = useState('');
-  const [] = useState<string[]>([]);
+  const [availableStores, setAvailableStores] = useState<string[]>([]);
   const [selectedNgPharmacyId, setSelectedNgPharmacyId] = useState('');
 
   // 画面内デバッグ表示切替（?debug=1）
