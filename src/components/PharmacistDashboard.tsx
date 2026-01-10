@@ -116,10 +116,6 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
 
   // 定型時間テンプレートを保存
   const saveTimeTemplate = () => {
-    if (!newTemplateName.trim()) {
-      alert('テンプレート名を入力してください');
-      return;
-    }
     if (!startTime || !endTime) {
       alert('開始時間と終了時間を入力してください');
       return;
@@ -129,8 +125,11 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       return;
     }
 
+    // テンプレート名が空の場合は時間帯を自動的に使用
+    const templateName = newTemplateName.trim() || `${startTime}-${endTime}`;
+
     const newTemplate = {
-      name: newTemplateName.trim(),
+      name: templateName,
       start: startTime,
       end: endTime
     };
@@ -1509,12 +1508,12 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               {/* 定型時間保存フォーム */}
               {showTemplateForm && (
                 <div className="mt-3 p-3 bg-gray-50 border border-gray-300 rounded-lg space-y-2">
-                  <label className="block text-xs font-medium text-gray-700">テンプレート名</label>
+                  <label className="block text-xs font-medium text-gray-700">テンプレート名（省略可）</label>
                   <input
                     type="text"
                     value={newTemplateName}
                     onChange={(e) => setNewTemplateName(e.target.value)}
-                    placeholder="例: 午前、午後、夜勤"
+                    placeholder="未入力時は時間帯を使用（例：09:00-13:00）"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <div className="flex space-x-2">

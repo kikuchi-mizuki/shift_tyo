@@ -122,10 +122,6 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
   // 定型時間テンプレートを保存
   const saveTimeTemplate = () => {
-    if (!newTemplateName.trim()) {
-      alert('テンプレート名を入力してください');
-      return;
-    }
     if (!startTime || !endTime) {
       alert('開始時間と終了時間を入力してください');
       return;
@@ -135,8 +131,11 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       return;
     }
 
+    // テンプレート名が空の場合は時間帯を自動的に使用
+    const templateName = newTemplateName.trim() || `${startTime}-${endTime}`;
+
     const newTemplate = {
-      name: newTemplateName.trim(),
+      name: templateName,
       start: startTime,
       end: endTime
     };
@@ -2442,7 +2441,7 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                     type="text"
                     value={newTemplateName}
                     onChange={(e) => setNewTemplateName(e.target.value)}
-                    placeholder="例: 午前, 午後, 夜勤など"
+                    placeholder="テンプレート名（省略可・未入力時は時間帯を使用）"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
                   />
                   <div className="flex gap-2">
