@@ -21,6 +21,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [tempSelectedDate, setTempSelectedDate] = useState('');
+  const [customTimeMode, setCustomTimeMode] = useState(true); // 常に時間選択モード
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('13:00');
   const [, setIsSystemConfirmed] = useState(false);
