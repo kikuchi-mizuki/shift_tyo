@@ -1010,19 +1010,19 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
       const creates: string[] = [];
 
       for (const date of selectedDates) {
-        // 同じ日付・同じ時間帯の既存希望を検索
+        // 同じ日付の既存希望を検索（時間帯は無視）
         const existingRequest = myRequests.find((req: any) =>
           req.pharmacist_id === userIdToUse &&
-          req.date === date &&
-          req.start_time?.substring(0, 5) === startTime &&
-          req.end_time?.substring(0, 5) === endTime
+          req.date === date
         );
 
         if (existingRequest) {
-          // 既存の希望がある場合は更新
+          // 既存の希望がある場合は更新（時間帯も含めて）
           const { error: updateError } = await supabase
             .from('shift_requests')
             .update({
+              start_time: startTimeFormatted,
+              end_time: endTimeFormatted,
               memo: memo,
               updated_at: new Date().toISOString()
             })
