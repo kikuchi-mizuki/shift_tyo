@@ -1262,11 +1262,33 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     for (const date of selectedDates) {
       for (const name of targets) {
         const match = myShifts.find((s: any) => {
+          console.log(`チェック中: 既存シフト`, {
+            date: s.date,
+            store_name: s.store_name,
+            time_slot: s.time_slot,
+            start_time: s.start_time,
+            end_time: s.end_time
+          });
+          console.log(`チェック中: 新規登録`, {
+            date,
+            name,
+            customTimeMode,
+            startTime,
+            endTime,
+            timeSlot
+          });
+
           // 日付が一致するか
-          if (s.date !== date) return false;
+          if (s.date !== date) {
+            console.log('→ 日付不一致');
+            return false;
+          }
 
           // 同じ薬局の募集か
-          if (s.pharmacy_id !== user?.id) return false;
+          if (s.pharmacy_id !== user?.id) {
+            console.log('→ 薬局ID不一致');
+            return false;
+          }
 
           // 時間帯が一致するか（カスタム時間の場合はfulldayとして比較）
           const currentTimeSlot = customTimeMode ? 'fullday' : timeSlot;
@@ -1274,9 +1296,17 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
           if (customTimeMode && s.time_slot === 'fullday') {
             const sStart = s.start_time ? String(s.start_time).substring(0, 5) : '';
             const sEnd = s.end_time ? String(s.end_time).substring(0, 5) : '';
-            if (sStart !== startTime || sEnd !== endTime) return false;
+            console.log(`→ カスタム時間比較: 既存(${sStart}-${sEnd}) vs 新規(${startTime}-${endTime})`);
+            if (sStart !== startTime || sEnd !== endTime) {
+              console.log('→ 時間不一致');
+              return false;
+            }
           } else {
-            if (s.time_slot !== currentTimeSlot) return false;
+            console.log(`→ time_slot比較: 既存(${s.time_slot}) vs 新規(${currentTimeSlot})`);
+            if (s.time_slot !== currentTimeSlot) {
+              console.log('→ time_slot不一致');
+              return false;
+            }
           }
 
           // 店舗名が一致するか
@@ -1287,7 +1317,15 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
             if (m && m[1]) fromMemo = m[1];
           }
           const sStoreName = direct || fromMemo;
-          return (sStoreName === '' && name === '') || sStoreName === name;
+          const storeMatch = (sStoreName === '' && name === '') || sStoreName === name;
+          console.log(`→ 店舗名比較: 既存(${sStoreName}) vs 新規(${name}) = ${storeMatch}`);
+          if (!storeMatch) {
+            console.log('→ 店舗名不一致');
+            return false;
+          }
+
+          console.log('✅ 完全一致！更新対象');
+          return true;
         });
 
         if (match) {
