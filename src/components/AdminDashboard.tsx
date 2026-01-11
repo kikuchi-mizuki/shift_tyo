@@ -190,7 +190,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     const result = await addRequest(requestData, supabase);
     if (result.success) {
       setShowAddRequest(false);
-      setNewRequest({ pharmacist_id: '', date: '', time_slot: 'negotiable', start_time: '', end_time: '', priority: 'medium', memo: '' });
+      setNewRequest({ pharmacist_id: '', date: '', time_slot: 'negotiable', start_time: '', end_time: '', memo: '' });
       await reload();
     } else {
       alert(result.message || '追加に失敗しました');

@@ -90,7 +90,6 @@ export const addRequest = async (
     time_slot?: string;
     start_time?: string;
     end_time?: string;
-    priority?: string;
     memo?: string;
   },
   supabase: SupabaseClient
@@ -198,7 +197,6 @@ export const updateRequest = async (
     time_slot: string;
     start_time: string;
     end_time: string;
-    priority: string;
     status: string;
     memo: string;
   }>,

@@ -1026,7 +1026,8 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               memo: memo,
               updated_at: new Date().toISOString()
             })
-            .eq('id', existingRequest.id);
+            .eq('id', existingRequest.id)
+            .select();
 
           if (updateError) {
             console.error('Error updating shift request:', updateError);

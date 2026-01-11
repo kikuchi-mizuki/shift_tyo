@@ -66,7 +66,6 @@ export const useFormState = (): UseFormStateReturn => {
     time_slot: 'negotiable',
     start_time: '',
     end_time: '',
-    priority: 'medium',
     memo: ''
   });
 
