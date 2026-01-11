@@ -11,7 +11,7 @@ interface ActionButtonsProps {
   aiMatchingLoading: boolean;
   onToggleRecruitment: () => void;
   onMonthlyMatching: () => void;
-  onCSVExport?: (type: 'matching' | 'shortage' | 'requests' | 'postings') => void;
+  onCSVExport?: (type: 'matching' | 'shortage' | 'requests' | 'postings' | 'all') => void;
 }
 
 export const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -62,10 +62,19 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
             <div className="absolute left-0 right-0 mt-2 mx-4 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
               <button
                 onClick={() => {
+                  onCSVExport('all');
+                  setShowCSVMenu(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-50 rounded-t-lg"
+              >
+                📊 全データ一覧
+              </button>
+              <button
+                onClick={() => {
                   onCSVExport('matching');
                   setShowCSVMenu(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 rounded-t-lg"
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t"
               >
                 マッチング一覧
               </button>

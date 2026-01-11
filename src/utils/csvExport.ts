@@ -288,3 +288,200 @@ export const exportPostingsCSV = (
   const filename = `募集薬局一覧_${year}年${month}月_${new Date().getTime()}.csv`;
   downloadCSV(csv, filename);
 };
+
+/**
+ * 全データ統合CSV出力
+ * マッチング、不足薬局、応募薬剤師、募集薬局の全てを1つのCSVに出力
+ */
+export const exportAllDataCSV = (
+  assigned: any[],
+  postings: any[],
+  requests: any[],
+  userProfiles: any,
+  year: number,
+  month: number
+) => {
+  const headers = [
+    '種別',
+    '日付',
+    '薬剤師名',
+    '薬剤師メール',
+    '薬局名',
+    '薬局メール',
+    '店舗名',
+    '開始時間',
+    '終了時間',
+    '必要人数',
+    '確定人数',
+    '不足人数',
+    '備考',
+    'ステータス'
+  ];
+
+  const allRows: (string | number)[][] = [];
+
+  // 1. マッチング結果
+  assigned
+    .filter((shift: any) => {
+      const shiftDate = new Date(shift.date);
+      return shiftDate.getFullYear() === year && shiftDate.getMonth() + 1 === month;
+    })
+    .forEach((shift: any) => {
+      const pharmacistProfile = userProfiles[shift.pharmacist_id];
+      const pharmacyProfile = userProfiles[shift.pharmacy_id];
+      const storeName = extractStoreName(shift);
+
+      allRows.push([
+        'マッチング',
+        shift.date,
+        pharmacistProfile?.name || '',
+        pharmacistProfile?.email || '',
+        pharmacyProfile?.name || '',
+        pharmacyProfile?.email || '',
+        storeName,
+        shift.start_time ? String(shift.start_time).substring(0, 5) : '',
+        shift.end_time ? String(shift.end_time).substring(0, 5) : '',
+        '', // 必要人数
+        '', // 確定人数
+        '', // 不足人数
+        '', // 備考
+        shift.status === 'confirmed' ? '確定' : '保留'
+      ]);
+    });
+
+  // 2. 応募薬剤師
+  requests
+    .filter((request: any) => {
+      const requestDate = new Date(request.date);
+      return requestDate.getFullYear() === year && requestDate.getMonth() + 1 === month;
+    })
+    .forEach((request: any) => {
+      const pharmacistProfile = userProfiles[request.pharmacist_id];
+
+      allRows.push([
+        '応募薬剤師',
+        request.date,
+        pharmacistProfile?.name || '',
+        pharmacistProfile?.email || '',
+        '', // 薬局名
+        '', // 薬局メール
+        '', // 店舗名
+        request.start_time ? String(request.start_time).substring(0, 5) : '',
+        request.end_time ? String(request.end_time).substring(0, 5) : '',
+        '', // 必要人数
+        '', // 確定人数
+        '', // 不足人数
+        request.memo || '',
+        request.status === 'confirmed' ? '確定' : request.status === 'pending' ? '保留' : request.status
+      ]);
+    });
+
+  // 3. 募集薬局
+  postings
+    .filter((posting: any) => {
+      const postingDate = new Date(posting.date);
+      return postingDate.getFullYear() === year && postingDate.getMonth() + 1 === month;
+    })
+    .forEach((posting: any) => {
+      const pharmacyProfile = userProfiles[posting.pharmacy_id];
+      const storeName = extractStoreName(posting);
+
+      allRows.push([
+        '募集薬局',
+        posting.date,
+        '', // 薬剤師名
+        '', // 薬剤師メール
+        pharmacyProfile?.name || '',
+        pharmacyProfile?.email || '',
+        storeName,
+        posting.start_time ? String(posting.start_time).substring(0, 5) : '',
+        posting.end_time ? String(posting.end_time).substring(0, 5) : '',
+        posting.required_staff || 1,
+        '', // 確定人数
+        '', // 不足人数
+        posting.memo || '',
+        '' // ステータス
+      ]);
+    });
+
+  // 4. 不足薬局の計算
+  const shortageMap: {[key: string]: {
+    date: string;
+    pharmacy_id: string;
+    store_name: string;
+    time_slot: string;
+    start_time?: string;
+    end_time?: string;
+    required: number;
+    confirmed: number;
+  }} = {};
+
+  postings
+    .filter((posting: any) => {
+      const postingDate = new Date(posting.date);
+      return postingDate.getFullYear() === year && postingDate.getMonth() + 1 === month;
+    })
+    .forEach((posting: any) => {
+      const storeName = extractStoreName(posting);
+      const key = `${posting.date}_${posting.pharmacy_id}_${storeName}_${posting.time_slot}_${posting.start_time || ''}_${posting.end_time || ''}`;
+
+      if (!shortageMap[key]) {
+        shortageMap[key] = {
+          date: posting.date,
+          pharmacy_id: posting.pharmacy_id,
+          store_name: storeName,
+          time_slot: posting.time_slot,
+          start_time: posting.start_time,
+          end_time: posting.end_time,
+          required: 0,
+          confirmed: 0
+        };
+      }
+
+      shortageMap[key].required += posting.required_staff || 1;
+    });
+
+  assigned
+    .filter((shift: any) => {
+      const shiftDate = new Date(shift.date);
+      return shiftDate.getFullYear() === year && shiftDate.getMonth() + 1 === month && shift.status === 'confirmed';
+    })
+    .forEach((shift: any) => {
+      const storeName = extractStoreName(shift);
+      const key = `${shift.date}_${shift.pharmacy_id}_${storeName}_${shift.time_slot}_${shift.start_time || ''}_${shift.end_time || ''}`;
+
+      if (shortageMap[key]) {
+        shortageMap[key].confirmed += 1;
+      }
+    });
+
+  Object.values(shortageMap)
+    .filter(item => item.confirmed < item.required)
+    .forEach(item => {
+      const pharmacyProfile = userProfiles[item.pharmacy_id];
+
+      allRows.push([
+        '不足薬局',
+        item.date,
+        '', // 薬剤師名
+        '', // 薬剤師メール
+        pharmacyProfile?.name || '',
+        pharmacyProfile?.email || '',
+        item.store_name,
+        item.start_time ? String(item.start_time).substring(0, 5) : '',
+        item.end_time ? String(item.end_time).substring(0, 5) : '',
+        item.required,
+        item.confirmed,
+        item.required - item.confirmed,
+        '', // 備考
+        '' // ステータス
+      ]);
+    });
+
+  // 日付でソート
+  allRows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+
+  const csv = arrayToCSV(headers, allRows);
+  const filename = `全データ一覧_${year}年${month}月_${new Date().getTime()}.csv`;
+  downloadCSV(csv, filename);
+};

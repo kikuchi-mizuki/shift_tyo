@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { exportMatchingCSV, exportShortageCSV, exportRequestsCSV, exportPostingsCSV } from '../utils/csvExport';
+import { exportMatchingCSV, exportShortageCSV, exportRequestsCSV, exportPostingsCSV, exportAllDataCSV } from '../utils/csvExport';
 
 // Custom Hooks
 import { useAdminData } from '../hooks/admin/useAdminData';
@@ -217,7 +217,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   };
 
   // CSV出力ハンドラー
-  const handleCSVExport = (type: 'matching' | 'shortage' | 'requests' | 'postings') => {
+  const handleCSVExport = (type: 'matching' | 'shortage' | 'requests' | 'postings' | 'all') => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
 
@@ -233,6 +233,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         break;
       case 'postings':
         exportPostingsCSV(postings, userProfiles, year, month);
+        break;
+      case 'all':
+        exportAllDataCSV(assigned, postings, requests, userProfiles, year, month);
         break;
     }
   };
