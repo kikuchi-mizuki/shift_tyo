@@ -82,12 +82,17 @@ export const PharmacyPostings: React.FC<PharmacyPostingsProps> = ({
                   <option key={id} value={id}>{profile.name || profile.email}</option>
                 ))}
             </select>
-            <input
+            <select
               className="text-xs border rounded px-2 py-1"
               value={newPosting.store_name}
               onChange={(e) => onPostingChange({ ...newPosting, store_name: e.target.value })}
-              placeholder="店舗名（任意）"
-            />
+              disabled={!newPosting.pharmacy_id}
+            >
+              <option value="">店舗名を選択</option>
+              {newPosting.pharmacy_id && userProfiles[newPosting.pharmacy_id]?.store_names?.map((storeName: string, index: number) => (
+                <option key={index} value={storeName}>{storeName}</option>
+              ))}
+            </select>
             <input
               className="text-xs border rounded px-2 py-1"
               type="time"
