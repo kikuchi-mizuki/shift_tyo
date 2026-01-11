@@ -184,7 +184,8 @@ export const executeHistoryBasedMatching = async (
         end_time: selectedPosting.end_time,
         status: 'confirmed',
         matching_algorithm: 'history_based',
-        pharmacist_priority_score: pharmacistHistory.get(request.pharmacist_id)?.priority_score || 0
+        pharmacist_priority_score: pharmacistHistory.get(request.pharmacist_id)?.priority_score || 0,
+        memo: request.memo || ''
       });
       
       usedPharmacists.add(request.pharmacist_id);

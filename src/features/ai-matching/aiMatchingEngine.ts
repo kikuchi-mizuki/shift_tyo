@@ -53,6 +53,7 @@ export interface MatchCandidate {
     start_time: string;
     end_time: string;
   };
+  memo?: string; // 薬剤師の備考
 }
 
 export class AIMatchingEngine {
@@ -233,7 +234,8 @@ export class AIMatchingEngine {
                 start_time: posting.start_time,
                 end_time: posting.end_time,
                 store_name: posting.store_name || ''
-              }
+              },
+              memo: request.memo || '' // 薬剤師の備考を追加
             };
             
               candidates.push(candidate);

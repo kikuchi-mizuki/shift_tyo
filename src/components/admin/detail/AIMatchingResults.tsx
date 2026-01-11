@@ -176,6 +176,11 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
                   <div className="text-gray-600">
                     {startTime} - {endTime}
                   </div>
+                  {match.memo && (
+                    <div className="text-[11px] text-gray-600 mt-1 bg-gray-50 border border-gray-200 rounded px-2 py-1">
+                      <span className="font-medium text-gray-700">備考:</span> {match.memo}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right ml-2">
                   <div className="text-purple-600 font-medium mb-1">

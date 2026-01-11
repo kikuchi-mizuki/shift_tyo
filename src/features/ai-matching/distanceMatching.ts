@@ -327,7 +327,7 @@ export const generateDistanceBasedMatches = async (
               end_time: posting.end_time,
               status: 'confirmed',
               store_name: posting.store_name || '',
-              memo: `Distance-based matching (pharmacy): ${distanceScore.toFixed(2)} score`,
+              memo: request.memo || '',
               compatibility_score: distanceScore,
               distance_score: distanceScore,
               algorithm: 'distance_based'
@@ -349,7 +349,7 @@ export const generateDistanceBasedMatches = async (
         };
         
         const distanceScore = await calculateDistanceScore(pharmacistLocation, pharmacyLocation);
-        
+
         if (distanceScore > 0.3) {
           scoredMatches.push({
             match: {
@@ -361,7 +361,7 @@ export const generateDistanceBasedMatches = async (
               end_time: posting.end_time,
               status: 'confirmed',
               store_name: posting.store_name || '',
-              memo: `Distance-based matching (store): ${distanceScore.toFixed(2)} score`,
+              memo: request.memo || '',
               compatibility_score: distanceScore,
               distance_score: distanceScore
             },
