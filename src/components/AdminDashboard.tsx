@@ -292,20 +292,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       )}
 
       {/* メインレイアウト */}
-      <div className="flex flex-col gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
+      <div className="flex flex-col gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6 max-w-[1920px] mx-auto">
         {/* カレンダーと管理パネル */}
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
           {/* カレンダー */}
-          <AdminCalendar
-            currentDate={currentDate}
-            selectedDate={selectedDate}
-            requests={requests}
-            postings={postings}
-            assigned={assigned}
-            onPrevMonth={handlePrevMonth}
-            onNextMonth={handleNextMonth}
-            onDateSelect={onDateSelect}
-          />
+          <div className="w-full lg:max-w-[800px]">
+            <AdminCalendar
+              currentDate={currentDate}
+              selectedDate={selectedDate}
+              requests={requests}
+              postings={postings}
+              assigned={assigned}
+              onPrevMonth={handlePrevMonth}
+              onNextMonth={handleNextMonth}
+              onDateSelect={onDateSelect}
+            />
+          </div>
 
           {/* 管理パネル */}
           <AdminPanel
