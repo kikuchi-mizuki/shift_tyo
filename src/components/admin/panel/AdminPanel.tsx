@@ -35,7 +35,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   dateDetailProps
 }) => {
   return (
-    <div className="w-full lg:w-80 xl:w-96 flex flex-col h-[800px]">
+    <div className="w-full lg:w-96 xl:w-[480px] flex flex-col h-[800px]">
       <PanelHeader
         onPasswordChange={onPasswordChange}
       />

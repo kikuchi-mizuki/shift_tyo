@@ -26,7 +26,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   return (
     <div className="p-2 pb-0 flex-shrink-0">
       {/* 1ヶ月分のシフト自動組み */}
-      <div className="bg-white rounded-lg shadow p-2 mb-2">
+      <div className="mb-2">
         <button
           onClick={onMonthlyMatching}
           disabled={aiMatchingLoading}
@@ -48,7 +48,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 
       {/* CSV出力 */}
       {onCSVExport && (
-        <div className="bg-white rounded-lg shadow p-2 mb-2 relative">
+        <div className="mb-2 relative">
           <button
             onClick={() => setShowCSVMenu(!showCSVMenu)}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium flex items-center justify-center gap-2"
@@ -59,7 +59,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           </button>
 
           {showCSVMenu && (
-            <div className="absolute left-0 right-0 mt-2 mx-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-10">
               <button
                 onClick={() => {
                   onCSVExport('all');
@@ -111,7 +111,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       )}
 
       {/* 募集管理 */}
-      <div className="bg-white rounded-lg shadow p-2 mb-2">
+      <div className="mb-2">
         <button
           onClick={onToggleRecruitment}
           className={`w-full py-1.5 px-3 rounded text-sm ${
