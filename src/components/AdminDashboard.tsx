@@ -296,7 +296,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         {/* カレンダーと管理パネル */}
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 max-w-[1920px] mx-auto w-full justify-center">
           {/* カレンダー */}
-          <div className="w-full lg:w-auto lg:max-w-[800px]">
+          <div className="w-full lg:w-auto lg:max-w-[1000px]">
             <AdminCalendar
               currentDate={currentDate}
               selectedDate={selectedDate}
