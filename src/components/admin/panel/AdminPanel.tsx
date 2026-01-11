@@ -49,7 +49,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       />
 
       {/* スクロール可能な詳細エリア */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 pt-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-2 pt-2 space-y-2">
         {/* 選択された日付の詳細表示 */}
         {selectedDate && dateDetailProps && (
           <DateDetailPanel {...dateDetailProps} />
