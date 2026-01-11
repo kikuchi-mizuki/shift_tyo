@@ -30,7 +30,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   dateDetailProps
 }) => {
   return (
-    <div className="w-full lg:w-96 xl:w-[560px] flex flex-col h-[800px]">
+    <div className="w-full lg:w-[480px] flex flex-col h-[800px] flex-shrink-0">
       <ActionButtons
         recruitmentStatus={recruitmentStatus}
         aiMatchingLoading={aiMatchingLoading}
