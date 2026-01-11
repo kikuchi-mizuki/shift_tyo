@@ -292,7 +292,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       )}
 
       {/* メインレイアウト */}
-      <div className="flex flex-col gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6 max-w-[1920px] mx-auto">
+      <div className="flex flex-col gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6 max-w-[1600px] mx-auto">
         {/* カレンダーと管理パネル */}
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 w-full">
           {/* カレンダー */}

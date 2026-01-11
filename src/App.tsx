@@ -235,7 +235,7 @@ function AppContent() {
       
       {/* ヘッダー */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center py-4 sm:h-16 space-y-2 sm:space-y-0">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
@@ -288,7 +288,7 @@ function AppContent() {
       </header>
 
       {/* メインコンテンツ */}
-      <main className="max-w-[1920px] mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-[1600px] mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         <AppErrorBoundary>
           <React.Suspense fallback={
             <div className="p-6">
