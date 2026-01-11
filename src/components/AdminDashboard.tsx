@@ -158,8 +158,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const handleAddPosting = async () => {
     const postingData = {
       ...newPosting,
-      date: selectedDate,
-      created_by: user.id
+      date: selectedDate
     };
     const result = await addPosting(postingData, supabase);
     if (result.success) {
