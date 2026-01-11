@@ -1046,7 +1046,8 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
               end_time: endTimeFormatted,
               memo: memo,
               status: 'pending'
-            });
+            })
+            .select();
 
           if (insertError) {
             console.error('Error creating shift request:', insertError);
