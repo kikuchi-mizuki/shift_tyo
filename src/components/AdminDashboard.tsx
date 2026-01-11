@@ -292,11 +292,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       )}
 
       {/* メインレイアウト */}
-      <div className="flex flex-col gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6 max-w-[1920px] mx-auto">
+      <div className="flex flex-col gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         {/* カレンダーと管理パネル */}
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 max-w-[1920px] mx-auto w-full justify-center">
           {/* カレンダー */}
-          <div className="w-full lg:max-w-[800px]">
+          <div className="w-full lg:w-auto lg:max-w-[800px]">
             <AdminCalendar
               currentDate={currentDate}
               selectedDate={selectedDate}
@@ -356,7 +356,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         </div>
 
         {/* ユーザー管理（カレンダーの下） */}
-        <div className="w-full">
+        <div className="w-full max-w-[1920px] mx-auto">
           <UserManagement
             pharmacies={pharmacies}
             pharmacists={pharmacists}
