@@ -50,7 +50,7 @@ export const useFormState = (): UseFormStateReturn => {
   const [newPosting, setNewPosting] = useState<any>({
     pharmacy_id: '',
     date: '',
-    time_slot: 'negotiable',
+    time_slot: 'fullday',
     start_time: '',
     end_time: '',
     required_staff: 1,
@@ -63,7 +63,7 @@ export const useFormState = (): UseFormStateReturn => {
   const [newRequest, setNewRequest] = useState<any>({
     pharmacist_id: '',
     date: '',
-    time_slot: 'negotiable',
+    time_slot: 'fullday',
     start_time: '',
     end_time: '',
     memo: ''
