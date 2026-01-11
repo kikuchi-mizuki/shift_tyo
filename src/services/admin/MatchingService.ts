@@ -348,7 +348,8 @@ export const executeSimpleAIMatching = async (
           flexibility: 0
         },
         compatibilityScore: match.pharmacistRating / 5,
-        reasons: [`評価${match.pharmacistRating}`, `優先度${match.priority}`, '時間範囲適合']
+        reasons: [`評価${match.pharmacistRating}`, `優先度${match.priority}`, '時間範囲適合'],
+        memo: match.request.memo || '' // 薬剤師の備考を追加
       });
 
       // 状態更新
@@ -684,7 +685,8 @@ export const performMatchingAnalysis = (
         start_time: matchedPharmacies[index].start_time,
         end_time: matchedPharmacies[index].end_time,
         store_name: storeName
-      }
+      },
+      memo: pharmacist.memo || '' // 薬剤師の備考を追加
     };
   });
 
@@ -853,7 +855,7 @@ export const executeAIMatching = async (
             end_time: match.timeSlot?.end || '18:00:00',
             status: 'pending',
             store_name: storeName,
-            memo: `AIマッチング: ${match.compatibilityScore.toFixed(2)} score - ${match.reasons.join(', ')}`
+            memo: match.memo || '' // 薬剤師の備考を保持
           };
         });
 
