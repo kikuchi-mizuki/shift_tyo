@@ -368,16 +368,45 @@ export const analyzePharmacyShortage = (
     const pharmacyId = match.pharmacy?.id || match.pharmacy_id;
     // 店舗名を正しく取得（match.pharmacy.store_name, match.store_name, またはpostingから）
     let storeName = match.pharmacy?.store_name || match.store_name;
-    if (!storeName) {
-      const matchingPosting = dayPostings.find(p => p.pharmacy_id === pharmacyId);
-      storeName = matchingPosting?.store_name || '店舗名なし';
+
+    // 時間帯を取得（複数のソースから試行）
+    let startTime = '09:00';
+    let endTime = '18:00';
+
+    // 1. match.posting から取得（AIマッチング結果の場合）
+    if (match.posting?.start_time && match.posting?.end_time) {
+      startTime = String(match.posting.start_time).substring(0, 5);
+      endTime = String(match.posting.end_time).substring(0, 5);
     }
-    // 時間帯を取得
-    const startTime = match.start_time ? String(match.start_time).substring(0, 5) : '09:00';
-    const endTime = match.end_time ? String(match.end_time).substring(0, 5) : '18:00';
+    // 2. match直下の start_time/end_time から取得（assigned_shiftsの場合）
+    else if (match.start_time && match.end_time) {
+      startTime = String(match.start_time).substring(0, 5);
+      endTime = String(match.end_time).substring(0, 5);
+    }
+    // 3. match.timeSlot から取得
+    else if (match.timeSlot?.start && match.timeSlot?.end) {
+      startTime = String(match.timeSlot.start).substring(0, 5);
+      endTime = String(match.timeSlot.end).substring(0, 5);
+    }
+    // 4. 対応する募集から取得（最終手段）
+    else {
+      const matchingPosting = dayPostings.find(p =>
+        p.pharmacy_id === pharmacyId &&
+        (p.store_name === storeName || storeName === '店舗名なし')
+      );
+      if (matchingPosting) {
+        startTime = matchingPosting.start_time ? String(matchingPosting.start_time).substring(0, 5) : '09:00';
+        endTime = matchingPosting.end_time ? String(matchingPosting.end_time).substring(0, 5) : '18:00';
+        if (!storeName || storeName === '店舗名なし') {
+          storeName = matchingPosting.store_name || '店舗名なし';
+        }
+      }
+    }
+
     const uniqueKey = `${pharmacyId}_${storeName}_${startTime}_${endTime}`;
 
     console.log(`  - マッチ: pharmacyId=${pharmacyId}, storeName=${storeName}, time=${startTime}-${endTime}, uniqueKey=${uniqueKey}`);
+    console.log(`    match object keys:`, Object.keys(match));
     if (pharmacyNeeds[uniqueKey]) {
       pharmacyNeeds[uniqueKey].matched++;
       console.log(`    ✓ matched++, 現在=${pharmacyNeeds[uniqueKey].matched}`);
