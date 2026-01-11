@@ -4,14 +4,10 @@
  */
 
 import React from 'react';
-import { PanelHeader } from './PanelHeader';
 import { ActionButtons } from './ActionButtons';
 import { DateDetailPanel } from '../detail/DateDetailPanel';
 
 interface AdminPanelProps {
-  // ヘッダー関連
-  onPasswordChange: () => void;
-
   // アクションボタン関連
   recruitmentStatus: any;
   aiMatchingLoading: boolean;
@@ -25,7 +21,6 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
-  onPasswordChange,
   recruitmentStatus,
   aiMatchingLoading,
   onToggleRecruitment,
@@ -35,11 +30,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   dateDetailProps
 }) => {
   return (
-    <div className="w-full lg:w-96 xl:w-[480px] flex flex-col h-[800px]">
-      <PanelHeader
-        onPasswordChange={onPasswordChange}
-      />
-
+    <div className="w-full lg:w-96 xl:w-[560px] flex flex-col h-[800px]">
       <ActionButtons
         recruitmentStatus={recruitmentStatus}
         aiMatchingLoading={aiMatchingLoading}

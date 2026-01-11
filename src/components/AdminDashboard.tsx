@@ -309,7 +309,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
           {/* 管理パネル */}
           <AdminPanel
-            onPasswordChange={() => setShowPasswordChangeModal(true)}
             recruitmentStatus={recruitmentStatus}
             aiMatchingLoading={aiMatchingLoading}
             onToggleRecruitment={toggleRecruitmentStatus}

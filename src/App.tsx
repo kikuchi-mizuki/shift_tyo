@@ -53,6 +53,7 @@ import { AdminLoginForm } from './components/AdminLoginForm';
 import { UserTypeSwitcher } from './components/UserTypeSwitcher';
 import { PasswordResetRequest } from './components/PasswordResetRequest';
 import { PasswordResetComplete } from './components/PasswordResetComplete';
+import PasswordChangeModal from './components/PasswordChangeModal';
 
 // エラーバウンダリーコンポーネント
 class AppErrorBoundary extends Component<
@@ -144,6 +145,7 @@ class AppErrorBoundary extends Component<
 function AppContent() {
   const { currentUserType, getCurrentUser, activeSessions } = useMultiUserAuth();
   const [showPasswordReset, setShowPasswordReset] = React.useState(false);
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = React.useState(false);
 
   // URLパスから画面を判定（SSRガード付き）
   const currentPath = typeof window !== 'undefined' ? window.location?.pathname : '/';
@@ -252,6 +254,14 @@ function AppContent() {
               <span className="text-xs sm:text-sm text-gray-500">
                 {effectiveUserType === 'pharmacist' ? '薬剤師' : effectiveUserType === 'pharmacy' ? '薬局' : effectiveUserType === 'admin' ? '管理' : 'ユーザー'}
               </span>
+              {effectiveUserType === 'admin' && (
+                <button
+                  onClick={() => setShowPasswordChangeModal(true)}
+                  className="text-xs sm:text-sm text-gray-600 hover:text-purple-600 px-2 py-1"
+                >
+                  パスワード変更
+                </button>
+              )}
               <button
                 onClick={async () => {
                   try {
@@ -278,7 +288,7 @@ function AppContent() {
       </header>
 
       {/* メインコンテンツ */}
-      <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-[1920px] mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         <AppErrorBoundary>
           <React.Suspense fallback={
             <div className="p-6">
@@ -312,6 +322,15 @@ function AppContent() {
           </React.Suspense>
         </AppErrorBoundary>
       </main>
+
+      {/* パスワード変更モーダル */}
+      {showPasswordChangeModal && currentSession && (
+        <PasswordChangeModal
+          isOpen={showPasswordChangeModal}
+          user={currentSession}
+          onClose={() => setShowPasswordChangeModal(false)}
+        />
+      )}
     </div>
   );
 }
