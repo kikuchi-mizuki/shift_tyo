@@ -262,14 +262,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const requestDateStr = String(r.date);
         let requestDateOnly = requestDateStr.split('T')[0].split(' ')[0];
 
-        // 日付を解析してYYYY-MM-DD形式に正規化
-        try {
-          const parsedDate = new Date(requestDateOnly);
-          if (!isNaN(parsedDate.getTime())) {
-            requestDateOnly = parsedDate.toISOString().split('T')[0];
-          }
-        } catch (e) {
-          // 解析失敗時は元の文字列を使用
+        // YYYY-M-D形式をYYYY-MM-DD形式に正規化（ゼロ埋め、タイムゾーン変換なし）
+        const dateParts = requestDateOnly.split('-');
+        if (dateParts.length === 3) {
+          const year = dateParts[0];
+          const month = dateParts[1].padStart(2, '0');
+          const day = dateParts[2].padStart(2, '0');
+          requestDateOnly = `${year}-${month}-${day}`;
         }
 
         return requestDateOnly === selectedDate;
