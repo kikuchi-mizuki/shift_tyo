@@ -258,11 +258,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const dateFiltered = (requests || []).filter((r: any) => {
         if (!r.date) return false;
 
-        // r.dateをString型に変換して比較
+        // 日付を標準化して比較（YYYY-MM-DD形式）
         const requestDateStr = String(r.date);
+        let requestDateOnly = requestDateStr.split('T')[0].split(' ')[0];
 
-        // YYYY-MM-DD形式で比較（時刻部分を除去）
-        const requestDateOnly = requestDateStr.split('T')[0].split(' ')[0];
+        // 日付を解析してYYYY-MM-DD形式に正規化
+        try {
+          const parsedDate = new Date(requestDateOnly);
+          if (!isNaN(parsedDate.getTime())) {
+            requestDateOnly = parsedDate.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          // 解析失敗時は元の文字列を使用
+        }
 
         return requestDateOnly === selectedDate;
       });

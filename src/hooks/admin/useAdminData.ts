@@ -198,7 +198,22 @@ export const useAdminData = (
 
       console.log('🔍 DEBUG: Total shift_requests fetched:', requestsData?.length || 0);
 
-      // 3月2日のデータを確認
+      // 全データのサンプルを確認
+      console.log('🔍 DEBUG: Sample of ALL data (first 10):', requestsData?.slice(0, 10).map((r: any) => ({
+        id: r.id.substring(0, 8),
+        date: r.date,
+        dateType: typeof r.date,
+        dateRaw: JSON.stringify(r.date)
+      })));
+
+      // 3月のデータを確認
+      const marchData = requestsData?.filter((r: any) => {
+        const dateStr = String(r.date);
+        return dateStr.includes('2026-03');
+      });
+      console.log('🔍 DEBUG: March data count:', marchData?.length || 0);
+
+      // 3月2日のデータを確認（複数の方法で）
       const march2Data = requestsData?.filter((r: any) => {
         const dateStr = String(r.date);
         return dateStr === '2026-03-02' || dateStr.startsWith('2026-03-02');
