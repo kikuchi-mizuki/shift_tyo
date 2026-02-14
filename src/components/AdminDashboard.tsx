@@ -254,18 +254,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('🔍 AdminDashboard: Total requests:', (requests || []).length);
       console.log('🔍 AdminDashboard: Selected date:', selectedDate, 'type:', typeof selectedDate);
 
-      // デバッグ：全リクエストの日付サンプルを確認
-      const dateSamples = (requests || []).slice(0, 10).map((r: any) => ({
-        date: r.date,
-        dateType: typeof r.date,
-        matches: r.date === selectedDate,
-        strictEqual: r.date === selectedDate,
-        looseEqual: r.date == selectedDate
-      }));
-      console.log('🔍 AdminDashboard: Date samples from all requests:', dateSamples);
+      // 日付でフィルタ（より寛容な比較）
+      const dateFiltered = (requests || []).filter((r: any) => {
+        if (!r.date) return false;
 
-      // 日付でフィルタ
-      const dateFiltered = (requests || []).filter((r: any) => r.date === selectedDate);
+        // r.dateをString型に変換して比較
+        const requestDateStr = String(r.date);
+
+        // YYYY-MM-DD形式で比較（時刻部分を除去）
+        const requestDateOnly = requestDateStr.split('T')[0].split(' ')[0];
+
+        return requestDateOnly === selectedDate;
+      });
+
+      console.log('🔍 AdminDashboard: After date filter:', dateFiltered.length);
+      console.log('🔍 AdminDashboard: Filtered dates:', dateFiltered.map(r => String(r.date).substring(0, 10)));
       console.log('🔍 AdminDashboard: After date filter:', dateFiltered.length);
       console.log('🔍 AdminDashboard: Date filtered data:', dateFiltered.map((r: any) => ({
         id: r.id.substring(0, 8),
