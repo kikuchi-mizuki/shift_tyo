@@ -252,17 +252,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     postings: (postings || []).filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult'),
     requests: (() => {
       const filtered = (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult' && r.status !== 'confirmed');
+      console.log('DEBUG: Filtered requests before deduplication:', filtered.length, filtered.map((r: any) => ({
+        id: r.id,
+        pharmacist_id: r.pharmacist_id,
+        start_time: r.start_time,
+        end_time: r.end_time,
+        date: r.date,
+        status: r.status,
+        time_slot: r.time_slot
+      })));
+
       // 重複除去: 薬剤師ID + 開始時間 + 終了時間でユニーク化
       const seen = new Map<string, any>();
       filtered.forEach((r: any) => {
         const startTime = r.start_time ? String(r.start_time).substring(0, 5) : '';
         const endTime = r.end_time ? String(r.end_time).substring(0, 5) : '';
         const key = `${r.pharmacist_id}_${startTime}_${endTime}`;
+        console.log('DEBUG: Processing request - pharmacist_id:', r.pharmacist_id, 'key:', key, 'already seen:', seen.has(key));
         if (!seen.has(key)) {
           seen.set(key, r);
+        } else {
+          console.log('DEBUG: Duplicate found - skipping request:', r.id);
         }
       });
-      return Array.from(seen.values());
+
+      const result = Array.from(seen.values());
+      console.log('DEBUG: Final deduplicated requests:', result.length, result.map((r: any) => ({
+        id: r.id,
+        pharmacist_id: r.pharmacist_id
+      })));
+      return result;
     })(),
     consultRequests: (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot === 'consult')
   } : null;
