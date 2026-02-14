@@ -224,6 +224,7 @@ export const useAdminData = (
         return dateStr === '2026-03-02' || dateStr.startsWith('2026-03-02');
       });
       console.log('🔍 DEBUG: March 2nd data count in useAdminData:', march2Data?.length || 0);
+      console.log('🔍 DEBUG: March 2nd actual data:', JSON.stringify(march2Data, null, 2));
 
       setRequests(requestsData || []);
 
