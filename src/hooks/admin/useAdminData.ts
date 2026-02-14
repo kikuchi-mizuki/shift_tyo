@@ -145,17 +145,31 @@ export const useAdminData = (
 
       // 現在のユーザー情報を確認
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('👤 現在ログイン中のユーザーID:', user?.id);
 
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('id', user.id)
           .single();
 
+        console.log('👤 user_profilesのデータ:', profile);
+        console.log('👤 user_type:', profile?.user_type);
+        console.log('👤 profileエラー:', profileError);
+
+        if (profileError) {
+          console.error('❌ user_profilesの取得エラー:', profileError);
+        }
+
         if (profile?.user_type !== 'admin') {
           console.warn('⚠️ 警告: 管理者ではありません! user_type=' + profile?.user_type);
+          console.warn('⚠️ プロフィール全体:', JSON.stringify(profile, null, 2));
+        } else {
+          console.log('✅ 管理者として認証されています');
         }
+      } else {
+        console.error('❌ ユーザー情報が取得できません');
       }
 
       // 募集状況を読み込み
