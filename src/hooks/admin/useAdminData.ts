@@ -198,10 +198,18 @@ export const useAdminData = (
 
       console.log('🔍 DEBUG: Total shift_requests fetched:', requestsData?.length || 0);
 
-      // 3月のデータを確認
+      // デバッグ: 最初の5件のdateフィールドを確認
+      if (requestsData && requestsData.length > 0) {
+        console.log('🔍 DEBUG: Sample dates (first 5):');
+        requestsData.slice(0, 5).forEach((r: any, i: number) => {
+          console.log(`  ${i + 1}. date:`, r.date, 'typeof:', typeof r.date);
+        });
+      }
+
+      // 3月のデータを確認（修正版: startsWith を使用）
       const marchData = requestsData?.filter((r: any) => {
         const dateStr = String(r.date);
-        return dateStr.includes('2026-03');
+        return dateStr.startsWith('2026-03');
       });
       console.log('🔍 DEBUG: March data count:', marchData?.length || 0);
 
@@ -218,7 +226,7 @@ export const useAdminData = (
       });
       console.log('🔍 DEBUG: March dates count:', dateCount);
 
-      // 3月2日のデータを確認（複数の方法で）
+      // 3月2日のデータを確認（修正版）
       const march2Data = requestsData?.filter((r: any) => {
         const dateStr = String(r.date);
         return dateStr === '2026-03-02' || dateStr.startsWith('2026-03-02');
