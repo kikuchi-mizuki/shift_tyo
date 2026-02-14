@@ -282,22 +282,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // time_slotでフィルタ
       const filtered = dateFiltered.filter((r: any) => r.time_slot !== 'consult');
       console.log('🔍 AdminDashboard: After time_slot filter:', filtered.length);
+      console.log('🔍 AdminDashboard: Final result (no deduplication):', filtered.length);
 
-      // 重複除去: 薬剤師ID + 開始時間 + 終了時間でユニーク化
-      const seen = new Map<string, any>();
-      filtered.forEach((r: any) => {
-        const startTime = r.start_time ? String(r.start_time).substring(0, 5) : '';
-        const endTime = r.end_time ? String(r.end_time).substring(0, 5) : '';
-        const key = `${r.pharmacist_id}_${startTime}_${endTime}`;
-        console.log('🔍 AdminDashboard: Checking key:', key, 'exists:', seen.has(key));
-        if (!seen.has(key)) {
-          seen.set(key, r);
-        }
-      });
-
-      const result = Array.from(seen.values());
-      console.log('🔍 AdminDashboard: Final result:', result.length);
-      return result;
+      return filtered;
     })(),
     consultRequests: (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot === 'consult')
   } : null;
