@@ -251,11 +251,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     confirmedShifts: (assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed'),
     postings: (postings || []).filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult'),
     requests: (() => {
+      console.log('🔍 AdminDashboard: Total requests:', (requests || []).length);
+      console.log('🔍 AdminDashboard: Selected date:', selectedDate);
+
       // 日付でフィルタ
       const dateFiltered = (requests || []).filter((r: any) => r.date === selectedDate);
+      console.log('🔍 AdminDashboard: After date filter:', dateFiltered.length);
+      console.log('🔍 AdminDashboard: Date filtered data:', dateFiltered.map((r: any) => ({
+        id: r.id.substring(0, 8),
+        pharmacist_id: r.pharmacist_id.substring(0, 8),
+        time_slot: r.time_slot,
+        start_time: r.start_time,
+        end_time: r.end_time
+      })));
 
       // time_slotでフィルタ
       const filtered = dateFiltered.filter((r: any) => r.time_slot !== 'consult');
+      console.log('🔍 AdminDashboard: After time_slot filter:', filtered.length);
 
       // 重複除去: 薬剤師ID + 開始時間 + 終了時間でユニーク化
       const seen = new Map<string, any>();
@@ -263,12 +275,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         const startTime = r.start_time ? String(r.start_time).substring(0, 5) : '';
         const endTime = r.end_time ? String(r.end_time).substring(0, 5) : '';
         const key = `${r.pharmacist_id}_${startTime}_${endTime}`;
+        console.log('🔍 AdminDashboard: Checking key:', key, 'exists:', seen.has(key));
         if (!seen.has(key)) {
           seen.set(key, r);
         }
       });
 
-      return Array.from(seen.values());
+      const result = Array.from(seen.values());
+      console.log('🔍 AdminDashboard: Final result:', result.length);
+      return result;
     })(),
     consultRequests: (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot === 'consult')
   } : null;

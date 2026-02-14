@@ -182,6 +182,16 @@ export const useAdminData = (
         console.error('❌ Error loading shift requests:', requestsError);
       }
 
+      console.log('🔍 DEBUG: Total shift_requests fetched:', requestsData?.length || 0);
+      console.log('🔍 DEBUG: Sample data (first 3):', requestsData?.slice(0, 3).map((r: any) => ({
+        id: r.id.substring(0, 8),
+        pharmacist_id: r.pharmacist_id.substring(0, 8),
+        date: r.date,
+        time_slot: r.time_slot,
+        start_time: r.start_time,
+        end_time: r.end_time
+      })));
+
       setRequests(requestsData || []);
 
       // シフト募集を読み込み
