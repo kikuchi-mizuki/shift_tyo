@@ -92,6 +92,14 @@ npm run dev
 
 ## 📖 ドキュメント
 
+### 📘 アプリケーション仕様書
+
+**[📚 詳細な仕様書を見る（GitHub Pages）](https://kikuchi-mizuki.github.io/shift_tyo/)**
+
+画面構成、機能詳細、技術スタック、データベース構造などの包括的なドキュメント
+
+### 📝 開発ドキュメント
+
 - **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Edge Functionのデプロイ手順
 - **[SETUP_DATABASE.md](./SETUP_DATABASE.md)** - データベースのセットアップ
 - **[LINE_INTEGRATION_SETUP.md](./LINE_INTEGRATION_SETUP.md)** - LINE連携の設定方法
