@@ -153,6 +153,15 @@ function AppContent() {
   const isPasswordResetPath = currentPath === '/password-reset' || currentPath?.startsWith('/password-reset/');
   const isResetPasswordPath = currentPath === '/reset-password' || currentPath?.startsWith('/reset-password/');
 
+  // デバッグログ
+  React.useEffect(() => {
+    console.log('🔍 DEBUG: currentPath:', currentPath);
+    console.log('🔍 DEBUG: window.location.pathname:', window.location.pathname);
+    console.log('🔍 DEBUG: window.location.href:', window.location.href);
+    console.log('🔍 DEBUG: isAdminLoginPath:', isAdminLoginPath);
+    console.log('🔍 DEBUG: activeSessions.length:', activeSessions.length);
+  }, [currentPath, isAdminLoginPath, activeSessions.length]);
+
   // アプリケーション起動時の診断
   useEffect(() => {
     // 前回のエラーレポートを確認

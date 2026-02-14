@@ -187,10 +187,14 @@ export const useAdminData = (
         setAssigned(assignedData || []);
       }
 
-      // シフト希望を読み込み
+      // シフト希望を読み込み（2026年1月〜12月のデータに限定）
+      const currentYear = currentDate.getFullYear();
       const { data: requestsData, error: requestsError } = await supabase
         .from('shift_requests')
-        .select('*');
+        .select('*')
+        .gte('date', `${currentYear}-01-01`)
+        .lte('date', `${currentYear}-12-31`)
+        .order('date', { ascending: true });
 
       if (requestsError) {
         console.error('❌ Error loading shift requests:', requestsError);

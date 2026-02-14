@@ -103,6 +103,10 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, 
         await addSession(data.user, 'admin');
 
         setError('');
+
+        // セッションが確実に保存されるまで少し待つ
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         onLoginSuccess();
       }
     } catch (error) {
