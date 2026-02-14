@@ -118,9 +118,18 @@ export const useAdminData = (
         return;
       }
 
+      // 表示中の月の範囲を計算
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const nextMo = currentDate.getMonth() === 11 ? 1 : currentDate.getMonth() + 2;
+      const nextYear = currentDate.getMonth() === 11 ? year + 1 : year;
+      const nextMoStr = String(nextMo).padStart(2, '0');
+
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
         .select('*')
+        .gte('date', `${year}-${month}-01`)
+        .lt('date', `${nextYear}-${nextMoStr}-01`)
         .order('created_at', { ascending: false });
 
       if (assignedError) {
@@ -133,7 +142,7 @@ export const useAdminData = (
       console.error('Error in loadAssignedShifts:', error);
       setAssigned([]);
     }
-  }, [supabase]);
+  }, [supabase, currentDate]);
 
   /**
    * 全データを読み込む
@@ -175,10 +184,19 @@ export const useAdminData = (
       // 募集状況を読み込み
       await loadRecruitmentStatus();
 
-      // 確定シフトを読み込み
+      // 表示中の月の範囲を計算
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const nextMonth = currentDate.getMonth() === 11 ? 1 : currentDate.getMonth() + 2;
+      const nextMonthYear = currentDate.getMonth() === 11 ? currentYear + 1 : currentYear;
+      const nextMonthStr = String(nextMonth).padStart(2, '0');
+
+      // 確定シフトを読み込み（表示中の月のみ）
       const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_shifts')
-        .select('*');
+        .select('*')
+        .gte('date', `${currentYear}-${currentMonth}-01`)
+        .lt('date', `${nextMonthYear}-${nextMonthStr}-01`);
 
       if (assignedError) {
         console.error('Error loading assigned shifts:', assignedError);
@@ -187,13 +205,12 @@ export const useAdminData = (
         setAssigned(assignedData || []);
       }
 
-      // シフト希望を読み込み（2026年1月〜12月のデータに限定）
-      const currentYear = currentDate.getFullYear();
+      // シフト希望を読み込み（表示中の月のみ取得してパフォーマンス向上）
       const { data: requestsData, error: requestsError } = await supabase
         .from('shift_requests')
         .select('*')
-        .gte('date', `${currentYear}-01-01`)
-        .lte('date', `${currentYear}-12-31`)
+        .gte('date', `${currentYear}-${currentMonth}-01`)
+        .lt('date', `${nextMonthYear}-${nextMonthStr}-01`)
         .order('date', { ascending: true });
 
       if (requestsError) {
@@ -202,8 +219,14 @@ export const useAdminData = (
 
       setRequests(requestsData || []);
 
-      // シフト募集を読み込み
-      const { data: postingsData } = await shiftPostings.getPostings('', 'admin' as any);
+      // シフト募集を読み込み（表示中の月のみ）
+      const { data: postingsData } = await supabase
+        .from('shift_postings')
+        .select('*')
+        .gte('date', `${currentYear}-${currentMonth}-01`)
+        .lt('date', `${nextMonthYear}-${nextMonthStr}-01`)
+        .order('date', { ascending: true });
+
       setPostings(postingsData || []);
 
       // ユーザーIDを収集
