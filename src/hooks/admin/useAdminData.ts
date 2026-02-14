@@ -200,44 +200,6 @@ export const useAdminData = (
         console.error('❌ Error loading shift requests:', requestsError);
       }
 
-      console.log('🔍 DEBUG: Total shift_requests fetched:', requestsData?.length || 0);
-
-      // デバッグ: 最初の5件のdateフィールドを確認
-      if (requestsData && requestsData.length > 0) {
-        console.log('🔍 DEBUG: Sample dates (first 5):');
-        requestsData.slice(0, 5).forEach((r: any, i: number) => {
-          console.log(`  ${i + 1}. date:`, r.date, 'typeof:', typeof r.date);
-        });
-      }
-
-      // 3月のデータを確認（修正版: startsWith を使用）
-      const marchData = requestsData?.filter((r: any) => {
-        const dateStr = String(r.date);
-        return dateStr.startsWith('2026-03');
-      });
-      console.log('🔍 DEBUG: March data count:', marchData?.length || 0);
-
-      // 3月の全日付を表示
-      const marchDates = marchData?.map((r: any) => String(r.date).split('T')[0]);
-      const uniqueMarchDates = [...new Set(marchDates)].sort();
-      console.log('🔍 DEBUG: Unique March dates:', uniqueMarchDates);
-
-      // 各日付ごとの件数を表示
-      const dateCount: Record<string, number> = {};
-      marchData?.forEach((r: any) => {
-        const dateStr = String(r.date).split('T')[0];
-        dateCount[dateStr] = (dateCount[dateStr] || 0) + 1;
-      });
-      console.log('🔍 DEBUG: March dates count:', dateCount);
-
-      // 3月2日のデータを確認（修正版）
-      const march2Data = requestsData?.filter((r: any) => {
-        const dateStr = String(r.date);
-        return dateStr === '2026-03-02' || dateStr.startsWith('2026-03-02');
-      });
-      console.log('🔍 DEBUG: March 2nd data count in useAdminData:', march2Data?.length || 0);
-      console.log('🔍 DEBUG: March 2nd actual data:', JSON.stringify(march2Data, null, 2));
-
       setRequests(requestsData || []);
 
       // シフト募集を読み込み
