@@ -198,14 +198,6 @@ export const useAdminData = (
 
       console.log('🔍 DEBUG: Total shift_requests fetched:', requestsData?.length || 0);
 
-      // 全データのサンプルを確認
-      console.log('🔍 DEBUG: Sample of ALL data (first 10):', requestsData?.slice(0, 10).map((r: any) => ({
-        id: r.id.substring(0, 8),
-        date: r.date,
-        dateType: typeof r.date,
-        dateRaw: JSON.stringify(r.date)
-      })));
-
       // 3月のデータを確認
       const marchData = requestsData?.filter((r: any) => {
         const dateStr = String(r.date);
@@ -213,22 +205,25 @@ export const useAdminData = (
       });
       console.log('🔍 DEBUG: March data count:', marchData?.length || 0);
 
+      // 3月の全日付を表示
+      const marchDates = marchData?.map((r: any) => String(r.date).split('T')[0]);
+      const uniqueMarchDates = [...new Set(marchDates)].sort();
+      console.log('🔍 DEBUG: Unique March dates:', uniqueMarchDates);
+
+      // 各日付ごとの件数を表示
+      const dateCount: Record<string, number> = {};
+      marchData?.forEach((r: any) => {
+        const dateStr = String(r.date).split('T')[0];
+        dateCount[dateStr] = (dateCount[dateStr] || 0) + 1;
+      });
+      console.log('🔍 DEBUG: March dates count:', dateCount);
+
       // 3月2日のデータを確認（複数の方法で）
       const march2Data = requestsData?.filter((r: any) => {
         const dateStr = String(r.date);
         return dateStr === '2026-03-02' || dateStr.startsWith('2026-03-02');
       });
       console.log('🔍 DEBUG: March 2nd data count in useAdminData:', march2Data?.length || 0);
-      console.log('🔍 DEBUG: March 2nd ALL data:', march2Data?.map((r: any) => ({
-        id: r.id.substring(0, 8),
-        pharmacist_id: r.pharmacist_id.substring(0, 8),
-        date: r.date,
-        dateType: typeof r.date,
-        dateValue: JSON.stringify(r.date),
-        time_slot: r.time_slot,
-        start_time: r.start_time,
-        end_time: r.end_time
-      })));
 
       setRequests(requestsData || []);
 
