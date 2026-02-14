@@ -5,6 +5,7 @@
 DROP POLICY IF EXISTS "Allow view shift requests" ON shift_requests;
 
 -- Create a new SELECT policy that works correctly for admins
+DROP POLICY IF EXISTS "Allow view shift requests" ON shift_requests;
 CREATE POLICY "Allow view shift requests" ON shift_requests
 FOR SELECT
 TO authenticated

@@ -183,30 +183,23 @@ export const useAdminData = (
       }
 
       console.log('🔍 DEBUG: Total shift_requests fetched:', requestsData?.length || 0);
-      console.log('🔍 DEBUG: Sample data (first 3):', requestsData?.slice(0, 3).map((r: any) => ({
-        id: r.id.substring(0, 8),
-        pharmacist_id: r.pharmacist_id.substring(0, 8),
-        date: r.date,
-        date_type: typeof r.date,
-        time_slot: r.time_slot,
-        start_time: r.start_time,
-        end_time: r.end_time
-      })));
 
       // 3月2日のデータを確認
       const march2Data = requestsData?.filter((r: any) => {
         const dateStr = String(r.date);
         return dateStr === '2026-03-02' || dateStr.startsWith('2026-03-02');
       });
-      console.log('🔍 DEBUG: March 2nd data count:', march2Data?.length || 0);
-      if (march2Data && march2Data.length > 0) {
-        console.log('🔍 DEBUG: March 2nd samples:', march2Data.slice(0, 3).map((r: any) => ({
-          id: r.id.substring(0, 8),
-          date: r.date,
-          date_exact: JSON.stringify(r.date),
-          pharmacist_id: r.pharmacist_id.substring(0, 8)
-        })));
-      }
+      console.log('🔍 DEBUG: March 2nd data count in useAdminData:', march2Data?.length || 0);
+      console.log('🔍 DEBUG: March 2nd ALL data:', march2Data?.map((r: any) => ({
+        id: r.id.substring(0, 8),
+        pharmacist_id: r.pharmacist_id.substring(0, 8),
+        date: r.date,
+        dateType: typeof r.date,
+        dateValue: JSON.stringify(r.date),
+        time_slot: r.time_slot,
+        start_time: r.start_time,
+        end_time: r.end_time
+      })));
 
       setRequests(requestsData || []);
 
