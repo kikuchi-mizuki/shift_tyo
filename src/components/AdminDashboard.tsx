@@ -252,7 +252,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     postings: (postings || []).filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult'),
     requests: (() => {
       console.log('🔍 AdminDashboard: Total requests:', (requests || []).length);
-      console.log('🔍 AdminDashboard: Selected date:', selectedDate);
+      console.log('🔍 AdminDashboard: Selected date:', selectedDate, 'type:', typeof selectedDate);
+
+      // デバッグ：全リクエストの日付サンプルを確認
+      const dateSamples = (requests || []).slice(0, 10).map((r: any) => ({
+        date: r.date,
+        dateType: typeof r.date,
+        matches: r.date === selectedDate,
+        strictEqual: r.date === selectedDate,
+        looseEqual: r.date == selectedDate
+      }));
+      console.log('🔍 AdminDashboard: Date samples from all requests:', dateSamples);
 
       // 日付でフィルタ
       const dateFiltered = (requests || []).filter((r: any) => r.date === selectedDate);
@@ -260,6 +270,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       console.log('🔍 AdminDashboard: Date filtered data:', dateFiltered.map((r: any) => ({
         id: r.id.substring(0, 8),
         pharmacist_id: r.pharmacist_id.substring(0, 8),
+        date: r.date,
         time_slot: r.time_slot,
         start_time: r.start_time,
         end_time: r.end_time
