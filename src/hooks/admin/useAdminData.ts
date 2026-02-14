@@ -143,6 +143,24 @@ export const useAdminData = (
       setLoading(true);
       setError(null);
 
+      // 現在のユーザー情報を確認
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('👤 現在のログインユーザー:', user?.id);
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        console.log('👤 ユーザープロフィール:', profile);
+        console.log('👤 user_type:', profile?.user_type);
+
+        if (profile?.user_type !== 'admin') {
+          console.warn('⚠️ 警告: 管理者ではありません! user_type=' + profile?.user_type);
+        }
+      }
+
       // 募集状況を読み込み
       await loadRecruitmentStatus();
 
