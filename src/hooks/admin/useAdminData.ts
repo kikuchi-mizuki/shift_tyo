@@ -319,7 +319,7 @@ export const useAdminData = (
     } finally {
       setLoading(false);
     }
-  }, [supabase, loadRecruitmentStatus]);
+  }, [supabase, loadRecruitmentStatus, currentDate]);
 
   /**
    * 募集ステータスを切り替える
@@ -421,10 +421,10 @@ export const useAdminData = (
     }
   }, [supabase, user, recruitmentStatus, loadRecruitmentStatus]);
 
-  // 初回読み込み
+  // データ読み込み（初回 + 月変更時）
   useEffect(() => {
     reload();
-  }, []); // 依存配列を空にして初回のみ実行
+  }, [reload]); // reloadが変更されたら再実行（currentDateが変わるとreloadも変わる）
 
   return {
     requests,
