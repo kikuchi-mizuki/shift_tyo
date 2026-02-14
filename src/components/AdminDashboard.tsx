@@ -251,18 +251,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     confirmedShifts: (assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed'),
     postings: (postings || []).filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult'),
     requests: (() => {
-      const filtered = (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot !== 'consult');
+      // デバッグ: 全リクエストを確認
+      console.log('🔍 DEBUG: 全リクエスト数:', (requests || []).length);
+      console.log('🔍 DEBUG: 選択された日付:', selectedDate);
+
+      // 日付でフィルタ
+      const dateFiltered = (requests || []).filter((r: any) => r.date === selectedDate);
+      console.log('📅 DEBUG: 選択日付のリクエスト:', dateFiltered.length, dateFiltered.map((r: any) => ({
+        id: r.id.substring(0, 8),
+        pharmacist_id: r.pharmacist_id.substring(0, 8),
+        date: r.date,
+        time_slot: r.time_slot,
+        status: r.status,
+        start_time: r.start_time,
+        end_time: r.end_time
+      })));
+
+      // time_slotでフィルタ
+      const filtered = dateFiltered.filter((r: any) => r.time_slot !== 'consult');
+      console.log('⏰ DEBUG: consult除外後:', filtered.length, filtered.map((r: any) => ({
+        id: r.id.substring(0, 8),
+        pharmacist_id: r.pharmacist_id.substring(0, 8),
+        time_slot: r.time_slot,
+        status: r.status
+      })));
+
       // 重複除去: 薬剤師ID + 開始時間 + 終了時間でユニーク化
       const seen = new Map<string, any>();
       filtered.forEach((r: any) => {
         const startTime = r.start_time ? String(r.start_time).substring(0, 5) : '';
         const endTime = r.end_time ? String(r.end_time).substring(0, 5) : '';
         const key = `${r.pharmacist_id}_${startTime}_${endTime}`;
+        console.log('🔑 DEBUG: key=' + key, 'already exists:', seen.has(key));
         if (!seen.has(key)) {
           seen.set(key, r);
+        } else {
+          console.log('❌ DEBUG: 重複スキップ - id:', r.id.substring(0, 8));
         }
       });
-      return Array.from(seen.values());
+
+      const result = Array.from(seen.values());
+      console.log('✅ DEBUG: 最終結果:', result.length, '件');
+      return result;
     })(),
     consultRequests: (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot === 'consult')
   } : null;
