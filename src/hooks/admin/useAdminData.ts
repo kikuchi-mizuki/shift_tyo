@@ -164,7 +164,32 @@ export const useAdminData = (
         .select('*');
 
       if (requestsError) {
-        console.error('Error loading shift requests:', requestsError);
+        console.error('❌ Error loading shift requests:', requestsError);
+      }
+
+      console.log('🎯 useAdminData: shift_requests取得完了:', requestsData?.length || 0, '件');
+      if (requestsData && requestsData.length > 0) {
+        console.log('📋 取得したデータのサンプル（最初の3件）:', requestsData.slice(0, 3).map((r: any) => ({
+          id: r.id.substring(0, 8),
+          date: r.date,
+          pharmacist_id: r.pharmacist_id.substring(0, 8),
+          time_slot: r.time_slot,
+          status: r.status,
+          start_time: r.start_time,
+          end_time: r.end_time
+        })));
+
+        // 3月のデータを確認
+        const marchData = requestsData.filter((r: any) => r.date && r.date.startsWith('2026-03'));
+        console.log('🗓️ 2026年3月のデータ:', marchData.length, '件');
+        if (marchData.length > 0) {
+          console.log('3月のデータ詳細:', marchData.map((r: any) => ({
+            date: r.date,
+            pharmacist_id: r.pharmacist_id.substring(0, 12),
+            time_slot: r.time_slot,
+            status: r.status
+          })));
+        }
       }
 
       setRequests(requestsData || []);
