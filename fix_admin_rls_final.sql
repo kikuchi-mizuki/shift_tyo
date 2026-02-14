@@ -3,7 +3,11 @@
 -- 一度の実行で完全に解決します
 -- ============================================
 
--- Step 1: is_admin()関数を完全に削除して、よりシンプルなSQL関数として再作成
+-- Step 1: 既存のRLSポリシーを先に削除（関数に依存しているため）
+DROP POLICY IF EXISTS "Allow view shift requests" ON shift_requests;
+DROP POLICY IF EXISTS "sr_sel_auth" ON shift_requests;
+
+-- Step 2: is_admin()関数を完全に削除して、よりシンプルなSQL関数として再作成
 DROP FUNCTION IF EXISTS public.is_admin();
 
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -17,10 +21,6 @@ AS $$
     WHERE id = auth.uid() AND user_type = 'admin'
   );
 $$;
-
--- Step 2: 既存のRLSポリシーを削除
-DROP POLICY IF EXISTS "Allow view shift requests" ON shift_requests;
-DROP POLICY IF EXISTS "sr_sel_auth" ON shift_requests;
 
 -- Step 3: 新しいRLSポリシーを作成
 CREATE POLICY "Allow view shift requests" ON shift_requests
