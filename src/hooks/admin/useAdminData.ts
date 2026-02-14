@@ -145,7 +145,6 @@ export const useAdminData = (
 
       // 現在のユーザー情報を確認
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('👤 現在のログインユーザー:', user?.id);
 
       if (user) {
         const { data: profile } = await supabase
@@ -153,8 +152,6 @@ export const useAdminData = (
           .select('*')
           .eq('id', user.id)
           .single();
-        console.log('👤 ユーザープロフィール:', profile);
-        console.log('👤 user_type:', profile?.user_type);
 
         if (profile?.user_type !== 'admin') {
           console.warn('⚠️ 警告: 管理者ではありません! user_type=' + profile?.user_type);
@@ -183,31 +180,6 @@ export const useAdminData = (
 
       if (requestsError) {
         console.error('❌ Error loading shift requests:', requestsError);
-      }
-
-      console.log('🎯 useAdminData: shift_requests取得完了:', requestsData?.length || 0, '件');
-      if (requestsData && requestsData.length > 0) {
-        console.log('📋 取得したデータのサンプル（最初の3件）:', requestsData.slice(0, 3).map((r: any) => ({
-          id: r.id.substring(0, 8),
-          date: r.date,
-          pharmacist_id: r.pharmacist_id.substring(0, 8),
-          time_slot: r.time_slot,
-          status: r.status,
-          start_time: r.start_time,
-          end_time: r.end_time
-        })));
-
-        // 3月のデータを確認
-        const marchData = requestsData.filter((r: any) => r.date && r.date.startsWith('2026-03'));
-        console.log('🗓️ 2026年3月のデータ:', marchData.length, '件');
-        if (marchData.length > 0) {
-          console.log('3月のデータ詳細:', marchData.map((r: any) => ({
-            date: r.date,
-            pharmacist_id: r.pharmacist_id.substring(0, 12),
-            time_slot: r.time_slot,
-            status: r.status
-          })));
-        }
       }
 
       setRequests(requestsData || []);
@@ -252,19 +224,6 @@ export const useAdminData = (
         console.error('Error fetching user profiles:', allProfilesError);
       } else {
         if (allProfilesData) {
-          // デバッグ：薬局のstore_namesを確認
-          console.log('📊 全ユーザープロファイル取得:', allProfilesData.length);
-          const pharmacies = allProfilesData.filter((p: any) => p.user_type === 'pharmacy');
-          console.log('📊 薬局データ詳細:', pharmacies.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            email: p.email,
-            store_name: p.store_name,
-            store_names: p.store_names,
-            store_names_type: typeof p.store_names,
-            store_names_is_array: Array.isArray(p.store_names),
-            store_names_length: Array.isArray(p.store_names) ? p.store_names.length : 'N/A'
-          })));
 
           allProfilesData.forEach((profile: any) => {
             if (profile && profile.id) {

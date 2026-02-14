@@ -48,11 +48,9 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, 
           role: 'admin',
           user_type: 'admin'
         };
-        
-        console.log('Admin registration:', { email, userType: registrationData.userType, userData });
-        
+
         const result = await auth.signUp(email.trim(), password, userData);
-        
+
         if (result.error) {
           if (result.error.message?.includes('User already registered')) {
             setError('このメールアドレスは既に登録されています。ログインしてください。');
@@ -60,81 +58,26 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, 
             setError(result.error.message || '新規登録に失敗しました');
           }
         } else {
-          console.log('Admin registration successful');
           setError('');
           setIsRegistering(false); // 登録完了後はログイン画面に戻る
         }
         setLoading(false);
         return;
       }
-      
-      // ログイン処理
-      console.log('=== ADMIN LOGIN FORM SUBMITTED ===');
-      console.log('Admin login attempt:', { email });
 
+      // ログイン処理
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (authError) {
-        console.error('Admin login error:', authError);
         setError(authError.message || 'ログインに失敗しました');
         setLoading(false);
         return;
       }
 
       if (data.user) {
-        console.log('Admin login successful:', data.user.id);
-
-        // デバッグ: セッション情報を確認
-        const { data: sessionData } = await supabase.auth.getSession();
-        console.log('Session debug:', {
-          hasSession: !!sessionData.session,
-          sessionUserId: sessionData.session?.user?.id,
-          accessToken: sessionData.session?.access_token?.substring(0, 20) + '...'
-        });
-
-        // デバッグ: auth.uid()を直接テスト
-        console.log('Testing auth.uid() directly...');
-        const { data: authUidTest, error: authUidError } = await supabase
-          .rpc('auth_uid_test');
-
-        console.log('auth.uid() test result:', {
-          authUid: authUidTest,
-          error: authUidError?.message
-        });
-
-        // デバッグ: RLSを無視してすべてのプロフィールを取得（service_roleで実行されないのでエラーになる）
-        console.log('Attempting to fetch ALL profiles (should fail with RLS)...');
-        const { data: allProfilesNoFilter, error: allNoFilterError } = await supabase
-          .from('user_profiles')
-          .select('id, email, user_type');
-
-        console.log('All profiles result:', {
-          success: !allNoFilterError,
-          count: allProfilesNoFilter?.length || 0,
-          error: allNoFilterError?.message
-        });
-
-        // デバッグ: まず .single() なしで試す
-        console.log('Attempting to fetch profile without .single()...');
-        const { data: allProfiles, error: allError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', data.user.id);
-
-        console.log('Profile fetch result (without .single()):', {
-          success: !allError,
-          count: allProfiles?.length || 0,
-          error: allError?.message,
-          profiles: allProfiles?.map(p => ({ id: p.id, email: p.email, user_type: p.user_type }))
-        });
-
-        if (allError) {
-          console.error('Error fetching profiles (without .single()):', allError);
-        }
-
         // ユーザープロフィールを取得して管理者権限を確認
         const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
@@ -143,13 +86,6 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, 
           .single();
 
         if (profileError) {
-          console.error('Error fetching admin profile:', profileError);
-          console.log('Debug info:', {
-            userId: data.user.id,
-            errorCode: profileError.code,
-            errorMessage: profileError.message,
-            allProfilesCount: allProfiles?.length || 0
-          });
           setError('ユーザープロフィールの取得に失敗しました');
           setLoading(false);
           return;
@@ -157,7 +93,6 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, 
 
         // 管理者権限の確認
         if (profile.user_type !== 'admin') {
-          console.warn('Non-admin user attempted admin login:', profile.user_type);
           setError('管理者権限がありません。管理者としてログインする権限がありません。');
           await supabase.auth.signOut(); // ログアウト
           setLoading(false);
@@ -166,13 +101,11 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, 
 
         // 管理者セッションを追加
         await addSession(data.user, 'admin');
-        
-        console.log('Admin session added successfully');
+
         setError('');
         onLoginSuccess();
       }
     } catch (error) {
-      console.error('Admin login/registration error:', error);
       setError('処理中にエラーが発生しました');
     } finally {
       setLoading(false);
