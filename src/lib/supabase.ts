@@ -1256,8 +1256,8 @@ export const shiftPostings = {
         const requiredStaff =
           p.required_staff ?? p.required_people ?? 1;
 
-        // ステータスの既定値 ('open' / 'recruiting') どちらでも運用できるように 'recruiting' を採用
-        const status = p.status === 'open' ? 'recruiting' : (p.status || 'recruiting');
+        // ステータスの既定値: 'open', 'filled', 'cancelled', 'confirmed' のみ許可
+        const status = p.status || 'open';
 
         // start/end を補完・正規化
         let start_time = toHHMMSS(p.start_time);

@@ -119,7 +119,7 @@ export interface ShiftPosting {
   hourlyRate: number;
   requirements?: string[];
   notes?: string;
-  status: 'open' | 'filled' | 'cancelled';
+  status: 'open' | 'filled' | 'cancelled' | 'confirmed';
   createdAt: string;
 }
 

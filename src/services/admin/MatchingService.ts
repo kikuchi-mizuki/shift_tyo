@@ -787,7 +787,7 @@ export const executeAIMatching = async (
     }
 
     // 薬局側も未確定のみでマッチング
-    const allowedPostingStatuses = new Set(['open', 'recruiting']);
+    const allowedPostingStatuses = new Set(['open']);
     const filteredDayPostings = dayPostings.filter((p: any) => {
       if (!allowedPostingStatuses.has((p.status || '').toLowerCase())) return false;
 
