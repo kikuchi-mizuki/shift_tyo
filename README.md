@@ -2,6 +2,11 @@
 
 薬局と薬剤師のシフトマッチングを効率化する統合管理システムです。AIマッチング、LINE通知連携、緊急シフト対応など、現代の薬局運営に必要な機能を網羅しています。
 
+## 📖 ドキュメント
+
+- **[完全な仕様書（GitHub Pages）](https://kikuchi-mizuki.github.io/shift_tyo/)**
+- **[🤖 AIマッチングアルゴリズムの詳細解説](https://kikuchi-mizuki.github.io/shift_tyo/matching-algorithm)** ⭐ **New!**
+
 ## ✨ 主な機能
 
 ### 🎯 コア機能
