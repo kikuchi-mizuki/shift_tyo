@@ -3,7 +3,7 @@
  * インタラクティブマッチング（手動入れ替え可能なマッチング）を管理するカスタムフック
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { MatchCandidate } from '../../features/ai-matching/aiMatchingEngine';
 import {
@@ -56,16 +56,21 @@ export const useInteractiveMatching = ({
   const [isReoptimizing, setIsReoptimizing] = useState(false);
 
   // 初期マッチングが変更されたら更新
-  useState(() => {
-    setMatches(initialMatches);
-  });
+  useEffect(() => {
+    setMatches(initialMatches || []);
+  }, [initialMatches]);
 
   // 各店舗の候補者リストを生成（メモ化）
   const candidatesByStore = useMemo(() => {
     const map = new Map<string, any[]>();
 
+    // データが不足している場合は空のマップを返す
+    if (!postings || !Array.isArray(postings) || !userProfiles || !requests) {
+      return map;
+    }
+
     for (const posting of postings) {
-      if (posting.date !== date) continue;
+      if (!posting || posting.date !== date) continue;
 
       const storeKey = `${posting.pharmacy_id}_${(posting.store_name || '').trim()}`;
 
@@ -73,9 +78,9 @@ export const useInteractiveMatching = ({
       const candidates = getAvailableCandidatesForStore(
         storeKey,
         posting,
-        requests.filter(r => r.date === date),
+        requests.filter(r => r && r.date === date),
         userProfiles,
-        ratings,
+        ratings || [],
         requests,
         storeNgPharmacists,
         storeNgPharmacies
@@ -92,16 +97,18 @@ export const useInteractiveMatching = ({
             pharmacistName = pharmacistProfile.name.trim();
           } else if (pharmacistProfile.email && pharmacistProfile.email.trim()) {
             pharmacistName = pharmacistProfile.email.split('@')[0];
-          } else {
+          } else if (c.pharmacistId) {
             pharmacistName = `薬剤師${c.pharmacistId.slice(-4)}`;
           }
-        } else {
+        } else if (c.pharmacistId) {
           pharmacistName = `薬剤師${c.pharmacistId.slice(-4)}`;
         }
 
-        // 現在他の薬局に割り当てられているかチェック
-        const currentAssignment = matches.find(m => m.pharmacist.id === c.pharmacistId);
-        const isAssignedElsewhere = currentAssignment &&
+        // 現在他の薬局に割り当てられているかチェック（安全に）
+        const currentAssignment = matches.find(m =>
+          m && m.pharmacist && m.pharmacist.id === c.pharmacistId
+        );
+        const isAssignedElsewhere = currentAssignment && currentAssignment.pharmacy &&
           `${currentAssignment.pharmacy.id}_${(currentAssignment.pharmacy.store_name || '').trim()}` !== storeKey;
 
         return {
@@ -109,7 +116,7 @@ export const useInteractiveMatching = ({
           pharmacistName,
           score: c.score,
           isAssignedElsewhere,
-          assignedTo: isAssignedElsewhere ? currentAssignment.pharmacy.name : null
+          assignedTo: isAssignedElsewhere && currentAssignment.pharmacy ? currentAssignment.pharmacy.name : null
         };
       });
 
@@ -124,6 +131,12 @@ export const useInteractiveMatching = ({
    */
   const handlePharmacistChange = useCallback(async (storeKey: string, newPharmacistId: string) => {
     console.log(`🔄 薬剤師変更: ${storeKey} → ${newPharmacistId}`);
+
+    // データが不足している場合は処理を中断
+    if (!requests || !postings || !userProfiles) {
+      console.warn('⚠️ 再最適化に必要なデータが不足しています');
+      return;
+    }
 
     setIsReoptimizing(true);
 
@@ -145,22 +158,23 @@ export const useInteractiveMatching = ({
       // 再最適化を実行
       const result = reoptimizeWithLockedAssignments(
         previousLocked,
-        requests.filter(r => r.date === date),
-        postings.filter(p => p.date === date),
+        (requests || []).filter(r => r && r.date === date),
+        (postings || []).filter(p => p && p.date === date),
         date,
-        assigned,
-        userProfiles,
-        ratings,
-        requests,
+        assigned || [],
+        userProfiles || {},
+        ratings || [],
+        requests || [],
         storeNgPharmacists,
         storeNgPharmacies
       );
 
-      setMatches(result.matches);
+      setMatches(result.matches || []);
       console.log(`✅ 再最適化完了: ${result.matches.length}件のマッチング`);
 
     } catch (error) {
       console.error('再最適化エラー:', error);
+      alert('再最適化中にエラーが発生しました。');
     } finally {
       setIsReoptimizing(false);
     }

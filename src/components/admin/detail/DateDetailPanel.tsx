@@ -84,17 +84,21 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
   onDeleteRequest
 }) => {
   // インタラクティブマッチング（オプショナル機能）
-  const interactiveMatchingEnabled = allRequests.length > 0 && allPostings.length > 0;
+  const interactiveMatchingEnabled =
+    Array.isArray(allRequests) && allRequests.length > 0 &&
+    Array.isArray(allPostings) && allPostings.length > 0 &&
+    userProfiles && typeof userProfiles === 'object' &&
+    Array.isArray(dayData?.matches);
 
   const interactiveMatching = useInteractiveMatching({
     supabase,
-    initialMatches: dayData.matches,
+    initialMatches: dayData?.matches || [],
     date: selectedDate,
-    requests: allRequests,
-    postings: allPostings,
-    assigned: allAssigned,
-    userProfiles,
-    ratings,
+    requests: allRequests || [],
+    postings: allPostings || [],
+    assigned: allAssigned || [],
+    userProfiles: userProfiles || {},
+    ratings: ratings || [],
     storeNgPharmacists,
     storeNgPharmacies
   });
