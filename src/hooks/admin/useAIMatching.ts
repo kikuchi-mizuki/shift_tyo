@@ -116,14 +116,15 @@ export const useAIMatching = (
           .eq('status', 'pending');
       }
 
-      // 1ヶ月分の日付リストを生成
+      // 1ヶ月分の日付リストを生成（UTC時刻で作成してタイムゾーン問題を回避）
       const currentMonth = currentDate.getMonth();
       const currentYear = currentDate.getFullYear();
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       const monthlyDates: string[] = [];
 
       for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(currentYear, currentMonth, day);
+        // Date.UTC()を使用してUTC時刻で日付を作成
+        const date = new Date(Date.UTC(currentYear, currentMonth, day));
         monthlyDates.push(date.toISOString().split('T')[0]);
       }
 
