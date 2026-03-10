@@ -761,17 +761,29 @@ export const executeAIMatching = async (
         .select('*')
         .eq('date', date);
       if (requestsData) freshRequests = requestsData;
+      console.log(`🔍 ${date} - DB取得 requests:`, freshRequests.length);
 
       const { data: postingsData } = await supabase
         .from('shift_postings')
         .select('*')
         .eq('date', date);
       if (postingsData) freshPostings = postingsData;
+      console.log(`🔍 ${date} - DB取得 postings:`, freshPostings.length);
     }
 
     // 未確定のみ抽出
     const dayRequests = freshRequests.filter((r: any) => r.status !== 'confirmed');
     const dayPostings = freshPostings.filter((p: any) => p.status !== 'confirmed');
+
+    console.log(`🔍 ${date} - 未確定フィルタ後 requests:`, dayRequests.length);
+    console.log(`🔍 ${date} - 未確定フィルタ後 postings:`, dayPostings.length);
+    if (dayPostings.length > 0) {
+      console.log(`🔍 ${date} - posting statusサンプル:`, dayPostings.slice(0, 3).map((p: any) => ({
+        id: p.id?.slice(0, 8),
+        status: p.status,
+        hasStatus: p.hasOwnProperty('status')
+      })));
+    }
 
     // 確定済みの組み合わせをセット化
     const confirmedPharmacists = new Set<string>();
@@ -792,7 +804,12 @@ export const executeAIMatching = async (
     const filteredDayPostings = dayPostings.filter((p: any) => {
       // statusカラムが存在する場合のみチェック（存在しない場合はスキップ）
       if (p.hasOwnProperty('status') && p.status !== null && p.status !== undefined) {
-        if (!allowedPostingStatuses.has((p.status || '').toLowerCase())) return false;
+        const statusLower = (p.status || '').toLowerCase();
+        const statusOk = allowedPostingStatuses.has(statusLower);
+        if (!statusOk) {
+          console.log(`🔍 ${date} - posting除外(status): ${p.id?.slice(0, 8)} status="${p.status}"`);
+          return false;
+        }
       }
 
       // 店舗ごとの確定人数をカウント
@@ -801,7 +818,11 @@ export const executeAIMatching = async (
       const requiredStaff = Number(p.required_staff) || 1;
 
       // 確定人数が募集人数に達していない場合のみマッチング対象
-      return confirmedCountForStore < requiredStaff;
+      const hasSpace = confirmedCountForStore < requiredStaff;
+      if (!hasSpace) {
+        console.log(`🔍 ${date} - posting除外(満員): ${storeKey} confirmed=${confirmedCountForStore} required=${requiredStaff}`);
+      }
+      return hasSpace;
     });
     const filteredDayRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
 
