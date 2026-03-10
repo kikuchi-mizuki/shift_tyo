@@ -135,6 +135,8 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
           candidatesByStore={interactiveMatchingEnabled ? interactiveMatching.candidatesByStore : undefined}
           onPharmacistChange={interactiveMatchingEnabled ? interactiveMatching.handlePharmacistChange : undefined}
           isReoptimizing={interactiveMatchingEnabled ? interactiveMatching.isReoptimizing : false}
+          onResetToInitial={interactiveMatchingEnabled ? interactiveMatching.resetToInitial : undefined}
+          hasManualChanges={interactiveMatchingEnabled && safeLength(interactiveMatching.lockedAssignments) > 0}
         />
 
         {/* 不足薬局 */}

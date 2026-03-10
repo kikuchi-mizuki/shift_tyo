@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Brain, RefreshCw } from 'lucide-react';
+import { Brain, RefreshCw, RotateCcw } from 'lucide-react';
 import { safeLength } from '../../../utils/admin/arrayHelpers';
 
 interface AIMatchingResultsProps {
@@ -15,6 +15,8 @@ interface AIMatchingResultsProps {
   candidatesByStore?: Map<string, any[]>;
   onPharmacistChange?: (storeKey: string, newPharmacistId: string) => void;
   isReoptimizing?: boolean;
+  onResetToInitial?: () => void;
+  hasManualChanges?: boolean;
 }
 
 export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
@@ -24,7 +26,9 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
   onConfirmMatch,
   candidatesByStore,
   onPharmacistChange,
-  isReoptimizing = false
+  isReoptimizing = false,
+  onResetToInitial,
+  hasManualChanges = false
 }) => {
   if (safeLength(matches) === 0) {
     return null;
@@ -39,12 +43,25 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
             AIマッチング結果 {safeLength(matches)}件
           </h4>
         </div>
-        {isReoptimizing && (
-          <div className="flex items-center space-x-1 text-blue-600 text-xs">
-            <RefreshCw className="w-3 h-3 animate-spin" />
-            <span>再最適化中...</span>
-          </div>
-        )}
+        <div className="flex items-center space-x-2">
+          {hasManualChanges && onResetToInitial && (
+            <button
+              onClick={onResetToInitial}
+              disabled={isReoptimizing}
+              className="flex items-center space-x-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              title="手動変更をリセットして初期状態に戻す"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>リセット</span>
+            </button>
+          )}
+          {isReoptimizing && (
+            <div className="flex items-center space-x-1 text-blue-600 text-xs">
+              <RefreshCw className="w-3 h-3 animate-spin" />
+              <span>再最適化中...</span>
+            </div>
+          )}
+        </div>
       </div>
       <div className="space-y-2 max-h-48 overflow-y-auto">
         {matches.map((match, index) => {
