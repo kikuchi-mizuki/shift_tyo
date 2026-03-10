@@ -787,9 +787,13 @@ export const executeAIMatching = async (
     }
 
     // 薬局側も未確定のみでマッチング
+    // statusカラムが存在する場合は'open'のみ、存在しない場合はすべて対象
     const allowedPostingStatuses = new Set(['open']);
     const filteredDayPostings = dayPostings.filter((p: any) => {
-      if (!allowedPostingStatuses.has((p.status || '').toLowerCase())) return false;
+      // statusカラムが存在する場合のみチェック（存在しない場合はスキップ）
+      if (p.hasOwnProperty('status') && p.status !== null && p.status !== undefined) {
+        if (!allowedPostingStatuses.has((p.status || '').toLowerCase())) return false;
+      }
 
       // 店舗ごとの確定人数をカウント
       const storeKey = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
