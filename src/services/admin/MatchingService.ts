@@ -810,8 +810,8 @@ export const executeAIMatching = async (
       return [];
     }
 
-    // マッチング分析を実行
-    const matchingResult = performMatchingAnalysis(
+    // マッチング分析を実行（最適化アルゴリズムを使用）
+    const matchingResult = performOptimizedMatching(
       filteredDayRequests,
       filteredDayPostings,
       date,
@@ -877,4 +877,465 @@ export const executeAIMatching = async (
     console.error('AI Matching failed:', error);
     return [];
   }
+};
+
+/**
+ * ========================================
+ * 最適化マッチングアルゴリズム
+ * ========================================
+ * 不足薬局をゼロに近づけることを優先したマッチングアルゴリズム
+ */
+
+/**
+ * 互換性情報を格納する型
+ */
+interface CompatibilityInfo {
+  storeKey: string;
+  pharmacistId: string;
+  isCompatible: boolean;
+  score: number;
+  distanceScore: number;
+  requestCountScore: number;
+  ratingScore: number;
+  request: any;
+  posting: any;
+}
+
+/**
+ * 割り当て情報を格納する型
+ */
+interface OptimizedAssignment {
+  storeKey: string;
+  pharmacistId: string;
+  posting: any;
+  request: any;
+  score: number;
+}
+
+/**
+ * 互換性マトリクスを構築
+ */
+const buildOptimizedCompatibilityMatrix = (
+  dayRequests: any[],
+  dayPostings: any[],
+  userProfiles: any,
+  ratings: any[],
+  requests: any[],
+  storeNgPharmacists?: { [pharmacyId: string]: any[] },
+  storeNgPharmacies?: { [pharmacistId: string]: any[] }
+): CompatibilityInfo[] => {
+  const compatibilityList: CompatibilityInfo[] = [];
+
+  // 時間を正規化する関数
+  const normalizeTime = (item: any) => {
+    if (item.start_time && item.end_time) {
+      return item;
+    }
+    const timeSlotMap: { [key: string]: { start: string; end: string } } = {
+      'morning': { start: '09:00:00', end: '13:00:00' },
+      'afternoon': { start: '13:00:00', end: '18:00:00' },
+      'fullday': { start: '09:00:00', end: '18:00:00' },
+      'negotiable': { start: '09:00:00', end: '18:00:00' }
+    };
+    const timeSlot = item.time_slot || 'fullday';
+    const times = timeSlotMap[timeSlot] || timeSlotMap['fullday'];
+    return { ...item, start_time: times.start, end_time: times.end };
+  };
+
+  // 時間を分に変換
+  const timeToMinutes = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // 各薬剤師リクエストに対して
+  for (const request of dayRequests) {
+    const normalizedRequest = normalizeTime(request);
+    const pharmacist = userProfiles[request.pharmacist_id];
+
+    if (!normalizedRequest.start_time || !normalizedRequest.end_time) continue;
+
+    // 各薬局募集に対して
+    for (const posting of dayPostings) {
+      const normalizedPosting = normalizeTime(posting);
+      const pharmacy = userProfiles[posting.pharmacy_id];
+      const storeKey = `${posting.pharmacy_id}_${(posting.store_name || '').trim()}`;
+
+      if (!normalizedPosting.start_time || !normalizedPosting.end_time) continue;
+
+      // NGリストチェック
+      let blockedByPharmacist = false;
+      let blockedByPharmacy = false;
+
+      if (storeNgPharmacies && storeNgPharmacies[request.pharmacist_id]) {
+        const ngPharmacies = storeNgPharmacies[request.pharmacist_id];
+        blockedByPharmacist = ngPharmacies.some((ng: any) =>
+          ng.pharmacy_id === posting.pharmacy_id &&
+          (!ng.store_name || ng.store_name === posting.store_name)
+        );
+      }
+
+      if (storeNgPharmacists && storeNgPharmacists[posting.pharmacy_id]) {
+        const ngPharmacists = storeNgPharmacists[posting.pharmacy_id];
+        blockedByPharmacy = ngPharmacists.some((ng: any) =>
+          ng.pharmacist_id === request.pharmacist_id &&
+          (!ng.store_name || ng.store_name === posting.store_name)
+        );
+      }
+
+      // 時間互換性チェック（100%カバー必須）
+      const requestStart = timeToMinutes(normalizedRequest.start_time);
+      const requestEnd = timeToMinutes(normalizedRequest.end_time);
+      const postingStart = timeToMinutes(normalizedPosting.start_time);
+      const postingEnd = timeToMinutes(normalizedPosting.end_time);
+      const isTimeCompatible = requestStart <= postingStart && requestEnd >= postingEnd;
+
+      // 互換性判定
+      const isCompatible = !blockedByPharmacist && !blockedByPharmacy && isTimeCompatible;
+
+      // スコア計算
+      const distanceScore = calculateDistanceScore(pharmacist, pharmacy);
+      const requestCountScore = calculateRequestCountScore(request.pharmacist_id, requests);
+      const ratingScore = getPharmacistRating(request.pharmacist_id, ratings) / 5;
+
+      // 総合スコア（距離40%, 希望回数30%, 評価30%）
+      const totalScore = distanceScore * 0.4 + (1 - requestCountScore) * 0.3 + ratingScore * 0.3;
+
+      compatibilityList.push({
+        storeKey,
+        pharmacistId: request.pharmacist_id,
+        isCompatible,
+        score: totalScore,
+        distanceScore,
+        requestCountScore,
+        ratingScore,
+        request: normalizedRequest,
+        posting: normalizedPosting
+      });
+    }
+  }
+
+  return compatibilityList;
+};
+
+/**
+ * フェーズ1: 不足最小化マッチング
+ * 候補者が少ない店舗から優先的に処理
+ */
+const minimizeShortageMatching = (
+  compatibilityMatrix: CompatibilityInfo[],
+  dayPostings: any[]
+): OptimizedAssignment[] => {
+  const assignments: OptimizedAssignment[] = [];
+  const usedPharmacists = new Set<string>();
+
+  // 店舗ごとに候補者リストを作成
+  const storeMap = new Map<string, { posting: any; candidates: CompatibilityInfo[] }>();
+
+  for (const posting of dayPostings) {
+    const storeKey = `${posting.pharmacy_id}_${(posting.store_name || '').trim()}`;
+    const candidates = compatibilityMatrix.filter(c =>
+      c.storeKey === storeKey && c.isCompatible
+    );
+
+    storeMap.set(storeKey, {
+      posting,
+      candidates: candidates.sort((a, b) => b.score - a.score) // スコア降順
+    });
+  }
+
+  // 候補者が少ない店舗から処理（制約が厳しい順）
+  const sortedStores = Array.from(storeMap.entries()).sort((a, b) => {
+    const aCandidates = a[1].candidates.length;
+    const bCandidates = b[1].candidates.length;
+
+    // 1. 候補者数が少ない方を優先
+    if (aCandidates !== bCandidates) {
+      return aCandidates - bCandidates;
+    }
+
+    // 2. 必要人数が多い方を優先
+    const aRequired = Number(a[1].posting.required_staff) || 1;
+    const bRequired = Number(b[1].posting.required_staff) || 1;
+    return bRequired - aRequired;
+  });
+
+  console.log('🎯 店舗処理順序:');
+  sortedStores.forEach(([storeKey, data], index) => {
+    console.log(`  ${index + 1}. ${storeKey}: 候補者${data.candidates.length}人, 必要${data.posting.required_staff}人`);
+  });
+
+  // 各店舗に対して必要人数分を割り当て
+  for (const [storeKey, storeData] of sortedStores) {
+    const requiredStaff = Number(storeData.posting.required_staff) || 1;
+    let assignedCount = 0;
+
+    for (const candidate of storeData.candidates) {
+      if (assignedCount >= requiredStaff) break;
+      if (usedPharmacists.has(candidate.pharmacistId)) continue;
+
+      assignments.push({
+        storeKey,
+        pharmacistId: candidate.pharmacistId,
+        posting: candidate.posting,
+        request: candidate.request,
+        score: candidate.score
+      });
+
+      usedPharmacists.add(candidate.pharmacistId);
+      assignedCount++;
+    }
+
+    console.log(`  ✅ ${storeKey}: ${assignedCount}/${requiredStaff}人割り当て`);
+  }
+
+  return assignments;
+};
+
+/**
+ * フェーズ2: 再配置による最適化（オプション）
+ * 不足がある店舗に対して、他店舗から薬剤師を再配置できるか試行
+ */
+const refineAssignments = (
+  assignments: OptimizedAssignment[],
+  compatibilityMatrix: CompatibilityInfo[],
+  dayPostings: any[]
+): OptimizedAssignment[] => {
+  const assignmentMap = new Map<string, OptimizedAssignment[]>();
+
+  // 店舗ごとに割り当てをグループ化
+  for (const assignment of assignments) {
+    if (!assignmentMap.has(assignment.storeKey)) {
+      assignmentMap.set(assignment.storeKey, []);
+    }
+    assignmentMap.get(assignment.storeKey)!.push(assignment);
+  }
+
+  // 不足がある店舗を特定
+  const shortageStores: { storeKey: string; shortage: number; posting: any }[] = [];
+  for (const posting of dayPostings) {
+    const storeKey = `${posting.pharmacy_id}_${(posting.store_name || '').trim()}`;
+    const assignedCount = assignmentMap.get(storeKey)?.length || 0;
+    const requiredStaff = Number(posting.required_staff) || 1;
+    const shortage = requiredStaff - assignedCount;
+
+    if (shortage > 0) {
+      shortageStores.push({ storeKey, shortage, posting });
+    }
+  }
+
+  if (shortageStores.length === 0) {
+    console.log('✨ 全店舗の必要人数を満たしました！');
+    return assignments;
+  }
+
+  console.log(`🔄 再配置を試行: ${shortageStores.length}店舗に不足`);
+
+  let improved = true;
+  let iteration = 0;
+  const maxIterations = 10;
+
+  while (improved && iteration < maxIterations) {
+    improved = false;
+    iteration++;
+
+    for (const shortageStore of shortageStores) {
+      // この不足店舗に割り当て可能な薬剤師を探す
+      const reassignableCandidates = compatibilityMatrix.filter(c =>
+        c.storeKey === shortageStore.storeKey && c.isCompatible
+      );
+
+      for (const candidate of reassignableCandidates) {
+        // この薬剤師が現在別の店舗に割り当てられているか確認
+        const currentAssignment = assignments.find(a => a.pharmacistId === candidate.pharmacistId);
+
+        if (!currentAssignment) continue;
+
+        // 元の店舗の余裕を確認
+        const originalStoreAssignments = assignmentMap.get(currentAssignment.storeKey) || [];
+        const originalPosting = dayPostings.find(p => {
+          const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
+          return key === currentAssignment.storeKey;
+        });
+        const originalRequired = Number(originalPosting?.required_staff) || 1;
+
+        // 元の店舗に余裕がある場合のみ再配置
+        if (originalStoreAssignments.length > originalRequired * 0.5) { // 半分以上確保されている
+          // 再配置を実行
+          console.log(`  🔄 ${candidate.pharmacistId} を ${currentAssignment.storeKey} → ${shortageStore.storeKey} に再配置`);
+
+          // 元の割り当てを削除
+          const index = assignments.indexOf(currentAssignment);
+          assignments.splice(index, 1);
+
+          // 新しい割り当てを追加
+          assignments.push({
+            storeKey: shortageStore.storeKey,
+            pharmacistId: candidate.pharmacistId,
+            posting: candidate.posting,
+            request: candidate.request,
+            score: candidate.score
+          });
+
+          // マップを更新
+          assignmentMap.get(currentAssignment.storeKey)!.splice(
+            assignmentMap.get(currentAssignment.storeKey)!.indexOf(currentAssignment),
+            1
+          );
+          if (!assignmentMap.has(shortageStore.storeKey)) {
+            assignmentMap.set(shortageStore.storeKey, []);
+          }
+          assignmentMap.get(shortageStore.storeKey)!.push(assignments[assignments.length - 1]);
+
+          improved = true;
+          break;
+        }
+      }
+
+      if (improved) break;
+    }
+  }
+
+  return assignments;
+};
+
+/**
+ * 最適化マッチング分析（不足最小化優先）
+ */
+export const performOptimizedMatching = (
+  dayRequests: any[],
+  dayPostings: any[],
+  date: string,
+  assigned: any[],
+  userProfiles: any,
+  ratings: any[],
+  requests: any[],
+  storeNgPharmacists?: { [pharmacyId: string]: any[] },
+  storeNgPharmacies?: { [pharmacistId: string]: any[] }
+): { matches: MatchCandidate[]; matchedCount: number; shortage: number } => {
+  console.log('🚀 最適化マッチングアルゴリズム開始');
+  console.log(`📊 対象: ${dayPostings.length}店舗, ${dayRequests.length}薬剤師`);
+
+  // 確定済みを除外
+  const confirmedPharmacists = new Set<string>();
+  const confirmedStoreKeys = new Set<string>();
+
+  if (Array.isArray(assigned)) {
+    assigned.filter((s: any) => s?.date === date && s?.status === 'confirmed').forEach((s: any) => {
+      confirmedPharmacists.add(s.pharmacist_id);
+      const storeKey = `${s.pharmacy_id}_${(s.store_name || '').trim()}`;
+      confirmedStoreKeys.add(storeKey);
+    });
+  }
+
+  const filteredRequests = dayRequests.filter((r: any) => !confirmedPharmacists.has(r.pharmacist_id));
+  const filteredPostings = dayPostings.filter((p: any) => {
+    const storeKey = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
+    const confirmedCountForStore = Array.from(confirmedStoreKeys).filter(key => key === storeKey).length;
+    const requiredStaff = Number(p.required_staff) || 1;
+    return confirmedCountForStore < requiredStaff;
+  });
+
+  console.log(`🔍 フィルター後: ${filteredPostings.length}店舗, ${filteredRequests.length}薬剤師`);
+
+  // ステップ1: 互換性マトリクスを構築
+  const compatibilityMatrix = buildOptimizedCompatibilityMatrix(
+    filteredRequests,
+    filteredPostings,
+    userProfiles,
+    ratings,
+    requests,
+    storeNgPharmacists,
+    storeNgPharmacies
+  );
+
+  const compatibleCount = compatibilityMatrix.filter(c => c.isCompatible).length;
+  console.log(`✅ 互換性のある組み合わせ: ${compatibleCount}件`);
+
+  // ステップ2: 不足最小化マッチング
+  let assignments = minimizeShortageMatching(compatibilityMatrix, filteredPostings);
+  console.log(`📝 フェーズ1完了: ${assignments.length}件の割り当て`);
+
+  // ステップ3: 再配置による最適化
+  assignments = refineAssignments(assignments, compatibilityMatrix, filteredPostings);
+  console.log(`🎯 最終結果: ${assignments.length}件の割り当て`);
+
+  // MatchCandidate形式に変換
+  const matches: MatchCandidate[] = assignments.map(assignment => {
+    const pharmacistProfile = userProfiles[assignment.pharmacistId];
+    const pharmacyId = assignment.posting.pharmacy_id;
+    const pharmacyProfile = userProfiles[pharmacyId];
+
+    // 薬剤師名の取得
+    let pharmacistName = '薬剤師名未設定';
+    if (pharmacistProfile) {
+      if (pharmacistProfile.name && pharmacistProfile.name.trim()) {
+        pharmacistName = pharmacistProfile.name.trim();
+      } else if (pharmacistProfile.email && pharmacistProfile.email.trim()) {
+        pharmacistName = pharmacistProfile.email.split('@')[0];
+      } else {
+        pharmacistName = `薬剤師${assignment.pharmacistId.slice(-4)}`;
+      }
+    } else {
+      pharmacistName = `薬剤師${assignment.pharmacistId.slice(-4)}`;
+    }
+
+    // 薬局名の取得
+    let pharmacyName = '薬局名未設定';
+    if (pharmacyProfile) {
+      if (pharmacyProfile.name && pharmacyProfile.name.trim()) {
+        pharmacyName = pharmacyProfile.name.trim();
+      } else if (pharmacyProfile.email && pharmacyProfile.email.trim()) {
+        pharmacyName = pharmacyProfile.email.split('@')[0];
+      } else {
+        pharmacyName = `薬局${pharmacyId.slice(-4)}`;
+      }
+    } else {
+      pharmacyName = `薬局${pharmacyId.slice(-4)}`;
+    }
+
+    const storeName = assignment.posting.store_name ||
+                     pharmacyProfile?.store_name ||
+                     '店舗名未設定';
+
+    return {
+      pharmacist: {
+        id: assignment.pharmacistId,
+        name: pharmacistName
+      },
+      pharmacy: {
+        id: pharmacyId,
+        name: pharmacyName,
+        store_name: storeName
+      },
+      timeSlot: {
+        start: assignment.posting.start_time,
+        end: assignment.posting.end_time,
+        date: assignment.request.date
+      },
+      compatibilityScore: assignment.score,
+      reasons: ['最適化マッチング', '時間適合', '距離考慮'],
+      posting: {
+        start_time: assignment.posting.start_time,
+        end_time: assignment.posting.end_time,
+        store_name: storeName
+      },
+      memo: assignment.request.memo || ''
+    };
+  });
+
+  const totalRequired = filteredPostings.reduce((sum, p) => sum + (Number(p.required_staff) || 0), 0);
+  const shortage = Math.max(0, totalRequired - matches.length);
+
+  console.log(`📊 最終統計:`);
+  console.log(`  - 必要人数: ${totalRequired}人`);
+  console.log(`  - 割り当て: ${matches.length}人`);
+  console.log(`  - 不足: ${shortage}人`);
+  console.log(`  - カバー率: ${((matches.length / totalRequired) * 100).toFixed(1)}%`);
+
+  return {
+    matches,
+    matchedCount: matches.length,
+    shortage
+  };
 };
