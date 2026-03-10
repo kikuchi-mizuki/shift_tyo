@@ -362,6 +362,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               showAddForms: { posting: showAddPosting, request: showAddRequest },
               newPosting,
               newRequest,
+              // インタラクティブマッチング用のデータ
+              allRequests: requests,
+              allPostings: postings,
+              allAssigned: assigned,
+              ratings,
+              storeNgPharmacists,
+              storeNgPharmacies,
+              // イベントハンドラー
               onClose: () => setSelectedDate(''),
               onConfirmMatch: handleConfirmMatch,
               onPharmacistSelect: (pharmacyId, index, pharmacistId) => {

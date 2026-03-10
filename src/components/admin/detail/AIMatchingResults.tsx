@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Brain } from 'lucide-react';
+import { Brain, RefreshCw } from 'lucide-react';
 import { safeLength } from '../../../utils/admin/arrayHelpers';
 
 interface AIMatchingResultsProps {
@@ -12,13 +12,19 @@ interface AIMatchingResultsProps {
   userProfiles: any;
   postings: any[];
   onConfirmMatch: (match: any) => void;
+  candidatesByStore?: Map<string, any[]>;
+  onPharmacistChange?: (storeKey: string, newPharmacistId: string) => void;
+  isReoptimizing?: boolean;
 }
 
 export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
   matches,
   userProfiles,
   postings,
-  onConfirmMatch
+  onConfirmMatch,
+  candidatesByStore,
+  onPharmacistChange,
+  isReoptimizing = false
 }) => {
   if (safeLength(matches) === 0) {
     return null;
@@ -26,11 +32,19 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
 
   return (
     <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
-      <div className="flex items-center space-x-2 mb-2">
-        <Brain className="w-4 h-4 text-purple-600" />
-        <h4 className="text-sm font-semibold text-purple-800">
-          AIマッチング結果 {safeLength(matches)}件
-        </h4>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center space-x-2">
+          <Brain className="w-4 h-4 text-purple-600" />
+          <h4 className="text-sm font-semibold text-purple-800">
+            AIマッチング結果 {safeLength(matches)}件
+          </h4>
+        </div>
+        {isReoptimizing && (
+          <div className="flex items-center space-x-1 text-blue-600 text-xs">
+            <RefreshCw className="w-3 h-3 animate-spin" />
+            <span>再最適化中...</span>
+          </div>
+        )}
       </div>
       <div className="space-y-2 max-h-48 overflow-y-auto">
         {matches.map((match, index) => {
@@ -161,12 +175,51 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
                                storeName !== pharmacyName &&
                                storeName.trim() !== '';
 
+          // 店舗キーを生成
+          const storeKey = `${pharmacyId}_${(storeName || '').trim()}`;
+
+          // この店舗の候補者リストを取得
+          const candidates = candidatesByStore?.get(storeKey) || [];
+
+          // プルダウンを表示するか（候補者が2人以上いて、機能が有効な場合）
+          const showDropdown = candidatesByStore && onPharmacistChange && candidates.length > 0;
+
+          // 固定されたマッチかどうか
+          const isLocked = match.isLocked === true;
+
           return (
             <div key={index} className="bg-white rounded border p-2 text-xs">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
+                  {/* 薬剤師選択プルダウン */}
+                  {showDropdown ? (
+                    <div className="mb-1">
+                      <label className="text-[10px] text-gray-500 block mb-0.5">
+                        薬剤師 {isLocked && <span className="text-blue-600">(固定)</span>}
+                      </label>
+                      <select
+                        value={pharmacistId}
+                        onChange={(e) => onPharmacistChange(storeKey, e.target.value)}
+                        disabled={isReoptimizing}
+                        className="text-xs border border-gray-300 rounded px-1 py-0.5 w-full bg-white disabled:opacity-50"
+                      >
+                        {candidates.map((candidate: any) => (
+                          <option key={candidate.pharmacistId} value={candidate.pharmacistId}>
+                            {candidate.pharmacistName}
+                            {candidate.isAssignedElsewhere && ` (現在: ${candidate.assignedTo})`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="font-medium text-gray-800">
+                      {pharmacistName}
+                      {isLocked && <span className="text-blue-600 text-[10px] ml-1">(固定)</span>}
+                    </div>
+                  )}
+
                   <div className="font-medium text-gray-800">
-                    {pharmacistName} → {pharmacyName}
+                    → {pharmacyName}
                   </div>
                   {showStoreName && (
                     <div className="text-gray-600">

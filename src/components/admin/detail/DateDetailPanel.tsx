@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Calendar } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 import { AIMatchingResults } from './AIMatchingResults';
 import { ShortagePharmacies } from './ShortagePharmacies';
 import { ConfirmedShifts } from './ConfirmedShifts';
@@ -12,6 +13,7 @@ import { PharmacyPostings } from './PharmacyPostings';
 import { PharmacistRequests } from './PharmacistRequests';
 import { ConsultationRequests } from './ConsultationRequests';
 import { safeLength } from '../../../utils/admin/arrayHelpers';
+import { useInteractiveMatching } from '../../../hooks/admin/useInteractiveMatching';
 
 interface DateDetailPanelProps {
   selectedDate: string;
@@ -29,6 +31,14 @@ interface DateDetailPanelProps {
   showAddForms: { posting: boolean; request: boolean };
   newPosting: any;
   newRequest: any;
+  // インタラクティブマッチング用（オプショナル）
+  allRequests?: any[];
+  allPostings?: any[];
+  allAssigned?: any[];
+  ratings?: any[];
+  storeNgPharmacists?: { [pharmacyId: string]: any[] };
+  storeNgPharmacies?: { [pharmacistId: string]: any[] };
+  // イベントハンドラー
   onClose: () => void;
   onConfirmMatch: (match: any) => void;
   onPharmacistSelect: (pharmacyId: string, index: number, pharmacistId: string) => void;
@@ -53,6 +63,12 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
   showAddForms,
   newPosting,
   newRequest,
+  allRequests = [],
+  allPostings = [],
+  allAssigned = [],
+  ratings = [],
+  storeNgPharmacists,
+  storeNgPharmacies,
   onClose,
   onConfirmMatch,
   onPharmacistSelect,
@@ -67,6 +83,21 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
   onAddRequest,
   onDeleteRequest
 }) => {
+  // インタラクティブマッチング（オプショナル機能）
+  const interactiveMatchingEnabled = allRequests.length > 0 && allPostings.length > 0;
+
+  const interactiveMatching = useInteractiveMatching({
+    supabase,
+    initialMatches: dayData.matches,
+    date: selectedDate,
+    requests: allRequests,
+    postings: allPostings,
+    assigned: allAssigned,
+    userProfiles,
+    ratings,
+    storeNgPharmacists,
+    storeNgPharmacies
+  });
   const date = new Date(selectedDate);
   const dateDisplay = `${date.getMonth() + 1}月${date.getDate()}日`;
 
@@ -93,10 +124,13 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
       <div className="p-4 space-y-4">
         {/* AIマッチング結果 */}
         <AIMatchingResults
-          matches={dayData.matches}
+          matches={interactiveMatchingEnabled ? interactiveMatching.matches : dayData.matches}
           userProfiles={userProfiles}
           postings={dayData.postings}
           onConfirmMatch={onConfirmMatch}
+          candidatesByStore={interactiveMatchingEnabled ? interactiveMatching.candidatesByStore : undefined}
+          onPharmacistChange={interactiveMatchingEnabled ? interactiveMatching.handlePharmacistChange : undefined}
+          isReoptimizing={interactiveMatchingEnabled ? interactiveMatching.isReoptimizing : false}
         />
 
         {/* 不足薬局 */}
