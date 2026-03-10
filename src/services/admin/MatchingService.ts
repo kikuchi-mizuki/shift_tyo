@@ -1029,23 +1029,29 @@ const minimizeShortageMatching = (
   const assignments: OptimizedAssignment[] = [];
   const usedPharmacists = new Set<string>();
 
-  // 店舗ごとに候補者リストを作成
-  const storeMap = new Map<string, { posting: any; candidates: CompatibilityInfo[] }>();
+  // 各募集（posting）を個別に処理するため、posting.idをキーとして使用
+  // これにより、同じ店舗に複数の募集がある場合も正しく処理できる
+  const postingMap = new Map<string, { posting: any; storeKey: string; candidates: CompatibilityInfo[] }>();
 
   for (const posting of dayPostings) {
     const storeKey = `${posting.pharmacy_id}_${(posting.store_name || '').trim()}`;
     const candidates = compatibilityMatrix.filter(c =>
-      c.storeKey === storeKey && c.isCompatible
+      c.storeKey === storeKey &&
+      c.isCompatible &&
+      // 時間帯も一致するか確認（同じ店舗でも異なる時間帯の募集がある場合に対応）
+      c.posting.id === posting.id
     );
 
-    storeMap.set(storeKey, {
+    // posting.idをキーとして使用（同じ店舗の複数募集を区別）
+    postingMap.set(posting.id, {
       posting,
+      storeKey,
       candidates: candidates.sort((a, b) => b.score - a.score) // スコア降順
     });
   }
 
-  // 候補者が少ない店舗から処理（制約が厳しい順）
-  const sortedStores = Array.from(storeMap.entries()).sort((a, b) => {
+  // 候補者が少ない募集から処理（制約が厳しい順）
+  const sortedPostings = Array.from(postingMap.entries()).sort((a, b) => {
     const aCandidates = a[1].candidates.length;
     const bCandidates = b[1].candidates.length;
 
@@ -1060,22 +1066,22 @@ const minimizeShortageMatching = (
     return bRequired - aRequired;
   });
 
-  console.log('🎯 店舗処理順序:');
-  sortedStores.forEach(([storeKey, data], index) => {
-    console.log(`  ${index + 1}. ${storeKey}: 候補者${data.candidates.length}人, 必要${data.posting.required_staff}人`);
+  console.log('🎯 募集処理順序:');
+  sortedPostings.forEach(([postingId, data], index) => {
+    console.log(`  ${index + 1}. ${data.storeKey} (${postingId.slice(0, 8)}...): 候補者${data.candidates.length}人, 必要${data.posting.required_staff}人`);
   });
 
-  // 各店舗に対して必要人数分を割り当て
-  for (const [storeKey, storeData] of sortedStores) {
-    const requiredStaff = Number(storeData.posting.required_staff) || 1;
+  // 各募集に対して必要人数分を割り当て
+  for (const [postingId, postingData] of sortedPostings) {
+    const requiredStaff = Number(postingData.posting.required_staff) || 1;
     let assignedCount = 0;
 
-    for (const candidate of storeData.candidates) {
+    for (const candidate of postingData.candidates) {
       if (assignedCount >= requiredStaff) break;
       if (usedPharmacists.has(candidate.pharmacistId)) continue;
 
       assignments.push({
-        storeKey,
+        storeKey: postingData.storeKey,
         pharmacistId: candidate.pharmacistId,
         posting: candidate.posting,
         request: candidate.request,
@@ -1086,7 +1092,7 @@ const minimizeShortageMatching = (
       assignedCount++;
     }
 
-    console.log(`  ✅ ${storeKey}: ${assignedCount}/${requiredStaff}人割り当て`);
+    console.log(`  ✅ ${postingData.storeKey} (${postingId.slice(0, 8)}...): ${assignedCount}/${requiredStaff}人割り当て`);
   }
 
   return assignments;
@@ -1094,42 +1100,44 @@ const minimizeShortageMatching = (
 
 /**
  * フェーズ2: 再配置による最適化（オプション）
- * 不足がある店舗に対して、他店舗から薬剤師を再配置できるか試行
+ * 不足がある募集に対して、他募集から薬剤師を再配置できるか試行
  */
 const refineAssignments = (
   assignments: OptimizedAssignment[],
   compatibilityMatrix: CompatibilityInfo[],
   dayPostings: any[]
 ): OptimizedAssignment[] => {
+  // 募集ID（postingId）ごとに割り当てをグループ化
   const assignmentMap = new Map<string, OptimizedAssignment[]>();
 
-  // 店舗ごとに割り当てをグループ化
   for (const assignment of assignments) {
-    if (!assignmentMap.has(assignment.storeKey)) {
-      assignmentMap.set(assignment.storeKey, []);
+    const postingId = assignment.posting.id;
+    if (!assignmentMap.has(postingId)) {
+      assignmentMap.set(postingId, []);
     }
-    assignmentMap.get(assignment.storeKey)!.push(assignment);
+    assignmentMap.get(postingId)!.push(assignment);
   }
 
-  // 不足がある店舗を特定
-  const shortageStores: { storeKey: string; shortage: number; posting: any }[] = [];
+  // 不足がある募集を特定
+  const shortagePostings: { postingId: string; storeKey: string; shortage: number; posting: any }[] = [];
   for (const posting of dayPostings) {
+    const postingId = posting.id;
     const storeKey = `${posting.pharmacy_id}_${(posting.store_name || '').trim()}`;
-    const assignedCount = assignmentMap.get(storeKey)?.length || 0;
+    const assignedCount = assignmentMap.get(postingId)?.length || 0;
     const requiredStaff = Number(posting.required_staff) || 1;
     const shortage = requiredStaff - assignedCount;
 
     if (shortage > 0) {
-      shortageStores.push({ storeKey, shortage, posting });
+      shortagePostings.push({ postingId, storeKey, shortage, posting });
     }
   }
 
-  if (shortageStores.length === 0) {
-    console.log('✨ 全店舗の必要人数を満たしました！');
+  if (shortagePostings.length === 0) {
+    console.log('✨ 全募集の必要人数を満たしました！');
     return assignments;
   }
 
-  console.log(`🔄 再配置を試行: ${shortageStores.length}店舗に不足`);
+  console.log(`🔄 再配置を試行: ${shortagePostings.length}件の募集に不足`);
 
   let improved = true;
   let iteration = 0;
@@ -1139,30 +1147,29 @@ const refineAssignments = (
     improved = false;
     iteration++;
 
-    for (const shortageStore of shortageStores) {
-      // この不足店舗に割り当て可能な薬剤師を探す
+    for (const shortagePosting of shortagePostings) {
+      // この不足募集に割り当て可能な薬剤師を探す
       const reassignableCandidates = compatibilityMatrix.filter(c =>
-        c.storeKey === shortageStore.storeKey && c.isCompatible
+        c.storeKey === shortagePosting.storeKey &&
+        c.posting.id === shortagePosting.postingId &&
+        c.isCompatible
       );
 
       for (const candidate of reassignableCandidates) {
-        // この薬剤師が現在別の店舗に割り当てられているか確認
+        // この薬剤師が現在別の募集に割り当てられているか確認
         const currentAssignment = assignments.find(a => a.pharmacistId === candidate.pharmacistId);
 
         if (!currentAssignment) continue;
 
-        // 元の店舗の余裕を確認
-        const originalStoreAssignments = assignmentMap.get(currentAssignment.storeKey) || [];
-        const originalPosting = dayPostings.find(p => {
-          const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
-          return key === currentAssignment.storeKey;
-        });
-        const originalRequired = Number(originalPosting?.required_staff) || 1;
+        // 元の募集の余裕を確認
+        const originalPostingId = currentAssignment.posting.id;
+        const originalPostingAssignments = assignmentMap.get(originalPostingId) || [];
+        const originalRequired = Number(currentAssignment.posting.required_staff) || 1;
 
-        // 元の店舗に余裕がある場合のみ再配置
-        if (originalStoreAssignments.length > originalRequired * 0.5) { // 半分以上確保されている
+        // 元の募集に余裕がある場合のみ再配置
+        if (originalPostingAssignments.length > originalRequired * 0.5) { // 半分以上確保されている
           // 再配置を実行
-          console.log(`  🔄 ${candidate.pharmacistId} を ${currentAssignment.storeKey} → ${shortageStore.storeKey} に再配置`);
+          console.log(`  🔄 ${candidate.pharmacistId.slice(0, 8)}... を ${currentAssignment.storeKey} → ${shortagePosting.storeKey} に再配置`);
 
           // 元の割り当てを削除
           const index = assignments.indexOf(currentAssignment);
@@ -1170,7 +1177,7 @@ const refineAssignments = (
 
           // 新しい割り当てを追加
           assignments.push({
-            storeKey: shortageStore.storeKey,
+            storeKey: shortagePosting.storeKey,
             pharmacistId: candidate.pharmacistId,
             posting: candidate.posting,
             request: candidate.request,
@@ -1178,14 +1185,18 @@ const refineAssignments = (
           });
 
           // マップを更新
-          assignmentMap.get(currentAssignment.storeKey)!.splice(
-            assignmentMap.get(currentAssignment.storeKey)!.indexOf(currentAssignment),
-            1
-          );
-          if (!assignmentMap.has(shortageStore.storeKey)) {
-            assignmentMap.set(shortageStore.storeKey, []);
+          const originalAssignments = assignmentMap.get(originalPostingId);
+          if (originalAssignments) {
+            const assignmentIndex = originalAssignments.indexOf(currentAssignment);
+            if (assignmentIndex > -1) {
+              originalAssignments.splice(assignmentIndex, 1);
+            }
           }
-          assignmentMap.get(shortageStore.storeKey)!.push(assignments[assignments.length - 1]);
+
+          if (!assignmentMap.has(shortagePosting.postingId)) {
+            assignmentMap.set(shortagePosting.postingId, []);
+          }
+          assignmentMap.get(shortagePosting.postingId)!.push(assignments[assignments.length - 1]);
 
           improved = true;
           break;
