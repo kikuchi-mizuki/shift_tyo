@@ -245,12 +245,4 @@ C薬局（池袋店）: 高橋さん（88点）
 
 ---
 
-## 参考リンク
-
-- [アプリケーション仕様書](index.md)
-- [GitHub リポジトリ](https://github.com/kikuchi-mizuki/shift_tyo)
-- [問題報告](https://github.com/kikuchi-mizuki/shift_tyo/issues)
-
----
-
 **最終更新**: 2026年3月10日
