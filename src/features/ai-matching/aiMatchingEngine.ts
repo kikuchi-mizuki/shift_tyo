@@ -52,8 +52,10 @@ export interface MatchCandidate {
   posting?: {
     start_time: string;
     end_time: string;
+    store_name?: string;
   };
   memo?: string; // 薬剤師の備考
+  isLocked?: boolean; // 手動割り当てで固定されたかどうか
 }
 
 export class AIMatchingEngine {
