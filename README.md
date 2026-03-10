@@ -1,36 +1,36 @@
-# 🏥 薬局シフト管理システム
+# 薬局シフト管理システム
 
 薬局と薬剤師のシフトマッチングを効率化する統合管理システムです。AIマッチング、LINE通知連携、緊急シフト対応など、現代の薬局運営に必要な機能を網羅しています。
 
-## 📖 ドキュメント
+## ドキュメント
 
 - **[完全な仕様書（GitHub Pages）](https://kikuchi-mizuki.github.io/shift_tyo/)**
-- **[🤖 AIマッチングアルゴリズムの詳細解説](https://kikuchi-mizuki.github.io/shift_tyo/matching-algorithm)** ⭐ **New!**
+- **[AIマッチングアルゴリズムの詳細解説](https://kikuchi-mizuki.github.io/shift_tyo/matching-algorithm)**
 
-## ✨ 主な機能
+## 主な機能
 
-### 🎯 コア機能
+### コア機能
 - **マルチユーザー対応**: 薬局、薬剤師、管理者の3種類のユーザータイプ
 - **シフト管理**: 募集、希望提出、マッチング、確定までの一元管理
 - **AIマッチング**: 距離、スキル、NG設定を考慮した自動マッチング
 - **カレンダー表示**: 直感的なUIでシフトの可視化
 
-### 🔔 通知機能
+### 通知機能
 - **LINE連携**: シフト確定、リマインダー、緊急通知をLINEで送信
 - **緊急シフト対応**: 即座に薬剤師へ通知し、迅速な対応を実現
 - **自動リマインダー**: シフト前日の自動通知
 
-### 🛡️ セキュリティ
+### セキュリティ
 - **認証システム**: Supabase Authによる安全な認証
 - **Row Level Security (RLS)**: データベースレベルでのアクセス制御
 - **NG設定**: 薬局と薬剤師の相互NG設定
 
-### 📊 管理機能
+### 管理機能
 - **募集ステータス管理**: 一括での募集開始・終了
 - **評価システム**: 薬剤師の評価管理
 - **統計表示**: AIマッチング精度などの可視化
 
-## 🚀 技術スタック
+## 技術スタック
 
 ### フロントエンド
 - **React 18** + **TypeScript**
@@ -45,7 +45,7 @@
 ### 外部連携
 - **LINE Messaging API** - 通知配信
 
-## 📦 セットアップ
+## セットアップ
 
 ### 前提条件
 - Node.js >= 18.0.0
@@ -95,15 +95,15 @@ npm run dev
 
 ブラウザで `http://localhost:5173` を開いてアクセスできます。
 
-## 📖 ドキュメント
+## ドキュメント
 
-### 📘 アプリケーション仕様書
+### アプリケーション仕様書
 
-**[📚 詳細な仕様書を見る（GitHub Pages）](https://kikuchi-mizuki.github.io/shift_tyo/)**
+**[詳細な仕様書を見る（GitHub Pages）](https://kikuchi-mizuki.github.io/shift_tyo/)**
 
 画面構成、機能詳細、技術スタック、データベース構造などの包括的なドキュメント
 
-### 📝 開発ドキュメント
+### 開発ドキュメント
 
 - **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Edge Functionのデプロイ手順
 - **[SETUP_DATABASE.md](./SETUP_DATABASE.md)** - データベースのセットアップ
@@ -111,7 +111,7 @@ npm run dev
 - **[USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md)** - 使用例とベストプラクティス
 - **[MULTI_USER_GUIDE.md](./MULTI_USER_GUIDE.md)** - マルチユーザー機能の詳細
 
-## 🏗️ ビルドとデプロイ
+## ビルドとデプロイ
 
 ### 本番用ビルド
 
@@ -136,7 +136,7 @@ npm run preview
 3. GitHubリポジトリを連携
 4. 自動デプロイが開始されます
 
-## 🧪 開発用ツール
+## 開発用ツール
 
 ### テスト
 
@@ -161,24 +161,24 @@ npm run lint
 
 開発・デバッグ用のSQLファイルは `development/sql/` ディレクトリに格納されています。
 
-## 🔒 セキュリティ
+## セキュリティ
 
 - 環境変数（`.env`）は絶対にコミットしないでください
 - Supabase Service Role Keyは安全に管理してください
 - 本番環境では適切なRLSポリシーを設定してください
 
-## 📄 ライセンス
+## ライセンス
 
 このプロジェクトはプライベートプロジェクトです。
 
-## 🤝 サポート
+## サポート
 
 問題が発生した場合は、以下のドキュメントを参照してください：
 - [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - デプロイ関連
 - [SETUP_DATABASE.md](./SETUP_DATABASE.md) - データベース関連
 - [EMERGENCY_NOTIFICATION_FIX_GUIDE.md](./EMERGENCY_NOTIFICATION_FIX_GUIDE.md) - 通知関連
 
-## 📊 プロジェクト構成
+## プロジェクト構成
 
 ```
 shift_tyo-main/
@@ -221,7 +221,7 @@ shift_tyo-main/
 4. **Utility Layer** (5 Helper Functions) - 汎用ヘルパー関数
 5. **Type Layer** (型定義) - TypeScript型定義
 
-## 🎯 リファクタリング完了状況
+## リファクタリング完了状況
 
 - [x] **AdminDashboard.tsxのリファクタリング** - 7,276行 → 379行（94.8%削減）
 - [x] **パフォーマンスの最適化** - React.memo適用（3コンポーネント）
