@@ -104,25 +104,21 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
     loadShifts();
     checkRecruitmentStatus();
 
-    // 定型時間テンプレートをlocalStorageから読み込み
-    try {
-      const saved = safeGetLocalStorageJSON<TimeTemplate[]>(`time_templates_${user?.id || ''}`);
-      if (saved) {
-        setSavedTimeTemplates(saved);
-      }
-    } catch (e) {
-      console.error('Failed to load time templates:', e);
-    }
+    // 定型時間テンプレートはloadShifts内でデータベースから読み込まれる
   }, [user]);
 
   // 定型時間テンプレートを保存
-  const saveTimeTemplate = () => {
+  const saveTimeTemplate = async () => {
     if (!startTime || !endTime) {
       alert('開始時間と終了時間を入力してください');
       return;
     }
     if (startTime >= endTime) {
       alert('開始時間は終了時間より早く設定してください');
+      return;
+    }
+    if (!user) {
+      alert('ユーザー情報が取得できませんでした');
       return;
     }
 
@@ -138,18 +134,42 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
     const updated = [...savedTimeTemplates, newTemplate];
     setSavedTimeTemplates(updated);
 
-    safeSetLocalStorageJSON(`time_templates_${user?.id || ''}`, updated);
+    // データベースに保存
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ time_templates: updated })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('定型時間の保存に失敗しました:', error);
+      alert('定型時間の保存に失敗しました');
+      return;
+    }
 
     alert('定型時間を保存しました');
   };
 
-  const deleteTimeTemplate = (index: number) => {
+  const deleteTimeTemplate = async (index: number) => {
     if (!confirm('この定型時間を削除しますか？')) return;
+    if (!user) {
+      alert('ユーザー情報が取得できませんでした');
+      return;
+    }
 
     const updated = savedTimeTemplates.filter((_, i) => i !== index);
     setSavedTimeTemplates(updated);
 
-    safeSetLocalStorageJSON(`time_templates_${user?.id || ''}`, updated);
+    // データベースに保存
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ time_templates: updated })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('定型時間の削除に失敗しました:', error);
+      alert('定型時間の削除に失敗しました');
+      return;
+    }
   };
 
   const applyTimeTemplate = (template: {name: string, start: string, end: string}) => {
@@ -381,9 +401,14 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
           setProfileName(profileData.name || '');
         }
         setNgList(profileData.ng_list || []);
+        setNearestStationName(profileData.nearest_station_name || '');
+        // 定型時間テンプレートをデータベースから読み込み
+        if (profileData.time_templates && Array.isArray(profileData.time_templates)) {
+          setSavedTimeTemplates(profileData.time_templates);
+        }
         // LINE連携状態をチェック
         setIsLineLinked(!!profileData.line_user_id);
-        
+
         // 名前がメールアドレスの@より前の部分の場合は、user_metadataから正しい名前を取得
         if (profileData.name === user.email?.split('@')[0] && user.user_metadata?.name) {
           console.log('名前をuser_metadataから更新:', user.user_metadata.name);
@@ -391,7 +416,7 @@ const PharmacistDashboard: React.FC<PharmacistDashboardProps> = ({ user }) => {
             .from('user_profiles')
             .update({ name: user.user_metadata.name })
             .eq('id', userIdToUse);
-          
+
           if (!updateError && !showProfileEdit) {
             setProfileName(user.user_metadata.name);
           }
