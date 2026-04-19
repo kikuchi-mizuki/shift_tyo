@@ -22,6 +22,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('13:00');
   const [requiredStaff, setRequiredStaff] = useState<number | null>(1); // デフォルトで1人を選択
+  const [isEditMode, setIsEditMode] = useState(false); // 編集モードかどうか
+  const [editingPostingId, setEditingPostingId] = useState<string | null>(null); // 編集中の募集ID
 
   // 定型時間テンプレート
   const [savedTimeTemplates, setSavedTimeTemplates] = useState<Array<{name: string, start: string, end: string}>>([]);
@@ -821,14 +823,16 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
         return newDates;
       });
       
-      // 新しい日付の場合はフォームをリセット（ただし時間帯はデフォルト値を設定）
+      // 新しい日付の場合はフォームをリセット
       console.log('Resetting form for new date');
-      setTimeSlot('morning'); // 空文字列ではなくデフォルト値を設定
-      setCustomTimeMode(false);
+      setTimeSlot(''); // カスタム時間を使用するため空文字列に設定
+      setCustomTimeMode(true); // デフォルトでカスタムモードを有効化
       setStartTime('09:00');
       setEndTime('13:00');
       setRequiredStaff(1); // nullではなくデフォルト値を設定
       setMemo('');
+      setIsEditMode(false); // 編集モードをリセット
+      setEditingPostingId(null); // 編集中のIDをクリア
       // 店舗名はリセットしない（ユーザーが選択した店舗名を保持）
     }
   };
@@ -1215,7 +1219,9 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
 
   const handlePost = async () => {
     console.log('=== handlePost START ===');
-    
+    console.log('isEditMode:', isEditMode);
+    console.log('editingPostingId:', editingPostingId);
+
     // 店舗名の検証
     const invalidStoreNames = batchStoreNames.filter(name => name === user.name);
     if (invalidStoreNames.length > 0) {
@@ -1223,13 +1229,13 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       return;
     }
     console.log('handlePost called', { selectedDates, timeSlot, requiredStaff });
-    
+
     // 募集締切チェック
     if (!isRecruitmentOpen) {
       alert('現在募集は締め切られています。管理者にお問い合わせください。');
       return;
     }
-    
+
     // バリデーション
     if (selectedDates.length === 0) {
       alert('募集日を選択してください');
@@ -1250,6 +1256,54 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
     if (!requiredStaff) {
       alert('必要人数を選択してください');
       return;
+    }
+
+    // 編集モードの場合は既存の募集を直接更新
+    if (isEditMode && editingPostingId) {
+      console.log('=== EDIT MODE: Updating existing posting ===');
+      console.log('Editing posting ID:', editingPostingId);
+
+      try {
+        const updateData = {
+          date: selectedDates[0], // 編集モードでは常に1つの日付
+          store_name: singleStoreName || null,
+          time_slot: customTimeMode ? 'fullday' : timeSlot,
+          start_time: customTimeMode ? startTime + ':00' : undefined,
+          end_time: customTimeMode ? endTime + ':00' : undefined,
+          required_staff: requiredStaff,
+          memo: memo || ''
+        };
+
+        console.log('Update data:', updateData);
+
+        const { error } = await shiftPostings.updatePosting(editingPostingId, updateData);
+        if (error) throw error;
+
+        alert('募集を更新しました');
+
+        // フォームをリセット
+        setSelectedDates([]);
+        setTimeSlot('');
+        setCustomTimeMode(false);
+        setStartTime('09:00');
+        setEndTime('13:00');
+        setRequiredStaff(null);
+        setMemo('');
+        setIsEditMode(false);
+        setEditingPostingId(null);
+
+        // 再読込
+        const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
+        if (!myShiftsError) {
+          setMyShifts(myShiftsData || []);
+        }
+
+        return; // 編集処理完了、以降の新規作成処理は実行しない
+      } catch (error) {
+        console.error('Update error:', error);
+        alert('募集の更新に失敗しました');
+        return;
+      }
     }
     
     // 既存の募集があるかチェック（同日・同店舗名で判断）
@@ -1429,6 +1483,8 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
       setEndTime('13:00');
       setRequiredStaff(null);
       setMemo('');
+      setIsEditMode(false); // 編集モードをリセット
+      setEditingPostingId(null); // 編集中のIDをクリア
 
       // 再読込（プロフィールは保持）
       const { data: myShiftsData, error: myShiftsError } = await shiftPostings.getPostings(user.id, 'pharmacy');
@@ -2230,16 +2286,29 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                           <div className="flex items-center space-x-1">
                             <button
                               onClick={() => {
+                                console.log('=== EDIT BUTTON CLICKED ===');
+                                console.log('Posting to edit:', s);
+                                console.log('Store name:', name);
+                                console.log('Start time:', s.start_time);
+                                console.log('End time:', s.end_time);
+                                console.log('Time slot:', s.time_slot);
+
+                                // 編集モードを有効化
+                                setIsEditMode(true);
+                                setEditingPostingId(s.id);
+
                                 // 編集モードにする：選択日付を設定し、フォームに値を反映
                                 setSelectedDates([s.date]);
                                 setSingleStoreName(name);
                                 // カスタム時間かどうか判定
                                 if (s.start_time && s.end_time) {
+                                  console.log('Setting custom time mode');
                                   setCustomTimeMode(true);
                                   setStartTime(String(s.start_time).substring(0, 5));
                                   setEndTime(String(s.end_time).substring(0, 5));
                                   setTimeSlot('');
                                 } else {
+                                  console.log('Setting preset time slot');
                                   setCustomTimeMode(false);
                                   setTimeSlot(s.time_slot);
                                   setStartTime('09:00');
@@ -2247,6 +2316,18 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                                 }
                                 setRequiredStaff(s.required_staff || 1);
                                 setMemo(s.memo || '');
+
+                                console.log('Form values set:', {
+                                  date: s.date,
+                                  storeName: name,
+                                  customTimeMode: s.start_time && s.end_time,
+                                  startTime: s.start_time ? String(s.start_time).substring(0, 5) : '09:00',
+                                  endTime: s.end_time ? String(s.end_time).substring(0, 5) : '13:00',
+                                  requiredStaff: s.required_staff || 1,
+                                  isEditMode: true,
+                                  editingPostingId: s.id
+                                });
+
                                 // 画面をスクロールしてフォームに移動
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                               }}
@@ -2468,7 +2549,10 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                   <input
                     type="time"
                     value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
+                    onChange={(e) => {
+                      setStartTime(e.target.value);
+                      setCustomTimeMode(true); // 手動入力時もカスタムモードを有効化
+                    }}
                     className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                   />
                 </div>
@@ -2477,7 +2561,10 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                   <input
                     type="time"
                     value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
+                    onChange={(e) => {
+                      setEndTime(e.target.value);
+                      setCustomTimeMode(true); // 手動入力時もカスタムモードを有効化
+                    }}
                     className="w-full max-w-full min-w-0 box-border px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                   />
                 </div>
@@ -2554,117 +2641,89 @@ const PharmacyDashboard: React.FC<PharmacyDashboardProps> = ({ user }) => {
                 });
               }
               
-              // 既存募集の検出（日付と薬局IDのみで判定、時間帯は柔軟に）
+              // 既存募集の検出（完全一致：日付、薬局ID、店舗名、時間帯が全て一致）
               const existingPosting = selectedDates.length > 0 && myShifts ? myShifts.find((s: any) => {
                 const dateMatch = selectedDates.includes(s.date);
                 const pharmacyMatch = s.pharmacy_id === user?.id;
-                
+
+                // 店舗名の一致チェック
+                const direct = (s.store_name || '').trim();
+                let fromMemo = '';
+                if (!direct && typeof s.memo === 'string') {
+                  const m = s.memo.match(/\[store:([^\]]+)\]/);
+                  if (m && m[1]) fromMemo = m[1];
+                }
+                const shiftStoreName = direct || fromMemo;
+                const storeMatch = shiftStoreName === singleStoreName;
+
+                // 時間帯の一致チェック
+                let timeMatch = false;
+                if (customTimeMode) {
+                  // カスタム時間の場合：開始時間と終了時間が一致
+                  const sStart = s.start_time ? String(s.start_time).substring(0, 5) : '';
+                  const sEnd = s.end_time ? String(s.end_time).substring(0, 5) : '';
+                  timeMatch = sStart === startTime && sEnd === endTime;
+                } else {
+                  // 定型時間の場合：time_slotが一致
+                  timeMatch = s.time_slot === timeSlot;
+                }
+
                 console.log(`Checking shift ${s.id}:`, {
                   dateMatch,
                   pharmacyMatch,
+                  storeMatch,
+                  timeMatch,
                   shiftDate: s.date,
-                  shiftPharmacyId: s.pharmacy_id,
+                  shiftStoreName,
+                  currentStoreName: singleStoreName,
                   shiftTimeSlot: s.time_slot,
                   currentTimeSlot
                 });
-                
-                // 日付と薬局IDが一致すれば既存募集とみなす（時間帯は更新可能）
-                return dateMatch && pharmacyMatch;
+
+                // 全ての条件が一致する場合のみ既存募集とみなす
+                return dateMatch && pharmacyMatch && storeMatch && timeMatch;
               }) : null;
-              
+
               const hasExistingPosting = !!existingPosting;
               console.log('hasExistingPosting:', hasExistingPosting);
               console.log('existingPosting:', existingPosting);
-              
-              if (hasExistingPosting && existingPosting) {
-                // 既存の募集がある場合は「募集を更新」と「募集を削除」の両方を表示
-                return (
-                  <div className="space-y-3 mt-4 mb-4">
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        console.log('=== BUTTON CLICK START ===');
-                        console.log('Form state:', { selectedDates, timeSlot, requiredStaff });
-                        
-                        if (!isRecruitmentOpen) {
-                          alert('募集締切中のため編集できません');
-                          return;
-                        }
-                        if (selectedDates.length === 0 || (!customTimeMode && !timeSlot) || (customTimeMode && (!startTime || !endTime)) || !requiredStaff) {
-                          alert('募集日・時間帯・人数を選択してください');
-                          return;
-                        }
-                        
-                        console.log('Validation passed, calling handlePost');
-                        handlePost();
-                      }}
-                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                        !isRecruitmentOpen
-                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                          : 'bg-amber-600 text-white hover:bg-amber-700'
-                      }`}
-                      disabled={!isRecruitmentOpen}
-                    >
-                      {!isRecruitmentOpen ? '募集締切中' : '募集を更新'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        console.log('=== DELETE BUTTON CLICKED ===');
-                        console.log('existingPosting:', existingPosting);
-                        if (existingPosting && existingPosting.id) {
-                          console.log('Calling handleDeleteExisting with ID:', existingPosting.id);
-                          handleDeleteExisting(existingPosting.id);
-                        } else {
-                          console.error('No existing posting ID found');
-                          alert('削除対象の募集が見つかりません');
-                        }
-                      }}
-                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                        !isRecruitmentOpen
-                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                          : 'bg-red-600 text-white hover:bg-red-700'
-                      }`}
-                      disabled={!isRecruitmentOpen}
-                    >
-                      {!isRecruitmentOpen ? '募集締切中' : '募集を削除'}
-                    </button>
-                  </div>
-                );
-              } else {
-                // 既存の募集がない場合は「募集を追加」のみ表示
-                return (
-                  <div className="mt-4 mb-4">
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        console.log('=== BUTTON CLICK START ===');
-                        console.log('Form state:', { selectedDates, timeSlot, requiredStaff });
-                        
-                        if (!isRecruitmentOpen) {
-                          alert('募集締切中のため編集できません');
-                          return;
-                        }
-                        if (selectedDates.length === 0 || (!customTimeMode && !timeSlot) || (customTimeMode && (!startTime || !endTime)) || !requiredStaff) {
-                          alert('募集日・時間帯・人数を選択してください');
-                          return;
-                        }
-                        
-                        console.log('Validation passed, calling handlePost');
-                        handlePost();
-                      }}
-                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                        !isRecruitmentOpen
-                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              console.log('isEditMode:', isEditMode);
+              console.log('editingPostingId:', editingPostingId);
+
+              // 編集モードの場合は「更新」、そうでない場合は「新規追加」
+              return (
+                <div className="mt-4 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log('=== BUTTON CLICK START ===');
+                      console.log('Form state:', { selectedDates, timeSlot, requiredStaff, isEditMode });
+
+                      if (!isRecruitmentOpen) {
+                        alert('募集締切中のため編集できません');
+                        return;
+                      }
+                      if (selectedDates.length === 0 || (!customTimeMode && !timeSlot) || (customTimeMode && (!startTime || !endTime)) || !requiredStaff) {
+                        alert('募集日・時間帯・人数を選択してください');
+                        return;
+                      }
+
+                      console.log('Validation passed, calling handlePost');
+                      handlePost();
+                    }}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                      !isRecruitmentOpen
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : isEditMode
+                          ? 'bg-amber-600 text-white hover:bg-amber-700'
                           : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                      disabled={!isRecruitmentOpen}
-                    >
-                      {!isRecruitmentOpen ? '募集締切中' : '募集を追加'}
-                    </button>
-                  </div>
-                );
-              }
+                    }`}
+                    disabled={!isRecruitmentOpen}
+                  >
+                    {!isRecruitmentOpen ? '募集締切中' : isEditMode ? '募集を更新' : '新規募集を追加'}
+                  </button>
+                </div>
+              );
             })()}
             </div>
           )}
