@@ -48,7 +48,9 @@ const AdminDashboard = React.lazy(() =>
 // );
 import { MultiUserIndicator } from './components/MultiUserIndicator';
 import { MultiUserAuthProvider, useMultiUserAuth } from './contexts/MultiUserAuthContext';
-import { MultiUserLoginForm } from './components/MultiUserLoginForm';
+import { LoginSelector } from './components/LoginSelector';
+import { PharmacistLoginForm } from './components/PharmacistLoginForm';
+import { PharmacyLoginForm } from './components/PharmacyLoginForm';
 import { AdminLoginForm } from './components/AdminLoginForm';
 import { UserTypeSwitcher } from './components/UserTypeSwitcher';
 import { PasswordResetRequest } from './components/PasswordResetRequest';
@@ -150,6 +152,8 @@ function AppContent() {
   // URLパスから画面を判定（SSRガード付き）
   const currentPath = typeof window !== 'undefined' ? window.location?.pathname : '/';
   const isAdminLoginPath = currentPath === '/admin-login' || currentPath?.startsWith('/admin-login/');
+  const isPharmacistLoginPath = currentPath === '/pharmacist-login' || currentPath?.startsWith('/pharmacist-login/');
+  const isPharmacyLoginPath = currentPath === '/pharmacy-login' || currentPath?.startsWith('/pharmacy-login/');
   const isPasswordResetPath = currentPath === '/password-reset' || currentPath?.startsWith('/password-reset/');
   const isResetPasswordPath = currentPath === '/reset-password' || currentPath?.startsWith('/reset-password/');
 
@@ -188,6 +192,34 @@ function AppContent() {
     );
   }
 
+  // 薬剤師ログインパスの場合は専用ログイン画面を表示
+  if (isPharmacistLoginPath) {
+    return (
+      <PharmacistLoginForm
+        onLoginSuccess={() => {
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 200);
+        }}
+        onPasswordReset={() => setShowPasswordReset(true)}
+      />
+    );
+  }
+
+  // 薬局ログインパスの場合は専用ログイン画面を表示
+  if (isPharmacyLoginPath) {
+    return (
+      <PharmacyLoginForm
+        onLoginSuccess={() => {
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 200);
+        }}
+        onPasswordReset={() => setShowPasswordReset(true)}
+      />
+    );
+  }
+
   // 管理者ログインパスの場合は専用ログイン画面を表示
   if (isAdminLoginPath) {
     return (
@@ -210,15 +242,10 @@ function AppContent() {
     sessions: activeSessions.map(s => ({ type: s.user_type, email: s.email }))
   });
 
-  // アクティブセッションがない場合はマルチユーザーログイン画面を表示
+  // アクティブセッションがない場合はログイン選択画面を表示
   if (activeSessions.length === 0) {
-    console.log('⚠️ App: No active sessions, showing login form');
-    return (
-      <MultiUserLoginForm
-        onLoginSuccess={() => {}}
-        onPasswordReset={() => setShowPasswordReset(true)}
-      />
-    );
+    console.log('⚠️ App: No active sessions, showing login selector');
+    return <LoginSelector />;
   }
 
   // 現在のユーザータイプが設定されていない場合は最初のセッションを使用
@@ -232,8 +259,8 @@ function AppContent() {
   console.log('📋 App: Current session:', currentSession);
 
   if (!effectiveUserType || !currentSession) {
-    console.log('⚠️ App: No effective user type or session, showing login form');
-    return <MultiUserLoginForm onLoginSuccess={() => {}} />;
+    console.log('⚠️ App: No effective user type or session, showing login selector');
+    return <LoginSelector />;
   }
 
   return (
@@ -283,9 +310,13 @@ function AppContent() {
                 onClick={async () => {
                   try {
                     await auth.signOut();
-                    // 管理者の場合は管理者ログイン画面に、一般ユーザーの場合は一般ログイン画面にリダイレクト
+                    // ユーザータイプに応じて適切なログイン画面にリダイレクト
                     if (effectiveUserType === 'admin') {
                       window.location.href = '/admin-login';
+                    } else if (effectiveUserType === 'pharmacist') {
+                      window.location.href = '/pharmacist-login';
+                    } else if (effectiveUserType === 'pharmacy') {
+                      window.location.href = '/pharmacy-login';
                     } else {
                       window.location.href = '/';
                     }
