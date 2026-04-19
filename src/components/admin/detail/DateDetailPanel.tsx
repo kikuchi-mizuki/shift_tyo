@@ -3,7 +3,7 @@
  * 選択された日付の詳細情報を表示するパネルコンテナ
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Calendar } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { AIMatchingResults } from './AIMatchingResults';
@@ -14,6 +14,7 @@ import { PharmacistRequests } from './PharmacistRequests';
 import { ConsultationRequests } from './ConsultationRequests';
 import { safeLength } from '../../../utils/admin/arrayHelpers';
 import { useInteractiveMatching } from '../../../hooks/admin/useInteractiveMatching';
+import { getAvailableCandidatesForStore } from '../../../services/admin/MatchingService';
 
 interface DateDetailPanelProps {
   selectedDate: string;
@@ -91,7 +92,7 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
     Array.isArray(dayData?.matches);
 
   const interactiveMatching = useInteractiveMatching({
-    supabase,
+    supabase: supabase!,
     initialMatches: dayData?.matches || [],
     date: selectedDate,
     requests: allRequests || [],
@@ -102,6 +103,92 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
     storeNgPharmacists,
     storeNgPharmacies
   });
+
+  // 不足薬局用の候補者リストを生成（時間情報を含むstoreKey）
+  const shortageCandidatesByStore = useMemo(() => {
+    const map = new Map<string, any[]>();
+
+    if (!interactiveMatchingEnabled || !dayData?.shortages) {
+      return map;
+    }
+
+    for (const shortage of dayData.shortages) {
+      if (!shortage || !shortage.id) continue;
+
+      // 時間情報を含むstoreKeyを生成
+      const storeKey = `${shortage.id}_${(shortage.store_name || '').trim()}_${shortage.start_time || '09:00'}_${shortage.end_time || '18:00'}`;
+
+      // この不足薬局の募集情報を取得
+      const posting = allPostings.find(p =>
+        p.pharmacy_id === shortage.id &&
+        p.date === selectedDate &&
+        (p.store_name || '').trim() === (shortage.store_name || '').trim() &&
+        (p.start_time ? String(p.start_time).substring(0, 5) : '09:00') === (shortage.start_time || '09:00') &&
+        (p.end_time ? String(p.end_time).substring(0, 5) : '18:00') === (shortage.end_time || '18:00')
+      );
+
+      if (!posting) continue;
+
+      // この店舗に割り当て可能な全薬剤師を取得
+      const candidates = getAvailableCandidatesForStore(
+        storeKey,
+        posting,
+        allRequests.filter(r => r && r.date === selectedDate),
+        userProfiles,
+        ratings || [],
+        allRequests,
+        storeNgPharmacists,
+        storeNgPharmacies
+      );
+
+      // 候補者情報を整形
+      const formattedCandidates = candidates.map(c => {
+        const pharmacistProfile = userProfiles[c.pharmacistId];
+
+        // 薬剤師名の取得
+        let pharmacistName = '薬剤師名未設定';
+        if (pharmacistProfile) {
+          if (pharmacistProfile.name && pharmacistProfile.name.trim()) {
+            pharmacistName = pharmacistProfile.name.trim();
+          } else if (pharmacistProfile.email && pharmacistProfile.email.trim()) {
+            pharmacistName = pharmacistProfile.email.split('@')[0];
+          } else if (c.pharmacistId) {
+            pharmacistName = `薬剤師${c.pharmacistId.slice(-4)}`;
+          }
+        } else if (c.pharmacistId) {
+          pharmacistName = `薬剤師${c.pharmacistId.slice(-4)}`;
+        }
+
+        // 現在他の薬局に割り当てられているかチェック
+        const currentAssignment = interactiveMatching.matches.find(m =>
+          m && m.pharmacist && m.pharmacist.id === c.pharmacistId
+        );
+
+        let assignmentStoreKey = '';
+        if (currentAssignment) {
+          const assignedStoreName = currentAssignment.posting?.store_name || '';
+          const assignedStartTime = currentAssignment.timeSlot?.start ? String(currentAssignment.timeSlot.start).substring(0, 5) : '09:00';
+          const assignedEndTime = currentAssignment.timeSlot?.end ? String(currentAssignment.timeSlot.end).substring(0, 5) : '18:00';
+          assignmentStoreKey = `${currentAssignment.pharmacy.id}_${assignedStoreName.trim()}_${assignedStartTime}_${assignedEndTime}`;
+        }
+
+        const isAssignedElsewhere = currentAssignment && assignmentStoreKey !== storeKey;
+
+        return {
+          pharmacistId: c.pharmacistId,
+          pharmacistName,
+          score: c.score,
+          isAssignedElsewhere,
+          assignedTo: isAssignedElsewhere && currentAssignment ? currentAssignment.pharmacy.name : null
+        };
+      });
+
+      map.set(storeKey, formattedCandidates);
+    }
+
+    return map;
+  }, [interactiveMatchingEnabled, dayData?.shortages, allPostings, allRequests, selectedDate, userProfiles, ratings, storeNgPharmacists, storeNgPharmacies, interactiveMatching.matches]);
+
   const date = new Date(selectedDate);
   const dateDisplay = `${date.getMonth() + 1}月${date.getDate()}日`;
 
@@ -146,6 +233,9 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
           manualMatches={manualMatches}
           onPharmacistSelect={onPharmacistSelect}
           onSaveManualMatches={onSaveManualMatches}
+          candidatesByStore={interactiveMatchingEnabled ? shortageCandidatesByStore : undefined}
+          onPharmacistChange={interactiveMatchingEnabled ? interactiveMatching.handlePharmacistChange : undefined}
+          isReoptimizing={interactiveMatchingEnabled ? interactiveMatching.isReoptimizing : false}
         />
 
         {/* 確定シフト */}

@@ -5,14 +5,18 @@
 
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
-import { safeLength, safeObject } from '../../../utils/admin/arrayHelpers';
+import { safeLength } from '../../../utils/admin/arrayHelpers';
 
 interface ShortagePharmaciesProps {
   shortages: any[];
-  availablePharmacists: any[];
-  manualMatches: { [pharmacyId: string]: string[] };
-  onPharmacistSelect: (pharmacyId: string, index: number, pharmacistId: string) => void;
-  onSaveManualMatches: () => void;
+  availablePharmacists?: any[];
+  manualMatches?: { [pharmacyId: string]: string[] };
+  onPharmacistSelect?: (pharmacyId: string, index: number, pharmacistId: string) => void;
+  onSaveManualMatches?: () => void;
+  // インタラクティブマッチング用
+  candidatesByStore?: Map<string, any[]>;
+  onPharmacistChange?: (storeKey: string, pharmacistId: string) => void;
+  isReoptimizing?: boolean;
 }
 
 export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
@@ -20,15 +24,21 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
   availablePharmacists,
   manualMatches,
   onPharmacistSelect,
-  onSaveManualMatches
+  onSaveManualMatches,
+  candidatesByStore,
+  onPharmacistChange,
+  isReoptimizing = false
 }) => {
   if (safeLength(shortages) === 0) {
     return null;
   }
 
-  const hasManualSelections = Object.values(manualMatches).some(
+  const hasManualSelections = manualMatches ? Object.values(manualMatches).some(
     matches => matches.some(id => id && id !== '')
-  );
+  ) : false;
+
+  // インタラクティブマッチングが有効かどうか
+  const isInteractiveMode = candidatesByStore && onPharmacistChange;
 
   return (
     <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
@@ -64,50 +74,59 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
               </div>
             </div>
 
-            {/* 手動マッチング用プルダウン - 非表示 */}
-            {false && pharmacy.shortage > 0 && (
-              <div className="mt-2">
-                <div className="text-xs text-gray-600 mb-1">
-                  <span className="text-red-600">※ 選択した薬剤師の新しいシフト希望が作成されます</span>
+            {/* 手動マッチング用プルダウン */}
+            {isInteractiveMode && pharmacy.shortage > 0 && (() => {
+              // 時間情報を含むstoreKeyを生成
+              const storeKey = `${pharmacy.id}_${(pharmacy.store_name || '').trim()}_${pharmacy.start_time || '09:00'}_${pharmacy.end_time || '18:00'}`;
+              const candidates = candidatesByStore.get(storeKey) || [];
+
+              return (
+                <div className="mt-2">
+                  <div className="text-xs text-gray-600 mb-1">
+                    <span className="text-blue-600">※ 選択すると日全体のマッチングが再計算されます</span>
+                    {isReoptimizing && <span className="ml-2 text-orange-600">再計算中...</span>}
+                  </div>
+                  <div className="space-y-1">
+                    {Array.from({ length: pharmacy.shortage }, (_, slotIndex) => (
+                      <div key={slotIndex} className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500 w-8">
+                          {slotIndex + 1}:
+                        </span>
+                        <select
+                          onChange={(e) => {
+                            if (e.target.value && onPharmacistChange) {
+                              onPharmacistChange(storeKey, e.target.value);
+                            }
+                          }}
+                          disabled={isReoptimizing}
+                          className="text-xs border border-gray-300 rounded px-2 py-1 flex-1 disabled:bg-gray-100"
+                        >
+                          <option value="">薬剤師を選択してください</option>
+                          {candidates
+                            .filter((c: any) => c && c.pharmacistId)
+                            .map((candidate: any) => (
+                              <option
+                                key={candidate.pharmacistId}
+                                value={candidate.pharmacistId}
+                                disabled={candidate.isAssignedElsewhere}
+                              >
+                                {candidate.pharmacistName}
+                                {candidate.isAssignedElsewhere && ` (既に${candidate.assignedTo}に割当済み)`}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {Array.from({ length: pharmacy.shortage }, (_, slotIndex) => (
-                    <div key={slotIndex} className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500 w-8">
-                        {slotIndex + 1}:
-                      </span>
-                      <select
-                        value={manualMatches[pharmacy.id]?.[slotIndex] || ''}
-                        onChange={(e) => onPharmacistSelect(pharmacy.id, slotIndex, e.target.value)}
-                        className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
-                      >
-                        <option value="">薬剤師を選択してください</option>
-                        {(availablePharmacists || [])
-                          .filter((p: any) => p && p.id)
-                          .map((pharmacist: any) => (
-                            <option
-                              key={pharmacist.id}
-                              value={pharmacist.id}
-                              disabled={
-                                manualMatches[pharmacy.id]?.includes(pharmacist.id) &&
-                                manualMatches[pharmacy.id]?.[slotIndex] !== pharmacist.id
-                              }
-                            >
-                              {pharmacist.name || `薬剤師${pharmacist.id?.slice(-4) || 'unknown'}`}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
           ))}
       </div>
 
-      {/* 手動マッチング確定ボタン - 非表示 */}
-      {false && hasManualSelections && (
+      {/* 手動マッチング確定ボタン（非インタラクティブモードのみ） */}
+      {!isInteractiveMode && hasManualSelections && onSaveManualMatches && (
         <div className="mt-3 pt-2 border-t border-red-200">
           <button
             onClick={onSaveManualMatches}
