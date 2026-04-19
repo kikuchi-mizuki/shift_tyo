@@ -14,7 +14,7 @@ import { PharmacistRequests } from './PharmacistRequests';
 import { ConsultationRequests } from './ConsultationRequests';
 import { safeLength } from '../../../utils/admin/arrayHelpers';
 import { useInteractiveMatching } from '../../../hooks/admin/useInteractiveMatching';
-import { getAvailableCandidatesForStore } from '../../../services/admin/MatchingService';
+import { getAvailableCandidatesForShortageStore } from '../../../services/admin/MatchingService';
 
 interface DateDetailPanelProps {
   selectedDate: string;
@@ -129,8 +129,8 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
 
       if (!posting) continue;
 
-      // この店舗に割り当て可能な全薬剤師を取得
-      const candidates = getAvailableCandidatesForStore(
+      // この店舗に割り当て可能な全薬剤師を取得（時間互換性チェックなし、確定済み除外）
+      const candidates = getAvailableCandidatesForShortageStore(
         storeKey,
         posting,
         allRequests.filter(r => r && r.date === selectedDate),
@@ -236,6 +236,7 @@ export const DateDetailPanel: React.FC<DateDetailPanelProps> = ({
           candidatesByStore={interactiveMatchingEnabled ? shortageCandidatesByStore : undefined}
           onPharmacistChange={interactiveMatchingEnabled ? interactiveMatching.handlePharmacistChange : undefined}
           isReoptimizing={interactiveMatchingEnabled ? interactiveMatching.isReoptimizing : false}
+          matches={interactiveMatchingEnabled ? interactiveMatching.matches : dayData.matches}
         />
 
         {/* 確定シフト */}

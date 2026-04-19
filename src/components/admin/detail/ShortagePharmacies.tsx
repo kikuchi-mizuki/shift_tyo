@@ -17,6 +17,7 @@ interface ShortagePharmaciesProps {
   candidatesByStore?: Map<string, any[]>;
   onPharmacistChange?: (storeKey: string, pharmacistId: string) => void;
   isReoptimizing?: boolean;
+  matches?: any[]; // 現在のマッチング結果
 }
 
 export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
@@ -27,7 +28,8 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
   onSaveManualMatches,
   candidatesByStore,
   onPharmacistChange,
-  isReoptimizing = false
+  isReoptimizing = false,
+  matches = []
 }) => {
   if (safeLength(shortages) === 0) {
     return null;
@@ -80,6 +82,41 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
               const storeKey = `${pharmacy.id}_${(pharmacy.store_name || '').trim()}_${pharmacy.start_time || '09:00'}_${pharmacy.end_time || '18:00'}`;
               const candidates = candidatesByStore.get(storeKey) || [];
 
+              // この店舗に割り当てられている薬剤師を取得（固定マッチングから）
+              console.log('🔍 不足薬局の割り当て確認:', {
+                storeKey,
+                totalMatches: matches.length,
+                lockedMatches: matches.filter(m => m?.isLocked).length
+              });
+
+              const assignedPharmacists = matches
+                .filter(m => {
+                  if (!m || !m.pharmacy) {
+                    console.log('⚠️ マッチがnullまたはpharmacyがない');
+                    return false;
+                  }
+
+                  const matchStoreName = m.posting?.store_name || m.pharmacy.store_name || '';
+                  const matchStartTime = m.timeSlot?.start ? String(m.timeSlot.start).substring(0, 5) : '09:00';
+                  const matchEndTime = m.timeSlot?.end ? String(m.timeSlot.end).substring(0, 5) : '18:00';
+                  const matchStoreKey = `${m.pharmacy.id}_${matchStoreName.trim()}_${matchStartTime}_${matchEndTime}`;
+
+                  const isMatch = matchStoreKey === storeKey && m.isLocked;
+
+                  console.log('🔍 マッチチェック:', {
+                    pharmacistName: m.pharmacist.name,
+                    matchStoreKey,
+                    targetStoreKey: storeKey,
+                    isLocked: m.isLocked,
+                    isMatch
+                  });
+
+                  return isMatch;
+                })
+                .map(m => m.pharmacist.id);
+
+              console.log('✅ 割り当て済み薬剤師:', assignedPharmacists);
+
               return (
                 <div className="mt-2">
                   <div className="text-xs text-gray-600 mb-1">
@@ -87,36 +124,47 @@ export const ShortagePharmacies: React.FC<ShortagePharmaciesProps> = ({
                     {isReoptimizing && <span className="ml-2 text-orange-600">再計算中...</span>}
                   </div>
                   <div className="space-y-1">
-                    {Array.from({ length: pharmacy.shortage }, (_, slotIndex) => (
-                      <div key={slotIndex} className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500 w-8">
-                          {slotIndex + 1}:
-                        </span>
-                        <select
-                          onChange={(e) => {
-                            if (e.target.value && onPharmacistChange) {
-                              onPharmacistChange(storeKey, e.target.value);
-                            }
-                          }}
-                          disabled={isReoptimizing}
-                          className="text-xs border border-gray-300 rounded px-2 py-1 flex-1 disabled:bg-gray-100"
-                        >
-                          <option value="">薬剤師を選択してください</option>
-                          {candidates
-                            .filter((c: any) => c && c.pharmacistId)
-                            .map((candidate: any) => (
-                              <option
-                                key={candidate.pharmacistId}
-                                value={candidate.pharmacistId}
-                                disabled={candidate.isAssignedElsewhere}
-                              >
-                                {candidate.pharmacistName}
-                                {candidate.isAssignedElsewhere && ` (既に${candidate.assignedTo}に割当済み)`}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                    ))}
+                    {Array.from({ length: pharmacy.shortage }, (_, slotIndex) => {
+                      // このスロットに割り当てられた薬剤師
+                      const assignedPharmacistId = assignedPharmacists[slotIndex] || '';
+
+                      return (
+                        <div key={slotIndex} className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-500 w-8">
+                            {slotIndex + 1}:
+                          </span>
+                          <select
+                            value={assignedPharmacistId}
+                            onChange={(e) => {
+                              if (e.target.value && onPharmacistChange) {
+                                console.log('🔵 不足薬局で薬剤師選択:', {
+                                  storeKey,
+                                  selectedPharmacistId: e.target.value,
+                                  selectedPharmacistName: candidates.find(c => c.pharmacistId === e.target.value)?.pharmacistName
+                                });
+                                onPharmacistChange(storeKey, e.target.value);
+                              }
+                            }}
+                            disabled={isReoptimizing}
+                            className="text-xs border border-gray-300 rounded px-2 py-1 flex-1 disabled:bg-gray-100"
+                          >
+                            <option value="">薬剤師を選択してください</option>
+                            {candidates
+                              .filter((c: any) => c && c.pharmacistId)
+                              .map((candidate: any) => (
+                                <option
+                                  key={candidate.pharmacistId}
+                                  value={candidate.pharmacistId}
+                                  disabled={candidate.isAssignedElsewhere}
+                                >
+                                  {candidate.pharmacistName}
+                                  {candidate.isAssignedElsewhere && ` (既に${candidate.assignedTo}に割当済み)`}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );

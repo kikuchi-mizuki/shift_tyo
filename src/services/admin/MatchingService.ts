@@ -1384,6 +1384,129 @@ export const performOptimizedMatching = (
  */
 
 /**
+ * 不足薬局に割り当て可能な全薬剤師を取得（時間互換性チェックなし）
+ *
+ * @param storeKey 店舗キー（pharmacy_id_store_name）
+ * @param posting 募集情報
+ * @param allRequests 全薬剤師リクエスト（その日の分）
+ * @param userProfiles ユーザープロフィール
+ * @param ratings 評価情報
+ * @param requests 全リクエスト（スコア計算用）
+ * @param storeNgPharmacists 薬局のNG薬剤師リスト
+ * @param storeNgPharmacies 薬剤師のNG薬局リスト
+ * @returns 候補者リスト（NGチェック済み、確定済み除外、スコア付き）
+ */
+export const getAvailableCandidatesForShortageStore = (
+  storeKey: string,
+  posting: any,
+  allRequests: any[],
+  userProfiles: any,
+  ratings: any[],
+  requests: any[],
+  storeNgPharmacists?: { [pharmacyId: string]: any[] },
+  storeNgPharmacies?: { [pharmacistId: string]: any[] }
+): CompatibilityInfo[] => {
+  const candidates: CompatibilityInfo[] = [];
+
+  // 時間を正規化する関数
+  const normalizeTime = (item: any) => {
+    if (item.start_time && item.end_time) {
+      return item;
+    }
+    const timeSlotMap: { [key: string]: { start: string; end: string } } = {
+      'morning': { start: '09:00:00', end: '13:00:00' },
+      'afternoon': { start: '13:00:00', end: '18:00:00' },
+      'fullday': { start: '09:00:00', end: '18:00:00' },
+      'negotiable': { start: '09:00:00', end: '18:00:00' }
+    };
+    const timeSlot = item.time_slot || 'fullday';
+    const times = timeSlotMap[timeSlot] || timeSlotMap['fullday'];
+    return { ...item, start_time: times.start, end_time: times.end };
+  };
+
+  const normalizedPosting = normalizeTime(posting);
+
+  // 確定済み薬剤師のセットを作成
+  const confirmedPharmacistIds = new Set<string>();
+  for (const request of allRequests) {
+    if (request.status === 'confirmed') {
+      confirmedPharmacistIds.add(request.pharmacist_id);
+    }
+  }
+
+  // 全薬剤師プロフィールから薬剤師ユーザーを抽出
+  const allPharmacists = Object.entries(userProfiles)
+    .filter(([_, profile]: [string, any]) => profile.user_type === 'pharmacist')
+    .map(([pharmacistId, profile]) => ({ pharmacistId, profile }));
+
+  // 各薬剤師をチェック
+  for (const { pharmacistId, profile: pharmacist } of allPharmacists) {
+    // 確定済みの薬剤師はスキップ
+    if (confirmedPharmacistIds.has(pharmacistId)) {
+      continue;
+    }
+
+    // NGリストチェック
+    let blockedByPharmacist = false;
+    let blockedByPharmacy = false;
+
+    if (storeNgPharmacies && storeNgPharmacies[pharmacistId]) {
+      const ngPharmacies = storeNgPharmacies[pharmacistId];
+      blockedByPharmacist = ngPharmacies.some((ng: any) =>
+        ng.pharmacy_id === posting.pharmacy_id &&
+        (!ng.store_name || ng.store_name === posting.store_name)
+      );
+    }
+
+    if (storeNgPharmacists && storeNgPharmacists[posting.pharmacy_id]) {
+      const ngPharmacists = storeNgPharmacists[posting.pharmacy_id];
+      blockedByPharmacy = ngPharmacists.some((ng: any) =>
+        ng.pharmacist_id === pharmacistId &&
+        (!ng.store_name || ng.store_name === posting.store_name)
+      );
+    }
+
+    // NGリストに該当しない場合のみ候補に追加（時間互換性チェックなし）
+    if (!blockedByPharmacist && !blockedByPharmacy) {
+      // その薬剤師のrequestを検索（なければダミーを作成）
+      const existingRequest = allRequests.find(r => r.pharmacist_id === pharmacistId);
+      const dummyRequest = {
+        pharmacist_id: pharmacistId,
+        date: posting.date,
+        start_time: posting.start_time || '09:00:00',
+        end_time: posting.end_time || '18:00:00',
+        status: 'pending',
+        priority: 'medium'
+      };
+      const request = existingRequest || dummyRequest;
+      const normalizedRequest = normalizeTime(request);
+
+      // スコア計算
+      const pharmacy = userProfiles[posting.pharmacy_id];
+      const distanceScore = calculateDistanceScore(pharmacist as any, pharmacy);
+      const requestCountScore = calculateRequestCountScore(pharmacistId, requests);
+      const ratingScore = getPharmacistRating(pharmacistId, ratings) / 5;
+      const totalScore = distanceScore * 0.4 + (1 - requestCountScore) * 0.3 + ratingScore * 0.3;
+
+      candidates.push({
+        storeKey,
+        pharmacistId: pharmacistId,
+        isCompatible: true, // 時間チェックなしなので常にtrue
+        score: totalScore,
+        distanceScore,
+        requestCountScore,
+        ratingScore,
+        request: normalizedRequest,
+        posting: normalizedPosting
+      });
+    }
+  }
+
+  // スコア降順でソート
+  return candidates.sort((a, b) => b.score - a.score);
+};
+
+/**
  * 特定の店舗に割り当て可能な全薬剤師を取得
  *
  * @param storeKey 店舗キー（pharmacy_id_store_name）
@@ -1536,6 +1659,11 @@ export const reoptimizeWithLockedAssignments = (
 ): { matches: MatchCandidate[]; matchedCount: number; shortage: number } => {
   console.log('🔄 固定割り当てを含む再最適化開始');
   console.log(`📌 固定割り当て: ${lockedAssignments.length}件`);
+  console.log('📌 固定割り当て詳細:', lockedAssignments.map(la => ({
+    storeKey: la.storeKey,
+    pharmacistId: la.pharmacistId,
+    pharmacistName: userProfiles[la.pharmacistId]?.name || '不明'
+  })));
 
   // 固定された薬剤師を除外
   const lockedPharmacistIds = new Set(lockedAssignments.map(la => la.pharmacistId));
@@ -1544,17 +1672,90 @@ export const reoptimizeWithLockedAssignments = (
   // 固定された店舗の残り必要人数を計算
   const storeAssignmentCounts = new Map<string, number>();
   for (const locked of lockedAssignments) {
+    // 元のstoreKeyでカウント
     storeAssignmentCounts.set(
       locked.storeKey,
       (storeAssignmentCounts.get(locked.storeKey) || 0) + 1
     );
+
+    // storeKeyをパースして、時間情報なしのキーでもカウント
+    const parts = locked.storeKey.split('_');
+    if (parts.length >= 2) {
+      let storeKeyWithoutTime = '';
+
+      // 最後2つが時間形式（HH:MM）の場合、それを除いたキーを作成
+      const lastPart = parts[parts.length - 1];
+      const secondLastPart = parts[parts.length - 2];
+
+      if (lastPart.includes(':') && secondLastPart.includes(':')) {
+        // 時間情報を除外したstoreKeyを作成
+        storeKeyWithoutTime = parts.slice(0, -2).join('_');
+        storeAssignmentCounts.set(
+          storeKeyWithoutTime,
+          (storeAssignmentCounts.get(storeKeyWithoutTime) || 0) + 1
+        );
+      }
+    }
+
+    console.log('📊 固定割り当てカウント登録:', {
+      storeKey: locked.storeKey,
+      count: storeAssignmentCounts.get(locked.storeKey)
+    });
   }
+
+  console.log('📊 storeAssignmentCounts全体:', Array.from(storeAssignmentCounts.entries()));
 
   // 店舗の残り必要人数を更新
   const adjustedPostings = dayPostings.map(posting => {
-    const storeKey = `${posting.pharmacy_id}_${(posting.store_name || '').trim()}`;
-    const lockedCount = storeAssignmentCounts.get(storeKey) || 0;
+    // storeKeyを生成（時間情報を含む可能性を考慮）
+    const startTime = posting.start_time ? String(posting.start_time).substring(0, 5) : '09:00';
+    const endTime = posting.end_time ? String(posting.end_time).substring(0, 5) : '18:00';
+    const storeKeyWithTime = `${posting.pharmacy_id}_${(posting.store_name || '').trim()}_${startTime}_${endTime}`;
+    const storeKeyWithoutTime = `${posting.pharmacy_id}_${(posting.store_name || '').trim()}`;
+
+    console.log('🔍 Posting storeKey生成:', {
+      pharmacy_id: posting.pharmacy_id,
+      store_name: posting.store_name,
+      startTime,
+      endTime,
+      storeKeyWithTime,
+      storeKeyWithoutTime
+    });
+
+    // lockedAssignmentsから直接カウント（Mapを経由しない）
+    let lockedCount = 0;
+    for (const locked of lockedAssignments) {
+      // 完全一致をチェック
+      if (locked.storeKey === storeKeyWithTime) {
+        lockedCount++;
+        console.log('✅ 完全一致（時間あり）:', locked.storeKey);
+      }
+      // 時間なしでの一致もチェック
+      else if (locked.storeKey === storeKeyWithoutTime) {
+        lockedCount++;
+        console.log('✅ 完全一致（時間なし）:', locked.storeKey);
+      }
+      // 部分一致もチェック（時間情報が含まれているstoreKeyの場合）
+      else if (locked.storeKey.startsWith(storeKeyWithoutTime + '_')) {
+        lockedCount++;
+        console.log('✅ 部分一致:', locked.storeKey);
+      }
+    }
+
+    console.log('🔍 ロックカウント:', {
+      storeKeyWithTime,
+      storeKeyWithoutTime,
+      lockedCount
+    });
+
     const remainingStaff = Math.max(0, (Number(posting.required_staff) || 1) - lockedCount);
+
+    console.log('🔍 残り必要人数:', {
+      storeName: posting.store_name,
+      required_staff: posting.required_staff,
+      lockedCount,
+      remainingStaff
+    });
 
     return {
       ...posting,
@@ -1580,16 +1781,88 @@ export const reoptimizeWithLockedAssignments = (
 
   // 固定された割り当てを MatchCandidate 形式に変換
   const lockedMatches: MatchCandidate[] = lockedAssignments.map(locked => {
-    const posting = dayPostings.find(p => {
-      const key = `${p.pharmacy_id}_${(p.store_name || '').trim()}`;
-      return key === locked.storeKey;
+    console.log('🔧 固定マッチング作成:', {
+      storeKey: locked.storeKey,
+      pharmacistId: locked.pharmacistId,
+      pharmacistName: userProfiles[locked.pharmacistId]?.name || '不明'
     });
 
-    const request = dayRequests.find(r => r.pharmacist_id === locked.pharmacistId);
+    // storeKeyから情報を抽出（2つの形式に対応）
+    // 形式1: {pharmacy_id}_{store_name}
+    // 形式2: {pharmacy_id}_{store_name}_{start_time}_{end_time}
+    const parts = locked.storeKey.split('_');
+    let pharmacyId = '';
+    let storeName = '';
+    let startTime = '';
+    let endTime = '';
+
+    if (parts.length >= 2) {
+      pharmacyId = parts[0];
+
+      console.log('🔍 storeKey分解:', { parts, partsLength: parts.length });
+
+      // UUIDのような長い文字列の場合（pharmacy_id）
+      if (parts.length === 2) {
+        // 形式1: pharmacy_id + store_name
+        storeName = parts.slice(1).join('_');
+      } else if (parts.length === 4) {
+        // 形式2: pharmacy_id + store_name + start_time + end_time
+        storeName = parts[1];
+        startTime = parts[2];
+        endTime = parts[3];
+      } else {
+        // それ以外の場合、最後2つが時間の可能性を考慮
+        const lastPart = parts[parts.length - 1];
+        const secondLastPart = parts[parts.length - 2];
+
+        // 時間形式（HH:MM）かチェック
+        if (lastPart.includes(':') && secondLastPart.includes(':')) {
+          storeName = parts.slice(1, -2).join('_');
+          startTime = secondLastPart;
+          endTime = lastPart;
+        } else {
+          storeName = parts.slice(1).join('_');
+        }
+      }
+    }
+
+    console.log('📊 パース結果:', { pharmacyId, storeName, startTime, endTime });
+
+    // postingを検索（時間情報も考慮）
+    const posting = dayPostings.find(p => {
+      const matchPharmacyId = p.pharmacy_id === pharmacyId;
+      const matchStoreName = (p.store_name || '').trim() === storeName.trim();
+
+      // 時間情報がある場合は時間も一致するかチェック
+      if (startTime && endTime) {
+        const pStartTime = p.start_time ? String(p.start_time).substring(0, 5) : '09:00';
+        const pEndTime = p.end_time ? String(p.end_time).substring(0, 5) : '18:00';
+        return matchPharmacyId && matchStoreName && pStartTime === startTime && pEndTime === endTime;
+      }
+
+      return matchPharmacyId && matchStoreName;
+    });
+
+    // requestを検索（見つからない場合はダミーを作成）
+    let request = dayRequests.find(r => r.pharmacist_id === locked.pharmacistId);
+
+    // requestが見つからない場合（不足薬局から選択された薬剤師がその日のシフト希望を出していない）
+    // ダミーのrequestを作成
+    if (!request && posting) {
+      request = {
+        pharmacist_id: locked.pharmacistId,
+        date: date,
+        start_time: posting.start_time || (startTime ? `${startTime}:00` : '09:00:00'),
+        end_time: posting.end_time || (endTime ? `${endTime}:00` : '18:00:00'),
+        status: 'pending',
+        priority: 'medium',
+        memo: '不足薬局への手動割り当て'
+      };
+    }
 
     const pharmacistProfile = userProfiles[locked.pharmacistId];
-    const pharmacyId = posting?.pharmacy_id;
-    const pharmacyProfile = userProfiles[pharmacyId];
+    const finalPharmacyId = posting?.pharmacy_id || pharmacyId;
+    const pharmacyProfile = userProfiles[finalPharmacyId];
 
     // 薬剤師名の取得
     let pharmacistName = '薬剤師名未設定';
@@ -1613,52 +1886,75 @@ export const reoptimizeWithLockedAssignments = (
       } else if (pharmacyProfile.email && pharmacyProfile.email.trim()) {
         pharmacyName = pharmacyProfile.email.split('@')[0];
       } else {
-        pharmacyName = `薬局${pharmacyId?.slice(-4)}`;
+        pharmacyName = `薬局${finalPharmacyId?.slice(-4)}`;
       }
-    } else if (pharmacyId) {
-      pharmacyName = `薬局${pharmacyId.slice(-4)}`;
+    } else if (finalPharmacyId) {
+      pharmacyName = `薬局${finalPharmacyId.slice(-4)}`;
     }
 
-    const storeName = posting?.store_name ||
-                     pharmacyProfile?.store_name ||
-                     '店舗名未設定';
+    const finalStoreName = posting?.store_name ||
+                           storeName ||
+                           pharmacyProfile?.store_name ||
+                           '店舗名未設定';
 
-    return {
+    const lockedMatch = {
       pharmacist: {
         id: locked.pharmacistId,
         name: pharmacistName
       },
       pharmacy: {
-        id: pharmacyId || '',
+        id: finalPharmacyId || '',
         name: pharmacyName,
-        store_name: storeName
+        store_name: finalStoreName
       },
       timeSlot: {
-        start: posting?.start_time || request?.start_time || '09:00:00',
-        end: posting?.end_time || request?.end_time || '18:00:00',
+        start: posting?.start_time || (startTime ? `${startTime}:00` : (request?.start_time || '09:00:00')),
+        end: posting?.end_time || (endTime ? `${endTime}:00` : (request?.end_time || '18:00:00')),
         date: request?.date || date
       },
       compatibilityScore: 1.0,
       reasons: ['手動割り当て（固定）'],
       posting: {
-        start_time: posting?.start_time || '09:00:00',
-        end_time: posting?.end_time || '18:00:00',
-        store_name: storeName
+        start_time: posting?.start_time || (startTime ? `${startTime}:00` : '09:00:00'),
+        end_time: posting?.end_time || (endTime ? `${endTime}:00` : '18:00:00'),
+        store_name: finalStoreName
       },
       memo: request?.memo || '',
       isLocked: true // 固定フラグ
     };
+
+    console.log('✅ 固定マッチング作成完了:', {
+      pharmacistId: lockedMatch.pharmacist.id,
+      pharmacistName: lockedMatch.pharmacist.name,
+      pharmacyId: lockedMatch.pharmacy.id,
+      pharmacyName: lockedMatch.pharmacy.name,
+      storeName: lockedMatch.pharmacy.store_name
+    });
+
+    return lockedMatch;
   });
 
-  // 固定されたマッチと最適化されたマッチを結合
-  const allMatches = [...lockedMatches, ...optimizationResult.matches];
+  // 固定マッチングで使用された薬剤師を取得（結合用）
+  const lockedMatchPharmacistIds = new Set(lockedMatches.map(m => m.pharmacist.id));
+
+  // 最適化マッチングから、固定マッチングで既に使用された薬剤師を除外
+  const filteredOptimizationMatches = optimizationResult.matches.filter(m => {
+    const isUsedInLocked = lockedMatchPharmacistIds.has(m.pharmacist.id);
+    if (isUsedInLocked) {
+      console.log(`⚠️ 重複除外: ${m.pharmacist.name}は既に固定割り当てで使用されています`);
+    }
+    return !isUsedInLocked;
+  });
+
+  // 固定されたマッチと最適化されたマッチを結合（固定を優先）
+  const allMatches = [...lockedMatches, ...filteredOptimizationMatches];
 
   const totalRequired = dayPostings.reduce((sum, p) => sum + (Number(p.required_staff) || 0), 0);
   const shortage = Math.max(0, totalRequired - allMatches.length);
 
   console.log(`📊 再最適化結果:`);
   console.log(`  - 固定割り当て: ${lockedMatches.length}件`);
-  console.log(`  - 最適化割り当て: ${optimizationResult.matches.length}件`);
+  console.log(`  - 最適化割り当て（重複除外後）: ${filteredOptimizationMatches.length}件`);
   console.log(`  - 合計: ${allMatches.length}件`);
   console.log(`  - 不足: ${shortage}人`);
 

@@ -64,7 +64,14 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
         </div>
       </div>
       <div className="space-y-2 max-h-48 overflow-y-auto">
-        {matches.map((match, index) => {
+        {matches
+          .sort((a, b) => {
+            // 固定マッチング（isLocked=true）を優先表示
+            if (a.isLocked && !b.isLocked) return -1;
+            if (!a.isLocked && b.isLocked) return 1;
+            return 0;
+          })
+          .map((match, index) => {
           // userProfilesから名前を取得（フォールバック: name → email → ID末尾4桁）
           const pharmacistId = match.pharmacist_id || match.pharmacist?.id;
           const pharmacyId = match.pharmacy_id || match.pharmacy?.id;
@@ -82,6 +89,14 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
           } else if (pharmacistId) {
             pharmacistName = `薬剤師${pharmacistId.slice(-4)}`;
           }
+
+          console.log(`🏥 AIマッチング表示[${index}]:`, {
+            pharmacistId,
+            pharmacistName,
+            isLocked: match.isLocked,
+            pharmacyId,
+            storeName: match.pharmacy?.store_name || match.posting?.store_name
+          });
 
           let pharmacyName = '薬局名未設定';
           if (pharmacyId && userProfiles[pharmacyId]) {
@@ -192,11 +207,36 @@ export const AIMatchingResults: React.FC<AIMatchingResultsProps> = ({
                                storeName !== pharmacyName &&
                                storeName.trim() !== '';
 
-          // 店舗キーを生成
-          const storeKey = `${pharmacyId}_${(storeName || '').trim()}`;
+          // 店舗キーを生成（時間情報を含む）
+          const storeKey = `${pharmacyId}_${(storeName || '').trim()}_${startTime}_${endTime}`;
 
           // この店舗の候補者リストを取得
-          const candidates = candidatesByStore?.get(storeKey) || [];
+          let candidates = candidatesByStore?.get(storeKey) || [];
+
+          // 現在選択されている薬剤師が候補者リストに含まれていない場合、追加する
+          // （シフト希望を出していない薬剤師を手動で選択した場合のため）
+          const currentPharmacistInList = candidates.some((c: any) => c.pharmacistId === pharmacistId);
+          if (!currentPharmacistInList && pharmacistId) {
+            candidates = [
+              {
+                pharmacistId,
+                pharmacistName,
+                score: 1.0,
+                isAssignedElsewhere: false,
+                assignedTo: null
+              },
+              ...candidates
+            ];
+          }
+
+          console.log('🔑 StoreKey for dropdown:', {
+            storeKey,
+            hasCandidates: candidates.length > 0,
+            candidatesCount: candidates.length,
+            currentPharmacistId: pharmacistId,
+            currentPharmacistName: pharmacistName,
+            currentPharmacistInList
+          });
 
           // プルダウンを表示するか（候補者が2人以上いて、機能が有効な場合）
           const showDropdown = candidatesByStore && onPharmacistChange && candidates.length > 0;
