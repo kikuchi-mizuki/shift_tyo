@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // 環境変数で本番でもログを有効化できるようにする
-// Railway/本番で `VITE_ENABLE_DEBUG_LOGS=true` を設定すると console.log を削除しません
 const enableDebugLogs = process.env.VITE_ENABLE_DEBUG_LOGS === 'true';
 
 // https://vitejs.dev/config/
@@ -11,21 +10,22 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        // ベンダーライブラリを分離してキャッシュ効率を向上
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+        },
       },
     },
-    // 本番環境でのconsole.log削除
+    // 本番環境でのconsole削除
     minify: 'terser',
     terserOptions: {
       compress: {
-        // 本番環境ではconsole.logとdebuggerを削除（環境変数で制御可能）
-        drop_console: false, // console.errorを残すため、falseに変更
+        drop_console: false,
         drop_debugger: !enableDebugLogs,
-        // console.log/debug/infoを削除（console.error/warnは残す）
         pure_funcs: enableDebugLogs ? [] : ['console.log', 'console.debug', 'console.info', 'console.warn'],
       },
       format: {
-        // コメントを削除
         comments: false,
       },
     },
@@ -33,14 +33,11 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
-  // デプロイ環境での設定
   server: {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      // Prevent HTML caching to avoid stale index.html serving old chunk names
-      'Cache-Control': 'no-store',
     },
   },
   preview: {
@@ -48,7 +45,6 @@ export default defineConfig({
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Cache-Control': 'no-store',
     },
   },
 });
