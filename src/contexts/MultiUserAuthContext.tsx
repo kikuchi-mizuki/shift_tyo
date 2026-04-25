@@ -203,6 +203,11 @@ export const MultiUserAuthProvider: React.FC<MultiUserAuthProviderProps> = ({ ch
       // 直近でログインしたユーザータイプを現在のユーザータイプとして採用
       setCurrentUserType(userType);
 
+      // ページ遷移前にlocalStorageへ即座に保存（useEffect を待たない）
+      safeSetLocalStorageJSON('multi_user_sessions', [newSession]);
+      safeSetLocalStorage('current_user_type', userType);
+      safeSetLocalStorage('session_version', SESSION_VERSION);
+
       console.log('✅ MultiUserAuth: Session saved. Current user type:', userType);
     } catch (error) {
       console.error('❌ MultiUserAuth: Error adding session:', error);
