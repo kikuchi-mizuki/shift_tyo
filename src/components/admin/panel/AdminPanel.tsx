@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { ActionButtons } from './ActionButtons';
+import { MatchingSettings } from '../settings/MatchingSettings';
 import { DateDetailPanel } from '../detail/DateDetailPanel';
 
 interface AdminPanelProps {
@@ -38,6 +39,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         onMonthlyMatching={onMonthlyMatching}
         onCSVExport={onCSVExport}
       />
+
+      {/* マッチング優先順位設定 */}
+      <div className="px-2 pt-2">
+        <MatchingSettings />
+      </div>
 
       {/* スクロール可能な詳細エリア */}
       <div className="flex-1 overflow-y-auto p-2 pt-2 space-y-2">

@@ -13,6 +13,7 @@ import {
   calculateDistanceScore,
   calculateRequestCountScore,
 } from '../../utils/admin/scoreCalculators';
+import { getMatchingScoreWeights, MatchingScoreWeights } from './matchingScoreConfigService';
 
 /**
  * 時間範囲の互換性をチェックする関数
@@ -390,7 +391,8 @@ export const performMatchingAnalysis = (
   ratings: any[],
   requests: any[],
   storeNgPharmacists?: { [pharmacyId: string]: any[] },
-  storeNgPharmacies?: { [pharmacistId: string]: any[] }
+  storeNgPharmacies?: { [pharmacistId: string]: any[] },
+  scoreWeights?: MatchingScoreWeights
 ): { matches: MatchCandidate[]; matchedCount: number; shortage: number } => {
   console.log('🔍 performMatchingAnalysis - dayPostings:', dayPostings.map(p => ({
     pharmacy_id: p.pharmacy_id,
@@ -550,6 +552,24 @@ export const performMatchingAnalysis = (
         const requestCountScore = calculateRequestCountScore(request.pharmacist_id, requests);
         const ratingScore = getPharmacistRating(request.pharmacist_id, ratings) / 5;
 
+        // DB設定の重みを使用した総合スコア
+        const w = scoreWeights || {
+          weight_rating: 0.30,
+          weight_distance: 0.30,
+          weight_request_count: 0.20,
+          weight_acceptance_rate: 0.20,
+          request_count_order: 'desc' as const,
+        };
+        const adjustedRequestCountScore = w.request_count_order === 'desc'
+          ? requestCountScore
+          : (1 - requestCountScore);
+        const acceptanceRateScore = requestCountScore > 0 ? ratingScore : 0.5;
+        const totalScore =
+          ratingScore * w.weight_rating +
+          distanceScore * w.weight_distance +
+          adjustedRequestCountScore * w.weight_request_count +
+          acceptanceRateScore * w.weight_acceptance_rate;
+
         allMatchCandidates.push({
           request,
           pharmacyNeed,
@@ -557,28 +577,15 @@ export const performMatchingAnalysis = (
           pharmacy,
           distanceScore,
           requestCountScore,
-          ratingScore
+          ratingScore,
+          totalScore
         });
       }
     }
   });
 
-  // 段階的優先順位でソート（タイブレーク方式）
-  // 1. 距離（近い方が優先） → 2. シフト希望回数（少ない方が優先） → 3. 評価（高い方が優先）
-  allMatchCandidates.sort((a, b) => {
-    // 1. 距離で比較（距離が近い方が優先 = distanceScoreが高い方が優先）
-    if (Math.abs(a.distanceScore - b.distanceScore) > 0.01) {
-      return b.distanceScore - a.distanceScore;
-    }
-
-    // 2. 距離が同じ場合、シフト希望回数で比較（回数が少ない方が優先 = requestCountScoreが低い方が優先）
-    if (Math.abs(a.requestCountScore - b.requestCountScore) > 0.01) {
-      return a.requestCountScore - b.requestCountScore;
-    }
-
-    // 3. 回数も同じ場合、評価で比較（評価が高い方が優先 = ratingScoreが高い方が優先）
-    return b.ratingScore - a.ratingScore;
-  });
+  // 総合スコアでソート（高い方が優先）
+  allMatchCandidates.sort((a, b) => b.totalScore - a.totalScore);
 
   // 店舗別に募集人数分の薬剤師をマッチング
   const usedPharmacists = new Set<string>();
@@ -835,6 +842,10 @@ export const executeAIMatching = async (
       return [];
     }
 
+    // DB設定の重みを取得
+    const scoreWeights = await getMatchingScoreWeights();
+    console.log('📊 スコア重み設定:', scoreWeights);
+
     // マッチング分析を実行（最適化アルゴリズムを使用）
     const matchingResult = performOptimizedMatching(
       filteredDayRequests,
@@ -845,7 +856,8 @@ export const executeAIMatching = async (
       ratings,
       requests,
       storeNgPharmacists,
-      storeNgPharmacies
+      storeNgPharmacies,
+      scoreWeights
     );
     const matches = matchingResult.matches;
 
@@ -947,7 +959,8 @@ const buildOptimizedCompatibilityMatrix = (
   ratings: any[],
   requests: any[],
   storeNgPharmacists?: { [pharmacyId: string]: any[] },
-  storeNgPharmacies?: { [pharmacistId: string]: any[] }
+  storeNgPharmacies?: { [pharmacistId: string]: any[] },
+  scoreWeights?: MatchingScoreWeights
 ): CompatibilityInfo[] => {
   const compatibilityList: CompatibilityInfo[] = [];
 
@@ -1023,8 +1036,29 @@ const buildOptimizedCompatibilityMatrix = (
       const requestCountScore = calculateRequestCountScore(request.pharmacist_id, requests);
       const ratingScore = getPharmacistRating(request.pharmacist_id, ratings) / 5;
 
-      // 総合スコア（距離40%, 希望回数30%, 評価30%）
-      const totalScore = distanceScore * 0.4 + (1 - requestCountScore) * 0.3 + ratingScore * 0.3;
+      // DB設定の重みを使用（設定がない場合はデフォルト値）
+      const w = scoreWeights || {
+        weight_rating: 0.30,
+        weight_distance: 0.30,
+        weight_request_count: 0.20,
+        weight_acceptance_rate: 0.20,
+        request_count_order: 'desc' as const,
+      };
+
+      // 応募回数スコア: 順序設定に応じて反転
+      const adjustedRequestCountScore = w.request_count_order === 'desc'
+        ? requestCountScore      // 多い方が高スコア
+        : (1 - requestCountScore); // 少ない方が高スコア
+
+      // 承諾率スコア（現時点では成功率で代用）
+      const acceptanceRateScore = requestCountScore > 0 ? ratingScore : 0.5;
+
+      // 総合スコア（DB設定の重みに基づく）
+      const totalScore =
+        ratingScore * w.weight_rating +
+        distanceScore * w.weight_distance +
+        adjustedRequestCountScore * w.weight_request_count +
+        acceptanceRateScore * w.weight_acceptance_rate;
 
       compatibilityList.push({
         storeKey,
@@ -1247,7 +1281,8 @@ export const performOptimizedMatching = (
   ratings: any[],
   requests: any[],
   storeNgPharmacists?: { [pharmacyId: string]: any[] },
-  storeNgPharmacies?: { [pharmacistId: string]: any[] }
+  storeNgPharmacies?: { [pharmacistId: string]: any[] },
+  scoreWeights?: MatchingScoreWeights
 ): { matches: MatchCandidate[]; matchedCount: number; shortage: number } => {
   console.log('🚀 最適化マッチングアルゴリズム開始');
   console.log(`📊 対象: ${dayPostings.length}店舗, ${dayRequests.length}薬剤師`);
@@ -1274,7 +1309,7 @@ export const performOptimizedMatching = (
 
   console.log(`🔍 フィルター後: ${filteredPostings.length}店舗, ${filteredRequests.length}薬剤師`);
 
-  // ステップ1: 互換性マトリクスを構築
+  // ステップ1: 互換性マトリクスを構築（DB設定の重みを使用）
   const compatibilityMatrix = buildOptimizedCompatibilityMatrix(
     filteredRequests,
     filteredPostings,
@@ -1282,7 +1317,8 @@ export const performOptimizedMatching = (
     ratings,
     requests,
     storeNgPharmacists,
-    storeNgPharmacies
+    storeNgPharmacies,
+    scoreWeights
   );
 
   const compatibleCount = compatibilityMatrix.filter(c => c.isCompatible).length;
@@ -1404,7 +1440,8 @@ export const getAvailableCandidatesForShortageStore = (
   ratings: any[],
   requests: any[],
   storeNgPharmacists?: { [pharmacyId: string]: any[] },
-  storeNgPharmacies?: { [pharmacistId: string]: any[] }
+  storeNgPharmacies?: { [pharmacistId: string]: any[] },
+  scoreWeights?: MatchingScoreWeights
 ): CompatibilityInfo[] => {
   const candidates: CompatibilityInfo[] = [];
 
@@ -1481,12 +1518,24 @@ export const getAvailableCandidatesForShortageStore = (
       const request = existingRequest || dummyRequest;
       const normalizedRequest = normalizeTime(request);
 
-      // スコア計算
+      // スコア計算（DB設定の重みを使用）
       const pharmacy = userProfiles[posting.pharmacy_id];
       const distanceScore = calculateDistanceScore(pharmacist as any, pharmacy);
       const requestCountScore = calculateRequestCountScore(pharmacistId, requests);
       const ratingScore = getPharmacistRating(pharmacistId, ratings) / 5;
-      const totalScore = distanceScore * 0.4 + (1 - requestCountScore) * 0.3 + ratingScore * 0.3;
+      const w = scoreWeights || {
+        weight_rating: 0.30, weight_distance: 0.30,
+        weight_request_count: 0.20, weight_acceptance_rate: 0.20,
+        request_count_order: 'desc' as const,
+      };
+      const adjustedRequestCountScore = w.request_count_order === 'desc'
+        ? requestCountScore : (1 - requestCountScore);
+      const acceptanceRateScore = requestCountScore > 0 ? ratingScore : 0.5;
+      const totalScore =
+        ratingScore * w.weight_rating +
+        distanceScore * w.weight_distance +
+        adjustedRequestCountScore * w.weight_request_count +
+        acceptanceRateScore * w.weight_acceptance_rate;
 
       candidates.push({
         storeKey,
@@ -1527,7 +1576,8 @@ export const getAvailableCandidatesForStore = (
   ratings: any[],
   requests: any[],
   storeNgPharmacists?: { [pharmacyId: string]: any[] },
-  storeNgPharmacies?: { [pharmacistId: string]: any[] }
+  storeNgPharmacies?: { [pharmacistId: string]: any[] },
+  scoreWeights?: MatchingScoreWeights
 ): CompatibilityInfo[] => {
   const candidates: CompatibilityInfo[] = [];
 
@@ -1597,12 +1647,24 @@ export const getAvailableCandidatesForStore = (
     const isCompatible = !blockedByPharmacist && !blockedByPharmacy && isTimeCompatible;
 
     if (isCompatible) {
-      // スコア計算
+      // スコア計算（DB設定の重みを使用）
       const pharmacy = userProfiles[posting.pharmacy_id];
       const distanceScore = calculateDistanceScore(pharmacist, pharmacy);
       const requestCountScore = calculateRequestCountScore(request.pharmacist_id, requests);
       const ratingScore = getPharmacistRating(request.pharmacist_id, ratings) / 5;
-      const totalScore = distanceScore * 0.4 + (1 - requestCountScore) * 0.3 + ratingScore * 0.3;
+      const w = scoreWeights || {
+        weight_rating: 0.30, weight_distance: 0.30,
+        weight_request_count: 0.20, weight_acceptance_rate: 0.20,
+        request_count_order: 'desc' as const,
+      };
+      const adjustedRequestCountScore = w.request_count_order === 'desc'
+        ? requestCountScore : (1 - requestCountScore);
+      const acceptanceRateScore = requestCountScore > 0 ? ratingScore : 0.5;
+      const totalScore =
+        ratingScore * w.weight_rating +
+        distanceScore * w.weight_distance +
+        adjustedRequestCountScore * w.weight_request_count +
+        acceptanceRateScore * w.weight_acceptance_rate;
 
       candidates.push({
         storeKey,
