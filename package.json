@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp serve.json dist/serve.json",
     "preview": "vite preview",
     "start": "npx serve -s dist -l ${PORT:-8080} -c serve.json",
     "lint": "eslint .",
