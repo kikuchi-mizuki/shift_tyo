@@ -21,8 +21,8 @@ export default defineConfig({
         // 本番環境ではconsole.logとdebuggerを削除（環境変数で制御可能）
         drop_console: false, // console.errorを残すため、falseに変更
         drop_debugger: !enableDebugLogs,
-        // console.log/debug/infoのみ削除（console.error/warnは残す）
-        pure_funcs: enableDebugLogs ? [] : ['console.log', 'console.debug', 'console.info'],
+        // console.log/debug/infoを削除（console.error/warnは残す）
+        pure_funcs: enableDebugLogs ? [] : ['console.log', 'console.debug', 'console.info', 'console.warn'],
       },
       format: {
         // コメントを削除

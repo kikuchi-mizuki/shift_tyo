@@ -235,16 +235,8 @@ function AppContent() {
     );
   }
 
-  // デバッグログ
-  console.log('🔍 App: Checking sessions:', {
-    activeSessionsCount: activeSessions.length,
-    currentUserType,
-    sessions: activeSessions.map(s => ({ type: s.user_type, email: s.email }))
-  });
-
   // アクティブセッションがない場合はログイン選択画面を表示
   if (activeSessions.length === 0) {
-    console.log('⚠️ App: No active sessions, showing login selector');
     return <LoginSelector />;
   }
 
@@ -255,11 +247,7 @@ function AppContent() {
     ? (activeSessions.find(s => s.user_type === effectiveUserType) || activeSessions[0] || null)
     : null;
 
-  console.log('👤 App: Effective user type:', effectiveUserType);
-  console.log('📋 App: Current session:', currentSession);
-
   if (!effectiveUserType || !currentSession) {
-    console.log('⚠️ App: No effective user type or session, showing login selector');
     return <LoginSelector />;
   }
 

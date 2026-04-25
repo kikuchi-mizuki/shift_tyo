@@ -78,7 +78,6 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, 
       }
 
       if (data.user) {
-        console.log('🔐 AdminLogin: User authenticated:', data.user.email);
 
         // ユーザープロフィールを取得して管理者権限を確認
         const { data: profile, error: profileError } = await supabase
@@ -87,7 +86,6 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, 
           .eq('id', data.user.id)
           .single();
 
-        console.log('👤 AdminLogin: Profile fetched:', profile);
 
         if (profileError) {
           console.error('❌ AdminLogin: Profile fetch error:', profileError);
@@ -105,19 +103,16 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess, 
           return;
         }
 
-        console.log('✅ AdminLogin: Admin confirmed. Adding session...');
 
         // 管理者セッションを追加
         await addSession(data.user, 'admin');
 
-        console.log('✅ AdminLogin: Session added. Waiting before redirect...');
 
         setError('');
 
         // セッションが確実に保存されるまで少し待つ
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        console.log('✅ AdminLogin: Calling onLoginSuccess');
         onLoginSuccess();
       }
     } catch (error) {
