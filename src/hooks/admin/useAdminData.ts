@@ -152,144 +152,73 @@ export const useAdminData = (
       setLoading(true);
       setError(null);
 
-      // 現在のユーザー情報を確認
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('👤 現在ログイン中のユーザーID:', user?.id);
-
-      if (user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        console.log('👤 user_profilesのデータ:', profile);
-        console.log('👤 user_type:', profile?.user_type);
-        console.log('👤 profileエラー:', profileError);
-
-        if (profileError) {
-          console.error('❌ user_profilesの取得エラー:', profileError);
-        }
-
-        if (profile?.user_type !== 'admin') {
-          console.warn('⚠️ 警告: 管理者ではありません! user_type=' + profile?.user_type);
-          console.warn('⚠️ プロフィール全体:', JSON.stringify(profile, null, 2));
-        } else {
-          console.log('✅ 管理者として認証されています');
-        }
-      } else {
-        console.error('❌ ユーザー情報が取得できません');
-      }
-
-      // 募集状況を読み込み
-      await loadRecruitmentStatus();
-
       // 表示中の月の範囲を計算
       const currentYear = currentDate.getFullYear();
       const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
       const nextMonth = currentDate.getMonth() === 11 ? 1 : currentDate.getMonth() + 2;
       const nextMonthYear = currentDate.getMonth() === 11 ? currentYear + 1 : currentYear;
       const nextMonthStr = String(nextMonth).padStart(2, '0');
+      const dateFrom = `${currentYear}-${currentMonth}-01`;
+      const dateTo = `${nextMonthYear}-${nextMonthStr}-01`;
 
-      // 確定シフトを読み込み（表示中の月のみ）
-      const { data: assignedData, error: assignedError } = await supabase
-        .from('assigned_shifts')
-        .select('*')
-        .gte('date', `${currentYear}-${currentMonth}-01`)
-        .lt('date', `${nextMonthYear}-${nextMonthStr}-01`);
+      // 全クエリを並列実行（最大のパフォーマンス改善ポイント）
+      const [
+        recruitmentResult,
+        assignedResult,
+        requestsResult,
+        postingsResult,
+        profilesResult,
+        ratingsResult,
+        ngPharmaciesResult,
+        ngPharmacistsResult
+      ] = await Promise.all([
+        supabase.from('recruitment_status').select('*').eq('id', FIXED_RECRUITMENT_ID).single(),
+        supabase.from('assigned_shifts').select('*').gte('date', dateFrom).lt('date', dateTo),
+        supabase.from('shift_requests').select('*').gte('date', dateFrom).lt('date', dateTo).order('date', { ascending: true }),
+        supabase.from('shift_postings').select('*').gte('date', dateFrom).lt('date', dateTo).order('date', { ascending: true }),
+        supabase.from('user_profiles').select('*'),
+        supabase.from('pharmacist_ratings').select('*'),
+        supabase.from('store_ng_pharmacies').select('*'),
+        supabase.from('store_ng_pharmacists').select('*')
+      ]);
 
-      if (assignedError) {
-        console.error('Error loading assigned shifts:', assignedError);
-        setAssigned([]);
-      } else {
-        setAssigned(assignedData || []);
-      }
-
-      // シフト希望を読み込み（表示中の月のみ取得してパフォーマンス向上）
-      const { data: requestsData, error: requestsError } = await supabase
-        .from('shift_requests')
-        .select('*')
-        .gte('date', `${currentYear}-${currentMonth}-01`)
-        .lt('date', `${nextMonthYear}-${nextMonthStr}-01`)
-        .order('date', { ascending: true });
-
-      if (requestsError) {
-        console.error('❌ Error loading shift requests:', requestsError);
-      }
-
-      setRequests(requestsData || []);
-
-      // シフト募集を読み込み（表示中の月のみ）
-      const { data: postingsData } = await supabase
-        .from('shift_postings')
-        .select('*')
-        .gte('date', `${currentYear}-${currentMonth}-01`)
-        .lt('date', `${nextMonthYear}-${nextMonthStr}-01`)
-        .order('date', { ascending: true });
-
-      setPostings(postingsData || []);
-
-      // ユーザーIDを収集
-      const userIds = new Set<string>();
-
-      if (assignedData) {
-        assignedData.forEach((shift: any) => {
-          userIds.add(shift.pharmacist_id);
-          userIds.add(shift.pharmacy_id);
+      // 募集状況
+      if (recruitmentResult.data) {
+        setRecruitmentStatus({
+          is_open: recruitmentResult.data.is_open,
+          updated_at: recruitmentResult.data.updated_at,
+          updated_by: recruitmentResult.data.updated_by,
+          notes: recruitmentResult.data.notes
         });
       }
 
-      if (requestsData) {
-        requestsData.forEach((request: any) => {
-          if (request.pharmacist_id) {
-            userIds.add(request.pharmacist_id);
-          }
-        });
-      }
+      // 確定シフト
+      setAssigned(assignedResult.data || []);
 
-      if (postingsData) {
-        postingsData.forEach((posting: any) => {
-          if (posting.pharmacy_id) {
-            userIds.add(posting.pharmacy_id);
-          }
-        });
-      }
+      // シフト希望
+      setRequests(requestsResult.data || []);
 
-      // ユーザープロフィールを取得
-      const { data: allProfilesData, error: allProfilesError } = await supabase
-        .from('user_profiles')
-        .select('*');
+      // シフト募集
+      setPostings(postingsResult.data || []);
 
+      // ユーザープロフィール
       const profilesMap: any = {};
-      if (allProfilesError) {
-        console.error('Error fetching user profiles:', allProfilesError);
-      } else {
-        if (allProfilesData) {
-
-          allProfilesData.forEach((profile: any) => {
-            if (profile && profile.id) {
-              profilesMap[profile.id] = profile;
-            }
-          });
-        }
-        setUserProfiles(profilesMap);
+      if (profilesResult.data) {
+        profilesResult.data.forEach((profile: any) => {
+          if (profile && profile.id) {
+            profilesMap[profile.id] = profile;
+          }
+        });
       }
+      setUserProfiles(profilesMap);
 
-      // 薬剤師評価を取得
-      const { data: ratingsData } = await supabase
-        .from('pharmacist_ratings')
-        .select('*');
+      // 薬剤師評価
+      setRatings(ratingsResult.data || []);
 
-      setRatings(ratingsData || []);
-
-      // NG薬局/薬剤師リストを取得
-      const { data: ngPharmaciesData } = await supabase
-        .from('store_ng_pharmacies')
-        .select('*');
-
-      if (ngPharmaciesData) {
+      // NG薬局リスト
+      if (ngPharmaciesResult.data) {
         const ngMap: { [pharmacistId: string]: any[] } = {};
-        ngPharmaciesData.forEach((ng: any) => {
+        ngPharmaciesResult.data.forEach((ng: any) => {
           if (!ngMap[ng.pharmacist_id]) {
             ngMap[ng.pharmacist_id] = [];
           }
@@ -298,13 +227,10 @@ export const useAdminData = (
         setStoreNgPharmacies(ngMap);
       }
 
-      const { data: ngPharmacistsData } = await supabase
-        .from('store_ng_pharmacists')
-        .select('*');
-
-      if (ngPharmacistsData) {
+      // NG薬剤師リスト
+      if (ngPharmacistsResult.data) {
         const ngMap: { [pharmacyId: string]: any[] } = {};
-        ngPharmacistsData.forEach((ng: any) => {
+        ngPharmacistsResult.data.forEach((ng: any) => {
           if (!ngMap[ng.pharmacy_id]) {
             ngMap[ng.pharmacy_id] = [];
           }
@@ -319,7 +245,7 @@ export const useAdminData = (
     } finally {
       setLoading(false);
     }
-  }, [supabase, loadRecruitmentStatus, currentDate]);
+  }, [supabase, currentDate]);
 
   /**
    * 募集ステータスを切り替える

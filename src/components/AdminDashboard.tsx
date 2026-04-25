@@ -251,47 +251,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     confirmedShifts: (assigned || []).filter((s: any) => s.date === selectedDate && s.status === 'confirmed'),
     postings: (postings || []).filter((p: any) => p.date === selectedDate && p.time_slot !== 'consult'),
     requests: (() => {
-      console.log('🔍 AdminDashboard: Total requests:', (requests || []).length);
-      console.log('🔍 AdminDashboard: Selected date:', selectedDate, 'type:', typeof selectedDate);
-
-      // 日付でフィルタ（より寛容な比較）
+      // 日付でフィルタ（YYYY-MM-DD形式に正規化して比較）
       const dateFiltered = (requests || []).filter((r: any) => {
         if (!r.date) return false;
-
-        // 日付を標準化して比較（YYYY-MM-DD形式）
         const requestDateStr = String(r.date);
         let requestDateOnly = requestDateStr.split('T')[0].split(' ')[0];
-
-        // YYYY-M-D形式をYYYY-MM-DD形式に正規化（ゼロ埋め、タイムゾーン変換なし）
         const dateParts = requestDateOnly.split('-');
         if (dateParts.length === 3) {
-          const year = dateParts[0];
-          const month = dateParts[1].padStart(2, '0');
-          const day = dateParts[2].padStart(2, '0');
-          requestDateOnly = `${year}-${month}-${day}`;
+          requestDateOnly = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
         }
-
         return requestDateOnly === selectedDate;
       });
-
-      console.log('🔍 AdminDashboard: After date filter:', dateFiltered.length);
-      console.log('🔍 AdminDashboard: Filtered dates:', dateFiltered.map(r => String(r.date).substring(0, 10)));
-      console.log('🔍 AdminDashboard: After date filter:', dateFiltered.length);
-      console.log('🔍 AdminDashboard: Date filtered data:', dateFiltered.map((r: any) => ({
-        id: r.id.substring(0, 8),
-        pharmacist_id: r.pharmacist_id.substring(0, 8),
-        date: r.date,
-        time_slot: r.time_slot,
-        start_time: r.start_time,
-        end_time: r.end_time
-      })));
-
-      // time_slotでフィルタ
-      const filtered = dateFiltered.filter((r: any) => r.time_slot !== 'consult');
-      console.log('🔍 AdminDashboard: After time_slot filter:', filtered.length);
-      console.log('🔍 AdminDashboard: Final result (no deduplication):', filtered.length);
-
-      return filtered;
+      return dateFiltered.filter((r: any) => r.time_slot !== 'consult');
     })(),
     consultRequests: (requests || []).filter((r: any) => r.date === selectedDate && r.time_slot === 'consult')
   } : null;
